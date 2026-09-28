@@ -342,8 +342,19 @@ fully-social-os/
                                the real Supabase URL/anon key, local dev only)
 ```
 
-The thirteen skills are not in this repo (`.claude/skills/` doesn't exist
-here) — where they live is an open question. `calendar-planner` in
+**New-client order** (skill `client-onboarding`, `.claude/skills/client-onboarding/`):
+save transcripts → `customer-data-doc` → the 3-3-3 (`positioning.md`) →
+`tasteful-content` → content research → Google Docs → the portal's
+Documents page. Fully Launched is the reference output.
+
+`customer-data-doc` lives in this repo at `.claude/skills/customer-data-doc/`
+(built 2026-09-28: verbatim pains, dreams and 5 hook phrases, mirrored into
+the client's Customer Data Google Doc). `tasteful-content` lives at
+`.claude/skills/tasteful-content/` (installed 2026-09-28 from Founder OS's
+Tasteful AI Content Playbook, adapted per client): run once per new client,
+after `customer-data-doc`, it builds `sources/voice.md` and the first
+`concepts/content-ideas.md`. The other skills in the table are not in this
+repo — where they live is an open question. `calendar-planner` in
 particular was written to update the old per-client `config.json` files,
 which no longer exist; it needs repointing at Supabase or retiring.
 
@@ -466,8 +477,11 @@ an editor → edits to review → ready to post; a client dropdown beside the
 tabs, synced with the top chips; "Add ideas with Claude" and "+ New idea"
 buttons; within each stage, videos grouped by status in pipeline order,
 then by post date) →
-**Content Calendar** (every video on its post date, plus "Add ideas with
-Claude" and "+ New idea", also on To Do) → **Clients** (name, portal
+**Content Calendar** (one chip per platform on each post date, in that
+platform's color, plus ✅ approve-by, ✂️ edit-due and 🎬 film-by deadlines
+until they're met; overdue ones turn red; filter by platform and by kind.
+Approve by is 3 days before posting, `APPROVE_DAYS_BEFORE_POST` in
+shell.js. Also "Add ideas with Claude" and "+ New idea", as on To Do) → **Clients** (name, portal
 address, who films, raw footage folder, finished video folder) → **Editor
 portal ↗**. A client filter across the top narrows every page.
 
@@ -558,11 +572,10 @@ Spec or Architecture Reference if they ever disagree.
 
 As of 2026-09-23:
 
-- **Clients:** `grad-gig` (Grad Gig) and `test-fully-launched` (Fully
-  Launched), both self-serve, both in Supabase. Fully Launched's old
-  fabricated test videos were deleted rather than migrated; it starts
-  empty. `clients/test-fully-launched/README.md` still describes it as a
-  fake test client.
+- **Clients:** `grad-gig` (Grad Gig) and Fully Launched (Tait's own
+  agency — now a real client, `clients/fully-launched/`; its test videos
+  were cleared 2026-09-25 and its brain/customer data/taste/research are
+  outlines waiting on Tait's voice memo). Both self-serve, both in Supabase.
 - **Migration 003** must be run in Supabase before the rebuilt dashboards
   work — the client and editor buttons call its functions.
 - **No client or editor logins exist yet**, pending the CRM RLS fix.

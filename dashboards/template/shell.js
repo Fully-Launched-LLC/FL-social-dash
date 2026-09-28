@@ -53,6 +53,103 @@ function renderMonthCalendar(container, byDay, chipHtml, state, rerender) {
   });
 }
 
+// ---------- Platform calendar ----------
+// Each platform's short tag and color on the calendar. A video's platform
+// list may say "instagram" or "ig"; normPlatform folds the spellings together.
+const PLATFORMS = {
+  instagram: { tag: "IG", name: "Instagram", color: "#e1306c" },
+  tiktok:    { tag: "TT", name: "TikTok",    color: "#25f4ee" },
+  facebook:  { tag: "FB", name: "Facebook",  color: "#1877f2" },
+  linkedin:  { tag: "LI", name: "LinkedIn",  color: "#4a90d9" },
+  youtube:   { tag: "YT", name: "YouTube",   color: "#ff3b30" },
+};
+const PLATFORM_ALIASES = { ig: "instagram", insta: "instagram", tt: "tiktok", "tik tok": "tiktok", fb: "facebook", li: "linkedin", yt: "youtube" };
+function normPlatform(p) { const k = String(p || "").trim().toLowerCase(); return PLATFORM_ALIASES[k] || k; }
+
+// A finished video must be approved (Tait's review, then the client's) this
+// many days before it posts. Edit due is 7 days before (suggestedDates).
+const APPROVE_DAYS_BEFORE_POST = 3;
+function addDaysISO(iso, n) { const d = new Date(iso + "T00:00:00"); d.setDate(d.getDate() + n); return localISODate(d); }
+
+const CAL_KINDS = {
+  post:    { icon: "📤", label: "Post" },
+  approve: { icon: "✅", label: "Approve by" },
+  edit:    { icon: "✂️", label: "Edit due" },
+  film:    { icon: "🎬", label: "Film by" },
+};
+
+// Everything one video puts on the calendar:
+//   post    one entry per platform on the post date (done once posted)
+//   approve post date minus APPROVE_DAYS_BEFORE_POST, until ready to post
+//   edit    the edit-due date, until the editor delivers (edit review)
+//   film    the film-by date, until the footage is in
+// Deadlines drop off once they're met; posts stay, marked done.
+function calendarEntries(x) {
+  const v = x.video;
+  if (v.status === "rejected") return [];
+  const reached = s => STATUS_ORDER.indexOf(v.status) >= STATUS_ORDER.indexOf(s);
+  const out = [];
+  if (v.postDate) {
+    const plats = (v.platform || []).map(normPlatform);
+    (plats.length ? plats : [""]).forEach(p => out.push({ kind: "post", date: v.postDate, platform: p, done: v.status === "posted", x }));
+    if (!reached("ready_to_post")) out.push({ kind: "approve", date: addDaysISO(v.postDate, -APPROVE_DAYS_BEFORE_POST), x });
+  }
+  if (v.dueToEdit && !reached("in_review")) out.push({ kind: "edit", date: v.dueToEdit, x });
+  if (v.dueToFilm && !reached("filmed")) out.push({ kind: "film", date: v.dueToFilm, x });
+  return out;
+}
+
+// One calendar entry as a chip. Posts wear their platform's color; deadlines
+// are neutral with an icon. Overdue deadlines turn red; posted posts fade.
+function calEntryChip(e, { showClient, onclick }) {
+  const v = e.x.video, P = PLATFORMS[e.platform];
+  const overdue = !e.done && e.date < todayISO();
+  const tag = e.kind === "post" ? (P ? P.tag : (e.platform || "?").slice(0, 2).toUpperCase()) : CAL_KINDS[e.kind].label;
+  const name = (showClient ? e.x.client.name + ": " : "") + (v.title || "(untitled)");
+  const tip = `${CAL_KINDS[e.kind].label}${P ? " on " + P.name : ""}: ${v.title || "(untitled)"} (${STATUS_LABEL[v.status] || v.status})${overdue ? ". Overdue" : ""}`;
+  const cls = ["cal-chip", "video-card", e.kind === "post" ? "cal-post" : "cal-deadline", overdue ? "cal-overdue" : "", e.done ? "cal-done" : ""].join(" ");
+  const style = e.kind === "post" ? ` style="--pc:${P ? P.color : "var(--sub)"}"` : "";
+  return `<div class="${cls}"${style} title="${escapeHtml(tip)}" onclick="${onclick}('${v.id}')">${e.done ? "✓ " : CAL_KINDS[e.kind].icon + " "}<b>${escapeHtml(tag)}</b> ${escapeHtml(name)}</div>`;
+}
+
+// Filter chips above the calendar: which platforms and which kinds to show.
+// state = { platforms: Set (empty = all), kinds: Set }
+function calFilterHtml(state) {
+  const plat = [`<button class="chip ${state.platforms.size ? "" : "active"}" data-calplat="">All platforms</button>`]
+    .concat(Object.entries(PLATFORMS).map(([k, P]) =>
+      `<button class="chip cal-plat ${state.platforms.has(k) ? "active" : ""}" style="--pc:${P.color}" data-calplat="${k}">${P.name}</button>`));
+  const kinds = Object.entries(CAL_KINDS).map(([k, K]) =>
+    `<button class="chip ${state.kinds.has(k) ? "active" : ""}" data-calkind="${k}">${K.icon} ${K.label}</button>`);
+  return `<div class="chip-row" style="margin-bottom:8px">${plat.join("")}</div><div class="chip-row" style="margin-bottom:14px">${kinds.join("")}</div>`;
+}
+function wireCalFilters(container, state, rerender) {
+  container.querySelectorAll("[data-calplat]").forEach(b => b.onclick = () => {
+    const k = b.dataset.calplat;
+    if (!k) state.platforms.clear();
+    else state.platforms.has(k) ? state.platforms.delete(k) : state.platforms.add(k);
+    rerender();
+  });
+  container.querySelectorAll("[data-calkind]").forEach(b => b.onclick = () => {
+    const k = b.dataset.calkind;
+    state.kinds.has(k) ? state.kinds.delete(k) : state.kinds.add(k);
+    rerender();
+  });
+}
+// Entries grouped by day after the filters, posts first (in platform order),
+// then approve, edit, film.
+function calendarByDay(videos, state) {
+  const order = Object.keys(PLATFORMS), kindOrder = Object.keys(CAL_KINDS), byDay = {};
+  videos.flatMap(calendarEntries)
+    .filter(e => state.kinds.has(e.kind))
+    .filter(e => e.kind !== "post" || !state.platforms.size || state.platforms.has(e.platform))
+    .filter(e => e.kind === "post" || !state.platforms.size ||
+      (e.x.video.platform || []).map(normPlatform).some(p => state.platforms.has(p)))
+    .sort((a, b) => kindOrder.indexOf(a.kind) - kindOrder.indexOf(b.kind) ||
+      order.indexOf(a.platform) - order.indexOf(b.platform))
+    .forEach(e => (byDay[e.date] = byDay[e.date] || []).push(e));
+  return byDay;
+}
+
 // Sidebar view routing uses the plain URL hash: "#<view>".
 // Sidebar view router: nav items carry data-view="<id>"; sections carry
 // class="view" id="view-<id>". Call initRouter() once per page after render.
