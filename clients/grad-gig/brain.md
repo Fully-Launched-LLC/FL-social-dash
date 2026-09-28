@@ -6,7 +6,8 @@ Sources: client-brain intake interview, 2026-08-21 · Grad Gig website copy,
 extracted 2026-08-21 (`sources/2026-08-21-website-copy.md`) · Luke's voice memo
 (`sources/2026-09-28-luke-voice-memo.md`) · Tait's notes and answers
 (`sources/2026-09-28-tait-notes.md`) · Luke's LinkedIn posts
-(`sources/2026-09-28-luke-linkedin-posts.md`).
+(`sources/2026-09-28-luke-linkedin-posts.md`) · the Week 1 Feed Content
+Plan, sent by Tait 2026-09-28 (`sources/2026-09-22-week-1-feed-content-plan.md`).
 
 Drive: Grad Gig folder (https://drive.google.com/drive/folders/1nOD5dj0UU_0h715kvmHik3j4FJoXYTU2).
 The four working docs (built 2026-09-28 with `client-onboarding`):
