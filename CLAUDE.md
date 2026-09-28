@@ -342,8 +342,10 @@ fully-social-os/
                                the real Supabase URL/anon key, local dev only)
 ```
 
-The thirteen skills are not in this repo (`.claude/skills/` doesn't exist
-here) — where they live is an open question. `calendar-planner` in
+`customer-data-doc` lives in this repo at `.claude/skills/customer-data-doc/`
+(built 2026-09-28: verbatim pains, dreams and 5 hook phrases, mirrored into
+the client's Customer Data Google Doc). The other twelve skills are not in
+this repo — where they live is an open question. `calendar-planner` in
 particular was written to update the old per-client `config.json` files,
 which no longer exist; it needs repointing at Supabase or retiring.
 
