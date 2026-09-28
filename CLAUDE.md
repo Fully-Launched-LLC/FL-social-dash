@@ -473,8 +473,8 @@ back one piece at a time:
 
 Nav: **To Do** (every video by stage, one tab each plus All, with counts:
 sent back with suggestions → waiting on client → ready for an editor → with
-an editor → edits to review → ready to post; a client dropdown beside the
-tabs, synced with the top chips; "Add ideas with Claude" and "+ New idea"
+an editor → edits to review → ready to post, plus an **Abandoned** tab
+kept out of All; a client dropdown beside the tabs, synced with the top chips; "Add ideas with Claude" and "+ New idea"
 buttons; within each stage, videos grouped by status in pipeline order,
 then by post date) →
 **Content Calendar** (one chip per platform on each post date, in that
@@ -485,7 +485,12 @@ shell.js. Also "Add ideas with Claude" and "+ New idea", as on To Do) → **Clie
 address, who films, raw footage folder, finished video folder) → **Editor
 portal ↗**. A client filter across the top narrows every page.
 
-Click any video for its card; "Edit" opens the full form (any status, the
+Click any video for its card. **Abandon** (an idea that won't happen)
+sets status `rejected`, remembers where it was in `editor_brief.abandonedFrom`,
+and takes it off the calendar, the client's portal and the editor's page;
+To Do → Abandoned lists it with **Restore** (back where it was) and
+**Delete**. **🗑 Delete** (card, Abandoned tab, or the Edit form) removes the
+row and its status history for good. "Edit" opens the full form (any status, the
 dates (Month · Day · Year dropdowns, `dateSelectHtml` in shell.js), editor, the idea fields, caption, note, and one "Editing
 instructions" field stored as `editor_brief.instructions` — older videos'
 separate brief fields are folded into it for display). Entering a post date

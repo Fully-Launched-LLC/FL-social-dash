@@ -210,7 +210,7 @@ function statusBadge(status, labelMap) {
 
 const STATUS_LABEL = {
   concept_pending: "Idea", to_film: "To film", filmed: "Filmed",
-  ready_to_edit: "Footage uploaded", rejected: "Rejected", with_editor: "Editing",
+  ready_to_edit: "Footage uploaded", rejected: "Abandoned", with_editor: "Editing",
   in_review: "Edit review", client_review: "Client final review",
   ready_to_post: "Ready to post", posted: "Posted"
 };

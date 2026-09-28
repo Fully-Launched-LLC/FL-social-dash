@@ -45,6 +45,7 @@
     <div class="card" data-stage="withEditor"><h2>With an editor</h2><div id="withEditorList"></div></div>
     <div class="card" data-stage="edits"><h2>Edits to review</h2><div id="editsList"></div></div>
     <div class="card" data-stage="post"><h2>Ready to post</h2><div id="todoPostList"></div></div>
+    <div class="card" data-stage="abandoned"><h2>Abandoned <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— ideas that won't happen. Off the calendar and the client's portal. Restore one to put it back where it was</span></h2><div id="abandonedList"></div></div>
   </section>
 
   <section class="view" id="view-calendar">
@@ -135,7 +136,9 @@ async function loadLiveData() {
   EDITORS = editorsRes.data || [];
   EDITOR_BY_ID = {};
   EDITORS.forEach(e => { EDITOR_BY_ID[e.id] = e; });
-  VIDEOS = (videosRes.data || []).filter(r => CLIENT_BY_ID[r.client_id] && r.status !== "rejected").map(r => {
+  // Abandoned videos (status 'rejected') load too, for To Do's Abandoned
+  // tab; the calendar and every other stage leave them out.
+  VIDEOS = (videosRes.data || []).filter(r => CLIENT_BY_ID[r.client_id]).map(r => {
     const video = videoFromRow(r);
     video.assignedEditor = video.editorId && EDITOR_BY_ID[video.editorId] ? EDITOR_BY_ID[video.editorId].name : null;
     return { client: CLIENT_BY_ID[r.client_id], video };
@@ -269,6 +272,33 @@ async function markPosted(id) {
   if (!confirm("Mark this video as posted?")) return;
   await updateVideo(id, { status: "posted" });
 }
+// Abandon: the idea won't happen, but it's kept. Status 'rejected' takes it
+// off the calendar, the client's portal and the editor's page; To Do lists
+// it under Abandoned. Where it was is kept in editor_brief.abandonedFrom
+// (never shown to the client), so Restore puts it back there.
+async function abandonVideo(id) {
+  const x = findVideo(id);
+  if (!x || x.video.status === "rejected") return;
+  if (!confirm(`Abandon "${x.video.title || "this video"}"? It comes off the calendar and ${x.client.name}'s portal, and goes to To Do → Abandoned, where you can restore it.`)) return;
+  if (await updateVideo(id, { status: "rejected", editorBrief: Object.assign({}, x.video.editorBrief, { abandonedFrom: x.video.status }) })) closeVideoModal();
+}
+async function restoreVideo(id) {
+  const x = findVideo(id);
+  if (!x) return;
+  const eb = Object.assign({}, x.video.editorBrief), back = STATUS_ORDER.includes(eb.abandonedFrom) ? eb.abandonedFrom : "concept_pending";
+  delete eb.abandonedFrom;
+  if (await updateVideo(id, { status: back, editorBrief: eb })) closeVideoModal();
+}
+// Delete: gone for good, with its status history.
+async function deleteVideo(id) {
+  const x = findVideo(id);
+  if (!x) return;
+  if (!confirm(`Delete "${x.video.title || "this video"}" permanently? This can't be undone, and its status history is deleted too. (To keep it, abandon it instead.)`)) return;
+  const { error } = await sbClient.from("social_videos").delete().eq("id", id);
+  if (error) { alert("Couldn't delete: " + error.message); return; }
+  closeVideoModal();
+  await loadLiveData();
+}
 
 // ---------- shared row + modal ----------
 function rowHtml(x, rightHtml) {
@@ -326,9 +356,11 @@ function operatorActionsHtml(x) {
 function openOperatorVideoModal(id) {
   const x = findVideo(id);
   if (!x) return;
-  const actions = operatorActionsHtml(x) + smallBtn("✏️ Edit", `closeVideoModal();openVideoForm('${id}')`) +
+  const abandoned = x.video.status === "rejected";
+  const actions = (abandoned ? smallBtn("Restore", `restoreVideo('${id}')`, "primary") : operatorActionsHtml(x)) + smallBtn("✏️ Edit", `closeVideoModal();openVideoForm('${id}')`) +
     `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/clients/${encodeURIComponent(x.client.slug)}" target="_blank" rel="noopener">Open portal</a>` +
-    (x.video.editorId && x.video.status === "with_editor" ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/editor/dashboard.html?editor=${encodeURIComponent(x.video.editorId)}" target="_blank" rel="noopener">Open editor portal</a>` : "");
+    (x.video.editorId && x.video.status === "with_editor" ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/editor/dashboard.html?editor=${encodeURIComponent(x.video.editorId)}" target="_blank" rel="noopener">Open editor portal</a>` : "") +
+    (abandoned ? "" : smallBtn("Abandon", `abandonVideo('${id}')`)) + smallBtn("🗑 Delete", `deleteVideo('${id}')`, "reject");
   openVideoModal(x.client, x.video, { actionsHtml: actions });
   if (x.video.status === "concept_pending" && !x.video.conceptApprovedAt) {
     const meta = document.querySelector("#videoModalBox .modal-meta");
@@ -356,7 +388,7 @@ function openVideoForm(id, presetClientId) {
   const clientField = x
     ? `${lbl("Client")}<div style="margin-bottom:10px">${escapeHtml(x.client.name)}</div>`
     : `${lbl("Client")}<select data-f="clientId" style="width:100%;margin-bottom:10px">${CLIENTS.map(c => `<option value="${c.id}" ${c.id === v.clientId ? "selected" : ""}>${escapeHtml(c.name)}</option>`).join("")}</select>`;
-  const statusField = x ? `<div>${lbl("Status")}<select data-f="status" style="width:100%;margin-bottom:10px">${STATUS_ORDER.map(s =>
+  const statusField = x ? `<div>${lbl("Status")}<select data-f="status" style="width:100%;margin-bottom:10px">${STATUS_ORDER.concat("rejected").map(s =>
     `<option value="${s}" ${s === v.status ? "selected" : ""}>${escapeHtml(STATUS_LABEL[s] || s)}</option>`).join("")}</select></div>` : "<div></div>";
   const editorOpts = `<option value="">— none —</option>` + EDITORS.filter(e => e.active || e.id === v.editorId)
     .map(e => `<option value="${e.id}" ${e.id === v.editorId ? "selected" : ""}>${escapeHtml(e.name)}${e.active ? "" : " (inactive)"}</option>`).join("");
@@ -436,13 +468,7 @@ function openVideoForm(id, presetClientId) {
     await loadLiveData();
   };
   const del = box.querySelector("#vfDelete");
-  if (del) del.onclick = async () => {
-    if (!confirm(`Delete "${x.video.title || "this video"}" permanently? Its status history is deleted too.`)) return;
-    const { error } = await sbClient.from("social_videos").delete().eq("id", x.video.id);
-    if (error) { box.querySelector("#vfError").textContent = error.message; return; }
-    closeVideoModal();
-    await loadLiveData();
-  };
+  if (del) del.onclick = () => deleteVideo(x.video.id);
 }
 document.getElementById("newVideoBtn").onclick = () => openVideoForm(null);
 
@@ -589,6 +615,8 @@ const TODO_STAGES = [
   { key: "withEditor", label: "With an editor",             match: x => x.video.status === "with_editor" },
   { key: "edits",      label: "Edits to review",            match: x => x.video.status === "in_review" },
   { key: "post",       label: "Ready to post",              match: x => x.video.status === "ready_to_post" },
+  // Not work to do, so it's left out of All: shown only on its own tab.
+  { key: "abandoned",  label: "Abandoned",                  match: x => x.video.status === "rejected", apart: true },
 ];
 let todoStage = "all";
 function renderTodo() {
@@ -599,12 +627,15 @@ function renderTodo() {
   const inStage = key => vids.filter(TODO_STAGES.find(s => s.key === key).match);
 
   // Tabs, with counts for the client(s) shown.
-  const tabs = [{ key: "all", label: "All", n: TODO_STAGES.reduce((t, s) => t + inStage(s.key).length, 0) },
+  const tabs = [{ key: "all", label: "All", n: TODO_STAGES.filter(s => !s.apart).reduce((t, s) => t + inStage(s.key).length, 0) },
     ...TODO_STAGES.map(s => ({ key: s.key, label: s.label, n: inStage(s.key).length }))];
   document.getElementById("todoTabs").innerHTML = tabs.map(t =>
     `<div class="chip ${t.key === todoStage ? "active" : ""}" data-stage-tab="${t.key}">${escapeHtml(t.label)} (${t.n})</div>`).join("");
   document.querySelectorAll("#todoTabs .chip").forEach(c => c.onclick = () => { todoStage = c.dataset.stageTab; renderTodo(); });
-  document.querySelectorAll("#view-todo [data-stage]").forEach(el => { el.style.display = todoStage === "all" || el.dataset.stage === todoStage ? "" : "none"; });
+  const apart = new Set(TODO_STAGES.filter(s => s.apart).map(s => s.key));
+  document.querySelectorAll("#view-todo [data-stage]").forEach(el => {
+    el.style.display = el.dataset.stage === todoStage || (todoStage === "all" && !apart.has(el.dataset.stage)) ? "" : "none";
+  });
 
   // Client picker — the same filter as the chips at the top of every page.
   document.getElementById("todoClient").innerHTML = [{ id: "all", name: "All clients" }, ...CLIENTS]
@@ -620,6 +651,8 @@ function renderTodo() {
     ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/editor/dashboard.html?editor=${encodeURIComponent(x.video.editorId)}" target="_blank" rel="noopener">Open editor portal</a>` : "") + statusBadge(x.video.status, STATUS_LABEL), "Nothing with an editor.");
   listOrEmpty("editsList", inStage("edits"), x => operatorActionsHtml(x), "No edits waiting.");
   document.getElementById("todoPostList").innerHTML = inStage("post").map(postCardHtml).join("") || '<div class="empty">Nothing ready to post right now.</div>';
+  listOrEmpty("abandonedList", inStage("abandoned"), x => smallBtn("Restore", `restoreVideo('${x.video.id}')`, "primary") + smallBtn("🗑 Delete", `deleteVideo('${x.video.id}')`, "reject"),
+    "Nothing abandoned. To abandon an idea, click it and choose Abandon.");
 }
 document.getElementById("todoClient").onchange = e => { globalClientFilter = e.target.value; renderAll(); };
 
@@ -670,7 +703,7 @@ function renderAllClients() {
   el.innerHTML = CLIENTS.map(c => {
     const f = c.driveFolders;
     const missing = [!f.footageUploads && "raw footage folder", !f.finalEdits && "finished video folder", !f.brandVoice && "brand guidelines"].filter(Boolean);
-    const count = VIDEOS.filter(x => x.client.id === c.id).length;
+    const count = VIDEOS.filter(x => x.client.id === c.id && x.video.status !== "rejected").length;
     return `<div class="row"><div class="left"><b>${escapeHtml(c.name)}</b>
       <div class="meta">/clients/${escapeHtml(c.slug)} · ${escapeHtml(WHO_FILMS[c.clientSystem] || c.clientSystem)} · ${count} video(s)</div>
       ${missing.length ? `<div class="meta" style="color:var(--red)">Missing: ${missing.join(", ")}</div>` : ""}
