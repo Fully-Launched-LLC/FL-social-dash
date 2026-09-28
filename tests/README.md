@@ -17,6 +17,7 @@ dashboards first with `python3 dashboards/build.py` if templates changed).
 | `operator-editor.test.mjs` | The operator in the editor portal: links from the operator dashboard, opens on one editor's work, clicks Finished for any editor (including themself), logged as the operator. |
 | `date-dropdowns.test.mjs` | The Month · Day · Year dropdowns in the video forms: picking, the 7-day edit-by suggestion, Feb 31 → Feb 28, editing an existing date, saving (operator form and portal edit form). |
 | `todo-tabs.test.mjs` | To Do's stage tabs and counts, the client dropdown (in sync with the top chips), and marking posted from the Ready to post stage. |
+| `abandon-delete.test.mjs` | Abandon an idea (off the calendar and the client's portal, onto To Do → Abandoned), restore it to where it was, delete from the card, the Abandoned tab and the Edit form, and add a new idea. |
 | `documents.test.mjs` | Client documents: added, checked, ordered and removed on Clients → Edit; shown on the portal's Documents page (under Content Calendar). |
 | `flow.test.mjs 1\|2\|3` | Both client journeys end to end, clicking the real built pages: 30 client-filmed ideas (suggest changes / Video has been filmed → 7+7 dates → editor → revisions or approve + captions → client caption edits / change requests → posted), a we-film client (approve ideas, no upload), a per-video switch, and a new client with contact details + invite claim. Run 2 adds suggestions and client edits; run 3 adds owner revisions and backing out of "filmed". |
 | `harness.mjs` | Shared setup for the flow test. |
