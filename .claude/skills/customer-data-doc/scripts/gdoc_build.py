@@ -135,12 +135,19 @@ def cmd_format(args):
                 break
         sys.exit(1)
     end = body[-1]['endIndex'] - 1
+    lo, hi = 0, len(paras)  # --start/--end: format only that run of paragraphs
+    if args.start:
+        lo = next(i for i, t in enumerate(want) if t.startswith(args.start))
+        hi = next((i for i, t in enumerate(want) if i > lo and args.end and t.startswith(args.end)), len(want))
+        paras, dp = paras[lo:hi], dp[lo:hi]
+        end = dp[-1][0] + u(got[hi - 1]) + 1
+    first = dp[0][0]
     reqs = [
-        {'deleteParagraphBullets': {'range': {'startIndex': 1, 'endIndex': end}}},
-        {'updateParagraphStyle': {'range': {'startIndex': 1, 'endIndex': end},
+        {'deleteParagraphBullets': {'range': {'startIndex': first, 'endIndex': end}}},
+        {'updateParagraphStyle': {'range': {'startIndex': first, 'endIndex': end},
                                   'paragraphStyle': {'namedStyleType': 'NORMAL_TEXT'},
                                   'fields': 'namedStyleType'}},
-        {'updateTextStyle': {'range': {'startIndex': 1, 'endIndex': end}, 'textStyle': {},
+        {'updateTextStyle': {'range': {'startIndex': first, 'endIndex': end}, 'textStyle': {},
                              'fields': 'bold,italic,underline,link,fontSize,weightedFontFamily'}},
     ]
     styles = {'H1': 'TITLE', 'H2': 'HEADING_1', 'H3': 'HEADING_2'}
@@ -181,5 +188,8 @@ if __name__ == '__main__':
     b.add_argument('md')
     b.add_argument('doc')
     b.add_argument('--out', required=True)
+    b.add_argument('--start', help='format only paragraphs from the first one starting with this text')
+    b.add_argument('--end', help='...up to (not including) the next one starting with this text')
+    a.set_defaults(start=None, end=None)
     args = ap.parse_args()
     cmd_text(args) if args.cmd == 'text' else cmd_format(args)

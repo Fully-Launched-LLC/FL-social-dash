@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-09-28
 **Drive:** https://docs.google.com/document/d/1Lax_VKFYEeJxhJhOvdRn_Y6ALFtkF4Jyd0AZYnFi9jE/edit (mirror of this file)
-**Built from:** Customer Data, Your Voice and Content Research (all 2026-09-25), and Tait's LinkedIn posts (added 2026-09-28: B10, B11, O13 to O18).
+**Built from:** Customer Data, Your Voice and Content Research (all 2026-09-25), and Tait's LinkedIn posts and notes (added 2026-09-28: B10, B11, O13 to O19).
 
 **The rule for this doc:** Claude organizes *your* ideas, from Tait's memos and posts, Luke's answers and the Reddit research, into clear, usable ideas. Nothing new is invented. Each idea shows where it came from.
 
@@ -455,6 +455,20 @@ Documenting the build of the business, on the calendar every week. **[Tait]** Th
 - **Source:** Tait's LinkedIn post 3
 - **Needs from you:** a real lead number, if you have one, to back up the last line
 
+**O19. Document it or give value? Do both**
+- **Hook:** "Should your business document what it's doing, or give value? Do both."
+- **Format:** How we · **Perspective:** ② Service media
+- **Seed:** "the answer is that you do both."
+- **The idea:** The question business owners always ask, and one we've wrestled with ourselves. Our answer, and how we do both on our own accounts.
+- **Talking points:**
+  - The question: "people always ask the question do i document it or provide value as a business on social media."
+  - Be honest: "that is something our agency has struggled with."
+  - How we do both: at least 4 videos a week documenting the build of the business, plus how-to videos that give the viewer an action step.
+  - Land it: "the answer is that you do both."
+- **Ask on camera:** "Should a business document what it's doing or give value on social media?"
+- **CTA:** Free guide: how to build a social media system
+- **Source:** Tait's notes in chat (2026-09-28)
+
 ---
 
 ## Pillar: AI systems
@@ -824,7 +838,7 @@ Documenting the build of the business, on the calendar every week. **[Tait]** Th
 
 - **Building Fully Launched:** 11 ideas (B1–B11). **At least 4 go on the calendar every week.**
 - **Authority Hacking:** 4 slots (AH1–AH4), one pillar a week in rotation. **1 goes on the calendar every week.** People still to pick.
-- **Organic content:** 18 (O1–O18)
+- **Organic content:** 19 (O1–O19)
 - **AI systems:** 10 (A1–A10)
 - **Websites:** 4 (W1–W4)
 - **Marketplaces:** 17 (M1–M17)

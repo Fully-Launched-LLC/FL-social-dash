@@ -78,7 +78,7 @@ The voice profile (Tait's rhythm, his real phrases, and the new perspective cand
 
 ## Where we post [Tait]
 
-LinkedIn, Instagram, Facebook.
+Instagram, TikTok, Facebook, LinkedIn, YouTube. (Updated 2026-09-28: TikTok and YouTube added.)
 
 ## Calls to action [Tait]
 
