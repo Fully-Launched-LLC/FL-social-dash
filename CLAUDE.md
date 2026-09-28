@@ -342,6 +342,11 @@ fully-social-os/
                                the real Supabase URL/anon key, local dev only)
 ```
 
+**New-client order** (skill `client-onboarding`, `.claude/skills/client-onboarding/`):
+save transcripts → `customer-data-doc` → the 3-3-3 (`positioning.md`) →
+`tasteful-content` → content research → Google Docs → the portal's
+Documents page. Fully Launched is the reference output.
+
 `customer-data-doc` lives in this repo at `.claude/skills/customer-data-doc/`
 (built 2026-09-28: verbatim pains, dreams and 5 hook phrases, mirrored into
 the client's Customer Data Google Doc). `tasteful-content` lives at

@@ -71,6 +71,10 @@ draining or feared → **Pains**. For each passage about what they want →
   customers say", "From Reddit"). Number the quotes straight through each list.
 - One-line note under each quote, in italics: who said it, and about what.
   Use the speaker labels explained in "How to read this" (below).
+- **Two-sided businesses** (a marketplace like Grad Gig: homeowners who hire,
+  students who work) have two different buyers. Split each list by audience
+  first ("For homeowners", "For students"), then by theme, and pick hook
+  phrases for each side. Never mix one side's quotes into the other's list.
 
 ### 3. Pick the 5 hook phrases
 
