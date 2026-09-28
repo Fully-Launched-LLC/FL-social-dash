@@ -92,7 +92,11 @@ function calendarEntries(x) {
   if (v.postDate) {
     const plats = (v.platform || []).map(normPlatform);
     (plats.length ? plats : [""]).forEach(p => out.push({ kind: "post", date: v.postDate, platform: p, done: v.status === "posted", x }));
-    if (!reached("ready_to_post")) out.push({ kind: "approve", date: addDaysISO(v.postDate, -APPROVE_DAYS_BEFORE_POST), x });
+    // Never before the edit is due: a fast-tracked video (edit due 2 days
+    // out) gets approved the day after its edit, not before it exists.
+    let approve = addDaysISO(v.postDate, -APPROVE_DAYS_BEFORE_POST);
+    if (v.dueToEdit && approve <= v.dueToEdit) approve = addDaysISO(v.dueToEdit, 1);
+    if (!reached("ready_to_post")) out.push({ kind: "approve", date: approve, x });
   }
   if (v.dueToEdit && !reached("in_review")) out.push({ kind: "edit", date: v.dueToEdit, x });
   if (v.dueToFilm && !reached("filmed")) out.push({ kind: "film", date: v.dueToFilm, x });
