@@ -29,35 +29,35 @@
 
 One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait films all 20 with Luke by Fri, Oct 2 (filmed by us, so Luke approves only the finished videos). Each week mixes the pillars.
 
-**Status marks:** 📅 Scheduled · 🎬 Filmed · ✅ Posted. Every scheduled idea has a **Status** line under its title; update it as the video moves, so this doc always shows what's been used.
+The dashboard numbers these videos #1 to #20 in posting order; each one's idea ID follows in parentheses. **Status marks:** 📅 Scheduled · 🎬 Filmed · ✅ Posted. Every scheduled idea has a **Status** line under its title; update it as the video moves, so this doc always shows what's been used.
 
 **Week 1** (edits fast-tracked)
-- Mon, Oct 5: **L1** Why I started Grad Gig
-- Tue, Oct 6: **H1** "Is this job too small?"
-- Wed, Oct 7: **W4** Wheaton date night, and who's watching the kids
-- Thu, Oct 8: **T1** Don't gamble on a stranger
-- Fri, Oct 9: **H9** A million things on your list
+- Mon, Oct 5: **#1** Why I started Grad Gig (idea L1)
+- Tue, Oct 6: **#2** "Is this job too small?" (idea H1)
+- Wed, Oct 7: **#3** Wheaton date night, and who's watching the kids (idea W4)
+- Thu, Oct 8: **#4** Don't gamble on a stranger (idea T1)
+- Fri, Oct 9: **#5** A million things on your list (idea H9)
 
 **Week 2**
-- Mon, Oct 12: **H2** The 6 PM homework fight
-- Tue, Oct 13: **L2** How to hire a student on Grad Gig
-- Wed, Oct 14: **W1** The 5 best restaurants in Wheaton
-- Thu, Oct 15: **T5** "Students are flaky"
-- Fri, Oct 16: **S1** Making money in college without a 9-to-5
+- Mon, Oct 12: **#6** The 6 PM homework fight (idea H2)
+- Tue, Oct 13: **#7** How to hire a student on Grad Gig (idea L2)
+- Wed, Oct 14: **#8** The 5 best restaurants in Wheaton (idea W1)
+- Thu, Oct 15: **#9** "Students are flaky" (idea T5)
+- Fri, Oct 16: **#10** Making money in college without a 9-to-5 (idea S1)
 
 **Week 3**
-- Mon, Oct 19: **H5** You shouldn't be up on that ladder
-- Tue, Oct 20: **T4** The family that booked once and kept booking
-- Wed, Oct 21: **L4** Hope is a good breakfast but a bad supper
-- Thu, Oct 22: **W3** Things to do in Wheaton this fall
-- Fri, Oct 23: **T7** More like a neighbor than a contractor
+- Mon, Oct 19: **#11** You shouldn't be up on that ladder (idea H5)
+- Tue, Oct 20: **#12** The family that booked once and kept booking (idea T4)
+- Wed, Oct 21: **#13** Hope is a good breakfast but a bad supper (idea L4)
+- Thu, Oct 22: **#14** Things to do in Wheaton this fall (idea W3)
+- Fri, Oct 23: **#15** More like a neighbor than a contractor (idea T7)
 
 **Week 4**
-- Mon, Oct 26: **H10** The first snow is coming
-- Tue, Oct 27: **T2** How we check every student
-- Wed, Oct 28: **L5** From a few friends to over 500 users
-- Thu, Oct 29: **W2** The 5 best neighborhoods in Wheaton
-- Fri, Oct 30: **T9** Why local beats national
+- Mon, Oct 26: **#16** The first snow is coming (idea H10)
+- Tue, Oct 27: **#17** How we check every student (idea T2)
+- Wed, Oct 28: **#18** From a few friends to over 500 users (idea L5)
+- Thu, Oct 29: **#19** The 5 best neighborhoods in Wheaton (idea W2)
+- Fri, Oct 30: **#20** Why local beats national (idea T9)
 
 ---
 
@@ -66,7 +66,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 ### Help around the house
 
 **H1. "Is this job too small?"**
-- **Status:** 📅 Scheduled for Tue, Oct 6 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #2 for Tue, Oct 6 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "'Is this job too small?' Small jobs are exactly what we do."
 - **Format:** How to · **Perspective:** ③ No job is too small
 - **Seed:** "small jobs are exactly what we do."
@@ -81,7 +81,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 - **Source:** Luke's voice memo
 
 **H2. The 6 PM homework fight**
-- **Status:** 📅 Scheduled for Mon, Oct 12 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #6 for Mon, Oct 12 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "It's 6 PM. Your kid is in tears over homework, and dinner's not started."
 - **Format:** How I · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "getting home at 6 PM a kid in tears over the homework. Dinner not started"
@@ -125,7 +125,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 - **Source:** Luke's voice memo
 
 **H5. You shouldn't be up on that ladder**
-- **Status:** 📅 Scheduled for Mon, Oct 19 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #11 for Mon, Oct 19 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "If you know you shouldn't be up on a ladder or hauling leaf bags, don't be."
 - **Format:** How to · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "knowing that they shouldn't be up on a ladder or hauling bags and they have nobody to call"
@@ -183,7 +183,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 - **Source:** Luke's voice memo
 
 **H9. A million things on your list**
-- **Status:** 📅 Scheduled for Fri, Oct 9 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #5 for Fri, Oct 9 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** On-screen text: "Your to-do list: about a million things."
 - **Format:** Text on screen over stock footage *(new format, brainstormed)* · **Perspective:** ③ No job is too small
 - **Seed:** "every task that's undone in the back of their mind"
@@ -200,7 +200,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 - **Needs from you:** stock footage, or quick clips Tait shoots this week
 
 **H10. The first snow is coming**
-- **Status:** 📅 Scheduled for Mon, Oct 26 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #16 for Mon, Oct 26 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "The first snow is coming. Who's shoveling your driveway?"
 - **Format:** How to · **Perspective:** ③ No job is too small
 - **Seed:** "leaf raking snow shoveling and garden cleanup"
@@ -232,7 +232,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 ### Trust and the student neighbor
 
 **T1. Don't gamble on a stranger**
-- **Status:** 📅 Scheduled for Thu, Oct 8 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #4 for Thu, Oct 8 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "You don't have to gamble on a stranger from Facebook Marketplace."
 - **Format:** How to · **Perspective:** ② Help works best when it's local
 - **Seed:** "You don't have to gamble on a stranger, you get a neighbor"
@@ -247,7 +247,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 - **Source:** Luke's voice memo
 
 **T2. How we check every student**
-- **Status:** 📅 Scheduled for Tue, Oct 27 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #17 for Tue, Oct 27 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "'I just need somebody I can trust in my house.' Here's how we check every student."
 - **Format:** How to · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "We strictly limit our platform to students with verified .edu email addresses from accredited colleges and monitor all activity."
@@ -276,7 +276,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 - **Needs from you:** how a family rebooks the same student in the app
 
 **T4. The family that booked once and kept booking**
-- **Status:** 📅 Scheduled for Tue, Oct 20 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #12 for Tue, Oct 20 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "They booked one student for tutoring. Now they have a whole team."
 - **Format:** How I · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "they started looking for one time help and ended with a team of students that they trust"
@@ -292,7 +292,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 - **Needs from you:** the family's permission to share it, and anything they'd say themselves
 
 **T5. "Students are flaky"**
-- **Status:** 📅 Scheduled for Thu, Oct 15 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #9 for Thu, Oct 15 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "Think college students are flaky?"
 - **Format:** How I · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "our student students are motivated local and have a reputation to protect"
@@ -320,7 +320,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 - **Needs from you:** a real example rate, so "affordable" has a number
 
 **T7. More like a neighbor than a contractor**
-- **Status:** 📅 Scheduled for Fri, Oct 23 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #15 for Fri, Oct 23 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "Booking a Grad Gig student is less like hiring a contractor and more like getting to know a young neighbor."
 - **Format:** How I · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "more like getting to know a trustworthy young neighbor"
@@ -350,7 +350,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 - **Needs from you:** what Luke would say back to a parent who feels that way
 
 **T9. Why local beats national**
-- **Status:** 📅 Scheduled for Fri, Oct 30 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #20 for Fri, Oct 30 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "Most gig apps go national. That's where the trust disappears."
 - **Format:** How I · **Perspective:** ② Help works best when it's local
 - **Seed:** "they go national get faceless the trust disappears."
@@ -382,7 +382,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 ## Pillar 2: Building Grad Gig
 
 **L1. Why I started Grad Gig**
-- **Status:** 📅 Scheduled for Mon, Oct 5 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #1 for Mon, Oct 5 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "I saw two problems sitting right next to each other."
 - **Format:** How I · **Perspective:** ② Help works best when it's local
 - **Seed:** "I saw two problems sitting right next to each other"
@@ -397,7 +397,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 - **Source:** Luke's voice memo, Grad Gig's website copy
 
 **L2. How to hire a student on Grad Gig**
-- **Status:** 📅 Scheduled for Tue, Oct 13 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #7 for Tue, Oct 13 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "Here's how to hire a Wheaton student on Grad Gig, start to finish."
 - **Format:** How to · **Perspective:** ③ No job is too small
 - **Seed:** "how to sign up, how to hire a student, how to find a reliable student."
@@ -426,7 +426,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 - **Source:** Luke's voice memo, Grad Gig's website copy
 
 **L4. Hope is a good breakfast but a bad supper**
-- **Status:** 📅 Scheduled for Wed, Oct 21 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #13 for Wed, Oct 21 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "Hope is a good breakfast but a bad supper."
 - **Format:** How I · **Perspective:** none of the three fits (founder mindset)
 - **Seed:** "Hope is a good breakfast but a bad supper."
@@ -442,7 +442,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 - **Needs from you:** one real Grad Gig result or moment to tie it to
 
 **L5. From a few friends to over 500 users**
-- **Status:** 📅 Scheduled for Wed, Oct 28 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #18 for Wed, Oct 28 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "Grad Gig started with a few friends and a few Wheaton families."
 - **Format:** Behind the scenes · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "What started as a small project connecting a few friends to local families"
@@ -490,7 +490,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 ## Pillar 3: Wheaton, the local guide
 
 **W1. The 5 best restaurants in Wheaton**
-- **Status:** 📅 Scheduled for Wed, Oct 14 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #8 for Wed, Oct 14 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "The 5 best restaurants in Wheaton, from a Wheaton College grad."
 - **Format:** How I · **Perspective:** ② Help works best when it's local
 - **Seed:** "here are the five best restaurants to go to in the Wheaton area."
@@ -505,7 +505,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 - **Needs from you:** Luke's 5 picks and why
 
 **W2. The 5 best neighborhoods in Wheaton**
-- **Status:** 📅 Scheduled for Thu, Oct 29 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #19 for Thu, Oct 29 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "The 5 best neighborhoods in Wheaton."
 - **Format:** How I · **Perspective:** ② Help works best when it's local
 - **Seed:** "Here are the five best neighborhoods in the Wheaton area."
@@ -520,7 +520,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 - **Needs from you:** Luke's picks, and more Wheaton topics he'd be good at (date-night spots, parks, events)
 
 **W3. Things to do in Wheaton this fall**
-- **Status:** 📅 Scheduled for Thu, Oct 22 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #14 for Thu, Oct 22 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "The best things to do in Wheaton this fall."
 - **Format:** How I · **Perspective:** ② Help works best when it's local
 - **Seed:** "he could share cool things in Wheaton"
@@ -534,7 +534,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 - **Source:** Tait's 3-3-3 memo
 
 **W4. Wheaton date night, and who's watching the kids**
-- **Status:** 📅 Scheduled for Wed, Oct 7 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #3 for Wed, Oct 7 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "The best date night spots in Wheaton, and who's watching the kids."
 - **Format:** How I · **Perspective:** ② Help works best when it's local
 - **Seed:** "a date night that just keeps getting canceled for lack of a sitter"
@@ -555,7 +555,7 @@ One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait fil
 Use sparingly: the content is for people who hire. Tait: "We don't need students."
 
 **S1. Making money in college without a 9-to-5**
-- **Status:** 📅 Scheduled for Fri, Oct 16 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #10 for Fri, Oct 16 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "A 9-to-5 doesn't fit a college class schedule. Here's what does."
 - **Format:** How I · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "a traditional 9-to-5 or a rigid shift schedule just was not compatible with student life."
