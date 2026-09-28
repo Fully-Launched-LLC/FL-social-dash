@@ -66,8 +66,10 @@
   </section>
 
   <section class="view" id="view-calendar">
-    <div class="page-head"><h1>Content Calendar</h1><p>Every video on its post date<span id="calFilmNote"> (🎥 marks when to film it)</span>. Click one to open it.</p></div>
+    <div class="page-head"><h1>Content Calendar</h1><p>Every video on the day it posts, and where it posts<span id="calFilmNote"> (🎥 marks when to film it)</span>. Click one to open it.</p></div>
+    <div class="chip-row" id="calLegend" style="margin-bottom:10px"></div>
     <div class="card"><div class="cal-grid" id="calGrid"></div></div>
+    <div class="card"><h2 id="agendaTitle">What posts each day</h2><div id="calAgenda"></div></div>
   </section>
 
 </main>
@@ -343,9 +345,35 @@ function renderCalendar() {
     if (v.postDate) (byDay[v.postDate] = byDay[v.postDate] || []).push({ v, kind: "" });
   });
   document.getElementById("calFilmNote").style.display = VIDEOS.some(v => filmedBy(v) === "client") ? "" : "none";
-  renderMonthCalendar(document.getElementById("calGrid"), byDay, ({ v, kind }) =>
-    `<div class="cal-chip video-card" style="background:color-mix(in srgb, var(--status-${v.status}) 20%, transparent); color:var(--status-${v.status})" onclick="openClientVideoModal('${v.id}')">${kind}${escapeHtml(v.title || "(untitled)")}</div>`,
+  // Which platforms this client posts on, as a key above the calendar.
+  const used = [...new Set(VIDEOS.flatMap(v => (v.platform || []).map(normPlatform)))];
+  document.getElementById("calLegend").innerHTML = used.length ? `<span class="meta" style="margin-right:4px">Posts on:</span>` + platformPills(used, true) : "";
+  // Each day: the video's title, then the platforms it goes out on.
+  renderMonthCalendar(document.getElementById("calGrid"), byDay, ({ v, kind }) => kind
+    ? `<div class="cal-item film video-card" title="Film by: ${escapeHtml(v.title || "")}" onclick="openClientVideoModal('${v.id}')"><div class="t">🎥 Film: ${escapeHtml(v.title || "(untitled)")}</div></div>`
+    : `<div class="cal-item video-card ${v.status === "posted" ? "done" : ""}" title="${escapeHtml((v.title || "") + " · " + (v.platform || []).map(p => (PLATFORMS[normPlatform(p)] || { name: p }).name).join(", "))}" onclick="openClientVideoModal('${v.id}')">
+        <div class="t">${v.status === "posted" ? "✓ " : ""}${escapeHtml(v.title || "(untitled)")}</div>${platformPills(v.platform)}</div>`,
     calState, renderCalendar);
+  renderAgenda();
+}
+
+// Under the calendar, the month shown as a list: each post day, what goes
+// out, the hook, and the platforms by name. Easier to read than the grid,
+// especially on a phone.
+function renderAgenda() {
+  const now = new Date(), first = new Date(now.getFullYear(), now.getMonth() + (calState.offset || 0), 1);
+  const month = localISODate(first).slice(0, 7);
+  document.getElementById("agendaTitle").textContent = "What posts each day in " + first.toLocaleString(undefined, { month: "long", year: "numeric" });
+  const posts = VIDEOS.filter(v => v.postDate && v.postDate.startsWith(month)).sort((a, b) => a.postDate.localeCompare(b.postDate));
+  const days = {};
+  posts.forEach(v => (days[v.postDate] = days[v.postDate] || []).push(v));
+  document.getElementById("calAgenda").innerHTML = posts.length ? Object.entries(days).map(([d, vs]) => `
+    <div class="agenda-day"><h3>${escapeHtml(new Date(d + "T00:00:00").toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }))}</h3>
+      ${vs.map(v => `<div class="agenda-post video-card" onclick="openClientVideoModal('${v.id}')">
+        <b>${v.status === "posted" ? "✓ " : ""}${escapeHtml(v.title || "(untitled)")}</b>
+        ${v.hook ? `<div class="hook">“${escapeHtml(v.hook)}”</div>` : ""}
+        <div>${platformPills(v.platform, true) || `<span class="meta">No platforms set yet</span>`}</div></div>`).join("")}
+    </div>`).join("") : `<div class="empty">Nothing posts this month.</div>`;
 }
 
 function renderDocuments() {
