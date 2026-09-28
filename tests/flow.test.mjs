@@ -48,6 +48,7 @@ const PREMP = () => openPage("clients/portal.html", U.prem, BASE + "/clients/pre
 const ED = () => openPage("editor/dashboard.html", U.ed, BASE + "/editor/dashboard.html");
 
 const day = n => plus("2026-10-01", n);      // Oct 1 + n
+const nice = iso => new Date(iso + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 const title = i => `Post ${String(i + 1).padStart(2, "0")} — idea ${i + 1}`;
 const plan = Array.from({ length: 30 }, (_, i) => ({
   title: title(i), platform: ["instagram", "tiktok"], hook: `Hook ${i + 1}`,
@@ -115,7 +116,7 @@ chk(`To film shows ${clientFilmed.length}`, $(cl, "#videoTabs").textContent.incl
 if (V.switchToUs.length) chk("switched video shows under Ideas to approve", $(cl, "#videoTabs").textContent.includes(`Ideas to approve (${V.switchToUs.length})`), $(cl, "#videoTabs").textContent);
 else chk("no Ideas to approve tab for a client who films", !$(cl, "#videoTabs").textContent.includes("Ideas to approve"));
 const c0 = portalCard(cl, "#listToFilm", title(0));
-chk("to-film card: film-by, hook, script, outline, how to film", c0 && ["Film by " + day(-10), "Hook 1", "Talking points 1", "- Point A1\n- Point B1", "Film it like this: 1"].every(t => c0.textContent.includes(t)), c0 && c0.textContent);
+chk("to-film card: film-by, hook, script, outline, how to film", c0 && ["Film by " + nice(day(-10)), "Hook 1", "Talking points 1", "- Point A1\n- Point B1", "Film it like this: 1"].every(t => c0.textContent.includes(t)), c0 && c0.textContent);
 chk("to-film card: upload link + only Video has been filmed / Suggest changes", c0 && !!c0.querySelector('a[href="https://drive/fl-footage"]')
   && Array.from(c0.querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Video has been filmed|Suggest changes", c0 && Array.from(c0.querySelectorAll(".actions button")).map(b => b.textContent));
 chk("client never sees editing instructions", !cl.d.body.textContent.includes("Cut it like this"));
@@ -283,7 +284,7 @@ chk(`${V.post} posted`, (await count("status='posted'")) === V.post);
 // ── 8. Premium client: we film, they approve ideas ──
 op = track(await OP());
 op.w.openBulkAdd(PREM); await settle();
-$(op, "#bkText").value = JSON.stringify([1, 2, 3].map(n => ({ title: "Prem " + n, hook: "Prem hook " + n, body: "Prem script " + n, outline: "- Prem point " + n, filmingDirection: "never shown", postDate: day(n) })));
+$(op, "#bkText").value = JSON.stringify([1, 2, 3].map(n => ({ title: "Prem " + n, hook: "Prem hook " + n, body: "Prem script " + n, outline: "- Prem point " + n, filmingDirection: "We film it " + n, postDate: day(n) })));
 $(op, "#bkText").dispatchEvent(new op.w.Event("input"));
 await click($(op, "#bkSave"), "save premium ideas");
 chk("premium ideas default to we film", (await count("client_id=$1 and filmed_by='us' and status='concept_pending'", [PREM])) === 3);
@@ -291,7 +292,7 @@ let prem = track(await PREMP());
 chk("premium tabs: All, Ideas to approve, Finished", $$(prem, "#videoTabs .chip").map(c => c.textContent).join("|") === "All (3)|Ideas to approve (3)|Finished videos to approve (0)", $$(prem, "#videoTabs .chip").map(c => c.textContent));
 chk("premium still has its footage folder link", $(prem, "#footageCardLink").href === "https://drive/prem-footage");
 const pc = portalCard(prem, "#listIdeas", "Prem 1");
-chk("premium idea card: hook, script, outline — no filming instructions or upload", pc && ["Prem hook 1", "Prem script 1", "- Prem point 1"].every(t => pc.textContent.includes(t)) && !pc.textContent.includes("never shown") && !pc.querySelector("a[href*='footage']"));
+chk("premium idea card: hook, script, outline, how we'll make it — no upload", pc && ["Prem hook 1", "Prem script 1", "- Prem point 1", "How we'll make itWe film it 1"].every(t => pc.textContent.includes(t)) && !pc.textContent.includes("How to film it") && !pc.querySelector("a[href*='footage']"), pc && pc.textContent);
 await click(btn(pc, "Approve idea"), "premium approve 1"); await dismissThanks(prem, "Stay tuned");
 await click(btn(portalCard(prem, "#listIdeas", "Prem 2"), "Approve idea"), "premium approve 2"); await dismissThanks(prem, "approve before it posts");
 await sendNote(prem, portalCard(prem, "#listIdeas", "Prem 3"), "Suggest changes", "Different angle");

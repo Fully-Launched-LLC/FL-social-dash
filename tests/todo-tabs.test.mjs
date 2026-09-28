@@ -36,7 +36,7 @@ const titlesIn = stage => Array.from(op.d.querySelectorAll(`#view-todo [data-sta
 
 let t = tabs();
 chk("tabs in stage order with counts", Object.values(t).join(" | ") ===
-  "All (11) | Sent back with suggestions (1) | Waiting on client (4) | Ready for an editor (2) | With an editor (1) | Edits to review (1) | Ready to post (2) | Abandoned (0)", Object.values(t));
+  "All (11) | ⏰ Time sensitive (0) | Sent back with suggestions (1) | Waiting on client (4) | Ready for an editor (2) | With an editor (1) | Edits to review (1) | Ready to post (2) | Abandoned (0)", Object.values(t));
 chk("All shows every stage", shown().join() === "sentBack,client,toEditor,withEditor,edits,post", shown());
 chk("posted videos aren't in To Do", !op.d.getElementById("view-todo").textContent.includes("A posted"));
 
