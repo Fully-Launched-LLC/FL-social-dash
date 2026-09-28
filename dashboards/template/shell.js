@@ -60,7 +60,7 @@ const PLATFORMS = {
   instagram: { tag: "IG", name: "Instagram", color: "#e1306c" },
   tiktok:    { tag: "TT", name: "TikTok",    color: "#25f4ee" },
   facebook:  { tag: "FB", name: "Facebook",  color: "#1877f2" },
-  linkedin:  { tag: "LI", name: "LinkedIn",  color: "#4a90d9" },
+  linkedin:  { tag: "LI", name: "LinkedIn",  color: "#22c55e" },
   youtube:   { tag: "YT", name: "YouTube",   color: "#ff3b30" },
 };
 const PLATFORM_ALIASES = { ig: "instagram", insta: "instagram", tt: "tiktok", "tik tok": "tiktok", fb: "facebook", li: "linkedin", yt: "youtube" };
