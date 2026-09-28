@@ -69,6 +69,9 @@ in the area for years. Still open: the real Jennifer M. testimonial quote.
 
 ## Founder facts
 
+- Luke (Luke Bothun) owns Grad Gig and also Fully Launched. They are two
+  separate clients: Grad Gig's documents only use Luke's Grad Gig material.
+
 - Luke started Grad Gig as a senior at Wheaton College (site bio) and, per
   the live interview, has since graduated. Both can be true, not a
   contradiction.
@@ -109,11 +112,6 @@ later).
 ## Open questions
 
 - Perspectives 2 and 3 (Tait's call).
-- The Instagram reel (https://www.instagram.com/reel/DdCl6wauJ8d/): its script
-  or caption, for how Luke sounds on camera.
-- Luke's LinkedIn posts talk about Fully Launched as his own venture. Is he
-  the same Luke as Fully Launched's cofounder (Luke Bothun)? If so, his posts
-  can also fill in Luke's voice for Fully Launched.
 - The real Jennifer M. testimonial quote.
 - The "Needs from you" lines in Content Ideas (Luke's Wheaton picks, fees,
   rebooking, milestones, the tutoring family's permission).

@@ -33,6 +33,8 @@ Full detail: `sources/customer-data.md` → "Our unique solution".
 See `sources/customer-data.md`.
 
 ## Founder facts
+- Luke Bothun also owns Grad Gig, a separate client. Fully Launched's documents only use
+  Luke's Fully Launched material; Grad Gig's only use his Grad Gig material.
 - Why we started [Luke]: great local businesses stuck because the owner did everything;
   online businesses failing on unoptimized Etsy/Faire listings; wanted to help, and to do
   fast, fun projects as a team.

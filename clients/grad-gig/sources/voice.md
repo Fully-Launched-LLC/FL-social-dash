@@ -1,8 +1,8 @@
 # Grad Gig: Voice Profile
 
 **Last updated:** 2026-09-28
-**Whose voice:** Luke, Grad Gig's founder. He's on camera for almost every video ("Almost all of our content needs to be founder based and more of Luke talking." Tait). Built from his voice memo (`2026-09-28-luke-voice-memo.md`), four of his LinkedIn posts (`2026-09-28-luke-linkedin-posts.md`) and the founder bio on Grad Gig's site (`2026-08-21-website-copy.md`). Every phrase below is quoted exactly.
-**Good to know:** the memo shows how he talks through a problem; the posts show how he writes. How he sounds on camera unprompted is still [pending: needs the Instagram reel's script or caption, or another video].
+**Whose voice:** Luke, Grad Gig's founder. He's on camera for almost every video ("Almost all of our content needs to be founder based and more of Luke talking." Tait). Built from his voice memo (`2026-09-28-luke-voice-memo.md`), two of his LinkedIn posts (`2026-09-28-luke-linkedin-posts.md`) and the founder bio on Grad Gig's site (`2026-08-21-website-copy.md`). Every phrase below is quoted exactly.
+**Good to know:** the memo shows how he talks through a problem; the posts show how he writes. How he sounds on camera unprompted isn't captured yet.
 
 Read this before writing anything for Grad Gig. If a line doesn't sound like Luke saying it out loud, rewrite it.
 
@@ -17,10 +17,8 @@ What matters most to me, in my words: "faith and family!"
 ## How I sound
 
 - **Opens with a saying, then makes it practical.** "Hope is a good breakfast but a bad supper." then "We all have to show results at some point."
-- **Pairs opposites, line by line.** "Young people want to be old. / Old people want to be young." · "Entrepreneurs envy the stability of a paycheck. / 9-5ers crave the freedom of running something."
 - **Answers the question straight, in one word, then moves on.** "Are they actually Wheaton students? Yes" · "Can we have the same student back next time definitely"
 - **Paints the bad moment with small, real details.** "getting home at 6 PM a kid in tears over the homework. Dinner not started" · "The basement is still full of boxes that should've been moved three months ago."
-- **Honest about his own life.** "I've felt this from both sides working part time and building ventures on the side" · "Sometimes that feels like a compromise"
 - **Lists he actually lives by,** short and concrete. "Learning new skills (vibe coding)" · "Reading real books (yes, the paper kind)" · "Praying" · "Working as hard as I can"
 - **Ends with a push.** "Get after it today!"
 - **Short, plain lines when he's sure.** "small jobs are exactly what we do." · "You don't have to gamble on a stranger, you get a neighbor"
@@ -33,7 +31,6 @@ Said more than once:
 - "real" ("real Wheaton college students", "real money", "real relationships", "real flexible income", "real books")
 - "local" ("local and relational", "motivated local", "local families")
 - "neighbor" ("you get a neighbor", "a trustworthy young neighbor")
-- "build" / "building" ("building ventures on the side", "lets me build", "building real relationships")
 
 Said once, and clearly his:
 - "Hope is a good breakfast but a bad supper."
@@ -62,7 +59,7 @@ Plus never use these machine tells: delve, unlock, leverage, harness, seamless, 
 
 Never write "It's not X, it's Y" or "this isn't about X, it's about Y." That negation-then-correction is the clearest tell a machine wrote it. Just say the thing.
 
-Luke uses a version of it himself ("The trick isn't picking a side. It's noticing when you're chasing the other side" and "these aren't random gig workers. They're real Wheaton college students who live here"). When writing for him, say the second half: "They're real Wheaton College students who live here."
+Luke uses a version of it himself ("these aren't random gig workers. They're real Wheaton college students who live here"). When writing for him, say the second half: "They're real Wheaton College students who live here."
 
 ## My unique perspectives
 
@@ -71,8 +68,6 @@ Matched to `positioning.md`:
 1. **Trustworthy students, trustworthy help** (positioning ①, Tait's). "families get help from people they can trust"
 2. **Help works best when it's local** (positioning ②, to confirm). "We believe that help works best when it's local and relational"
 3. **No job is too small** (positioning ③, to confirm). "small jobs are exactly what we do."
-
-Also his, from the posts, for the Building Grad Gig pillar: a steady income can fund the building. "stable income isn't the enemy of the entrepreneurial life, it's what's currently funding it."
 
 ## How to show up for me
 
@@ -88,5 +83,4 @@ If any answer is no, rewrite before showing me.
 
 ## Open questions for Tait and Luke
 
-- The Instagram reel's script or caption, to fill in how Luke sounds on camera.
 - Luke's own list of words he'd never say.

@@ -210,16 +210,7 @@
 - **Source:** Luke's LinkedIn post 1
 - **Needs from you:** one real Grad Gig result or moment to tie it to
 
-**L5. You want what you can't have**
-- **Hook:** "Young people want to be old. Old people want to be young."
-- **Format:** How I · **Perspective:** none of the three fits (founder mindset)
-- **Seed:** "stable income isn't the enemy of the entrepreneurial life, it's what's currently funding it."
-- **The idea:** Luke has "felt this from both sides working part time and building ventures on the side." Working a steady job is what "lets me build without starving the business for cash before it's ready."
-- **CTA:** Sign up at gradgig.co
-- **Source:** Luke's LinkedIn post 4 (written about Fully Launched)
-- **Needs from you:** confirm this is also true of how Luke builds Grad Gig
-
-**L6. From a few friends to over 500 users**
+**L5. From a few friends to over 500 users**
 - **Hook:** "Grad Gig started with a few friends and a few Wheaton families."
 - **Format:** Behind the scenes · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "What started as a small project connecting a few friends to local families"
@@ -228,7 +219,7 @@
 - **Source:** Grad Gig's website copy
 - **Needs from you:** the real milestones (first gig, first 100 users, when it hit 500)
 
-**L7. Building Grad Gig this week**
+**L6. Building Grad Gig this week**
 - **Hook:** "Here's what I'm building at Grad Gig this week."
 - **Format:** Behind the scenes · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "kind of documenting the process could be a good one."
@@ -237,13 +228,13 @@
 - **Source:** Tait's 3-3-3 memo
 - **Needs from you:** what Luke is building or fixing right now
 
-**L8. How I'm staying ahead with AI**
+**L7. How I'm staying ahead with AI**
 - **Hook:** "Nobody knows what they are doing with AI. Here's how I'm staying ahead."
 - **Format:** How I · **Perspective:** none of the three fits (founder mindset)
 - **Seed:** "Here's how I'm staying ahead:"
 - **The idea:** Luke's list: "Learning new skills (vibe coding)", "Networking", "Reading real books (yes, the paper kind)", "Tracking with the new AI tools as they progress", "Praying", "Working as hard as I can", "Focusing on what matters most: faith and family!"
 - **CTA:** Sign up at gradgig.co
-- **Source:** Luke's LinkedIn post 3
+- **Source:** Luke's LinkedIn post 2
 - **Needs from you:** how AI shows up in running Grad Gig, so it ties back
 
 ---
@@ -296,7 +287,7 @@ Use sparingly: the content is for people who hire. Tait: "We don't need students
 ## Summary
 
 - **The two problems, side by side:** 17 (H1–H8, T1–T9)
-- **Building Grad Gig:** 8 (L1–L8)
+- **Building Grad Gig:** 7 (L1–L7)
 - **Wheaton, the local guide:** 2 (W1–W2). Needs Luke's own picks.
 - **Side hustles in college:** 2 (S1–S2)
 
