@@ -4,7 +4,7 @@
 
 **Last updated:** 2026-09-28
 **Drive:** https://docs.google.com/document/d/1WjPXhiubV-p133P3YpyyRy6aOJUfGtJElBRLflpzJrk/edit (mirror of this file, with `sources/voice.md` added at the end)
-**Sources:** Luke's voice memo and Tait's notes (2026-09-28), and Grad Gig's website copy (2026-08-21). See Customer Data for the full recordings.
+**Sources:** Luke's voice memo and LinkedIn posts, Tait's notes and 3-3-3 memo (all 2026-09-28), and Grad Gig's website copy (2026-08-21). See Customer Data for the full recordings.
 **Tags:** **[Luke]** / **[Tait]** mean said by them. **[Site]** means Grad Gig's own website copy. **[To confirm]** means Tait hasn't decided yet.
 
 ---
@@ -19,58 +19,58 @@ Every client gets a **3-3-3**: **3 pillars** (what we always talk about), **3 fo
 
 ---
 
-## Pillars (3) [To confirm]
+## Pillars (3, plus a half)
 
-Tait: "we still need to nail down his pillars." These are the candidates from the material. Pick three.
-
-### 1. [To confirm] Wheaton, the local guide
-- **What it is:** Luke talking about the Wheaton area, the way a local realtor does: "here are the five best restaurants to go to in the Wheaton area. Here are the five best neighborhoods." **[Tait]**
-- **Why:** "Saying something about the area that will attract um, people from the area to watch the videos." **[Tait]**
-
-### 2. [To confirm] Help around the house
+### 1. The two problems, side by side
+- **What it is:** the problem Luke saw as a Wheaton student: "students with not much time and need a way to make some money with flexibility. And also Wheaton families who wanted trustworthy help but didn't know how to connect the two. So he built a business to help the two." **[Tait]**
 - **What we do:** tutoring and homework help, babysitting, heavy lifting ("moving furniture pulling boxes or rearranging rooms"), yard work ("leaf raking snow shoveling and garden cleanup"), small household projects, and tech help on a computer or TV. **[Luke]**
 - **Who it's for:** busy families who don't have "the time or the subject knowledge to help" with homework, and older homeowners who "can't keep up with the physical work" anymore. **[Luke]**
-- **Our angle:** "small jobs are exactly what we do." **[Luke]**
+- **Our angle:** "You don't have to gamble on a stranger, you get a neighbor" and "small jobs are exactly what we do." **[Luke]**
 
-### 3. [To confirm] Trust and the student neighbor
-- **What it is:** why a local college student beats a stranger or a big company. "You don't have to gamble on a stranger, you get a neighbor" **[Luke]**
-- **The customer story:** a family booked a student for tutoring, then for furniture, and now books "again and again for odd jobs around the house." "Their kids grades improved and they love grad gig" **[Luke]**
+### 2. Building Grad Gig
+- **What it is:** "him talking about building grad gig, kind of documenting the process" **[Tait]**
+- **The story so far:** "What started as a small project connecting a few friends to local families has grown into a trusted platform with over 500 active users in the Wheaton community." **[Site]**
 
-### Also possible: [To confirm] Luke and building Grad Gig
-- **What it is:** the founder story. "I saw two problems sitting right next to each other" **[Luke]** A senior with "a tight class schedule and an even tighter budget," and local families who needed help. **[Site]**
+### 3. Wheaton, the local guide
+- **What it is:** "he could share cool things in Wheaton" **[Tait]**, the way a local realtor does: "here are the five best restaurants to go to in the Wheaton area. Here are the five best neighborhoods." **[Tait]**
+- **Why:** "Saying something about the area that will attract um, people from the area to watch the videos." **[Tait]**
+
+### Half pillar: Side hustles in college
+- **What it is:** "great side hustles, great ways to make money in college for college students." **[Tait]**
+- **Use sparingly:** it speaks to students, and the content is for people who hire ("We don't need students." **[Tait]**). It fits best when it also shows a parent what their Wheaton student neighbor is like.
 
 ---
 
 ## Formats (3)
 
-1. **Wheaton talking head.** Luke on camera about something in the Wheaton area. **[Tait]**
-2. **How to.** "how to sign up, how to hire a student, how to find a reliable student." **[Tait]**
-3. **[To confirm] Story.** Luke tells one real customer story, like the tutoring family that now books "again and again." **[Luke]** (A candidate: Tait named the first two formats only.)
+1. **How to.** Talking head: "how to do this" **[Tait]**, for example "how to sign up, how to hire a student, how to find a reliable student." **[Tait]**
+2. **How I.** Talking head: "how I did this" **[Tait]**
+3. **Behind the scenes.** "behind the scenes of maybe it's building the business or it's behind the scenes of a student" **[Tait]**. Student footage is a bonus: "we can't rely a ton on that." **[Tait]**
 
 ---
 
 ## Unique perspectives (3)
 
-### 1. Help works best when it's local
-"most gig platforms [treat] workers as interchangeable and customers as transactions they go national get faceless the trust disappears. We believe that help works best when it's local and relational the same students in the same community building real relationships with the families they serve" **[Luke, "what the industry gets wrong"]**
+### 1. Trustworthy students, trustworthy help
+"the problem he solves, but also that he's able to give trustworthy students jobs and help people with trustworthy students." **[Tait]** In Luke's words: "families get help from people they can trust" **[Luke]**
 
-### 2. [To confirm] A neighbor, not a contractor
-"these aren't random gig workers ... booking one [is] less like hiring a contractor and more like getting to know a trustworthy young neighbor" **[Luke, "what we wish every customer understood"]**
+### 2. [To confirm] Help works best when it's local
+"most gig platforms [treat] workers as interchangeable and customers as transactions they go national get faceless the trust disappears. We believe that help works best when it's local and relational the same students in the same community building real relationships with the families they serve" **[Luke, "what the industry gets wrong"]**
 
 ### 3. [To confirm] No job is too small
 Customers think "this job is too small to hire somebody for but small jobs are exactly what we do." **[Luke]**
 
-*Also in the material:* "students at Christian colleges offer something unique to their local communities: trust, character, and hard work." **[Site]** And "students shouldn't have to choose between school and earning a bit of money on the side." **[Luke]** (That one speaks to students, who aren't the audience.)
+*Also in the material:* "more like getting to know a trustworthy young neighbor" **[Luke]** and "students at Christian colleges offer something unique to their local communities: trust, character, and hard work." **[Site]**
 
-*Tait: keep these, change them, or replace them.*
+*Tait: perspective 1 is yours. Keep, change or replace 2 and 3.*
 
 ---
 
 ## What we can and can't claim
 
-- **Can:** "We strictly limit our platform to students with verified .edu email addresses from accredited colleges and monitor all activity. Students are rated after every gig so you can see their track record before hiring." **[Site FAQ, via Tait]**
+- **Say "Wheaton students."** "In the content lets talk about wheaton students specifically. in the future luke might expand to other schools." **[Tait]**
+- **Can:** "We strictly limit our platform to students with verified .edu email addresses from accredited colleges and monitor all activity. Students are rated after every gig so you can see their track record before hiring." **[Site FAQ, via Tait]** And the trust that comes with Wheaton itself: "because of the work the student had to do to get in to wheaton." **[Tait]**
 - **Can't:** background checks, formal vetting or insurance. Grad Gig's Terms say it doesn't do them. **[brain.md]**
-- **Careful with "Wheaton students only":** Luke says "real Wheaton college students," but the FAQ says students "from accredited colleges." Say "college students" until Luke confirms every student is from Wheaton.
 - **Don't** frame Grad Gig as brand new. It has over 500 active users. **[Site]**
 
 ---
@@ -92,7 +92,7 @@ Instagram, Facebook, LinkedIn.
 ## How to use this document
 
 When building an idea, pick:
-1. **One pillar.**
+1. **One pillar** (or the half pillar, sparingly).
 2. **One format.**
 3. **One perspective.**
 4. **One call to action.**

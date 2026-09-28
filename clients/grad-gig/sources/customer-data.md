@@ -184,7 +184,7 @@ These are already how the buyer talks: questions Luke says Grad Gig hears all th
 
 1. **"I don't know who else to call."**
    *Why:* what customers say (Luke), and it matches the older homeowner's bad day: "they have nobody to call."
-   *As a hook:* "Don't know who else to call? Call a local college student."
+   *As a hook:* "Don't know who else to call? Call a Wheaton student."
 2. **"Is this job too small?"**
    *Why:* customers ask it (Luke), and it's one of the false beliefs he named: "this job is too small to hire somebody for."
    *As a hook:* "'Is this job too small?' Small jobs are exactly what we do."
@@ -192,8 +192,8 @@ These are already how the buyer talks: questions Luke says Grad Gig hears all th
    *Why:* what customers say (Luke), and the fear both kinds of customer share: "a stranger going into their home."
    *As a hook:* "You need somebody you can trust in your house. Here's how we check every student."
 4. **"Are they actually Wheaton students?"**
-   *Why:* the first question Luke lists. What Grad Gig can show: every student has a verified .edu email from an accredited college, activity is monitored, and every gig gets a rating (Grad Gig's FAQ). It does not run background checks.
-   *As a hook:* "'Are they actually college students?' Here's how we check." (Say "Wheaton students" only once Luke confirms every student on the platform is from Wheaton.)
+   *Why:* the first question Luke lists, and his answer is "Yes". What Grad Gig can show: a verified .edu email, monitored activity, and a rating after every gig (Grad Gig's FAQ). It does not run background checks.
+   *As a hook:* "'Are they actually Wheaton students?' Yes. Here's how we check."
 5. **"Can we have the same student back next time?"**
    *Why:* what customers say (Luke), and the dream: "friendly students who know their house."
    *As a hook:* "Yes, you can have the same student back next time."

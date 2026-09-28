@@ -25,4 +25,10 @@ ideally the cost the client for grad gig the ideal customer would be a busy mom 
 
 **The ask at the end of most videos:** "Sign up at gradgig.co"
 
+**Wheaton students (later the same day):** "In the content lets talk about wheaton students specifically. in the future luke might expand to other schools."
+
+## Voice memo on the 3-3-3 (later the same day)
+
+All right, I think Luke's pillars are helping solve this one problem he saw when he was a student at Wheaton, which is students with not much time and need a way to make some money with flexibility. And also Wheaton families who wanted trustworthy help but didn't know how to connect the two. So he built a business to help the two. That's one pillar. I'd say another pillar is him talking about building grad gig, kind of documenting the process could be a good one. And I think another pillar could be the Wheaton Local Guide. So he could share cool things in Wheaton. Another maybe like half pillar could be talking about um, what... are great side hustles, great ways to make money in college for college students. Great side hustles. That could be another one. Formats are mostly going to be talking heads of how to do this, um, how I did this, and more behind the scenes of maybe it's building the business or it's behind the scenes of a student, which hopefully we can get more of those, but we can't rely a ton on that. And unique perspective Luke has is really just the problem he solves, but also that he's able to give trustworthy students jobs and help people with trustworthy students.
+
 **Website:** https://www.gradgig.co/ (copy already saved in `2026-08-21-website-copy.md`)

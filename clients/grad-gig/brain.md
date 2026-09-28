@@ -5,7 +5,8 @@ Interviewed by: Tait Allen
 Sources: client-brain intake interview, 2026-08-21 · Grad Gig website copy,
 extracted 2026-08-21 (`sources/2026-08-21-website-copy.md`) · Luke's voice memo
 (`sources/2026-09-28-luke-voice-memo.md`) · Tait's notes and answers
-(`sources/2026-09-28-tait-notes.md`).
+(`sources/2026-09-28-tait-notes.md`) · Luke's LinkedIn posts
+(`sources/2026-09-28-luke-linkedin-posts.md`).
 
 Drive: Grad Gig folder (https://drive.google.com/drive/folders/1nOD5dj0UU_0h715kvmHik3j4FJoXYTU2).
 The four working docs (built 2026-09-28 with `client-onboarding`):
@@ -86,10 +87,13 @@ in the area for years. Still open: the real Jennifer M. testimonial quote.
 
 ## Positioning canvas
 
-See `sources/positioning.md`. Pillars all **[To confirm]** (Tait: "we still
-need to nail down his pillars"). Formats: Wheaton talking head, How to [Tait],
-Story [to confirm]. Perspectives: help works best when it's local [Luke];
-a neighbor, not a contractor, and no job is too small [to confirm].
+See `sources/positioning.md`. Decided by Tait 2026-09-28: pillars are the two
+problems side by side, Building Grad Gig, and the Wheaton local guide, plus a
+half pillar on side hustles in college. Formats: How to, How I, Behind the
+scenes. Perspective 1: trustworthy students, trustworthy help. Perspectives 2
+(help works best when it's local) and 3 (no job is too small) still to confirm.
+Say "Wheaton students" in content (Tait: Luke "might expand to other schools"
+later).
 
 ## Do / don't
 
@@ -104,11 +108,12 @@ a neighbor, not a contractor, and no job is too small [to confirm].
 
 ## Open questions
 
-- Wheaton College-only vs. "any accredited college": Luke says "real Wheaton
-  college students", the FAQ says "accredited colleges". Content says
-  "college students" until Luke confirms.
-- The 3 pillars (Tait's call), the third format and perspectives 2 and 3.
-- A video or post of Luke talking on his own, for the voice profile.
+- Perspectives 2 and 3 (Tait's call).
+- The Instagram reel (https://www.instagram.com/reel/DdCl6wauJ8d/): its script
+  or caption, for how Luke sounds on camera.
+- Luke's LinkedIn posts talk about Fully Launched as his own venture. Is he
+  the same Luke as Fully Launched's cofounder (Luke Bothun)? If so, his posts
+  can also fill in Luke's voice for Fully Launched.
 - The real Jennifer M. testimonial quote.
 - The "Needs from you" lines in Content Ideas (Luke's Wheaton picks, fees,
-  rebooking, the tutoring family's permission).
+  rebooking, milestones, the tutoring family's permission).
