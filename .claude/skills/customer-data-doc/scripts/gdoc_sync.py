@@ -51,16 +51,42 @@ for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, got, want, autojunk=Fal
         s, e = paras[i1][0], paras[i2 - 1][1]
         ops.append((s, {'deleteContentRange': {'range': {'startIndex': s, 'endIndex': e}}}))
         continue
-    if tag == 'replace' and i2 - i1 >= j2 - j1:
-        # pair each new paragraph with the most similar old one, in order;
-        # old paragraphs left unpaired are deleted
-        pairs, start = [], i1
-        for j in range(j1, j2):
-            left = (j2 - j) - 1  # old paragraphs the later new ones still need
-            cands = range(start, i2 - left)
-            best = max(cands, key=lambda i: difflib.SequenceMatcher(None, got[i], want[j]).ratio())
-            pairs.append((best, j))
-            start = best + 1
+    if tag == 'replace':
+        sim = lambda i, j: difflib.SequenceMatcher(None, got[i], want[j]).ratio()
+        pairs = []
+        if i2 - i1 >= j2 - j1:
+            # pair each new paragraph with the most similar old one, in order;
+            # old paragraphs left unpaired are deleted
+            start = i1
+            for j in range(j1, j2):
+                left = (j2 - j) - 1  # old paragraphs the later new ones still need
+                best = max(range(start, i2 - left), key=lambda i: sim(i, j))
+                pairs.append((best, j))
+                start = best + 1
+        else:
+            # more new than old: pair each old paragraph with the most similar
+            # new one, in order; new paragraphs left unpaired are inserted in
+            # front of the next paired old paragraph (or the one after the run)
+            start = j1
+            for i in range(i1, i2):
+                left = (i2 - i) - 1
+                best = max(range(start, j2 - left), key=lambda j: sim(i, j))
+                pairs.append((i, best))
+                start = best + 1
+            full = [p[0] for p in parse(open(a.md).read())]  # keeps nesting tabs
+            pj = [j for _, j in pairs]
+            groups = {}
+            for j in range(j1, j2):
+                if j in pj:
+                    continue
+                nxt = next((i for i, jj in pairs if jj > j), i2)
+                groups.setdefault(nxt, []).append(j)
+            for k, js in groups.items():
+                if k >= len(paras):
+                    sys.exit('insert at the end of the doc: rebuild with gdoc_build.py instead')
+                # after every edit inside paragraph k (those sort at >= its start - 0.5)
+                ops.append((paras[k][0] - 0.75, {'insertText': {'location': {'index': paras[k][0]},
+                                                               'text': ''.join(full[j] + '\n' for j in js)}}))
         paired = {i for i, _ in pairs}
         for i in range(i1, i2):
             if i not in paired:

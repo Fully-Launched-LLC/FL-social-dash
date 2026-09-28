@@ -1,12 +1,12 @@
 # Grad Gig: Content Ideas
 
-**Last updated:** 2026-09-28 (October schedule added)
+**Last updated:** 2026-09-28 (October remade from the Week 1 feed plan; brainstormed ideas removed)
 **Drive:** https://docs.google.com/document/d/1pLjTP26vgJHZgBXcFaGHNd5xjnaF9OOBqD_Y6oxsgU4/edit (mirror of this file)
-**Built from:** Customer Data, Your Voice and the voice profile (all 2026-09-28), from Luke's voice memo and LinkedIn posts, Tait's notes and 3-3-3 memo, and Grad Gig's website copy.
+**Built from:** Customer Data, Your Voice and the voice profile (all 2026-09-28), from Luke's voice memo and LinkedIn posts, Tait's notes and 3-3-3 memo, Grad Gig's website copy, and the Week 1 Feed Content Plan.
 
 **The rule for this doc:** Claude organizes *your* ideas, from Luke's memo and posts, Tait's notes and Grad Gig's own site, into clear, usable ideas. Nothing new is invented. Each idea shows where it came from.
 
-**Every video:** Luke talking to camera, for people who hire (families and homeowners in Wheaton, not students). Say "Wheaton students." CTA: "Sign up at gradgig.co". Never claim background checks.
+**Most videos:** Luke talking to camera (the Week 1 feed plan adds stock/AI reels and a carousel), for people who hire (families and homeowners in Wheaton, not students). Say "Wheaton students." CTA: "Sign up at gradgig.co". Never claim background checks.
 
 **Each idea has:**
 - **Hook:** the opening line
@@ -19,7 +19,6 @@
 - **Source:** where it came from
 - **Needs from you:** only where an idea needs a detail we don't have yet
 - **Status:** 📅 Scheduled, 🎬 Filmed or ✅ Posted, once an idea is on the calendar
-- **Brainstormed:** marks ideas Claude brainstormed at Tait's request, not from Luke's own material
 
 **Pillars:** The two problems, side by side · Building Grad Gig · Wheaton, the local guide · Side hustles in college (half pillar)
 **Formats:** How to · How I · Behind the scenes
@@ -27,37 +26,37 @@
 
 ## October 2026 schedule
 
-One video a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Tait films all 20 with Luke by Fri, Oct 2 (filmed by us, so Luke approves only the finished videos). Each week mixes the pillars.
+One post a day, Monday to Friday, on LinkedIn, Facebook and Instagram. Week 1 is the Week 1 feed plan: three posts from stock/AI footage and graphics, then Luke. Tait films Luke's 17 videos with him by Fri, Oct 2 (filmed by us, so Luke approves only the finished videos). Each week mixes the pillars, and every hook comes from Customer Data or the feed plan, with no hook used twice.
 
 The dashboard numbers these videos #1 to #20 in posting order; each one's idea ID follows in parentheses. **Status marks:** 📅 Scheduled · 🎬 Filmed · ✅ Posted. Every scheduled idea has a **Status** line under its title; update it as the video moves, so this doc always shows what's been used.
 
-**Week 1** (edits fast-tracked)
-- Mon, Oct 5: **#1** Why I started Grad Gig (idea L1)
-- Tue, Oct 6: **#2** "Is this job too small?" (idea H1)
-- Wed, Oct 7: **#3** Wheaton date night, and who's watching the kids (idea W4)
-- Thu, Oct 8: **#4** Don't gamble on a stranger (idea T1)
-- Fri, Oct 9: **#5** A million things on your list (idea H9)
+**Week 1** (edits fast-tracked; the Week 1 feed plan, then Luke's story)
+- Mon, Oct 5: **#1** Your Saturday to-do list (idea F1)
+- Tue, Oct 6: **#2** "I'll do it this weekend" (idea F2)
+- Wed, Oct 7: **#3** There's probably more you can get help with than you think (idea F3)
+- Thu, Oct 8: **#4** Luke: what can I actually post on Grad Gig? (idea F4)
+- Fri, Oct 9: **#5** Why I started Grad Gig (idea L1)
 
 **Week 2**
 - Mon, Oct 12: **#6** The 6 PM homework fight (idea H2)
-- Tue, Oct 13: **#7** How to hire a student on Grad Gig (idea L2)
+- Tue, Oct 13: **#7** How we check every student (idea T2)
 - Wed, Oct 14: **#8** The 5 best restaurants in Wheaton (idea W1)
-- Thu, Oct 15: **#9** "Students are flaky" (idea T5)
-- Fri, Oct 16: **#10** Making money in college without a 9-to-5 (idea S1)
+- Thu, Oct 15: **#9** "Is this job too small?" (idea H1)
+- Fri, Oct 16: **#10** How to hire a student on Grad Gig (idea L2)
 
 **Week 3**
 - Mon, Oct 19: **#11** You shouldn't be up on that ladder (idea H5)
-- Tue, Oct 20: **#12** The family that booked once and kept booking (idea T4)
-- Wed, Oct 21: **#13** Hope is a good breakfast but a bad supper (idea L4)
-- Thu, Oct 22: **#14** Things to do in Wheaton this fall (idea W3)
-- Fri, Oct 23: **#15** More like a neighbor than a contractor (idea T7)
+- Tue, Oct 20: **#12** "Students are flaky" (idea T5)
+- Wed, Oct 21: **#13** From a few friends to over 500 users (idea L5)
+- Thu, Oct 22: **#14** Can we have the same student back? (idea T3)
+- Fri, Oct 23: **#15** Don't gamble on a stranger (idea T1)
 
 **Week 4**
-- Mon, Oct 26: **#16** The first snow is coming (idea H10)
-- Tue, Oct 27: **#17** How we check every student (idea T2)
-- Wed, Oct 28: **#18** From a few friends to over 500 users (idea L5)
+- Mon, Oct 26: **#16** The boxes in the basement (idea H4)
+- Tue, Oct 27: **#17** The family that booked once and kept booking (idea T4)
+- Wed, Oct 28: **#18** Why local beats national (idea T9)
 - Thu, Oct 29: **#19** The 5 best neighborhoods in Wheaton (idea W2)
-- Fri, Oct 30: **#20** Why local beats national (idea T9)
+- Fri, Oct 30: **#20** More like a neighbor than a contractor (idea T7)
 
 ---
 
@@ -66,7 +65,7 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 ### Help around the house
 
 **H1. "Is this job too small?"**
-- **Status:** 📅 Scheduled as #2 for Tue, Oct 6 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #9 for Thu, Oct 15 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "'Is this job too small?' Small jobs are exactly what we do."
 - **Format:** How to · **Perspective:** ③ No job is too small
 - **Seed:** "small jobs are exactly what we do."
@@ -82,7 +81,7 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 
 **H2. The 6 PM homework fight**
 - **Status:** 📅 Scheduled as #6 for Mon, Oct 12 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
-- **Hook:** "It's 6 PM. Your kid is in tears over homework, and dinner's not started."
+- **Hook:** "Getting home at 6 PM. A kid in tears over the homework. Dinner not started."
 - **Format:** How I · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "getting home at 6 PM a kid in tears over the homework. Dinner not started"
 - **The idea:** Parents don't have "the time or the subject knowledge to help." A college student tutor, and homework that's "no longer a hefty and nightly fight."
@@ -111,6 +110,7 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 - **Source:** Luke's voice memo
 
 **H4. The boxes in the basement**
+- **Status:** 📅 Scheduled as #16 for Mon, Oct 26 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "The basement is still full of boxes that should've been moved three months ago."
 - **Format:** How to · **Perspective:** ③ No job is too small
 - **Seed:** "The basement is still full of boxes that should've been moved three months ago."
@@ -126,7 +126,7 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 
 **H5. You shouldn't be up on that ladder**
 - **Status:** 📅 Scheduled as #11 for Mon, Oct 19 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
-- **Hook:** "If you know you shouldn't be up on a ladder or hauling leaf bags, don't be."
+- **Hook:** "There's leaves in the yard, and you know you shouldn't be up on a ladder."
 - **Format:** How to · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "knowing that they shouldn't be up on a ladder or hauling bags and they have nobody to call"
 - **The idea:** For older homeowners: yard work, leaf raking, snow shoveling and garden cleanup, done by a student, so they "can stay home in the home that they love safely."
@@ -182,58 +182,11 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 - **CTA:** Sign up at gradgig.co
 - **Source:** Luke's voice memo
 
-**H9. A million things on your list**
-- **Status:** 📅 Scheduled as #5 for Fri, Oct 9 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
-- **Hook:** On-screen text: "Your to-do list: about a million things."
-- **Format:** Text on screen over stock footage *(new format, brainstormed)* · **Perspective:** ③ No job is too small
-- **Seed:** "every task that's undone in the back of their mind"
-- **Brainstormed:** yes, by Claude at Tait's request (2026-09-28). Not from Luke's own material; check it fits before filming.
-- **The idea:** Fast cuts of stock footage (leaves, boxes, homework, a dog on a leash, a TV remote), one line of on-screen text each. Then the turn: Wheaton students can take these off your list.
-- **Talking points:**
-  - On-screen text, one per clip: "Rake the leaves." "Move the couch." "Help with math homework." "Walk the dog." "Fix the TV."
-  - Then: "Too small for a company. Too big to do alone."
-  - Then: "Wheaton students who can help."
-  - End card: "Sign up at gradgig.co"
-- **Ask on camera:** "No one on camera. For a voiceover, ask Luke: What's on every Wheaton family's to-do list?"
-- **CTA:** Sign up at gradgig.co
-- **Source:** Tait's idea in chat (2026-09-28); the jobs are from Luke's voice memo
-- **Needs from you:** stock footage, or quick clips Tait shoots this week
-
-**H10. The first snow is coming**
-- **Status:** 📅 Scheduled as #16 for Mon, Oct 26 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
-- **Hook:** "The first snow is coming. Who's shoveling your driveway?"
-- **Format:** How to · **Perspective:** ③ No job is too small
-- **Seed:** "leaf raking snow shoveling and garden cleanup"
-- **Brainstormed:** yes, by Claude at Tait's request (2026-09-28). Not from Luke's own material; check it fits before filming.
-- **The idea:** Line up help before the first storm, especially for older homeowners who shouldn't be out there themselves.
-- **Talking points:**
-  - Snow shoveling is one of the jobs Wheaton families book students for.
-  - Older homeowners worry about "getting hurt doing a job."
-  - Book it on Grad Gig by request (it's request-based, not on call).
-- **Ask on camera:** "What should Wheaton homeowners do before the first snow?"
-- **CTA:** Sign up at gradgig.co
-- **Source:** Luke's voice memo, Grad Gig's website copy
-- **Needs from you:** confirm how snow requests work this winter
-
-**H11. The fall cleanup list, and what to hand off**
-- **Hook:** "Your fall cleanup list, and the parts you can hand off."
-- **Format:** How to · **Perspective:** ③ No job is too small
-- **Seed:** "A room needs rearranging a yards gotten away from them"
-- **Brainstormed:** yes, by Claude at Tait's request (2026-09-28). Not from Luke's own material; check it fits before filming.
-- **The idea:** Luke walks through the fall jobs Wheaton families put off, and which ones a student can take.
-- **Talking points:**
-  - The jobs: "leaf raking," "garden cleanup," heavy lifting.
-  - Which ones families hand off most (Luke answers on camera).
-  - "small jobs are exactly what we do."
-- **Ask on camera:** "What's on a Wheaton family's fall to-do list that a student could take off their hands?"
-- **CTA:** Sign up at gradgig.co
-- **Source:** Luke's voice memo
-
 ### Trust and the student neighbor
 
 **T1. Don't gamble on a stranger**
-- **Status:** 📅 Scheduled as #4 for Thu, Oct 8 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
-- **Hook:** "You don't have to gamble on a stranger from Facebook Marketplace."
+- **Status:** 📅 Scheduled as #15 for Fri, Oct 23 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Hook:** "You don't wanna hire a stranger off of Facebook Marketplace."
 - **Format:** How to · **Perspective:** ② Help works best when it's local
 - **Seed:** "You don't have to gamble on a stranger, you get a neighbor"
 - **The idea:** Craigslist and Facebook Marketplace mean "unreliable no-shows safety concerns." How to find a reliable student instead.
@@ -247,13 +200,13 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 - **Source:** Luke's voice memo
 
 **T2. How we check every student**
-- **Status:** 📅 Scheduled as #17 for Tue, Oct 27 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
-- **Hook:** "'I just need somebody I can trust in my house.' Here's how we check every student."
+- **Status:** 📅 Scheduled as #7 for Tue, Oct 13 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Hook:** "'Are they actually Wheaton students?' Yes. Here's how we check."
 - **Format:** How to · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "We strictly limit our platform to students with verified .edu email addresses from accredited colleges and monitor all activity."
 - **The idea:** Verified .edu emails, monitored activity, and a rating after every gig "so you can see their track record before hiring." No background checks, so never say them.
 - **Talking points:**
-  - The customer's words: "I just need somebody. I can trust in my house."
+  - The customer's question: "Are they actually Wheaton students?" Luke's answer: "Yes."
   - The platform: "verified .edu email addresses" and "monitor all activity."
   - The track record: "Students are rated after every gig so you can see their track record before hiring."
   - The school: getting into Wheaton takes real work (Tait). Never say background checks.
@@ -262,7 +215,8 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 - **Source:** Grad Gig's FAQ (sent by Tait), Luke's voice memo
 
 **T3. Can we have the same student back?**
-- **Hook:** "Yes, you can have the same student back next time."
+- **Status:** 📅 Scheduled as #14 for Thu, Oct 22 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Hook:** "'Can we have the same student back next time?' Definitely."
 - **Format:** How to · **Perspective:** ② Help works best when it's local
 - **Seed:** "Can we have the same student back next time"
 - **The idea:** "friendly students who know their house and show up when they say they will." The same students, building "real relationships with the families they serve."
@@ -276,8 +230,8 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 - **Needs from you:** how a family rebooks the same student in the app
 
 **T4. The family that booked once and kept booking**
-- **Status:** 📅 Scheduled as #12 for Tue, Oct 20 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
-- **Hook:** "They booked one student for tutoring. Now they have a whole team."
+- **Status:** 📅 Scheduled as #17 for Tue, Oct 27 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Hook:** "They started looking for one-time help and ended with a team of students they trust."
 - **Format:** How I · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "they started looking for one time help and ended with a team of students that they trust"
 - **The idea:** Tutoring first, then furniture, then odd jobs "again and again." "Their kids grades improved and they love grad gig"
@@ -292,8 +246,8 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 - **Needs from you:** the family's permission to share it, and anything they'd say themselves
 
 **T5. "Students are flaky"**
-- **Status:** 📅 Scheduled as #9 for Thu, Oct 15 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
-- **Hook:** "Think college students are flaky?"
+- **Status:** 📅 Scheduled as #12 for Tue, Oct 20 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Hook:** "'Students are flaky.' Ours have a reputation to protect."
 - **Format:** How I · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "our student students are motivated local and have a reputation to protect"
 - **The idea:** Luke answers the belief head on: motivated, local, with a reputation to protect, and rated after every gig.
@@ -320,8 +274,8 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 - **Needs from you:** a real example rate, so "affordable" has a number
 
 **T7. More like a neighbor than a contractor**
-- **Status:** 📅 Scheduled as #15 for Fri, Oct 23 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
-- **Hook:** "Booking a Grad Gig student is less like hiring a contractor and more like getting to know a young neighbor."
+- **Status:** 📅 Scheduled as #20 for Fri, Oct 30 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Hook:** "'I just need somebody I can trust in my house.' That's us."
 - **Format:** How I · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "more like getting to know a trustworthy young neighbor"
 - **The idea:** "They're real Wheaton college students who live here they care about the community and they wanted to do great work"
@@ -350,8 +304,8 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 - **Needs from you:** what Luke would say back to a parent who feels that way
 
 **T9. Why local beats national**
-- **Status:** 📅 Scheduled as #20 for Fri, Oct 30 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
-- **Hook:** "Most gig apps go national. That's where the trust disappears."
+- **Status:** 📅 Scheduled as #18 for Wed, Oct 28 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Hook:** "Why is it so hard to find somebody decent for a simple job?"
 - **Format:** How I · **Perspective:** ② Help works best when it's local
 - **Seed:** "they go national get faceless the trust disappears."
 - **The idea:** Luke's view of what the industry gets wrong: "help works best when it's local and relational"
@@ -363,26 +317,12 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 - **CTA:** Sign up at gradgig.co
 - **Source:** Luke's voice memo
 
-**T10. What happens when a student shows up**
-- **Hook:** "What actually happens when a Grad Gig student shows up at your door?"
-- **Format:** How to · **Perspective:** ① Trustworthy students, trustworthy help
-- **Seed:** "friendly students who know their house and show up when they say they will."
-- **Brainstormed:** yes, by Claude at Tait's request (2026-09-28). Not from Luke's own material; check it fits before filming.
-- **The idea:** Take the unknown out of the first visit, start to finish.
-- **Talking points:**
-  - Before: you post the gig and pick the student.
-  - The visit itself (Luke describes it on camera).
-  - After: the student logs hours, your card is charged automatically, and you rate the student.
-- **Ask on camera:** "What happens the first time a Grad Gig student comes to someone's house?"
-- **CTA:** Sign up at gradgig.co
-- **Source:** Luke's voice memo, Grad Gig's website copy
-
 ---
 
 ## Pillar 2: Building Grad Gig
 
 **L1. Why I started Grad Gig**
-- **Status:** 📅 Scheduled as #1 for Mon, Oct 5 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #5 for Fri, Oct 9 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "I saw two problems sitting right next to each other."
 - **Format:** How I · **Perspective:** ② Help works best when it's local
 - **Seed:** "I saw two problems sitting right next to each other"
@@ -397,8 +337,8 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 - **Source:** Luke's voice memo, Grad Gig's website copy
 
 **L2. How to hire a student on Grad Gig**
-- **Status:** 📅 Scheduled as #7 for Tue, Oct 13 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
-- **Hook:** "Here's how to hire a Wheaton student on Grad Gig, start to finish."
+- **Status:** 📅 Scheduled as #10 for Fri, Oct 16 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Hook:** "Don't know who else to call? Here's how to book a Wheaton student, start to finish."
 - **Format:** How to · **Perspective:** ③ No job is too small
 - **Seed:** "how to sign up, how to hire a student, how to find a reliable student."
 - **The idea:** Post a gig and set your rate, students apply, you pick one, they do the job and log hours, your card is charged automatically. (From Grad Gig's site.) Luke shows it on his phone.
@@ -426,7 +366,6 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 - **Source:** Luke's voice memo, Grad Gig's website copy
 
 **L4. Hope is a good breakfast but a bad supper**
-- **Status:** 📅 Scheduled as #13 for Wed, Oct 21 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "Hope is a good breakfast but a bad supper."
 - **Format:** How I · **Perspective:** none of the three fits (founder mindset)
 - **Seed:** "Hope is a good breakfast but a bad supper."
@@ -442,7 +381,7 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 - **Needs from you:** one real Grad Gig result or moment to tie it to
 
 **L5. From a few friends to over 500 users**
-- **Status:** 📅 Scheduled as #18 for Wed, Oct 28 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Status:** 📅 Scheduled as #13 for Wed, Oct 21 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "Grad Gig started with a few friends and a few Wheaton families."
 - **Format:** Behind the scenes · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "What started as a small project connecting a few friends to local families"
@@ -519,35 +458,6 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 - **Source:** Tait's notes
 - **Needs from you:** Luke's picks, and more Wheaton topics he'd be good at (date-night spots, parks, events)
 
-**W3. Things to do in Wheaton this fall**
-- **Status:** 📅 Scheduled as #14 for Thu, Oct 22 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
-- **Hook:** "The best things to do in Wheaton this fall."
-- **Format:** How I · **Perspective:** ② Help works best when it's local
-- **Seed:** "he could share cool things in Wheaton"
-- **Brainstormed:** yes, by Claude at Tait's request (2026-09-28). Not from Luke's own material; check it fits before filming.
-- **The idea:** Luke's own fall picks around Wheaton, like a local who knows the town.
-- **Talking points:**
-  - Luke's picks, one line each on why (he answers on camera).
-  - Close with who he is and what Grad Gig does.
-- **Ask on camera:** "What should a Wheaton family do this fall?"
-- **CTA:** Sign up at gradgig.co
-- **Source:** Tait's 3-3-3 memo
-
-**W4. Wheaton date night, and who's watching the kids**
-- **Status:** 📅 Scheduled as #3 for Wed, Oct 7 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
-- **Hook:** "The best date night spots in Wheaton, and who's watching the kids."
-- **Format:** How I · **Perspective:** ② Help works best when it's local
-- **Seed:** "a date night that just keeps getting canceled for lack of a sitter"
-- **Brainstormed:** yes, by Claude at Tait's request (2026-09-28). Not from Luke's own material; check it fits before filming.
-- **The idea:** Luke's date night picks in Wheaton, then the turn: the date night only happens if there's a sitter you trust.
-- **Talking points:**
-  - Luke's picks (he answers on camera).
-  - The problem: date night "keeps getting canceled for lack of a sitter."
-  - What parents need: "a reliable babysitter that they actually trust."
-- **Ask on camera:** "Where should a Wheaton couple go for date night?"
-- **CTA:** Sign up at gradgig.co
-- **Source:** Tait's 3-3-3 memo, Luke's voice memo
-
 ---
 
 ## Half pillar: Side hustles in college
@@ -555,7 +465,6 @@ The dashboard numbers these videos #1 to #20 in posting order; each one's idea I
 Use sparingly: the content is for people who hire. Tait: "We don't need students."
 
 **S1. Making money in college without a 9-to-5**
-- **Status:** 📅 Scheduled as #10 for Fri, Oct 16 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
 - **Hook:** "A 9-to-5 doesn't fit a college class schedule. Here's what does."
 - **Format:** How I · **Perspective:** ① Trustworthy students, trustworthy help
 - **Seed:** "a traditional 9-to-5 or a rigid shift schedule just was not compatible with student life."
@@ -584,12 +493,99 @@ Use sparingly: the content is for people who hire. Tait: "We don't need students
 
 ---
 
+## From the Week 1 feed plan
+
+The four posts in the Week 1 Feed Content Plan, word for word from the plan. The plan's rule: "Stock/AI creates the situation. Real GradGig content creates the proof." The first three need no filming; Luke films the fourth.
+
+**F1. Your Saturday to-do list**
+- **Status:** 📅 Scheduled as #1 for Mon, Oct 5 · LinkedIn, Facebook, Instagram · No filming (stock/AI)
+- **Hook:** On-screen text: "You finally made it to Saturday."
+- **Format:** Reel, stock/AI footage with text on screen · **Role in the plan:** Relatability · **Perspective:** ③ No job is too small
+- **Seed:** "Show the weekend problem before selling the solution."
+- **The idea:** "A supposedly free Saturday disappears under household jobs. GradGig appears only after the problem feels familiar."
+- **On-screen text, in order:**
+  - "You finally made it to Saturday."
+  - "Mow the lawn."
+  - "Clean the garage."
+  - "Move that thing that has been sitting there for 3 weeks."
+  - "So much for Saturday."
+  - "Your weekend does not have to become your to-do list."
+- **How it plays:** "Open on a calm coffee moment." Build the list: "lawn → garage → moving something → one more annoying task." "Return to the person/coffee: 'So much for Saturday.'"
+- **Production:** "12–15 sec · quick cuts · natural smartphone-style footage · light/comedic audio"
+- **Filming:** none. Stock/AI footage: "Createpossible can produce independently."
+- **Caption direction:** "Saturday was supposed to be the day you slowed down. Some things need doing; that does not mean you have to do all of them yourself."
+- **CTA:** Sign up at gradgig.co
+- **Source:** Week 1 Feed Content Plan (sent by Tait, 2026-09-28), Post 01
+- **Needs from you:** the plan's end card says "Post the gig." Our CTA is "Sign up at gradgig.co". Which one goes on the end card (or both)?
+
+**F2. "I'll do it this weekend"**
+- **Status:** 📅 Scheduled as #2 for Tue, Oct 6 · LinkedIn, Facebook, Instagram · No filming (stock/AI)
+- **Hook:** On-screen text: "I'll do it this weekend."
+- **Format:** Reel, stock/AI footage with text on screen · **Role in the plan:** Humour · **Perspective:** ③ No job is too small
+- **Seed:** "One household job survives weekend after weekend until GradGig becomes the punchline."
+- **The idea:** "Use one recognisable problem, ideally a chaotic garage." "Text changes while the problem stays exactly the same."
+- **On-screen text, in order:**
+  - "I'll do it this weekend."
+  - "Weekend #2"
+  - "Weekend #3"
+  - "Weekend #4"
+  - "At this point, just post the gig."
+- **How it plays:** "Optional visual gag: another box appears each weekend." "Final beat: person deliberately walks past it."
+- **Production:** "8–12 sec · one or two clips · very light edit · dry humour"
+- **Filming:** none. "one stock/AI clip can be enough."
+- **Caption direction:** "You said this weekend. Then last weekend. Some jobs do not need another spot on next week's list."
+- **CTA:** Sign up at gradgig.co
+- **Source:** Week 1 Feed Content Plan (sent by Tait, 2026-09-28), Post 02
+- **Needs from you:** the plan's end card says "Post the gig." Our CTA is "Sign up at gradgig.co". Which one goes on the end card (or both)?
+
+**F3. There's probably more you can get help with than you think**
+- **Status:** 📅 Scheduled as #3 for Wed, Oct 7 · LinkedIn, Facebook, Instagram · No filming (stock/AI)
+- **Hook:** Cover slide: "There's probably more you can get help with than you think."
+- **Format:** Carousel, graphics and stock · **Role in the plan:** Discovery · **Perspective:** ③ No job is too small
+- **Seed:** "Flip GradGig's existing student-facing gig list into a customer-facing carousel that shows the breadth of help available."
+- **The idea:** Seven slides, one kind of help each, from Grad Gig's own gig list.
+- **On-screen text, in order:**
+  - "There's probably more you can get help with than you think."
+  - "Around the house: Yardwork · landscaping · painting · moving help"
+  - "The kids: Tutoring · sports coaching · babysitting"
+  - "Tech: Tech setup · coding · social media"
+  - "Pets: Dog walking · pet care"
+  - "Skills you might not expect: Photography · artwork · music lessons · personal training"
+  - "What's on your list? Post a gig."
+- **How it looks:** "Alternate orange graphic slides, full-image slides, off-white layouts and beige panels." "Use GradGig branding + stock imagery. Avoid making every slide feel like the same Canva template."
+- **Filming:** none. Graphics and stock.
+- **Caption direction:** "Sometimes it is not that you cannot do something." "You just do not have the time" "or someone else already has the skill you need."
+- **CTA:** Sign up at gradgig.co
+- **Source:** Week 1 Feed Content Plan (sent by Tait, 2026-09-28), Post 03
+- **Needs from you:** the plan's last line says "There might already be a local college student who can help." Our rule is to say "Wheaton students." Also the end card: "Post a gig." or "Sign up at gradgig.co"?
+
+**F4. Luke: what can I actually post on Grad Gig?**
+- **Status:** 📅 Scheduled as #4 for Thu, Oct 8 · LinkedIn, Facebook, Instagram · Tait films by Fri, Oct 2
+- **Hook:** "People ask us what kind of jobs they can actually post…"
+- **Format:** Reel, Luke talking to camera · **Role in the plan:** Trust · **Perspective:** ③ No job is too small
+- **Seed:** "Luke answers a simple customer question and gives a few very different examples so GradGig feels broad, useful and human."
+- **The idea:** "Key message: the job does not have to be huge."
+- **Talking points:**
+  - Open with the customer question: "People ask us what kind of jobs they can actually post…"
+  - "Give 3–5 deliberately different examples: yardwork, moving help, tutoring, pet care, tech."
+  - "the job does not have to be huge."
+  - Close: "If there's something you could use an extra pair of hands with, post it."
+- **Ask on camera:** "What kinds of things can someone post on GradGig?"
+- **Production:** "20–30 sec" · "Vertical phone video · natural light · conversational delivery · supporting B-roll added in edit" · "Edit with quick supporting B-roll and orange category labels."
+- **Caption direction:** "Use Luke's answer as the core of the caption, then reinforce the breadth of gigs and direct people to post what they need help with."
+- **CTA:** Sign up at gradgig.co
+- **Source:** Week 1 Feed Content Plan (sent by Tait, 2026-09-28), Post 04
+- **Needs from you:** the plan's end card says "Post the gig." Our CTA is "Sign up at gradgig.co". Which one goes on the end card (or both)?
+
+---
+
 ## Summary
 
-- **The two problems, side by side:** 21 (H1–H11, T1–T10)
+- **The two problems, side by side:** 17 (H1–H8, T1–T9)
 - **Building Grad Gig:** 7 (L1–L7)
-- **Wheaton, the local guide:** 4 (W1–W4). Luke gives his picks on camera.
+- **Wheaton, the local guide:** 2 (W1–W2). Needs Luke's own picks.
 - **Side hustles in college:** 2 (S1–S2)
+- **From the Week 1 feed plan:** 4 (F1–F4)
 
 **Ready to film as-is:** every idea without a **Needs from you** line.
 **Next step:** pick dates and add them with **📋 Add ideas with Claude** on the dashboard.
