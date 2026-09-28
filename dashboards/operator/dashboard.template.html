@@ -341,7 +341,8 @@ function operatorActionsHtml(x, inCard) {
     out.push(smallBtn("Mark filmed for client", `markFilmedForClient('${id}')`, "primary"));
   }
   // We film it: tick it off once it's filmed (clears the film-by deadline).
-  if (filmedByX(x) === "us" && v.status === "to_film") out.push(smallBtn("✓ Mark filmed", `updateVideo('${id}', { status: 'filmed' })`));
+  // Only when there's filming (a film-by date): stock/graphics posts have none.
+  if (filmedByX(x) === "us" && v.status === "to_film" && v.dueToFilm) out.push(smallBtn("✓ Mark filmed", `updateVideo('${id}', { status: 'filmed' })`));
   if (!inCard && raw && (isOperatorFilmed(x) || v.status === "ready_to_edit")) {
     out.push(`<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">${raw.label}</a>`);
   }

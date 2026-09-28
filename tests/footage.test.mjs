@@ -22,7 +22,8 @@ await db.exec(`
     ('${GG}','A own folder','to_film','us',now(),null,'2026-10-02','2026-10-09','{"instructions":"Cut A","rawFootageUrl":"${OWN}","keepMe":"yes"}'),
     ('${GG}','B no folder','to_film','us',now(),null,'2026-10-02','2026-10-12','{"instructions":"Cut B"}'),
     ('${GG}','C editing','with_editor','us',now(),'${ED}',null,'2026-10-14','{"instructions":"Cut C","rawFootageUrl":"https://drive.google.com/drive/folders/own-c"}'),
-    ('${GG}','D client films','to_film','client',now(),null,'2026-10-03','2026-10-16','{"rawFootageUrl":"https://drive.google.com/drive/folders/own-d"}');
+    ('${GG}','D client films','to_film','client',now(),null,'2026-10-03','2026-10-16','{"rawFootageUrl":"https://drive.google.com/drive/folders/own-d"}'),
+    ('${GG}','E stock','to_film','us',now(),null,null,'2026-10-05','{}');
 `);
 const row = async t => (await db.query("select status, editor_brief from social_videos where title=$1", [t])).rows[0];
 const idOf = async t => (await db.query("select id from social_videos where title=$1", [t])).rows[0].id;
@@ -43,6 +44,8 @@ markBtn.click(); await settle();
 chk("Mark filmed: status filmed, still ready for an editor, film deadline gone", (await row("A own folder")).status === "filmed"
   && !!opRow("A own folder") && !op.w.eval("calendarEntries(findVideo(" + JSON.stringify(await idOf("A own folder")) + "))").some(e => e.kind === "film"));
 chk("…and it no longer offers Mark filmed", !Array.from(opRow("A own folder").querySelectorAll("button")).some(b => b.textContent === "✓ Mark filmed"));
+
+chk("no Mark filmed on a post with nothing to film (no film-by date)", !Array.from(opRow("E stock").querySelectorAll("button")).some(b => b.textContent === "✓ Mark filmed"));
 
 // The video form: shows the folder, validates it, keeps the rest of editor_brief.
 op.w.openVideoForm(await idOf("A own folder")); await settle();
