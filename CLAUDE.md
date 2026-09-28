@@ -503,7 +503,10 @@ footage folder" card, then tabs: **All** — the default, every action the
 client has to take, grouped under headings; To film — client-filmed
 ideas; Ideas to approve — we-film ideas; Finished videos to approve. A
 tab shows when it fits the client's default or has something in it), **Content Calendar**
-(post dates, plus 🎥 film dates for client-filmed ideas), **Documents**
+(each post date shows the video's full title and a colored pill per
+platform, with a "Posts on" key above; 🎥 film dates for client-filmed
+ideas; under the grid, "What posts each day": the month as a list with
+each video's hook and platforms by name), **Documents**
 (the client's important Google Drive docs — `social_client_documents`,
 added on the operator's Clients → Edit; clients read only their own) and **My footage
 folder ↗** (the client's Drive folder — what they upload and what we

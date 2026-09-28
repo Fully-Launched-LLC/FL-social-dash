@@ -65,6 +65,13 @@ const PLATFORMS = {
 };
 const PLATFORM_ALIASES = { ig: "instagram", insta: "instagram", tt: "tiktok", "tik tok": "tiktok", fb: "facebook", li: "linkedin", yt: "youtube" };
 function normPlatform(p) { const k = String(p || "").trim().toLowerCase(); return PLATFORM_ALIASES[k] || k; }
+// A video's platforms as colored pills: short tags ("IG") or full names.
+function platformPills(platforms, full) {
+  return (platforms || []).map(normPlatform).filter(Boolean).map(k => {
+    const P = PLATFORMS[k];
+    return `<span class="plat-pill" style="--pc:${P ? P.color : "var(--sub)"}" title="${escapeHtml(P ? P.name : k)}">${escapeHtml(P ? (full ? P.name : P.tag) : k)}</span>`;
+  }).join("");
+}
 
 // A finished video must be approved (Tait's review, then the client's) this
 // many days before it posts. Edit due is 7 days before (suggestedDates).
