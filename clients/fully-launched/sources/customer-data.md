@@ -225,7 +225,7 @@ These are already how the buyer talks: questions real people post, or complaints
    *As a hook:* "'What do I post?' Here's the simple answer."
 2. **"I don't have time."**
    *Why:* Tait says it about content five different ways, and customers tell Luke "We're too busy. We don't have time."
-   *As a hook:* "Don't have time to film? This takes two hours a month."
+   *As a hook:* "Don't have time to film? This takes under 2 hours a week."
 3. **"How do I stay consistent?"**
    *Why:* "usually the problem is consistency" (Tait), and "how do you keep a content calendar consistent when you're the only one running it?" (Reddit).
    *As a hook:* "How to stay consistent when you're the only one running your content."

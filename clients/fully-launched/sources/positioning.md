@@ -1,9 +1,9 @@
-# Fully Launched — Your Voice
+# Fully Launched: Your Voice
 
 **The 3-3-3 framework: pillars, formats, perspectives**
 
-**Last updated:** 2026-09-26
-**Drive:** https://docs.google.com/document/d/1CzaSXHTk_25Qb6GoueDd_wxzHpAV0efVmD6REdf9k_4/edit (mirror of this file)
+**Last updated:** 2026-09-28
+**Drive:** https://docs.google.com/document/d/1CzaSXHTk_25Qb6GoueDd_wxzHpAV0efVmD6REdf9k_4/edit (mirror of this file, with `sources/voice.md` added at the end)
 **Sources:** Tait's voice memo and notes in chat, and Luke Bothun's answers (2026-09-25). See Customer Data for the full recordings.
 **Tags:** **[Tait]** / **[Luke]** mean said by them. **[To confirm]** means Tait hasn't decided yet.
 
@@ -26,7 +26,7 @@ Every client gets a **3-3-3**: **3 pillars** (what we always talk about), **3 fo
 ### 2. Organic content (social media)
 - **What we do:** help businesses and founders bring in new clients and more cash flow through content on social media. **[Tait]**
 - **Who it's for:** founders and business owners who spend all their time on the business, have no time to film, don't know what to post, and struggle to stay consistent. **[Tait]**
-- **Our angle:** a whole content system in about 2 hours a month. One voice memo captures their ideas, we turn it into content ideas and a filming schedule, they film, and we post. **[Tait]**
+- **Our angle:** a whole content system in under 2 hours a week. **[Tait, decided 2026-09-28]** One voice memo captures their ideas, we turn it into content ideas and a filming schedule, they film, and we post. **[Tait]**
 
 ### 3. AI systems
 - **What we do:** build custom Claude solutions to business owners' problems. **[Tait]**
@@ -67,6 +67,12 @@ Tait hasn't named the third perspective yet. **The strongest candidate is in Luk
 - Agencies love to sell big retainers and AI strategy instead of shipping the one thing that works. We start with one specific task or channel and measure it in hours saved or dollars kept. **[Luke]**
 
 *Tait: keep this, change it, or replace it.*
+
+---
+
+## How Tait sounds
+
+The voice profile (Tait's rhythm, his real phrases, and the new perspective candidate from his LinkedIn posts) is in `sources/voice.md`, and at the end of the Your Voice Google Doc.
 
 ---
 

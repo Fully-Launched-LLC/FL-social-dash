@@ -25,6 +25,7 @@ def u(s):
 
 
 def inline(s):
+    s = s.replace('`', '')  # code marks around file names mean nothing in a Doc
     out, rng = '', []
     for m in re.finditer(r'\*\*(.+?)\*\*|\*(.+?)\*|([^*]+)', s):
         if m.group(1) is not None:

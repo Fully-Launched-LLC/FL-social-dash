@@ -25,7 +25,8 @@ docs are on the client portal's Documents page:
 ## Unique solution
 We take one painful manual process or sales channel and ship a working solution in weeks,
 not months, built around how the business actually runs — not a template [Luke]; everything
-simplified [Tait]; for social media, a whole content system in ~2 hours a month [Tait].
+simplified [Tait]; for social media, a whole content system in under 2 hours a week
+[Tait, decided 2026-09-28].
 Full detail: `sources/customer-data.md` → "Our unique solution".
 
 ## Ideal customer
@@ -50,7 +51,6 @@ systems, marketplaces) + the "Building Fully Launched" series (4+ videos/week), 
 
 ## Open questions
 - Third unique perspective — Luke's "start small, ship the one thing" is the candidate.
-- 2 hours a month (voice memo) or under 2 hours a week (LinkedIn post 3)?
 - Fourth perspective candidate from Tait's posts: less input, better ideas.
 - Answers the Content Ideas doc marks "Needs from you" (privacy, maintenance, Etsy ads,
   the 3 website steps, results examples, client permission for the case study, etc.).

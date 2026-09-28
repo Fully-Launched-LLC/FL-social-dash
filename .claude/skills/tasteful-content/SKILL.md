@@ -81,6 +81,16 @@ Leave every field the material can't answer as `[pending: needs <what>]`, and
 tell Tait which are pending. Never guess a voice. Then write the content
 ideas against this profile.
 
+Write `voice.md` without hard line wraps (one line per paragraph or bullet),
+so it converts cleanly to Google Docs.
+
+**Where the client sees it:** the portal's Documents page has no separate
+voice doc. The voice profile goes at the end of the client's **Your Voice**
+Google Doc, after the 3-3-3 from `positioning.md`. To mirror it, join the two
+files into one temporary markdown file (positioning, then `---`, then
+`voice.md` with its `#` title as `## Voice profile: how <founder> sounds`
+and its `##` headings as `###`), and run `gdoc_build.py` on that.
+
 The founder here is the client, not Tait. For Tait's own agency (Fully
 Launched) the founders are Tait and Luke.
 

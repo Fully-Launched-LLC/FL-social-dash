@@ -1,4 +1,4 @@
-# Fully Launched — Content Research
+# Fully Launched: Content Research
 
 **Last updated:** 2026-09-25
 **Drive:** https://docs.google.com/document/d/1Tc5WbaM0jK7rdc2x4WqxongfJ_D0VT_f1Kw-M1UqwAw/edit (mirror of this file)
@@ -17,7 +17,7 @@ Each entry shows **what people are asking** (their words), then **Tait's take**,
 
 ---
 
-## Reddit — social media and AI
+## Reddit: social media and AI
 
 | What people are asking | Tait's take |
 |---|---|
@@ -33,7 +33,7 @@ Each entry shows **what people are asking** (their words), then **Tait's take**,
 | Is CapCut still the easiest video editor for quick clips? | Show how Instagram's **Edits** app is a great way to make quick edits for business owners who need quick content out. |
 | How do you decide what content to post next? | "A great question that I can answer." |
 
-## Reddit — Etsy (top questions of the past month)
+## Reddit: Etsy (top questions of the past month)
 
 | What people are asking | Tait's take |
 |---|---|
@@ -43,7 +43,7 @@ Each entry shows **what people are asking** (their words), then **Tait's take**,
 | "My first few months of Etsy: what actually moved the needle" | That seller focused on the **wedding niche**. Finding a clear niche is a great way to start making sales, because you can't appeal to everyone. |
 | New Etsy listings are getting zero views | "Another great idea we can make content on." |
 
-## Reddit — Shopify and e-commerce
+## Reddit: Shopify and e-commerce
 
 | What people are asking | Tait's take |
 |---|---|
@@ -58,11 +58,11 @@ Each entry shows **what people are asking** (their words), then **Tait's take**,
 
 ---
 
-## YouTube — strong titles
+## YouTube: strong titles
 
 *Nothing added yet.* For each: the title, the channel, the views, and why it works.
 
-## Competitors — what's performing
+## Competitors: what's performing
 
 *Nothing added yet.* For each: the account, the post (with link), how it did, and why it works.
 
