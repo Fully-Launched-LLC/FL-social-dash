@@ -129,16 +129,35 @@ format that file already uses, one entry per idea:
 - **Pillar · Format · Perspective:** <from positioning.md>
 - **Seed:** "<the exact line from the artifact that this idea comes from>"
 - **The idea:** <what the video covers, in their words where possible>
+- **Talking points:**
+  - <2 to 4 points: what the person on camera actually says, in order>
+  - <taken from their material: quote their real lines, stories and numbers>
+- **Ask on camera:** "<one question the videographer asks from behind the camera>"
 - **CTA:** <one ask, from the client's own CTA list>
 - **Source:** <which file, and who said it>
 - **Needs from you:** <only if the idea needs a fact, story or number the material doesn't have>
 ```
 
+**Talking points** give both people enough to film without a script: the
+point to open on, the story or example, and where it lands. Every point comes
+from the material (quoted where it's a real line). If the material doesn't
+have the answer, the point says what's needed and the idea gets a **Needs
+from you** line, so nobody fills the gap on camera with something invented.
+
+**Ask on camera** is one open question in plain words, the kind a friend
+would ask ("Why did you start Grad Gig?"), that gets the person talking
+about exactly this idea. It never leads them into a claim the client can't
+make (Grad Gig: never ask anything that invites "background checks").
+
 On a new client, create the file: a short header (Last updated, Drive link,
 Built from), then ideas grouped under one heading per pillar, ranked best
 first. On a later run, add new ideas under the right pillar with the next
 free ID, and don't rewrite ideas Tait has already seen unless he asks. Then mirror the file into
-the client's Content Ideas Google Doc in place. The steps and
+the client's Content Ideas Google Doc in place. When only new lines were added
+(new ideas, or new Talking points / Ask on camera fields), use
+`customer-data-doc/scripts/gdoc_sync.py` to insert just those lines, read the
+doc again, then `scripts/format_new_fields.py` to bold the labels and nest the
+talking points. A second `gdoc_sync.py` run should report 0 requests. The steps and
 `gdoc_build.py` from `.claude/skills/customer-data-doc/` work for any of these
 docs. Keep the same doc and link.
 

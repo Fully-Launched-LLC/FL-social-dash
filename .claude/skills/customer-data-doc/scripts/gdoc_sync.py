@@ -7,8 +7,9 @@ doc.json is an unwrapped read_doc result. Compares the doc's paragraphs with
 the file's (parsed the same way as gdoc_build.py) and writes DIR/sync.json:
 update_doc arguments that delete removed paragraphs and change only the
 characters that differ inside edited ones, so bold labels and italics around
-the change keep their style. Much smaller than a full rebuild. Stops if the
-file adds new paragraphs: use gdoc_build.py text + format for those.
+the change keep their style, and inserts new paragraphs as plain text. Much
+smaller than a full rebuild. After a sync that inserts paragraphs, read the
+doc again and run `gdoc_build.py format` so the new lines get their styles.
 """
 import argparse
 import difflib
@@ -32,11 +33,19 @@ body = (doc['tabs'][0]['documentTab'] if 'tabs' in doc else doc)['body']['conten
 paras = [(e['startIndex'], e['endIndex'],
           ''.join(x.get('textRun', {}).get('content', '') for x in e['paragraph']['elements']).rstrip('\n'))
          for e in body if 'paragraph' in e]
-got = [t for _, _, t in paras]
+got = [t.lstrip('\t') for _, _, t in paras]  # a leading tab is a nesting marker, not text
 
 ops = []  # (index, request): applied from the highest index down
 for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, got, want, autojunk=False).get_opcodes():
     if tag == 'equal':
+        continue
+    if tag == 'insert':
+        # new paragraphs go in front of the old paragraph at i1 (never at the very end)
+        if i1 >= len(paras):
+            sys.exit('insert at the end of the doc: rebuild with gdoc_build.py instead')
+        full = [p[0] for p in parse(open(a.md).read())]  # keeps nesting tabs
+        text = ''.join(full[j] + '\n' for j in range(j1, j2))
+        ops.append((paras[i1][0] - 0.25, {'insertText': {'location': {'index': paras[i1][0]}, 'text': text}}))
         continue
     if tag == 'delete':
         s, e = paras[i1][0], paras[i2 - 1][1]
