@@ -489,6 +489,16 @@ shell.js. Also "Add ideas with Claude" and "+ New idea", as on To Do) → **Clie
 address, who films, raw footage folder, finished video folder) → **Editor
 portal ↗**. A client filter across the top narrows every page.
 
+**Raw footage per video:** a video can have its own Drive folder
+(`editor_brief.rawFootageUrl`, the "Raw footage folder for this video" field
+in the video form); `rawFootageLink` in shell.js sends every Raw footage /
+Upload footage button (operator rows and card, editor, client) there, and
+falls back to the client's raw footage folder when it's empty. Folders are
+made by hand or by Claude in Drive, inside the client's raw footage folder,
+named "NN. Title (posts Mon D)". **✓ Mark filmed** on a we-film video
+(to_film → filmed) clears its film-by deadline; it stays in Ready for an
+editor.
+
 Click any video for its card. **Abandon** (an idea that won't happen)
 sets status `rejected`, remembers where it was in `editor_brief.abandonedFrom`,
 and takes it off the calendar, the client's portal and the editor's page;

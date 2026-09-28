@@ -225,7 +225,8 @@ function clientStage(video, fb) {
   switch (video.status) {
     case "concept_pending": return fb === "us" ? "Idea: waiting for your OK" : "Idea: ready for you to film";
     // No film date on a we-film video: nothing to film (stock footage, graphics).
-    case "to_film": case "filmed": return fb === "us" ? (video.dueToFilm ? "We're filming it" : "We're making it") : "Ready for you to film";
+    case "to_film": return fb === "us" ? (video.dueToFilm ? "We're filming it" : "We're making it") : "Ready for you to film";
+    case "filmed": return fb === "us" ? "Filmed: editing next" : "Ready for you to film";
     case "ready_to_edit": case "with_editor": case "in_review": return "Being edited";
     case "client_review": return "Finished: ready for your approval";
     case "ready_to_post": return "Approved: ready to post";
@@ -255,6 +256,7 @@ function clientCardBody(video) {
   const weFilmIt = isIdea && fb === "us";
   const final = video.status === "client_review";
   const watch = final ? finishedVideoLink(video, DRIVE_FOLDERS) : null;
+  const raw = rawFootageLink(video, DRIVE_FOLDERS);
   return `
     ${cardFacts(video, fb)}
     ${clientFilmsIt && video.dueToFilm ? `<div class="meta" style="margin-bottom:6px">🎥 Film by <b>${escapeHtml(niceDate(video.dueToFilm))}</b></div>` : ""}
@@ -264,11 +266,11 @@ function clientCardBody(video) {
     ${isIdea ? fieldRow("Outline", video.outline) : ""}
     ${clientFilmsIt ? fieldRow("How to film it", video.filmingDirection) : ""}
     ${weFilmIt ? fieldRow("How we'll make it", video.filmingDirection) : ""}
-    ${clientFilmsIt && DRIVE_FOLDERS.footageUploads ? `<div class="meta" style="margin-top:10px">Upload your clips to your footage folder, with file names starting with <b>${escapeHtml(video.title || "the video title")}</b>.</div>` : ""}
+    ${clientFilmsIt && raw ? `<div class="meta" style="margin-top:10px">${raw.own ? "Upload your clips for this video to its footage folder." : `Upload your clips to your footage folder, with file names starting with <b>${escapeHtml(video.title || "the video title")}</b>.`}</div>` : ""}
     ${final ? fieldRow("On-screen caption", video.onScreenCaption) + fieldRow("Caption", video.caption) : ""}
     <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
       ${watch ? `<a class="btn primary" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${video.finalCutUrl ? "▶ Watch the video" : "▶ Watch it in the finished video folder"}</a>` : ""}
-      ${clientFilmsIt && DRIVE_FOLDERS.footageUploads ? `<a class="btn" href="${escapeHtml(DRIVE_FOLDERS.footageUploads)}" target="_blank" rel="noopener">📁 Upload footage</a>` : ""}
+      ${clientFilmsIt && raw ? `<a class="btn" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">📁 Upload footage</a>` : ""}
     </div>
     <div class="note-box" style="display:none;margin-top:12px">
       ${lbl("")}<textarea rows="3" style="font:inherit;font-size:0.92rem"></textarea>

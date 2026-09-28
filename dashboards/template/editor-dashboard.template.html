@@ -186,7 +186,7 @@ function renderQueue() {
 // instructions, the client's brand guidelines, and where to download and
 // upload. The edit-by date is in the card's header.
 function editorCardBody(client, video) {
-  const f = client.driveFolders || {};
+  const f = client.driveFolders || {}, raw = rawFootageLink(video, f);
   return `
     ${revisionsBox(video)}
     ${fieldBlock("Editing instructions", editorInstructions(video))}
@@ -195,7 +195,7 @@ function editorCardBody(client, video) {
       : `<b style="color:var(--red)">This client has no finished video folder yet.</b> Ask the operator to add one before you finish this.`}</div>
     <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
       ${f.brandVoice ? `<a class="btn" href="${escapeHtml(f.brandVoice)}" target="_blank" rel="noopener">📘 Brand guidelines</a>` : ""}
-      ${f.footageUploads ? `<a class="btn" href="${escapeHtml(f.footageUploads)}" target="_blank" rel="noopener">📁 Raw footage</a>` : ""}
+      ${raw ? `<a class="btn" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">${raw.label}</a>` : ""}
       ${f.finalEdits ? `<a class="btn" href="${escapeHtml(f.finalEdits)}" target="_blank" rel="noopener">⬆️ Finished video folder</a>` : ""}
     </div>`;
 }
