@@ -83,6 +83,6 @@ If any answer is no, rewrite before showing me.
 
 ## Open questions for Tait
 
-- **2 hours a month or a week?** Decided 2026-09-28: **under 2 hours a week**, as in post 3. (The voice memo's "two hours a month" stays in the transcript as said, but content uses the weekly number.)
+- **2 hours a month or a week?** Decided 2026-09-28: say **"2 hours per month"**, as in the voice memo. (Post 3's "< 2 hours per week" stays in the saved post as written, but content uses the monthly number.)
 - Confirm the third perspective (less input, better ideas, or Luke's start small), and whether ellipses stay.
 - The Instagram reel: paste its script or caption to add it here.

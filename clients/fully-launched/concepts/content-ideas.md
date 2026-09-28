@@ -30,8 +30,8 @@ Documenting the build of the business, on the calendar every week. **[Tait]** Th
 - **CTA:** Free guide: how to build a social media system
 - **Source:** Tait's voice memo
 
-**B2. Building our own 2-hours-a-week content system**
-- **Hook:** "We're building a content system that takes under 2 hours a week, starting with our own."
+**B2. Building our own 2-hours-per-month content system**
+- **Hook:** "We're building a content system that takes 2 hours per month, starting with our own."
 - **Format:** How we · **Perspective:** ① Make it simple
 - **The idea:** One hour of voice memo, research, ideas, a filming schedule, one to two hours of filming, then we post. Show each step on our own brand.
 - **CTA:** Free social media audit
@@ -164,8 +164,8 @@ Documenting the build of the business, on the calendar every week. **[Tait]** Th
 - **CTA:** Free social media audit
 - **Source:** Tait's voice memo
 
-**O3. All your content in under 2 hours a week**
-- **Hook:** "What if all your content took under 2 hours a week?"
+**O3. All your content in 2 hours per month**
+- **Hook:** "What if all your content took 2 hours per month?"
 - **Format:** How we · **Perspective:** ① Make it simple
 - **The idea:** The system: one voice memo, ideas plus research, a filming schedule, film in 1–2 hours, we post daily.
 - **CTA:** Free guide: how to build a social media system
@@ -272,8 +272,8 @@ Documenting the build of the business, on the calendar every week. **[Tait]** Th
 - **CTA:** Free social media audit
 - **Source:** Tait's LinkedIn post 4
 
-**O18. Under 2 hours a week on content, and no AI slop**
-- **Hook:** "< 2 hours per week. That’s the amount of time you will spend on content once our system is installed."
+**O18. 2 hours per month on content, and no AI slop**
+- **Hook:** "2 hours per month. That’s the amount of time you will spend on content once our system is installed."
 - **Format:** How we · **Perspective:** ① Make it simple
 - **Seed:** "No we don’t create AI slop."
 - **The idea:** The system "extracts what your target audience wants," then uses "your unique way of solving a problem" to make content ideas. We edit everything and post for you. "All you need to worry about is how to deal with the amount of leads coming in."

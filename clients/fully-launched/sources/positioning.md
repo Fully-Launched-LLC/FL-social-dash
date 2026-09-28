@@ -26,7 +26,7 @@ Every client gets a **3-3-3**: **3 pillars** (what we always talk about), **3 fo
 ### 2. Organic content (social media)
 - **What we do:** help businesses and founders bring in new clients and more cash flow through content on social media. **[Tait]**
 - **Who it's for:** founders and business owners who spend all their time on the business, have no time to film, don't know what to post, and struggle to stay consistent. **[Tait]**
-- **Our angle:** a whole content system in under 2 hours a week. **[Tait, decided 2026-09-28]** One voice memo captures their ideas, we turn it into content ideas and a filming schedule, they film, and we post. **[Tait]**
+- **Our angle:** a whole content system in 2 hours per month. **[Tait, decided 2026-09-28]** One voice memo captures their ideas, we turn it into content ideas and a filming schedule, they film, and we post. **[Tait]**
 
 ### 3. AI systems
 - **What we do:** build custom Claude solutions to business owners' problems. **[Tait]**

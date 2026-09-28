@@ -25,7 +25,7 @@ docs are on the client portal's Documents page:
 ## Unique solution
 We take one painful manual process or sales channel and ship a working solution in weeks,
 not months, built around how the business actually runs — not a template [Luke]; everything
-simplified [Tait]; for social media, a whole content system in under 2 hours a week
+simplified [Tait]; for social media, a whole content system in 2 hours per month
 [Tait, decided 2026-09-28].
 Full detail: `sources/customer-data.md` → "Our unique solution".
 
