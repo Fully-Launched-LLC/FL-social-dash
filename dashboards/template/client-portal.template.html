@@ -224,7 +224,8 @@ function niceDate(iso) {
 function clientStage(video, fb) {
   switch (video.status) {
     case "concept_pending": return fb === "us" ? "Idea: waiting for your OK" : "Idea: ready for you to film";
-    case "to_film": case "filmed": return fb === "us" ? "We're filming it" : "Ready for you to film";
+    // No film date on a we-film video: nothing to film (stock footage, graphics).
+    case "to_film": case "filmed": return fb === "us" ? (video.dueToFilm ? "We're filming it" : "We're making it") : "Ready for you to film";
     case "ready_to_edit": case "with_editor": case "in_review": return "Being edited";
     case "client_review": return "Finished: ready for your approval";
     case "ready_to_post": return "Approved: ready to post";
