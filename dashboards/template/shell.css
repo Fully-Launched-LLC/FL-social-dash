@@ -160,6 +160,7 @@ tr:hover td { background:var(--card2); }
 .cal-item.film { border-left-color:var(--sub); }
 .cal-item.film .t { color:var(--sub); }
 .cal-item.done { opacity:.5; }
+.card-facts { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:4px; }
 .agenda-day { padding:12px 0; border-top:1px solid var(--border); }
 .agenda-day:first-child { border-top:none; padding-top:0; }
 .agenda-day h3 { font-size:0.85rem; margin:0 0 8px; color:var(--sub); font-weight:600; }

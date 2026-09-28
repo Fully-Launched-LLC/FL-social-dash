@@ -474,7 +474,11 @@ back one piece at a time:
 Nav: **To Do** (every video by stage, one tab each plus All, with counts:
 sent back with suggestions → waiting on client → ready for an editor → with
 an editor → edits to review → ready to post, plus an **Abandoned** tab
-kept out of All; a client dropdown beside the tabs, synced with the top chips; "Add ideas with Claude" and "+ New idea"
+kept out of All, and **⏰ Time sensitive** right after All (also kept out of
+it): Tait's next task on each video, from `nextTask` (re-send an idea,
+film it, send it to an editor, chase the editor, review the edit, nudge the
+client to approve, post it), when its date is overdue or within
+`TIME_SENSITIVE_DAYS` (3), soonest first; a client dropdown beside the tabs, synced with the top chips; "Add ideas with Claude" and "+ New idea"
 buttons; within each stage, videos grouped by status in pipeline order,
 then by post date) →
 **Content Calendar** (one chip per platform on each post date, in that
@@ -510,9 +514,11 @@ each video's hook and platforms by name), **Documents**
 (the client's important Google Drive docs — `social_client_documents`,
 added on the operator's Clients → Edit; clients read only their own) and **My footage
 folder ↗** (the client's Drive folder — what they upload and what we
-film). A video card shows only what's needed: client-filmed ideas — film-by
-date, hook, script, outline, how to film it, upload link; we-film ideas —
-hook, script, outline; at final approval — the video and both captions
+film). Every video card starts with its post date, where it's at (in plain
+words) and a pill per platform it posts on. Then only what's needed:
+client-filmed ideas — film-by date, hook, script, outline, how to film it,
+upload link; we-film ideas — when we film it, hook, script, outline, and
+"How we'll make it" (the filming notes); at final approval — the video and both captions
 (read-only). Every client button calls
 `social_client_video_action`. An operator opening a portal sees exactly
 what the client sees and can click the client's buttons (logged as the

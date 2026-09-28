@@ -217,6 +217,32 @@ function fieldRow(label, value) {
 }
 function lbl(text) { return `<label style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin:12px 0 4px">${escapeHtml(text)}</label>`; }
 
+function niceDate(iso) {
+  return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+}
+// Where a video is, in the client's words.
+function clientStage(video, fb) {
+  switch (video.status) {
+    case "concept_pending": return fb === "us" ? "Idea: waiting for your OK" : "Idea: ready for you to film";
+    case "to_film": case "filmed": return fb === "us" ? "We're filming it" : "Ready for you to film";
+    case "ready_to_edit": case "with_editor": case "in_review": return "Being edited";
+    case "client_review": return "Finished: ready for your approval";
+    case "ready_to_post": return "Approved: ready to post";
+    case "posted": return "Posted";
+    default: return STATUS_LABEL[video.status] || video.status;
+  }
+}
+// The facts every card starts with: when it posts, where, and where it's at.
+function cardFacts(video, fb) {
+  const posts = video.postDate ? `📅 ${video.status === "posted" ? "Posted" : "Posts"} <b>${escapeHtml(niceDate(video.postDate))}</b>` : "📅 Post date to be set";
+  return `<div class="card-facts">
+      <span class="meta">${posts}</span>
+      <span class="meta">·</span>
+      <span class="meta">${escapeHtml(clientStage(video, fb))}</span>
+    </div>
+    <div style="margin:-2px 0 8px">${platformPills(video.platform, true) || `<span class="meta">Platforms to be set</span>`}</div>`;
+}
+
 // What the client sees on a video, by stage. Before filming: film-by date
 // (if they film it), hook, script, outline, how to film it. At final
 // approval: the video and both captions (read-only — changes go through
@@ -225,16 +251,19 @@ function clientCardBody(video) {
   const fb = filmedBy(video);
   const isIdea = ["concept_pending", "to_film", "filmed"].includes(video.status);
   const clientFilmsIt = isIdea && fb === "client";
+  const weFilmIt = isIdea && fb === "us";
   const final = video.status === "client_review";
   const watch = final ? finishedVideoLink(video, DRIVE_FOLDERS) : null;
   return `
-    ${clientFilmsIt && video.dueToFilm ? `<div class="meta" style="margin-bottom:6px">🎥 Film by <b>${escapeHtml(video.dueToFilm)}</b></div>` : ""}
+    ${cardFacts(video, fb)}
+    ${clientFilmsIt && video.dueToFilm ? `<div class="meta" style="margin-bottom:6px">🎥 Film by <b>${escapeHtml(niceDate(video.dueToFilm))}</b></div>` : ""}
+    ${weFilmIt && video.dueToFilm ? `<div class="meta" style="margin-bottom:6px">🎥 We film this with you by <b>${escapeHtml(niceDate(video.dueToFilm))}</b></div>` : ""}
     ${isIdea ? fieldRow("Hook", video.hook) : ""}
     ${isIdea ? fieldRow("Script", video.body) : ""}
     ${isIdea ? fieldRow("Outline", video.outline) : ""}
     ${clientFilmsIt ? fieldRow("How to film it", video.filmingDirection) : ""}
+    ${weFilmIt ? fieldRow("How we'll make it", video.filmingDirection) : ""}
     ${clientFilmsIt && DRIVE_FOLDERS.footageUploads ? `<div class="meta" style="margin-top:10px">Upload your clips to your footage folder, with file names starting with <b>${escapeHtml(video.title || "the video title")}</b>.</div>` : ""}
-    ${!isIdea && !final && video.postDate ? `<div class="meta">${escapeHtml(STATUS_LABEL[video.status] || video.status)} · posts ${escapeHtml(video.postDate)}</div>` : ""}
     ${final ? fieldRow("On-screen caption", video.onScreenCaption) + fieldRow("Caption", video.caption) : ""}
     <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
       ${watch ? `<a class="btn primary" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${video.finalCutUrl ? "▶ Watch the video" : "▶ Watch it in the finished video folder"}</a>` : ""}

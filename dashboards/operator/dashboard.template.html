@@ -39,6 +39,7 @@
       <select id="todoClient" style="width:auto;min-width:200px"></select>
     </div>
     <div class="chip-row" id="todoTabs"></div>
+    <div class="card" data-stage="urgent"><h2>⏰ Time sensitive <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— what you need to do that's overdue or due in the next 3 days, soonest first</span></h2><div id="urgentList"></div></div>
     <div class="card" data-stage="sentBack"><h2>Sent back with suggestions <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— edit them, then send them to the client again</span></h2><div id="sendAllWrap"></div><div id="ideasList"></div></div>
     <div class="card" data-stage="client"><h2>Waiting on the client <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— ideas to approve, videos to film, finished videos to approve</span></h2><div id="clientWaitingList"></div></div>
     <div class="card" data-stage="toEditor"><h2>Ready for an editor <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— footage the client uploaded, and videos you film</span></h2><div id="toEditorList"></div></div>
@@ -609,6 +610,8 @@ function unsentIdeas() {
 // The stages a video moves through, in order — one tab each (plus All).
 // Posted videos are done, so they're not here.
 const TODO_STAGES = [
+  // Its own tab, kept out of All (everything in it is also in a stage below).
+  { key: "urgent",     label: "⏰ Time sensitive",           match: x => !!timeSensitive(x), apart: true },
   { key: "sentBack",   label: "Sent back with suggestions", match: x => x.video.status === "concept_pending" && !x.video.conceptApprovedAt },
   { key: "client",     label: "Waiting on client",          match: x => isWaitingOnClient(x) },
   { key: "toEditor",   label: "Ready for an editor",        match: x => isReadyForEditor(x) },
@@ -619,6 +622,31 @@ const TODO_STAGES = [
   { key: "abandoned",  label: "Abandoned",                  match: x => x.video.status === "rejected", apart: true },
 ];
 let todoStage = "all";
+
+// Time sensitive: the next thing Tait has to do on a video, and by when,
+// if that's overdue or within TIME_SENSITIVE_DAYS. Waiting on the client
+// counts only at final approval (nudge them before the approve-by date).
+const TIME_SENSITIVE_DAYS = 3;
+function nextTask(x) {
+  const v = x.video, approveBy = (calendarEntries(x).find(e => e.kind === "approve") || {}).date;
+  if (v.status === "concept_pending" && !v.conceptApprovedAt) return { task: "Rework the idea and send it back", date: v.dueToFilm || v.postDate };
+  if (isOperatorFilmed(x) && v.status === "to_film" && v.dueToFilm) return { task: "Film it", date: v.dueToFilm };
+  if (isReadyForEditor(x)) return { task: "Send it to an editor", date: v.dueToEdit };
+  if (v.status === "with_editor") return { task: "Chase the editor: edit due", date: v.dueToEdit };
+  if (v.status === "in_review") return { task: "Review the edit", date: approveBy };
+  if (v.status === "client_review") return { task: "Nudge the client to approve", date: approveBy };
+  if (v.status === "ready_to_post") return { task: "Post it", date: v.postDate };
+  return null;
+}
+function timeSensitive(x) {
+  const t = nextTask(x);
+  return t && t.date && t.date <= addDaysISO(todayISO(), TIME_SENSITIVE_DAYS) ? t : null;
+}
+function urgentBadge(t) {
+  const late = t.date < todayISO();
+  const when = new Date(t.date + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  return `<span class="badge" style="background:var(--card2);color:${late ? "var(--red)" : "var(--ink)"}">${escapeHtml(t.task)} · ${late ? "overdue since " : t.date === todayISO() ? "today, " : "by "}${escapeHtml(when)}</span>`;
+}
 function renderTodo() {
   // Within each stage, grouped by status in pipeline order (so the status
   // labels line up), then by post date.
@@ -641,6 +669,8 @@ function renderTodo() {
   document.getElementById("todoClient").innerHTML = [{ id: "all", name: "All clients" }, ...CLIENTS]
     .map(c => `<option value="${c.id}" ${c.id === globalClientFilter ? "selected" : ""}>${escapeHtml(c.name)}</option>`).join("");
 
+  listOrEmpty("urgentList", inStage("urgent").sort((a, b) => timeSensitive(a).date.localeCompare(timeSensitive(b).date)),
+    x => urgentBadge(timeSensitive(x)) + operatorActionsHtml(x), "Nothing time sensitive. You're on top of it.");
   const unsent = inStage("sentBack");
   document.getElementById("sendAllWrap").innerHTML = unsent.length > 1
     ? `<div style="margin-bottom:10px">${smallBtn(`Send all ${unsent.length} to the client`, "sendAllToClient(this)", "primary")}</div>` : "";
