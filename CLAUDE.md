@@ -477,8 +477,11 @@ an editor → edits to review → ready to post; a client dropdown beside the
 tabs, synced with the top chips; "Add ideas with Claude" and "+ New idea"
 buttons; within each stage, videos grouped by status in pipeline order,
 then by post date) →
-**Content Calendar** (every video on its post date, plus "Add ideas with
-Claude" and "+ New idea", also on To Do) → **Clients** (name, portal
+**Content Calendar** (one chip per platform on each post date, in that
+platform's color, plus ✅ approve-by, ✂️ edit-due and 🎬 film-by deadlines
+until they're met; overdue ones turn red; filter by platform and by kind.
+Approve by is 3 days before posting, `APPROVE_DAYS_BEFORE_POST` in
+shell.js. Also "Add ideas with Claude" and "+ New idea", as on To Do) → **Clients** (name, portal
 address, who films, raw footage folder, finished video folder) → **Editor
 portal ↗**. A client filter across the top narrows every page.
 
