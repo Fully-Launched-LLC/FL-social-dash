@@ -28,8 +28,10 @@ def inline(s):
     out, rng = '', []
     for m in re.finditer(r'\*\*(.+?)\*\*|\*(.+?)\*|([^*]+)', s):
         if m.group(1) is not None:
-            rng.append((u(out), u(out) + u(m.group(1)), 'bold'))
-            out += m.group(1)
+            inner, inner_rng = inline(m.group(1))  # italics nested inside bold
+            rng.append((u(out), u(out) + u(inner), 'bold'))
+            rng += [(a + u(out), b + u(out), k) for a, b, k in inner_rng]
+            out += inner
         elif m.group(2) is not None:
             rng.append((u(out), u(out) + u(m.group(2)), 'italic'))
             out += m.group(2)

@@ -1,20 +1,21 @@
-# Fully Launched — Content Ideas
+# Fully Launched: Content Ideas
 
-**Last updated:** 2026-09-26
+**Last updated:** 2026-09-28
 **Drive:** https://docs.google.com/document/d/1Lax_VKFYEeJxhJhOvdRn_Y6ALFtkF4Jyd0AZYnFi9jE/edit (mirror of this file)
-**Built from:** Customer Data, Your Voice and Content Research (all 2026-09-25).
+**Built from:** Customer Data, Your Voice and Content Research (all 2026-09-25), and Tait's LinkedIn posts (added 2026-09-28: B10, B11, O13 to O18).
 
-**The rule for this doc:** Claude organizes *your* ideas, from Tait's memos, Luke's answers and the Reddit research, into clear, usable ideas. Nothing new is invented. Each idea shows where it came from.
+**The rule for this doc:** Claude organizes *your* ideas, from Tait's memos and posts, Luke's answers and the Reddit research, into clear, usable ideas. Nothing new is invented. Each idea shows where it came from.
 
 **Each idea has:**
 - **Hook:** the opening line
 - **Pillar · Format · Perspective**, from Your Voice
+- **Seed:** the exact line from your own material the idea grew from (on ideas added from 2026-09-28)
 - **The idea:** what the video covers
 - **CTA:** one call to action from the free-tools list
 - **Source:** where it came from
 - **Needs from you:** only where an idea needs a detail we don't have yet
 
-**Perspectives:** ① Make it simple · ② Service media · ③ Start small *(to confirm)*
+**Perspectives:** ① Make it simple · ② Service media · ③ Start small *(to confirm)* · ④ Less input, better ideas *(new from your posts, to confirm)*
 
 ---
 
@@ -86,6 +87,23 @@ Documenting the build of the business, on the calendar every week. **[Tait]** Th
 - **The idea:** Why Luke, Tait and the team started it: stuck local businesses, unoptimized Etsy and Faire listings, and wanting to do fast, fun projects as a team.
 - **CTA:** Free store audit or social media audit
 - **Source:** Luke's answers
+
+**B10. The edit off with my 15-year-old brother**
+- **Hook:** "My 15 year old brother and I are having an edit off."
+- **Format:** Behind the scenes · **Perspective:** none of the three fits (a personality post)
+- **Seed:** "we both filmed this moped together and then gave it our own unique twist."
+- **The idea:** Film one thing together, each edit it your own way, and show both. "his is pretty sweet."
+- **CTA:** Free social media audit
+- **Source:** Tait's LinkedIn post 1
+- **Needs from you:** is the Instagram reel you sent this edit? If so, a new round (a new thing to film) for the video
+
+**B11. Never grab the tail of a wiener dog**
+- **Hook:** "Never grab the tail of a wiener dog."
+- **Format:** How I · **Perspective:** none of the three fits (introduces the team)
+- **Seed:** "We are 4 young, scrappy guys helping businesses face their wiener dogs head on."
+- **The idea:** The lesson you learned at 5, from a wiener dog named Stroker ("I totally should have seen it coming"). Then two more lessons: "go directly to them" and "knock it out first thing in the morning." Then who we are, and "social media, websites, marketplaces…reach out to us."
+- **CTA:** Free social media audit
+- **Source:** Tait's LinkedIn post 5
 
 ---
 
@@ -213,6 +231,55 @@ Documenting the build of the business, on the calendar every week. **[Tait]** Th
 - **Format:** How to · **Perspective:** ② Service media
 - **CTA:** Free guide: how to build a social media system
 - **Source:** Reddit + Tait's take
+
+**O13. Staring at your phone with no idea what to post**
+- **Hook:** "Do you ever just stare at your phone trying to think of an idea for a LinkedIn post?"
+- **Format:** How I · **Perspective:** ④ Less input, better ideas
+- **Seed:** "I’ve learned that I need to escape the rational mind."
+- **The idea:** "the more you think, the less ideas you have." Do something that blocks your conscious mind: a drive, a workout, a hobby. Then write the ideas down, because "They come and go fast!"
+- **CTA:** Free guide: how to build a social media system
+- **Source:** Tait's LinkedIn post 2
+
+**O14. Your content gets more creative the less you're on social media**
+- **Hook:** "“Social media is a great place for ideas and inspiration.” If you want to look like everyone else."
+- **Format:** How I · **Perspective:** ④ Less input, better ideas
+- **Seed:** "my most creative ideas come when I’m on social media the least."
+- **The idea:** "Silencing the noise allows my brain to connect new ideas that have never been connected before." Kind of counterintuitive.
+- **CTA:** Free guide: how to build a social media system
+- **Source:** Tait's LinkedIn post 6
+
+**O15. The #1 way business owners fail to bring in customers with content**
+- **Hook:** "The #1 way business owners fail to bring in customers with content…"
+- **Format:** How to · **Perspective:** ② Service media
+- **Seed:** "You are posting content that brings in the same people as you."
+- **The idea:** The marketing company posting how it built a marketing company attracts other marketers, not businesses that need marketing. "Post content that solves problems." Viewers should have clear action steps after watching.
+- **CTA:** Free social media audit
+- **Source:** Tait's LinkedIn post 7
+
+**O16. There's no value in gatekeeping great advice**
+- **Hook:** "Business owners, there is no value in gatekeeping great advice."
+- **Format:** How to · **Perspective:** ② Service media
+- **Seed:** "You pay to be closer to the action…closer to the experts."
+- **The idea:** The soccer game, from $0 at a friend's house to $560 in the club on the field. Give the advice away; people pay to get closer to the experts.
+- **CTA:** Free guide: how to build a social media system
+- **Source:** Tait's LinkedIn post 8
+
+**O17. We traded the em dash for the ellipsis**
+- **Hook:** "Because of AI, the em dash is no longer in use. But all we did is trade it out for the ellipsis!"
+- **Format:** How I · **Perspective:** none of the three fits (a funny observation)
+- **Seed:** "the perfect way to ruin trust is leading your audience to think you use AI for all of your content"
+- **The idea:** The funny part (everyone on LinkedIn now uses ellipses, and "I’m using AI for the cover photo"), then the real point: content that looks AI-made costs you trust. Pairs with O5.
+- **CTA:** Free social media audit
+- **Source:** Tait's LinkedIn post 4
+
+**O18. Under 2 hours a week on content, and no AI slop**
+- **Hook:** "< 2 hours per week. That’s the amount of time you will spend on content once our system is installed."
+- **Format:** How we · **Perspective:** ① Make it simple
+- **Seed:** "No we don’t create AI slop."
+- **The idea:** The system "extracts what your target audience wants," then uses "your unique way of solving a problem" to make content ideas. We edit everything and post for you. "All you need to worry about is how to deal with the amount of leads coming in."
+- **CTA:** Free social media audit
+- **Source:** Tait's LinkedIn post 3
+- **Needs from you:** 2 hours a week or a month? O3 and the voice memo say a month. And a real lead number, if you have one, to back up the last line
 
 ---
 
@@ -445,9 +512,9 @@ Documenting the build of the business, on the calendar every week. **[Tait]** Th
 
 ## Summary
 
-- **Building Fully Launched:** 9 ideas (B1–B9). **At least 4 go on the calendar every week.**
+- **Building Fully Launched:** 11 ideas (B1–B11). **At least 4 go on the calendar every week.**
 - **Authority Hacking:** 4 slots (AH1–AH4), one pillar a week in rotation. **1 goes on the calendar every week.** People still to pick.
-- **Organic content:** 12 (O1–O12)
+- **Organic content:** 18 (O1–O18)
 - **AI systems:** 10 (A1–A10)
 - **Websites:** 4 (W1–W4)
 - **Marketplaces:** 17 (M1–M17)

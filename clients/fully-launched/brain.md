@@ -35,7 +35,8 @@ See `sources/customer-data.md`.
 - Why we started [Luke]: great local businesses stuck because the owner did everything;
   online businesses failing on unoptimized Etsy/Faire listings; wanted to help, and to do
   fast, fun projects as a team.
-- Voice — not captured yet (pending).
+- Voice: Tait's, in `sources/voice.md` (built 2026-09-28 from his LinkedIn posts,
+  `sources/2026-09-28-tait-linkedin-posts.md`). Luke's still pending.
 - Non-negotiables — pending.
 
 ## Positioning canvas
@@ -49,6 +50,7 @@ systems, marketplaces) + the "Building Fully Launched" series (4+ videos/week), 
 
 ## Open questions
 - Third unique perspective — Luke's "start small, ship the one thing" is the candidate.
-- Voice / how Tait talks on camera.
+- 2 hours a month (voice memo) or under 2 hours a week (LinkedIn post 3)?
+- Fourth perspective candidate from Tait's posts: less input, better ideas.
 - Answers the Content Ideas doc marks "Needs from you" (privacy, maintenance, Etsy ads,
   the 3 website steps, results examples, client permission for the case study, etc.).
