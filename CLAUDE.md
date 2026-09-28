@@ -344,8 +344,12 @@ fully-social-os/
 
 `customer-data-doc` lives in this repo at `.claude/skills/customer-data-doc/`
 (built 2026-09-28: verbatim pains, dreams and 5 hook phrases, mirrored into
-the client's Customer Data Google Doc). The other twelve skills are not in
-this repo — where they live is an open question. `calendar-planner` in
+the client's Customer Data Google Doc). `tasteful-content` lives at
+`.claude/skills/tasteful-content/` (installed 2026-09-28 from Founder OS's
+Tasteful AI Content Playbook, adapted per client): run once per new client,
+after `customer-data-doc`, it builds `sources/voice.md` and the first
+`concepts/content-ideas.md`. The other skills in the table are not in this
+repo — where they live is an open question. `calendar-planner` in
 particular was written to update the old per-client `config.json` files,
 which no longer exist; it needs repointing at Supabase or retiring.
 
