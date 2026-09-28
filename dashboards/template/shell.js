@@ -339,6 +339,14 @@ async function runVideoAction(actionKey, videoId, note, extra) {
 // Final edits folder (named after the video's title) rather than pasting a
 // link, so that folder is the default; a link on the video itself, if the
 // operator added one, points at the exact file instead.
+// Where a video's raw footage goes: its own folder (editor_brief.rawFootageUrl,
+// set in the video form) if it has one, else the client's raw footage folder.
+function rawFootageLink(video, folders) {
+  const own = (video.editorBrief || {}).rawFootageUrl;
+  if (own) return { url: own, label: "📁 Raw footage for this video", own: true };
+  if (folders && folders.footageUploads) return { url: folders.footageUploads, label: "📁 Raw footage folder", own: false };
+  return null;
+}
 function finishedVideoLink(video, folders) {
   if (video.finalCutUrl) return { url: video.finalCutUrl, label: "▶ Watch" };
   if (folders && folders.finalEdits) return { url: folders.finalEdits, label: "📁 Finished videos" };
@@ -477,7 +485,10 @@ function openVideoModal(client, video, opts) {
 
     <div class="modal-links">
       ${video.finalCutUrl && !opts.hideFinalCut ? `<a class="btn primary" href="${escapeHtml(video.finalCutUrl)}" target="_blank" rel="noopener">▶ Watch the finished video</a>` : ""}
-      ${linkKeys.filter(k => f[k]).map(k => `<a class="btn" href="${escapeHtml(f[k])}" target="_blank" rel="noopener">${escapeHtml(linkLabels[k] || k)}</a>`).join("")}
+      ${linkKeys.filter(k => f[k]).map(k => {
+        const raw = k === "footageUploads" ? rawFootageLink(video, f) : null;
+        return `<a class="btn" href="${escapeHtml(raw ? raw.url : f[k])}" target="_blank" rel="noopener">${escapeHtml(raw ? raw.label : linkLabels[k] || k)}</a>`;
+      }).join("")}
     </div>
 
     ${opts.actionsHtml ? `<div class="modal-actions">${opts.actionsHtml}</div>` : ""}

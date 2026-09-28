@@ -59,8 +59,6 @@
     <div class="card"><div class="cal-grid" id="calGrid"></div></div>
   </section>
 
-  </section>
-
   <section class="view" id="view-clients">
     <div class="page-head"><h1>Clients</h1><p>Each client's portal is live at /clients/&lt;slug&gt; as soon as they're added.</p></div>
     <div class="card">
@@ -332,8 +330,8 @@ function isOperatorFilmed(x) { return filmedByX(x) === "us" && ["to_film", "film
 function isReadyForEditor(x) { return x.video.status === "ready_to_edit" || isOperatorFilmed(x); }
 
 // The buttons each status gets, wherever the video shows up.
-function operatorActionsHtml(x) {
-  const v = x.video, id = v.id;
+function operatorActionsHtml(x, inCard) {
+  const v = x.video, id = v.id, raw = rawFootageLink(v, x.client.driveFolders);
   const out = [];
   if (videoActionsFor(v, "operator", x.client.clientSystem).includes("approve_concept_owner")) out.push(smallBtn("Send to client", `sendToClient('${id}')`, "primary"));
   if (filmedByX(x) === "us" && v.status === "concept_pending" && v.conceptApprovedAt) {
@@ -342,8 +340,10 @@ function operatorActionsHtml(x) {
   if (filmedByX(x) === "client" && (["to_film", "filmed"].includes(v.status) || (v.status === "concept_pending" && v.conceptApprovedAt))) {
     out.push(smallBtn("Mark filmed for client", `markFilmedForClient('${id}')`, "primary"));
   }
-  if (isOperatorFilmed(x) && x.client.driveFolders.footageUploads) {
-    out.push(`<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(x.client.driveFolders.footageUploads)}" target="_blank" rel="noopener">📁 Raw footage</a>`);
+  // We film it: tick it off once it's filmed (clears the film-by deadline).
+  if (filmedByX(x) === "us" && v.status === "to_film") out.push(smallBtn("✓ Mark filmed", `updateVideo('${id}', { status: 'filmed' })`));
+  if (!inCard && raw && (isOperatorFilmed(x) || v.status === "ready_to_edit")) {
+    out.push(`<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">${raw.label}</a>`);
   }
   if (isReadyForEditor(x)) out.push(editorSelect(v.editorId), smallBtn("Send to editor", `sendToEditor('${id}', this)`, "primary"));
   if (v.status === "in_review") {
@@ -358,7 +358,7 @@ function openOperatorVideoModal(id) {
   const x = findVideo(id);
   if (!x) return;
   const abandoned = x.video.status === "rejected";
-  const actions = (abandoned ? smallBtn("Restore", `restoreVideo('${id}')`, "primary") : operatorActionsHtml(x)) + smallBtn("✏️ Edit", `closeVideoModal();openVideoForm('${id}')`) +
+  const actions = (abandoned ? smallBtn("Restore", `restoreVideo('${id}')`, "primary") : operatorActionsHtml(x, true)) + smallBtn("✏️ Edit", `closeVideoModal();openVideoForm('${id}')`) +
     `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/clients/${encodeURIComponent(x.client.slug)}" target="_blank" rel="noopener">Open portal</a>` +
     (x.video.editorId && x.video.status === "with_editor" ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/editor/dashboard.html?editor=${encodeURIComponent(x.video.editorId)}" target="_blank" rel="noopener">Open editor portal</a>` : "") +
     (abandoned ? "" : smallBtn("Abandon", `abandonVideo('${id}')`)) + smallBtn("🗑 Delete", `deleteVideo('${id}')`, "reject");
@@ -425,6 +425,7 @@ function openVideoForm(id, presetClientId) {
     ${textField("note", "Note (shown to the client and the editor)", v.note, 2)}
     <h3 style="font-size:0.85rem;margin:14px 0 8px;color:var(--sub)">For the editor (the client never sees this)</h3>
     ${textField("editorInstructions", "Editing instructions", editorInstructions(v), 4)}
+    ${textField("rawFootageUrl", "Raw footage folder for this video (Google Drive link; leave empty to use the client's raw footage folder)", eb.rawFootageUrl)}
     ${textField("revisions", "Revisions needed (shows on the editor's card until you approve the edit)", eb.revisions, 3)}
     ${textField("finalCutUrl", "Link to the exact finished file (optional; Watch opens the finished video folder without it)", v.finalCutUrl)}
     <div class="auth-error" id="vfError"></div>
@@ -447,13 +448,17 @@ function openVideoForm(id, presetClientId) {
     box.querySelectorAll("[data-f]").forEach(el => {
       const k = el.dataset.f, val = el.value.trim();
       if (k === "platform") fields.platform = val.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
-      else if (k !== "editorInstructions" && k !== "revisions") fields[k] = val;
+      else if (!["editorInstructions", "revisions", "rawFootageUrl"].includes(k)) fields[k] = val;
     });
     // One instructions field replaces the old separate brief fields.
-    fields.editorBrief = {
+    // Keeps what else is stored there (e.g. where an abandoned idea came from).
+    fields.editorBrief = Object.assign({}, eb, {
       instructions: box.querySelector('[data-f="editorInstructions"]').value.trim() || null,
       revisions: box.querySelector('[data-f="revisions"]').value.trim() || null,
-    };
+      rawFootageUrl: box.querySelector('[data-f="rawFootageUrl"]').value.trim() || null,
+    });
+    OLD_BRIEF_FIELDS.forEach(([k]) => delete fields.editorBrief[k]); // folded into instructions above
+    if (fields.editorBrief.rawFootageUrl && !/^https?:\/\//i.test(fields.editorBrief.rawFootageUrl)) { err.textContent = "The raw footage folder has to be a link starting with https://"; return; }
     if (!fields.title) { err.textContent = "Give it a title first."; return; }
     if (fields.status === "with_editor" && !fields.editorId) { err.textContent = "A video with the editor needs an editor assigned."; return; }
     const saveBtn = box.querySelector("#vfSave");
@@ -587,8 +592,6 @@ function renderGlobalClientFilter() {
     <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px">
       <div><b>${escapeHtml(client.name)}</b><div class="meta">${escapeHtml(WHO_FILMS[client.clientSystem] || client.clientSystem)} · every page below shows just this client</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="primary" onclick="openBulkAdd('${client.id}')">📋 Add ideas with Claude</button>
-        <button onclick="openVideoForm(null,'${client.id}')">+ New idea</button>
         <a class="btn" href="/clients/${encodeURIComponent(client.slug)}" target="_blank" rel="noopener">Open portal</a>
       </div>
     </div>`;
@@ -741,7 +744,7 @@ function renderAllClients() {
         ? "Contact: " + [c.contactName, c.contactEmail, c.contactPhone].filter(Boolean).map(escapeHtml).join(" · ")
         : `<span style="color:var(--red)">No contact yet</span>`}</div></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn primary" style="font-size:0.75rem;padding:4px 9px" href="/clients/${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Open portal</a>
-      <button style="font-size:0.75rem;padding:4px 9px" onclick="inviteClient('${c.id}', this)">✉️ Invite to portal</button>
+      ${INVITES_ENABLED ? `<button style="font-size:0.75rem;padding:4px 9px" onclick="inviteClient('${c.id}', this)">✉️ Invite to portal</button>` : ""}
       <button style="font-size:0.75rem;padding:4px 9px" onclick="openClientPanel('${c.id}')">Edit</button></div></div>`;
   }).join("");
 }
