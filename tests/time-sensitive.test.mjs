@@ -43,6 +43,13 @@ chk("overdue and today are called out", text("Edit overdue").includes("overdue s
 chk("client's own tasks, far-off ones and abandoned ideas stay out", !["Client idea", "Film later", "Gone"].some(t => titles.includes(t)));
 chk("the stage's buttons are there (send to editor on a we-film video)", !!Array.from(rows.find(r => r.textContent.includes("Film soon")).querySelectorAll("button")).find(b => b.textContent === "Send to editor"));
 
+// Calendar days list their items in title order, numbers in order.
+await db.exec(`insert into social_videos (client_id,title,status,filmed_by,concept_approved_at,due_to_film,post_date,platform) values
+  ('${GG}','10. Ten','to_film','us',now(),'${day(30)}','${day(40)}','{linkedin}'),('${GG}','2. Two','to_film','us',now(),'${day(30)}','${day(41)}','{linkedin}'),('${GG}','9. Nine','to_film','us',now(),'${day(30)}','${day(42)}','{linkedin}')`);
+await op.w.loadLiveData(); await settle();
+const filmDay = op.w.eval("calendarByDay(filteredVideos(), calState)")[day(30)].map(e => e.x.video.title);
+chk("a day's items are in number order", filmDay.join() === "2. Two,9. Nine,10. Ten", filmDay);
+
 // The client's card: when, where, and where it's at.
 const cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-grad-gig");
 cl.w.openClientVideoModal(cl.w.eval("VIDEOS").find(v => v.title === "Film soon").id); await settle();

@@ -158,7 +158,10 @@ function calendarByDay(videos, state) {
     .filter(e => e.kind !== "post" || !state.platforms.size || state.platforms.has(e.platform))
     .filter(e => e.kind === "post" || !state.platforms.size ||
       (e.x.video.platform || []).map(normPlatform).some(p => state.platforms.has(p)))
+    // Within a day: posts, then deadlines; each video's items together, in
+    // title order (numbers in order, "2." before "10."); then by platform.
     .sort((a, b) => kindOrder.indexOf(a.kind) - kindOrder.indexOf(b.kind) ||
+      (a.x.video.title || "").localeCompare(b.x.video.title || "", undefined, { numeric: true }) ||
       order.indexOf(a.platform) - order.indexOf(b.platform))
     .forEach(e => (byDay[e.date] = byDay[e.date] || []).push(e));
   return byDay;
