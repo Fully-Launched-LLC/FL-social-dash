@@ -107,7 +107,7 @@ const clientFilmed = idx.filter(i => !V.switchToUs.includes(i));
 
 // ── 2. Client (films their own) ──
 let cl = track(await CL());
-chk("client nav: My Videos, Calendar, Documents, footage folder", $$(cl, ".nav-item").map(n => n.textContent.trim()).join("|") === "🎬 My Videos|📅 Content Calendar|📄 Documents|📁 My footage folder ↗");
+chk("client nav: To Do, Calendar, Documents, footage folder", $$(cl, ".nav-item").map(n => n.textContent.trim()).join("|") === "To Do|Content Calendar|Documents|My footage folder ↗", $$(cl, ".nav-item").map(n => n.textContent.trim()));
 chk("footage folder card on My Videos", $(cl, "#footageCard").style.display !== "none" && $(cl, "#footageCardLink").href === "https://drive/fl-footage");
 chk("My Videos opens on All", $(cl, "#videoTabs .chip.active").dataset.tab === "all" && $(cl, "#videoTabs .chip").textContent === `All (30)`, $(cl, "#videoTabs").textContent);
 chk("All shows the To film group with its heading", $(cl, '[data-panel="film"]').style.display !== "none" && $(cl, '[data-panel="film"] .panel-title').style.display !== "none");
@@ -133,7 +133,7 @@ if (V.change.length) {
   for (const i of V.change) {
     const row = opRow(op, "#ideasList", title(i));
     chk(`#${i} shows the client's suggestion`, row && row.textContent.includes("Make it funnier " + i));
-    await click(btn(row, "✏️ Edit"), "edit " + i);
+    await click(btn(row, "Edit"), "edit " + i);
     $(op, '[data-f="hook"]').value = "Funnier hook " + i;
     $(op, '[data-f="note"]').value = "";
     await click($(op, "#vfSave"), "save rewrite");
@@ -289,7 +289,7 @@ $(op, "#bkText").dispatchEvent(new op.w.Event("input"));
 await click($(op, "#bkSave"), "save premium ideas");
 chk("premium ideas default to we film", (await count("client_id=$1 and filmed_by='us' and status='concept_pending'", [PREM])) === 3);
 let prem = track(await PREMP());
-chk("premium tabs: All, Ideas to approve, Finished", $$(prem, "#videoTabs .chip").map(c => c.textContent).join("|") === "All (3)|Ideas to approve (3)|Finished videos to approve (0)", $$(prem, "#videoTabs .chip").map(c => c.textContent));
+chk("premium tabs: All, Ideas to approve, Finished", $$(prem, "#videoTabs .chip").map(c => c.textContent).join("|") === "All (3)|Time sensitive (0)|Ideas to approve (3)|Finished videos to approve (0)", $$(prem, "#videoTabs .chip").map(c => c.textContent));
 chk("premium still has its footage folder link", $(prem, "#footageCardLink").href === "https://drive/prem-footage");
 const pc = portalCard(prem, "#listIdeas", "Prem 1");
 chk("premium idea card: hook, script, outline, how we'll make it — no upload", pc && ["Prem hook 1", "Prem script 1", "- Prem point 1", "How we'll make itWe film it 1"].every(t => pc.textContent.includes(t)) && !pc.textContent.includes("How to film it") && !pc.querySelector("a[href*='footage']"), pc && pc.textContent);
@@ -322,7 +322,7 @@ const nc = (await db.query("select id, slug, contact_name, contact_phone, contac
 chk("new client saved with contact details", nc && nc.slug === "grad-gig-test" && nc.contact_name === "Pat Client" && nc.contact_phone === "555-0100" && nc.contact_email === "pat@gradgig.test" && nc.client_system === "self-serve", nc);
 const ncRow = $$(op, "#allClientsList .row").find(r => r.textContent.includes("Grad Gig Test"));
 chk("client list shows the contact", ncRow && ncRow.textContent.includes("Pat Client") && ncRow.textContent.includes("555-0100"));
-chk("invites are switched off until the CRM fix: no Invite button, nothing sent", !btn(ncRow, "✉️ Invite to portal") && !op.ui.log.some(l => l.otp));
+chk("invites are switched off until the CRM fix: no Invite button, nothing sent", !btn(ncRow, "Invite to portal") && !op.ui.log.some(l => l.otp));
 // The invited contact signs in for the first time (confirmed email) and is linked to their portal.
 await db.exec(`insert into auth.users (id, email, email_confirmed_at) values ('${U.invited}', 'pat@gradgig.test', now())`);
 const inv = track(await openPage("clients/portal.html", U.invited, BASE + "/clients/grad-gig-test"));

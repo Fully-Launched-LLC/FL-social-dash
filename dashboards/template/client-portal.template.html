@@ -16,11 +16,11 @@
 <nav class="sidebar">
   <div class="brand"><img src="/assets/logo-white.png" alt="Fully Launched"><span class="brand-sub" id="brandName"></span></div>
   <div class="sync-badge" id="authUserBadge"></div>
-  <div class="sync-badge" id="operatorBadge" style="display:none">🔧 Viewing as operator</div>
-  <div class="nav-item active" data-view="videos"><span class="ic">🎬</span> My Videos</div>
-  <div class="nav-item" data-view="calendar"><span class="ic">📅</span> Content Calendar</div>
-  <div class="nav-item" data-view="documents"><span class="ic">📄</span> Documents</div>
-  <a class="nav-item" id="footageNav" href="#" target="_blank" rel="noopener" style="text-decoration:none;display:none"><span class="ic">📁</span> My footage folder ↗</a>
+  <div class="sync-badge" id="operatorBadge" style="display:none">Viewing as operator</div>
+  <div class="nav-item active" data-view="videos">To Do</div>
+  <div class="nav-item" data-view="calendar">Content Calendar</div>
+  <div class="nav-item" data-view="documents">Documents</div>
+  <a class="nav-item" id="footageNav" href="#" target="_blank" rel="noopener" style="text-decoration:none;display:none">My footage folder ↗</a>
 </nav>
 
 <main class="main">
@@ -29,10 +29,10 @@
   <div id="loadError"></div>
 
   <section class="view active" id="view-videos">
-    <div class="page-head"><h1>My Videos</h1><p id="videosSubhead"></p></div>
+    <div class="page-head"><h1>To Do</h1><p id="videosSubhead"></p></div>
     <div class="card" id="footageCard" style="display:none">
       <div class="row" style="border:none;padding:0">
-        <div class="left"><b>📁 Your footage folder</b>
+        <div class="left"><b>Your footage folder</b>
           <div class="meta">Every clip for your videos lives here — what you upload and what we film.</div></div>
         <a class="btn primary" id="footageCardLink" href="#" target="_blank" rel="noopener">Open folder</a>
       </div>
@@ -40,6 +40,12 @@
     <div class="chip-row" id="videoTabs"></div>
 
     <div class="empty" id="allEmpty" style="display:none">Nothing needs you right now — stay tuned for your finished edits.</div>
+
+    <div data-panel="urgent" style="display:none">
+      <h2 class="panel-title">Time sensitive</h2>
+      <p class="meta" style="margin:8px 0 12px">What needs you in the next 3 days, or is already late, soonest first.</p>
+      <div id="listUrgent"></div>
+    </div>
 
     <div data-panel="film">
       <h2 class="panel-title">To film</h2>
@@ -66,7 +72,7 @@
   </section>
 
   <section class="view" id="view-calendar">
-    <div class="page-head"><h1>Content Calendar</h1><p>Every video on the day it posts, and where it posts<span id="calFilmNote"> (🎥 marks when to film it)</span>. Click one to open it.</p></div>
+    <div class="page-head"><h1>Content Calendar</h1><p>Every video on the day it posts, and where it posts<span id="calFilmNote"> (items marked “Film” show when to film it)</span>. Click one to open it.</p></div>
     <div class="chip-row" id="calLegend" style="margin-bottom:10px"></div>
     <div class="card"><div class="cal-grid" id="calGrid"></div></div>
     <div class="card"><h2 id="agendaTitle">What posts each day</h2><div id="calAgenda"></div></div>
@@ -110,7 +116,23 @@ const ACTION_TABS = [
   { key: "ideas", label: "Ideas to approve",           match: v => filmedBy(v) === "us" && v.status === "concept_pending", shownFor: () => !clientFilms() },
   { key: "final", label: "Finished videos to approve", match: v => v.status === "client_review", shownFor: () => true },
 ];
-const TABS = [{ key: "all", label: "All", match: v => ACTION_TABS.some(t => t.match(v)), shownFor: () => true }, ...ACTION_TABS];
+// Time sensitive: the client's own next step on a video, and by when, if
+// that's overdue or within CLIENT_SOON_DAYS. Its own tab, left out of All
+// (everything in it is also under its kind).
+const CLIENT_SOON_DAYS = 3;
+function clientTask(v) {
+  if (ACTION_TABS[0].match(v)) return { task: "Film it", date: v.dueToFilm };
+  if (ACTION_TABS[1].match(v)) return { task: "Approve the idea", date: v.dueToFilm || v.postDate };
+  if (ACTION_TABS[2].match(v)) return { task: "Approve the finished video", date: (calendarEntries({ video: v }).find(e => e.kind === "approve") || {}).date || v.postDate };
+  return null;
+}
+function clientTimeSensitive(v) {
+  const t = clientTask(v);
+  return t && t.date && t.date <= addDaysISO(todayISO(), CLIENT_SOON_DAYS) ? t : null;
+}
+const TABS = [{ key: "all", label: "All", match: v => ACTION_TABS.some(t => t.match(v)), shownFor: () => true },
+  { key: "urgent", label: "Time sensitive", match: v => !!clientTimeSensitive(v), shownFor: () => true, apart: true },
+  ...ACTION_TABS];
 // A tab shows when it fits how this client usually works, or when it has
 // something in it (a one-off video filmed the other way).
 function tabsForClient() { return TABS.filter(t => t.shownFor() || videosInTab(t.key).length); }
@@ -172,13 +194,13 @@ async function runAsOperator(actionKey, videoId, note, extra) {
 function thanksFor(actionKey, video) {
   const posts = video.postDate ? ` It's set to post on <b>${escapeHtml(video.postDate)}</b>.` : "";
   return {
-    submit_footage: ["Thanks for submitting your video! 🎬",
+    submit_footage: ["Thanks for submitting your video!",
       `Our editor has it now. In about <b>7 days</b> you'll get the finished video right here to approve for posting.${posts}`],
-    approve_concept: ["Idea approved! 🎉",
+    approve_concept: ["Idea approved!",
       "Stay tuned — we'll film and edit it, then you'll get the finished video right here to check out and approve before it posts."],
     request_concept_changes: ["Thanks for the suggestions!",
       "We'll rework this idea and send it back to you."],
-    approve_final: ["Approved for posting! ✅", `Nothing else to do.${posts}`],
+    approve_final: ["Approved for posting!", `Nothing else to do.${posts}`],
     request_revisions: ["Got it — changes are on the way.",
       "We'll make those changes and send the video back here for you to approve."],
   }[actionKey];
@@ -236,7 +258,7 @@ function clientStage(video, fb) {
 }
 // The facts every card starts with: when it posts, where, and where it's at.
 function cardFacts(video, fb) {
-  const posts = video.postDate ? `📅 ${video.status === "posted" ? "Posted" : "Posts"} <b>${escapeHtml(niceDate(video.postDate))}</b>` : "📅 Post date to be set";
+  const posts = video.postDate ? `${video.status === "posted" ? "Posted" : "Posts"} <b>${escapeHtml(niceDate(video.postDate))}</b>` : "Post date to be set";
   return `<div class="card-facts">
       <span class="meta">${posts}</span>
       <span class="meta">·</span>
@@ -259,8 +281,8 @@ function clientCardBody(video) {
   const raw = rawFootageLink(video, DRIVE_FOLDERS);
   return `
     ${cardFacts(video, fb)}
-    ${clientFilmsIt && video.dueToFilm ? `<div class="meta" style="margin-bottom:6px">🎥 Film by <b>${escapeHtml(niceDate(video.dueToFilm))}</b></div>` : ""}
-    ${weFilmIt && video.dueToFilm ? `<div class="meta" style="margin-bottom:6px">🎥 We film this with you by <b>${escapeHtml(niceDate(video.dueToFilm))}</b></div>` : ""}
+    ${clientFilmsIt && video.dueToFilm ? `<div class="meta" style="margin-bottom:6px">Film by <b>${escapeHtml(niceDate(video.dueToFilm))}</b></div>` : ""}
+    ${weFilmIt && video.dueToFilm ? `<div class="meta" style="margin-bottom:6px">We film this with you by <b>${escapeHtml(niceDate(video.dueToFilm))}</b></div>` : ""}
     ${isIdea ? fieldRow("Hook", video.hook) : ""}
     ${isIdea ? fieldRow("Script", video.body) : ""}
     ${isIdea ? fieldRow("Outline", video.outline) : ""}
@@ -269,8 +291,8 @@ function clientCardBody(video) {
     ${clientFilmsIt && raw ? `<div class="meta" style="margin-top:10px">${raw.own ? "Upload your clips for this video to its footage folder." : `Upload your clips to your footage folder, with file names starting with <b>${escapeHtml(video.title || "the video title")}</b>.`}</div>` : ""}
     ${final ? fieldRow("On-screen caption", video.onScreenCaption) + fieldRow("Caption", video.caption) : ""}
     <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-      ${watch ? `<a class="btn primary" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${video.finalCutUrl ? "▶ Watch the video" : "▶ Watch it in the finished video folder"}</a>` : ""}
-      ${clientFilmsIt && raw ? `<a class="btn" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">📁 Upload footage</a>` : ""}
+      ${watch ? `<a class="btn primary" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${video.finalCutUrl ? "Watch the video" : "Watch it in the finished video folder"}</a>` : ""}
+      ${clientFilmsIt && raw ? `<a class="btn" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">Upload footage</a>` : ""}
     </div>
     <div class="note-box" style="display:none;margin-top:12px">
       ${lbl("")}<textarea rows="3" style="font:inherit;font-size:0.92rem"></textarea>
@@ -341,7 +363,8 @@ function renderVideos() {
   document.getElementById("videosSubhead").textContent = clientFilms()
     ? "Film your videos, then approve the finished edits for posting."
     : "Approve ideas, then approve the finished edits for posting. We handle the filming.";
-  const byPostDate = (a, b) => (a.postDate || "9999").localeCompare(b.postDate || "9999");
+  const byPostDate = (a, b) => (a.postDate || "9999").localeCompare(b.postDate || "9999")
+    || (a.title || "").localeCompare(b.title || "", undefined, { numeric: true });
   const byFilmDate = (a, b) => (a.dueToFilm || "9999").localeCompare(b.dueToFilm || "9999");
   const fill = (elId, vids, empty) => {
     const el = document.getElementById(elId);
@@ -352,6 +375,12 @@ function renderVideos() {
   fill("listToFilm", videosInTab("film").sort(byFilmDate), "Nothing to film right now — nice work. Stay tuned for your finished edits.");
   fill("listIdeas", videosInTab("ideas").sort(byPostDate), "No new ideas right now. Stay tuned for your finished edits.");
   fill("listFinal", videosInTab("final").sort(byPostDate), "No finished videos waiting. They'll show up here as soon as they're edited.");
+  const urgent = videosInTab("urgent").sort((a, b) => clientTimeSensitive(a).date.localeCompare(clientTimeSensitive(b).date));
+  fill("listUrgent", urgent, "Nothing urgent. You're all caught up.");
+  document.querySelectorAll("#listUrgent > .card").forEach((card, i) => {
+    const t = clientTimeSensitive(urgent[i]), late = t.date < todayISO();
+    card.insertAdjacentHTML("afterbegin", `<div class="badge" style="margin-bottom:8px;border-color:var(--accent);color:var(--accent)">${escapeHtml(t.task)} · ${late ? "late, was due " : t.date === todayISO() ? "today, " : "by "}${escapeHtml(niceDate(t.date))}</div>`);
+  });
   renderVideoTabs();
 }
 
@@ -364,7 +393,8 @@ function renderVideoTabs() {
   // All: every kind that has something waiting, each under its heading.
   const all = activeTab === "all";
   document.querySelectorAll("[data-panel]").forEach(p => {
-    p.style.display = (all ? tabs.some(t => t.key === p.dataset.panel) && videosInTab(p.dataset.panel).length : p.dataset.panel === activeTab) ? "" : "none";
+    const apart = (TABS.find(t => t.key === p.dataset.panel) || {}).apart;
+    p.style.display = (all ? !apart && tabs.some(t => t.key === p.dataset.panel) && videosInTab(p.dataset.panel).length : p.dataset.panel === activeTab) ? "" : "none";
     p.querySelector(".panel-title").style.display = all ? "" : "none";
   });
   document.getElementById("allEmpty").style.display = all && !videosInTab("all").length ? "" : "none";
@@ -373,7 +403,7 @@ function renderVideoTabs() {
 function renderCalendar() {
   const byDay = {};
   VIDEOS.forEach(v => {
-    if (v.dueToFilm && filmedBy(v) === "client" && ["concept_pending", "to_film", "filmed"].includes(v.status)) (byDay[v.dueToFilm] = byDay[v.dueToFilm] || []).push({ v, kind: "🎥 " });
+    if (v.dueToFilm && filmedBy(v) === "client" && ["concept_pending", "to_film", "filmed"].includes(v.status)) (byDay[v.dueToFilm] = byDay[v.dueToFilm] || []).push({ v, kind: "Film: " });
     if (v.postDate) (byDay[v.postDate] = byDay[v.postDate] || []).push({ v, kind: "" });
   });
   document.getElementById("calFilmNote").style.display = VIDEOS.some(v => filmedBy(v) === "client") ? "" : "none";
@@ -382,7 +412,7 @@ function renderCalendar() {
   document.getElementById("calLegend").innerHTML = used.length ? `<span class="meta" style="margin-right:4px">Posts on:</span>` + platformPills(used, true) : "";
   // Each day: the video's title, then the platforms it goes out on.
   renderMonthCalendar(document.getElementById("calGrid"), byDay, ({ v, kind }) => kind
-    ? `<div class="cal-item film video-card" title="Film by: ${escapeHtml(v.title || "")}" onclick="openClientVideoModal('${v.id}')"><div class="t">🎥 Film: ${escapeHtml(v.title || "(untitled)")}</div></div>`
+    ? `<div class="cal-item film video-card" title="Film by: ${escapeHtml(v.title || "")}" onclick="openClientVideoModal('${v.id}')"><div class="t">Film: ${escapeHtml(v.title || "(untitled)")}</div></div>`
     : `<div class="cal-item video-card ${v.status === "posted" ? "done" : ""}" title="${escapeHtml((v.title || "") + " · " + (v.platform || []).map(p => (PLATFORMS[normPlatform(p)] || { name: p }).name).join(", "))}" onclick="openClientVideoModal('${v.id}')">
         <div class="t">${v.status === "posted" ? "✓ " : ""}${escapeHtml(v.title || "(untitled)")}</div>${platformPills(v.platform)}</div>`,
     calState, renderCalendar);
@@ -410,7 +440,7 @@ function renderAgenda() {
 
 function renderDocuments() {
   document.getElementById("docsList").innerHTML = DOCUMENTS.length ? DOCUMENTS.map(d => `
-    <div class="row"><div class="left"><b>📄 ${escapeHtml(d.title)}</b></div>
+    <div class="row"><div class="left"><b>${escapeHtml(d.title)}</b></div>
       <a class="btn primary" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">Open</a></div>`).join("")
     : `<div class="empty">No documents yet.${IS_OPERATOR ? " Add them on the operator dashboard: Clients → Edit → Documents." : ""}</div>`;
 }

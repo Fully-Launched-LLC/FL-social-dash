@@ -35,9 +35,9 @@ chk("saved in order; the empty row is ignored", docs.map(d => d.title + "@" + d.
 // Client sees them on Documents, under Content Calendar.
 let cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
 const navs = Array.from(cl.d.querySelectorAll(".nav-item")).map(n => n.textContent.trim());
-chk("Documents sits right under Content Calendar", navs.indexOf("📄 Documents") === navs.indexOf("📅 Content Calendar") + 1, navs);
+chk("Documents sits right under Content Calendar", navs.indexOf("Documents") === navs.indexOf("Content Calendar") + 1, navs);
 const links = () => Array.from(cl.d.querySelectorAll("#docsList .row")).map(r => r.querySelector("b").textContent + "→" + r.querySelector("a").href);
-chk("client sees both documents with Open links", links().join() === "📄 Brand Voice→https://docs.google.com/voice,📄 Customer Data→https://docs.google.com/customers", links());
+chk("client sees both documents with Open links", links().join() === "Brand Voice→https://docs.google.com/voice,Customer Data→https://docs.google.com/customers", links());
 
 // Remove one, rename the other.
 op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
@@ -49,7 +49,7 @@ op.d.getElementById("cpSave").click(); await settle();
 docs = (await db.query("select title from social_client_documents")).rows;
 chk("removed and renamed", docs.map(d => d.title).join() === "Customer Data (2026)", docs);
 cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
-chk("client sees the update", links().join() === "📄 Customer Data (2026)→https://docs.google.com/customers", links());
+chk("client sees the update", links().join() === "Customer Data (2026)→https://docs.google.com/customers", links());
 
 // Empty state.
 await db.exec("delete from social_client_documents");

@@ -1,20 +1,24 @@
-/* Fully Launched branding, matched to fullylaunched.com: its navy page
-   background (#04101f), white text, tan accent (#C4AB82), Prata for
-   headings and Hanken Grotesk for everything else. */
+/* Fully Launched branding, matched to fullylaunched.com: three colors
+   only, its navy (#04101f), white and gold/tan (#C4AB82), with Prata for
+   headings and Hanken Grotesk for everything else. Every surface is the
+   one navy; cards and fields are set apart by thin white or gold lines,
+   never a second shade of navy. Secondary text is white at lower opacity.
+   Status and platform colors use only gold and white (solid or outline). */
 @import url("https://fonts.googleapis.com/css2?family=Prata&family=Hanken+Grotesk:wght@400;500;600;700&display=swap");
 :root {
-  --bg:#04101f; --sidebar:#030c18; --card:#0a1830; --card2:#10213d;
-  --border:#1d2e4a; --ink:#ffffff; --sub:#a4afc0; --sub2:#6f7c91;
-  --accent:#C4AB82; --accent-ink:#071227;
+  --navy:#04101f; --white:#ffffff; --gold:#C4AB82;
+  --bg:var(--navy); --sidebar:var(--navy); --card:var(--navy); --card2:var(--navy);
+  --border:rgba(255,255,255,.16); --ink:var(--white); --sub:rgba(255,255,255,.72); --sub2:rgba(255,255,255,.5);
+  --accent:var(--gold); --accent-ink:var(--navy);
   --font-serif:'Prata', Georgia, serif;
   --font-body:'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --green:#22c55e; --red:#ef4444; --amber:#f59e0b; --purple:#a78bfa;
-  --instagram:#ec4899; --facebook:#3b82f6; --twitter:#38bdf8;
-  --linkedin:#0a66c2; --tiktok:#2dd4bf;
-  --status-concept_pending:#fb7185; --status-to_film:#f59e0b; --status-filmed:#3b82f6;
-  --status-ready_to_edit:#a78bfa; --status-rejected:#ef4444; --status-with_editor:#2dd4bf;
-  --status-in_review:#818cf8; --status-client_review:#d946ef;
-  --status-ready_to_post:#22c55e; --status-posted:#6e6e69;
+  /* Warnings, errors and "overdue" are gold, the brand's one accent. */
+  --green:var(--gold); --red:var(--gold); --amber:var(--gold); --purple:var(--gold);
+  /* Stages that need someone to act are gold; the rest are white. */
+  --status-concept_pending:var(--gold); --status-to_film:var(--gold); --status-filmed:var(--white);
+  --status-ready_to_edit:var(--gold); --status-rejected:var(--sub2); --status-with_editor:var(--white);
+  --status-in_review:var(--gold); --status-client_review:var(--gold);
+  --status-ready_to_post:var(--gold); --status-posted:var(--sub2);
 }
 * { box-sizing:border-box; }
 html { color-scheme: dark; }
@@ -42,8 +46,8 @@ a { color:inherit; }
   color:var(--sub); font-size:0.88rem; cursor:pointer; margin-bottom:2px; user-select:none;
   border:1px solid transparent;
 }
-.nav-item:hover { background:var(--card); color:var(--ink); }
-.nav-item.active { background:color-mix(in srgb, var(--accent) 12%, transparent); color:var(--accent); border-color:color-mix(in srgb, var(--accent) 30%, transparent); font-weight:600; }
+.nav-item:hover { color:var(--ink); border-color:var(--border); }
+.nav-item.active { color:var(--accent); border-color:var(--accent); font-weight:600; }
 .nav-item .ic { width:18px; text-align:center; flex:0 0 auto; }
 .nav-section-label { font-size:0.68rem; text-transform:uppercase; letter-spacing:.06em; color:var(--sub2); padding:16px 11px 6px; }
 
@@ -103,7 +107,7 @@ p.meta, div.meta { color:var(--sub); font-size:0.88rem; line-height:1.5; }
 /* Video detail modal — the "click a card, see the full record" view,
    shared by every dashboard so a video looks the same everywhere. */
 .modal-backdrop {
-  position:fixed; inset:0; background:rgba(2,8,16,0.78); z-index:1000;
+  position:fixed; inset:0; background:rgba(4,16,31,0.88); z-index:1000;
   display:flex; align-items:flex-start; justify-content:center;
   padding:5vh 20px; overflow-y:auto;
 }
@@ -113,7 +117,7 @@ p.meta, div.meta { color:var(--sub); font-size:0.88rem; line-height:1.5; }
   max-width:620px; width:100%; padding:26px 28px 24px; position:relative;
 }
 .modal-close {
-  position:absolute; top:16px; right:16px; background:var(--card2); border:1px solid var(--border);
+  position:absolute; top:16px; right:16px; background:var(--navy); border:1px solid var(--border);
   border-radius:8px; width:30px; height:30px; display:flex; align-items:center; justify-content:center;
   cursor:pointer; color:var(--sub); font-size:1rem; line-height:1;
 }
@@ -123,23 +127,20 @@ p.meta, div.meta { color:var(--sub); font-size:0.88rem; line-height:1.5; }
 .modal-field b { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--sub); margin-bottom:4px; }
 .modal-field div, .modal-field p { font-size:0.92rem; line-height:1.55; margin:0; white-space:pre-wrap; }
 .modal-dates { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:0 0 16px; }
-.modal-dates div { background:var(--card2); border-radius:10px; padding:10px 12px; }
+.modal-dates div { border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
 .modal-dates .lbl { font-size:0.7rem; text-transform:uppercase; color:var(--sub); margin-bottom:2px; }
 .modal-links { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 18px; }
 .modal-actions { display:flex; gap:8px; flex-wrap:wrap; padding-top:14px; border-top:1px solid var(--border); }
 
 /* Badges */
-.badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.76rem; font-weight:600; white-space:nowrap; }
-.badge.tag-direct { background:rgba(239,68,68,0.15); color:#f87171; }
-.badge.tag-indirect { background:rgba(245,158,11,0.15); color:#fbbf24; }
-.badge.tag-aspirational { background:rgba(167,139,250,0.15); color:#c4b5fd; }
+.badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.76rem; font-weight:600; white-space:nowrap; border:1px solid var(--border); }
 .platform-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; }
 
 /* Table */
 table { width:100%; border-collapse:collapse; font-size:0.85rem; }
 th { text-align:left; color:var(--sub); font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:.04em; padding:0 10px 10px; }
 td { padding:12px 10px; border-top:1px solid var(--border); }
-tr:hover td { background:var(--card2); }
+tr:hover td { color:var(--accent); }
 
 /* Calendar */
 .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
@@ -148,23 +149,30 @@ tr:hover td { background:var(--card2); }
 .cal-cell.today { border-color:var(--accent); }
 .cal-cell .daynum { font-size:0.78rem; color:var(--sub); margin-bottom:6px; }
 .cal-chip { font-size:0.7rem; padding:2px 6px; border-radius:5px; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
-.cal-chip.cal-post { border-left:3px solid var(--pc); background:color-mix(in srgb, var(--pc) 20%, transparent); color:var(--ink); }
-.cal-chip.cal-deadline { background:var(--card2); color:var(--sub); }
-.cal-chip.cal-overdue { color:var(--red); box-shadow:inset 0 0 0 1px var(--red); }
+/* Each platform: gold or white, solid or outline (--pc line, --pbg fill, --pfg text). */
+.p-instagram { --pc:var(--gold); --pbg:var(--gold); --pfg:var(--navy); }
+.p-facebook  { --pc:var(--white); --pbg:var(--white); --pfg:var(--navy); }
+.p-linkedin  { --pc:var(--white); --pbg:transparent; --pfg:var(--white); }
+.p-tiktok    { --pc:var(--gold); --pbg:transparent; --pfg:var(--gold); }
+.p-youtube   { --pc:var(--gold); --pbg:transparent; --pfg:var(--gold); --pstyle:dashed; }
+.cal-chip.cal-post { border:1px solid var(--border); border-left:3px solid var(--pc, var(--sub)); color:var(--ink); }
+.cal-chip.cal-post b { background:var(--pbg); color:var(--pfg); border:1px var(--pstyle, solid) var(--pc); border-radius:3px; padding:0 3px; }
+.cal-chip.cal-deadline { border:1px dashed var(--border); color:var(--sub); }
+.cal-chip.cal-overdue { color:var(--red); border:1px solid var(--red); }
 .cal-chip.cal-done { opacity:.45; }
-.chip.cal-plat { border-left:4px solid var(--pc); }
-.plat-pill { display:inline-block; font-size:0.62rem; font-weight:700; line-height:1.3; padding:1px 5px; border-radius:4px; margin:3px 3px 0 0; border:1px solid var(--pc); background:color-mix(in srgb, var(--pc) 22%, transparent); color:var(--ink); white-space:nowrap; }
+.chip.cal-plat { border-left:4px var(--pstyle, solid) var(--pc); }
+.plat-pill { display:inline-block; font-size:0.62rem; font-weight:700; line-height:1.3; padding:1px 5px; border-radius:4px; margin:3px 3px 0 0; border:1px var(--pstyle, solid) var(--pc, var(--sub)); background:var(--pbg, transparent); color:var(--pfg, var(--ink)); white-space:nowrap; }
 /* Client calendar: the whole title (up to 3 lines) and where it posts. */
-.cal-item { font-size:0.72rem; line-height:1.25; padding:5px 6px; border-radius:6px; margin-bottom:5px; background:var(--card2); border-left:3px solid var(--accent); cursor:pointer; }
+.cal-item { font-size:0.72rem; line-height:1.25; padding:5px 6px; border-radius:6px; margin-bottom:5px; border:1px solid var(--border); border-left:3px solid var(--accent); cursor:pointer; }
 .cal-item .t { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; color:var(--ink); }
-.cal-item.film { border-left-color:var(--sub); }
+.cal-item.film { border-left-color:var(--sub); border-style:dashed; border-left-style:solid; }
 .cal-item.film .t { color:var(--sub); }
 .cal-item.done { opacity:.5; }
 .card-facts { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:4px; }
 .agenda-day { padding:12px 0; border-top:1px solid var(--border); }
 .agenda-day:first-child { border-top:none; padding-top:0; }
 .agenda-day h3 { font-size:0.85rem; margin:0 0 8px; color:var(--sub); font-weight:600; }
-.agenda-post { padding:8px 10px; border-radius:8px; background:var(--card2); margin-bottom:6px; cursor:pointer; }
+.agenda-post { padding:8px 10px; border-radius:8px; border:1px solid var(--border); margin-bottom:6px; cursor:pointer; }
 .agenda-post .hook { font-size:0.82rem; color:var(--sub); margin-top:3px; }
 @media (max-width: 640px) { .cal-item .t { -webkit-line-clamp:2; } }
 
@@ -178,9 +186,9 @@ tr:hover td { background:var(--card2); }
 button, .btn { font:inherit; font-size:0.85rem; padding:8px 16px; border-radius:999px; border:1px solid rgba(255,255,255,.22); background:transparent; color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s; }
 button:hover, .btn:hover { border-color:rgba(255,255,255,.6); }
 button.primary, .btn.primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
-button.primary:hover, .btn.primary:hover { background:#d4bd96; border-color:#d4bd96; }
+button.primary:hover, .btn.primary:hover { background:var(--white); border-color:var(--white); }
 button:disabled { opacity:.55; cursor:default; }
-button.reject { color:var(--red); }
+button.reject { color:var(--gold); border-color:var(--gold); }
 a.btn { text-decoration:none; display:inline-block; }
 textarea, input[type=text], input[type=email], input[type=password], input[type=date], select {
   width:100%; font:inherit; padding:10px 12px; border-radius:9px; border:1px solid var(--border);
@@ -189,7 +197,7 @@ textarea, input[type=text], input[type=email], input[type=password], input[type=
 textarea { font:12px/1.5 ui-monospace,monospace; }
 select { cursor:pointer; }
 textarea:focus, input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, input[type=date]:focus, select:focus {
-  outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+  outline:none; border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);
 }
 /* The native calendar-picker icon defaults to dark-on-transparent, which
    disappears against this dark background — flip it to match. */
@@ -202,7 +210,16 @@ input[type=date]::-webkit-calendar-picker-indicator { filter:invert(1); cursor:p
 .date-select select[data-part="y"] { flex:0 0 84px; }
 
 .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-@media (max-width:760px) { .grid-2 { grid-template-columns:1fr; } .sidebar { display:none; } }
+@media (max-width:760px) {
+  .grid-2 { grid-template-columns:1fr; }
+  #appShell { flex-direction:column; }
+  .sidebar { width:100%; flex:0 0 auto; height:auto; position:static; border-right:none; border-bottom:1px solid var(--border);
+    display:flex; flex-wrap:wrap; align-items:center; gap:4px; padding:12px 16px; }
+  .brand { width:100%; padding:0 0 4px; } .brand img { width:120px; }
+  .sync-badge { width:100%; padding:0 0 6px; }
+  .main { padding:20px 16px 60px; }
+  .modal-dates { grid-template-columns:1fr; }
+}
 
 .hidden { display:none !important; }
 
