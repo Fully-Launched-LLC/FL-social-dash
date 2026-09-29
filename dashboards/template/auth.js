@@ -96,7 +96,7 @@ function authRenderForm() {
 function authRenderUserBadge(user) {
   const el = document.getElementById("authUserBadge");
   if (!el) return;
-  el.innerHTML = `${escapeHtml(user.email || "")} · <a href="#" id="authSignOutBtn" style="color:inherit;text-decoration:underline">Sign out</a>`;
+  el.innerHTML = `${escapeHtml(user.email || "")} · <a href="#" id="authSignOutBtn" style="color:inherit;text-decoration:underline;white-space:nowrap">Sign out</a>`;
   document.getElementById("authSignOutBtn").onclick = e => { e.preventDefault(); authSignOut(); };
 }
 
