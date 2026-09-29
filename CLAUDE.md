@@ -337,7 +337,16 @@ fully-social-os/
                                dates, caption edits at final approval, client
                                contact details, social_claim_client_invite), 007
                                (social_client_documents — each client's
-                               important Google Drive docs)
+                               important Google Drive docs), 008 (client
+                               onboarding: social_client_onboarding,
+                               social_client_generated_docs, new folder links,
+                               the onboarding-audio bucket)
+    crm/                       013_team_only_access.sql: the CRM's team-only
+                               RLS fix (same Supabase project), with its test
+  api/                        Vercel serverless functions (no npm deps):
+                               invite.js (branded invite email), voice-memo.js
+                               (transcribe + build documents); _lib.js, _email.js
+  ONBOARDING-SETUP.md          the steps only Tait can do to turn onboarding on
     config.example.js          template for supabase/config.js (gitignored —
                                the real Supabase URL/anon key, local dev only)
 ```
@@ -414,24 +423,53 @@ same project allow any authenticated user (see the note at the end of
 including financials, until the CRM's policies check team membership. That
 fix belongs in the fully-launched-crm repo and is not done yet.
 
-**Client invites** (Clients → "✉️ Invite to portal") send a sign-in link
-(`signInWithOtp`, creating the login) to the client's contact email,
-redirecting to their portal. The first time a login with a *confirmed*
+**Client invites** (Clients → "Invite to portal" / "Resend invite", or
+automatically when a new client is created) go through `/api/invite`: a
+one-time Supabase link (invite for a new email, sign-in for an existing
+login) to `/welcome`, emailed from Fully Launched via Resend. Without
+`RESEND_API_KEY` the dashboard shows the link to copy and send by hand.
+The first time a login with a *confirmed*
 email matching a client's `contact_email` opens a portal,
 `social_claim_client_invite()` links it to that client
 (`social_client_users`); operators and editors are never linked. Clients
 sign in again with "Email me a sign-in link" on the login screen.
 Invites are **on** (`INVITES_ENABLED = true` in the operator template)
-since 2026-09-29, Tait's decision, to invite Luke to Grad Gig's portal. Until
-the CRM fix above, any client login can read the CRM, so only invite people
-trusted with that. Before turning them on, Supabase also
-needs: Authentication → URL Configuration → Redirect URLs including
-`https://fl-social-dash.vercel.app/**`, and custom SMTP (Supabase's built-in
-email only reaches the project's own team, and is heavily rate-limited).
+since 2026-09-29, Tait's decision. The CRM fix is written
+(`supabase/crm/013_team_only_access.sql`, tested) but must be run in the SQL
+Editor; until then any client login can read the CRM. Setup steps (redirect
+URLs, domain, keys): `ONBOARDING-SETUP.md`.
 
-Password reset calls `resetPasswordForEmail` with no `redirectTo`, and no
-page handles setting a new password — reset links land on the project's
-Site URL. Not fixed yet.
+"Forgot password?" sends a link to `/welcome?mode=reset`, which sets a new
+password for anyone and then opens their own dashboard. The site's home
+page sends a client or editor who signs in there to their own dashboard.
+
+## Client onboarding (`/welcome`)
+
+A new client's invite lands on `/welcome` (`dashboards/template/welcome.template.html`),
+one step at a time, each saved with `social_client_onboarding_save()` so
+they can stop and come back:
+password → how it works → **brand** (only if they film: logo and files to
+their Important Documents folder, fonts, colors, look and feel, looks they
+love) → **the questions** (`ONBOARDING_QUESTIONS` in shell.js: the order
+Luke's own recordings answered, plus the 3-3-3 perspective questions;
+optional written notes) → **voice memo** (recorded in the browser or
+uploaded, 25 MB max, into the private `onboarding-audio` bucket) →
+**footage** (their Previous Content Drive folder) → **their documents** →
+**portal tour** → their portal.
+
+Sending the voice memo calls `/api/voice-memo`: Whisper transcribes it,
+then Claude builds **Customer Data** (Tait's voice-of-customer prompt, word
+for word) and **Your Voice** (candidate 3-3-3 marked To confirm, plus the
+voice profile) under the skills' rules: nothing invented, quotes word for
+word. Every quote is then checked against the transcript and any that isn't
+found is flagged in the document. They're saved in
+`social_client_generated_docs` and shown in the welcome steps and on the
+portal's Documents page. The Content Ideas document still comes later, from
+Tait's content research. Operators see each client's progress on Clients,
+and **Onboarding** shows what they sent, the transcript, the documents,
+the voice memo, "Rebuild documents", and a preview of their steps
+(`/welcome?client=<slug>`). A client who hasn't finished gets a "Finish
+setting up" card on their To Do.
 
 ## Dashboards
 
@@ -568,11 +606,13 @@ filter, and can click Finished for them.
 ## Adding a client
 
 Operator dashboard → Clients → "+ New client": client name, portal address,
-contact name / phone / email (the email is who gets invited), who usually
-films, and the raw footage + finished video folder and brand guidelines
-links (created by hand — this repo never creates Drive folders). The portal
-is live immediately. "✉️ Invite to portal" sends the contact a sign-in link
-— switched off until the CRM fix (see Auth).
+contact name / phone / email (required: the invite goes there), who usually
+films, and the Drive links: main folder, Important Documents, Previous
+Content, raw footage, finished videos, brand guidelines. The folders are
+made by hand or by Claude (the repo never creates Drive folders itself):
+`Fully Social OS/<Client>/` with Important Documents, Previous Content, Raw
+Footage and Finished Videos. "Send their portal invite now" (on by default)
+emails the invite as soon as the client is created.
 
 ## Adding an editor
 
@@ -644,8 +684,9 @@ As of 2026-09-23:
 
 ## Backlog
 
-1. CRM RLS fix (fully-launched-crm repo) — blocks all client/editor logins.
-2. Password reset: `redirectTo` + a set-new-password page.
+1. Run the CRM RLS fix (`supabase/crm/013_team_only_access.sql`) and
+   migration 008, then the rest of `ONBOARDING-SETUP.md`.
+2. ~~Password reset~~ — done: `/welcome?mode=reset`.
 3. Repoint or retire `calendar-planner`; find where the skills live.
 4. Analytics (manual entry first), then the monthly performance loop tied
    to pillar/format/perspective.
@@ -659,8 +700,8 @@ As of 2026-09-23:
 | Phase | Description | Status |
 |---|---|---|
 | 0 | Client creation — operator adds a client, gets a working (empty) portal instantly | ✅ Live |
-| 1 | Onboarding survey — platform access (delegated, never passwords), brand voice, initial ideas, existing assets | ❌ Not built |
-| 2 | Survey data lands on the client's row in Supabase | ❌ Not built |
+| 1 | Onboarding — invite, password, brand, voice-memo questions, voice memo, existing footage, portal tour | ✅ Built (`/welcome`); needs `ONBOARDING-SETUP.md` to go live. Platform access not included. |
+| 2 | Onboarding data lands in Supabase; documents built from the voice memo | ✅ Built (`social_client_onboarding`, `/api/voice-memo`) |
 | 3 | Operator generates content ideas, AI-assisted | 🧩 Claude + "Add ideas with Claude"; not in-app |
 | 4 | Operator schedules content and writes filming instructions | ✅ Live |
 | 5 | Client films and uploads (self-serve) or Tait films (concierge) | ✅ Status live; upload is a Drive deep link |

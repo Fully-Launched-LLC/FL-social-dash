@@ -74,7 +74,8 @@ function authRenderForm() {
     const email = (document.getElementById("authEmail").value || "").trim();
     if (!email) { authSetMessage('Enter your email above, then click "Forgot password?" again.', false); return; }
     authSetMessage("Sending reset email…", true);
-    const { error } = await sbClient.auth.resetPasswordForEmail(email);
+    // Lands on /welcome?mode=reset, the "Set a new password" page.
+    const { error } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: location.origin + "/welcome?mode=reset" });
     authSetMessage(error ? error.message : "Password reset email sent — check your inbox.", !error);
   });
   // Invited clients sign in this way — the invite email is the same kind

@@ -112,14 +112,18 @@ const INVITES_ENABLED = true;
 
 // ---------- data ----------
 async function loadLiveData() {
-  const [clientsRes, videosRes, foldersRes, editorsRes, docsRes] = await Promise.all([
+  const [clientsRes, videosRes, foldersRes, editorsRes, docsRes, obRes] = await Promise.all([
     sbClient.from("social_clients").select("*").order("name"),
     sbClient.from("social_videos").select("*").order("created_at"),
     sbClient.from("social_drive_folder_links").select("*"),
     sbClient.from("social_editors").select("*").order("name"),
     sbClient.from("social_client_documents").select("*").order("position"),
+    sbClient.from("social_client_onboarding").select("*"),
   ]);
+  // Onboarding is optional here (migration 008): a database without it just shows no progress.
   const errors = [clientsRes, videosRes, foldersRes, editorsRes, docsRes].filter(r => r.error).map(r => r.error.message);
+  const obByClient = {};
+  (obRes.data || []).forEach(o => { obByClient[o.client_id] = o; });
   document.getElementById("loadError").innerHTML = errors.length
     ? `<div class="card" style="border-color:var(--red)"><b style="color:var(--red)">Couldn't load everything from Supabase:</b><div class="meta">${errors.map(escapeHtml).join("<br>")}</div></div>` : "";
 
@@ -132,7 +136,9 @@ async function loadLiveData() {
       id: c.id, slug: c.slug, name: c.name, displayName: c.name, clientSystem: c.client_system,
       contactName: c.contact_name, contactPhone: c.contact_phone, contactEmail: c.contact_email,
       documents: docsByClient[c.id] || [],
-      driveFolders: { footageUploads: f.footage_uploads, finalEdits: f.final_edits, brandVoice: f.brand_voice },
+      onboarding: obByClient[c.id] || null,
+      driveFolders: { footageUploads: f.footage_uploads, finalEdits: f.final_edits, brandVoice: f.brand_voice,
+        root: f.root, importantDocuments: f.important_documents, previousContent: f.previous_content },
     };
   });
   CLIENT_BY_ID = {};
@@ -769,9 +775,11 @@ function renderAllClients() {
       ${missing.length ? `<div class="meta" style="color:var(--red)">Missing: ${missing.join(", ")}</div>` : ""}
       <div class="meta">${c.contactName || c.contactEmail || c.contactPhone
         ? "Contact: " + [c.contactName, c.contactEmail, c.contactPhone].filter(Boolean).map(escapeHtml).join(" · ")
-        : `<span style="color:var(--red)">No contact yet</span>`}</div></div>
+        : `<span style="color:var(--red)">No contact yet</span>`}</div>
+      ${(() => { const s = onboardingSummary(c.onboarding, c.clientSystem !== "concierge"); return `<div class="meta" style="${s.failed ? "color:var(--red)" : ""}">Onboarding: ${escapeHtml(s.label)}</div>`; })()}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn primary" style="font-size:0.75rem;padding:4px 9px" href="/clients/${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Open portal</a>
-      ${INVITES_ENABLED ? `<button style="font-size:0.75rem;padding:4px 9px" onclick="inviteClient('${c.id}', this)">Invite to portal</button>` : ""}
+      <button style="font-size:0.75rem;padding:4px 9px" onclick="openOnboarding('${c.id}')">Onboarding</button>
+      ${INVITES_ENABLED ? `<button style="font-size:0.75rem;padding:4px 9px" onclick="inviteClient('${c.id}', this)">${c.onboarding && c.onboarding.invited_at ? "Resend invite" : "Invite to portal"}</button>` : ""}
       <button style="font-size:0.75rem;padding:4px 9px" onclick="openClientPanel('${c.id}')">Edit</button></div></div>`;
   }).join("");
 }
@@ -798,17 +806,21 @@ function openClientPanel(clientId) {
       <div>${lbl("Contact name")}<input type="text" id="cpContactName" value="${escapeHtml(c.contactName || "")}" style="width:100%;margin-bottom:10px"></div>
       <div>${lbl("Contact phone")}<input type="text" id="cpContactPhone" value="${escapeHtml(c.contactPhone || "")}" style="width:100%;margin-bottom:10px"></div>
     </div>
-    ${lbl("Contact email (this is who gets invited to the portal)")}<input type="email" id="cpContactEmail" value="${escapeHtml(c.contactEmail || "")}" style="width:100%;margin-bottom:10px">
+    ${lbl(clientId ? "Contact email (this is who gets invited to the portal)" : "Contact email (required: their portal invite goes here)")}<input type="email" id="cpContactEmail" value="${escapeHtml(c.contactEmail || "")}" style="width:100%;margin-bottom:10px">
     ${lbl("Who usually films (each video can be changed)")}<select id="cpSystem" style="width:100%;margin-bottom:10px">
       <option value="self-serve" ${c.clientSystem === "self-serve" ? "selected" : ""}>The client films — they film ideas and upload the footage</option>
       <option value="concierge" ${c.clientSystem === "concierge" ? "selected" : ""}>We film — they approve ideas; we film or already have the footage</option>
     </select>
+    ${lbl("Client's main Google Drive folder (link)")}<input type="text" id="cpRoot" value="${escapeHtml(f.root || "")}" style="width:100%;margin-bottom:10px">
+    ${lbl("Important Documents folder (brand files go here during onboarding)")}<input type="text" id="cpImportant" value="${escapeHtml(f.importantDocuments || "")}" style="width:100%;margin-bottom:10px">
+    ${lbl("Previous Content folder (their existing footage goes here during onboarding)")}<input type="text" id="cpPrevious" value="${escapeHtml(f.previousContent || "")}" style="width:100%;margin-bottom:10px">
     ${lbl("Raw footage folder (Google Drive link)")}<input type="text" id="cpFootage" value="${escapeHtml(f.footageUploads || "")}" style="width:100%;margin-bottom:10px">
     ${lbl("Finished video folder (Google Drive link)")}<input type="text" id="cpFinal" value="${escapeHtml(f.finalEdits || "")}" style="width:100%;margin-bottom:10px">
     ${lbl("Brand guidelines (Google Doc link — the editor sees it on every video)")}<input type="text" id="cpBrand" value="${escapeHtml(f.brandVoice || "")}" style="width:100%;margin-bottom:10px">
     <h3 style="font-size:0.85rem;margin:16px 0 4px;color:var(--sub)">Documents <span style="font-weight:400">— the client sees these on their portal's Documents page</span></h3>
     <div id="cpDocs"></div>
     <button type="button" id="cpAddDoc" style="font-size:0.78rem;padding:5px 12px;margin:4px 0 14px">+ Add document</button>
+    ${!clientId && INVITES_ENABLED ? `<label style="display:flex;gap:8px;align-items:center;margin:4px 0 12px;font-size:0.9rem"><input type="checkbox" id="cpInviteNow" checked style="width:auto"> Send their portal invite now</label>` : ""}
     <div class="auth-error" id="cpError"></div>
     <div style="display:flex;gap:8px">
       <button class="primary" id="cpSave">${clientId ? "Save changes" : "Create client"}</button>
@@ -843,6 +855,7 @@ function openClientPanel(clientId) {
       contact_email: document.getElementById("cpContactEmail").value.trim().toLowerCase() || null,
     };
     if (!name) { errEl.textContent = "Name can't be empty."; return; }
+    if (!clientId && !contact.contact_email) { errEl.textContent = "Add their contact email: that's where their portal invite goes."; return; }
     if (contact.contact_email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contact.contact_email)) { errEl.textContent = "That contact email doesn't look right."; return; }
     const docs = Array.from(docsEl.querySelectorAll(".doc-row")).map(r => ({
       title: r.querySelector('[data-doc="title"]').value.trim(), url: r.querySelector('[data-doc="url"]').value.trim() }))
@@ -861,12 +874,22 @@ function openClientPanel(clientId) {
       if (error) { errEl.textContent = error.code === "23505" ? "That portal address or contact email is already used by another client." : error.message; e.target.disabled = false; return; }
       id = data[0].id;
     }
-    const folderRes = await sbClient.from("social_drive_folder_links").upsert({
+    const folders = {
       client_id: id,
       footage_uploads: document.getElementById("cpFootage").value.trim() || null,
+      root: document.getElementById("cpRoot").value.trim() || null,
+      important_documents: document.getElementById("cpImportant").value.trim() || null,
+      previous_content: document.getElementById("cpPrevious").value.trim() || null,
       final_edits: document.getElementById("cpFinal").value.trim() || null,
       brand_voice: document.getElementById("cpBrand").value.trim() || null,
-    }, { onConflict: "client_id" });
+    };
+    let folderRes = await sbClient.from("social_drive_folder_links").upsert(folders, { onConflict: "client_id" });
+    // Before migration 008 there are no root / Important Documents /
+    // Previous Content columns: save the rest rather than fail.
+    if (folderRes.error && /root|important_documents|previous_content/.test(folderRes.error.message)) {
+      ["root", "important_documents", "previous_content"].forEach(k => delete folders[k]);
+      folderRes = await sbClient.from("social_drive_folder_links").upsert(folders, { onConflict: "client_id" });
+    }
     if (folderRes.error) { e.target.disabled = false; errEl.textContent = folderRes.error.message; return; }
     // Documents: replace this client's list with what's in the form.
     const delRes = await sbClient.from("social_client_documents").delete().eq("client_id", id);
@@ -875,30 +898,100 @@ function openClientPanel(clientId) {
       : { error: null };
     e.target.disabled = false;
     if (delRes.error || insRes.error) { errEl.textContent = "Couldn't save the documents: " + (delRes.error || insRes.error).message; return; }
+    const inviteNow = !clientId && document.getElementById("cpInviteNow") && document.getElementById("cpInviteNow").checked;
     panel.style.display = "none";
     await loadLiveData();
+    if (inviteNow) await sendInvite(id);
   };
 }
 document.getElementById("newClientBtn").onclick = () => openClientPanel(null);
 
+// Invites go through /api/invite (api/invite.js): a one-time link to
+// /welcome, emailed from Fully Launched. If email isn't set up yet, the
+// link comes back to copy and send yourself.
 async function inviteClient(clientId, btn) {
   const c = CLIENT_BY_ID[clientId];
   if (!c) return;
   if (!c.contactEmail) { alert(`Add ${c.name}'s contact email first (Edit).`); return; }
-  if (!INVITES_ENABLED) {
-    openModal(`<h2>Invites are switched off for now</h2>
-      <p style="line-height:1.55">When ${escapeHtml(c.contactEmail)} is invited, they get a login to this Supabase project, and right now the CRM's tables let <b>any</b> login read and change them, including financials. Invites turn on once your cofounder tightens the CRM's security (see CLAUDE.md → Auth).</p>
-      <p class="meta">Until then, open ${escapeHtml(c.name)}'s portal yourself and do things for them. Everything is ready: their contact email is saved, and they'll be linked to this portal the first time they sign in.</p>
+  if (!confirm(`Send ${c.name}'s portal invite to ${c.contactEmail}?`)) return;
+  if (btn) btn.disabled = true;
+  await sendInvite(clientId);
+  if (btn) btn.disabled = false;
+}
+async function sendInvite(clientId) {
+  const c = CLIENT_BY_ID[clientId];
+  let out;
+  try {
+    const { data } = await sbClient.auth.getSession();
+    const res = await fetch("/api/invite", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + ((data && data.session && data.session.access_token) || "") }, body: JSON.stringify({ clientId }) });
+    out = await res.json().catch(() => ({ error: "No response from the invite service." }));
+    if (!res.ok && !out.error) out.error = "The invite service answered " + res.status + ".";
+  } catch (e) { out = { error: "Couldn't reach the invite service: " + (e.message || e) }; }
+  await loadLiveData();
+  if (out.sent) {
+    openModal(`<h2>Invite sent</h2><p style="line-height:1.55">${escapeHtml(c.name)}'s invite is on its way to <b>${escapeHtml(out.email)}</b>. The link takes them to their onboarding: create a password, then the steps.</p>
       <div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Got it</button></div>`);
-    return;
+  } else if (out.link) {
+    const box = openModal(`<h2>Send this link yourself</h2><p class="meta" style="line-height:1.55">${escapeHtml(out.reason || "The email didn't send.")}</p>
+      <p style="line-height:1.55">Send ${escapeHtml(c.name)} this link (it works once, for 24 hours):</p>
+      <textarea readonly rows="4" style="width:100%" id="invLink">${escapeHtml(out.link)}</textarea>
+      <div class="modal-actions"><button class="primary" id="invCopy">Copy link</button><button onclick="closeVideoModal()">Done</button></div>`);
+    box.querySelector("#invCopy").onclick = async e => {
+      try { await navigator.clipboard.writeText(out.link); e.target.textContent = "Copied"; } catch (x) { box.querySelector("#invLink").select(); }
+    };
+  } else {
+    openModal(`<h2>The invite didn't go out</h2><p style="line-height:1.55">${escapeHtml(out.error || "Something went wrong.")}</p>
+      <div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Got it</button></div>`);
   }
-  if (!confirm(`Send a portal invite to ${c.contactEmail}? They'll get an email with a link that signs them in to ${c.name}'s portal.`)) return;
-  btn.disabled = true;
-  const { error } = await sbClient.auth.signInWithOtp({ email: c.contactEmail,
-    options: { shouldCreateUser: true, emailRedirectTo: location.origin + "/clients/" + encodeURIComponent(c.slug) } });
-  btn.disabled = false;
-  alert(error ? "Couldn't send the invite: " + error.message
-    : `Invite sent to ${c.contactEmail}. When they open the link, they land in ${c.name}'s portal. Later, they can sign in again with "Email me a sign-in link".`);
+}
+
+// What a client has given us during onboarding: brand, notes, voice memo,
+// transcript, and the documents built from it.
+async function openOnboarding(clientId) {
+  const c = CLIENT_BY_ID[clientId];
+  if (!c) return;
+  const [{ data: o }, { data: docs }] = await Promise.all([
+    sbClient.from("social_client_onboarding").select("*").eq("client_id", clientId).maybeSingle(),
+    sbClient.from("social_client_generated_docs").select("*").eq("client_id", clientId).order("kind"),
+  ]);
+  const ob = o || {};
+  const s = onboardingSummary(o, c.clientSystem !== "concierge");
+  const b = ob.brand || {}, a = ob.answers || {};
+  let memoLink = "";
+  if (ob.voice_memo_path) {
+    const { data: signed } = await sbClient.storage.from("onboarding-audio").createSignedUrl(ob.voice_memo_path, 3600);
+    if (signed && signed.signedUrl) memoLink = `<a class="btn" href="${escapeHtml(signed.signedUrl)}" target="_blank" rel="noopener">Listen to the voice memo</a>`;
+  }
+  const qText = id => { for (const sec of ONBOARDING_QUESTIONS) for (const it of sec.items) if (it.id === id) return it.q; return id; };
+  const box = openModal(`
+    <h2>${escapeHtml(c.name)}: onboarding</h2>
+    <div class="modal-meta">${escapeHtml(s.label)}${ob.invited_email ? " · invited " + escapeHtml(ob.invited_email) : ""}</div>
+    ${ob.docs_error ? modalField("Why the documents failed", ob.docs_error) : ""}
+    ${Object.keys(b).length ? modalField("Brand", [b.fonts && "Fonts: " + b.fonts, (b.colors || []).length && "Colors: " + b.colors.join(", "), b.aesthetic && "Look and feel: " + b.aesthetic, b.links && "Looks they love: " + b.links].filter(Boolean).join("\n")) : ""}
+    ${Object.keys(a).length ? modalField("Their written notes", Object.entries(a).map(([k, v]) => qText(k) + "\n" + v).join("\n\n")) : ""}
+    ${ob.transcript ? `<details class="modal-field"><summary style="cursor:pointer"><b style="display:inline">Transcript</b> (${ob.transcript.length.toLocaleString()} characters)</summary><div style="white-space:pre-wrap;margin-top:8px">${escapeHtml(ob.transcript)}</div></details>` : ""}
+    ${(docs || []).map(d => `<details class="modal-field"><summary style="cursor:pointer"><b style="display:inline">${escapeHtml(d.title)}</b></summary><div class="doc-body" style="margin-top:8px">${docBodyHtml(d)}</div></details>`).join("")}
+    <div class="modal-actions">
+      ${memoLink}
+      ${ob.voice_memo_path ? `<button id="obRebuild">${(docs || []).length ? "Rebuild documents" : "Build documents"}</button>` : ""}
+      <a class="btn" href="/welcome?client=${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Preview their onboarding</a>
+      <button class="primary" onclick="closeVideoModal()">Close</button>
+    </div>
+    <div class="auth-error" id="obErr"></div>`);
+  const rb = box.querySelector("#obRebuild");
+  if (rb) rb.onclick = async () => {
+    rb.disabled = true; rb.textContent = "Building… (a few minutes)";
+    const { data } = await sbClient.auth.getSession();
+    let out = {};
+    try {
+      const res = await fetch("/api/voice-memo", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + ((data && data.session && data.session.access_token) || "") }, body: JSON.stringify({ clientId }) });
+      out = await res.json().catch(() => ({}));
+      if (!res.ok) out.error = out.error || "The document service answered " + res.status + ".";
+    } catch (e) { out.error = "Couldn't reach the document service: " + (e.message || e); }
+    await loadLiveData();
+    if (out.error) { box.querySelector("#obErr").textContent = out.error; rb.disabled = false; rb.textContent = "Try again"; }
+    else openOnboarding(clientId);
+  };
 }
 
 // A click anywhere on a video's row opens its card, except on its own controls.
@@ -917,7 +1010,17 @@ function renderAll() {
 // client login, even if they know the URL.
 async function resolveOperatorAccess(sb, user) {
   const { data: op } = await sb.from("social_operators").select("*").eq("id", user.id).maybeSingle();
-  if (!op) return { ok: false, reason: "This login isn't set up as an operator — ask an existing operator to add you." };
+  if (!op) {
+    // A client or editor who lands here (e.g. the site's home page) goes to their own dashboard.
+    const { data: cu } = await sb.from("social_client_users").select("client_id").eq("id", user.id).maybeSingle();
+    if (cu) {
+      const { data: cl } = await sb.from("social_clients").select("slug").eq("id", cu.client_id).maybeSingle();
+      if (cl) { location.replace("/clients/" + encodeURIComponent(cl.slug)); return { ok: false, reason: "Taking you to your portal…" }; }
+    }
+    const { data: ed } = await sb.from("social_editors").select("id").eq("id", user.id).maybeSingle();
+    if (ed) { location.replace("/editor/dashboard.html"); return { ok: false, reason: "Taking you to your editor page…" }; }
+    return { ok: false, reason: "This login isn't set up as an operator — ask an existing operator to add you." };
+  }
   return { ok: true, role: "operator", roleRow: op };
 }
 

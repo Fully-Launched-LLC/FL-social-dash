@@ -517,3 +517,76 @@ function openVideoModal(client, video, opts) {
   `;
   document.getElementById("videoModalRoot").classList.remove("hidden");
 }
+
+// ---------- Onboarding ----------
+// The questions a new client answers in their voice memo, in the order
+// Luke's own recordings answered them (clients/*/sources/*luke*), plus the
+// perspective questions behind the 3-3-3. Shown on /welcome and in the
+// operator's onboarding view.
+const ONBOARDING_QUESTIONS = [
+  { section: "Your business", items: [
+    { id: "what", q: "What does your business do, in plain words? Who is it for?" },
+    { id: "why", q: "Why did you start it? What did you keep seeing that made you do it?" },
+    { id: "story", q: "Tell us about a customer you're proud of. What happened, start to finish?" },
+  ] },
+  { section: "Your best customer", items: [
+    { id: "best", q: "Who is your best customer? Describe them. If there's more than one kind, describe each." },
+    { id: "tipped", q: "What tips them over right before they find you? What just happened?" },
+    { id: "problems", q: "What are the main problems they come to you with?" },
+    { id: "badday", q: "What's the most painful part of their day? What does a bad day look like for them?" },
+    { id: "afraid", q: "What are they afraid of?" },
+    { id: "unsaid", q: "What are they frustrated or embarrassed about, but won't say out loud?" },
+    { id: "dream", q: "A year from now, what does their dream outcome look like?" },
+    { id: "tried", q: "What have they already tried that didn't work?" },
+    { id: "beliefs", q: "What do they believe about this that isn't true?" },
+    { id: "hear", q: "What questions and complaints do you hear all the time?" },
+    { id: "solve", q: "In plain words, what do you solve better than anyone?" },
+  ] },
+  { section: "Your perspective", items: [
+    { id: "wrong", q: "What does your industry get wrong?" },
+    { id: "wish", q: "What do you wish every customer understood?" },
+    { id: "believe", q: "What do you believe that most people in your space don't? Give two or three." },
+    { id: "topics", q: "What could you talk about for hours? What do people always ask you about?" },
+    { id: "share", q: "How do you like to share: telling stories, teaching how-to's, showing behind the scenes, or answering questions?" },
+  ] },
+];
+
+// Where a client is in onboarding, for the operator's Clients list.
+function onboardingSummary(o, clientFilms) {
+  if (!o) return { label: "Not invited yet", done: false };
+  if (o.completed_at) return { label: "Onboarding done", done: true };
+  const steps = [
+    ["Invited", !!o.invited_at], ["Password", !!o.password_set_at],
+    ...(clientFilms ? [["Brand", o.brand && Object.keys(o.brand).length > 0]] : []),
+    ["Voice memo", !!o.voice_memo_path],
+    ["Documents " + (o.docs_status === "ready" ? "ready" : o.docs_status === "failed" ? "failed" : o.docs_status === "processing" ? "building" : "waiting"), o.docs_status === "ready"],
+    ["Footage", !!o.footage_done_at],
+  ];
+  return { label: steps.map(([l, ok]) => (ok ? "✓ " : "") + l).join(" · "), done: false, failed: o.docs_status === "failed" };
+}
+
+// A generated document's body without its own "# Title" line (the card or
+// popup already shows the title).
+function docBodyHtml(d) { return mdToHtml(String(d.body_md || "").replace(/^\s*#\s+[^\n]*\n/, "")); }
+// Tiny Markdown → HTML for the generated documents: headings, lists,
+// bold, italics, quotes, rules. Escapes everything first.
+function mdToHtml(md) {
+  const inline = s => escapeHtml(s).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<i>$2</i>");
+  const out = [];
+  let list = null;
+  const close = () => { if (list) { out.push(`</${list}>`); list = null; } };
+  String(md || "").split("\n").forEach(line => {
+    const t = line.trimEnd();
+    let m;
+    if (!t.trim()) { close(); return; }
+    if ((m = t.match(/^(#{1,4})\s+(.*)$/))) { close(); const n = Math.min(m[1].length + 1, 4); out.push(`<h${n}>${inline(m[2])}</h${n}>`); return; }
+    if (/^---+$/.test(t.trim())) { close(); out.push("<hr>"); return; }
+    if ((m = t.match(/^\s*[-*]\s+(.*)$/))) { if (list !== "ul") { close(); out.push("<ul>"); list = "ul"; } out.push(`<li>${inline(m[1])}</li>`); return; }
+    if ((m = t.match(/^\s*\d+\.\s+(.*)$/))) { if (list !== "ol") { close(); out.push("<ol>"); list = "ol"; } out.push(`<li>${inline(m[1])}</li>`); return; }
+    if ((m = t.match(/^>\s?(.*)$/))) { close(); out.push(`<blockquote>${inline(m[1])}</blockquote>`); return; }
+    if (list) { const last = out.pop(); out.push(last.replace(/<\/li>$/, "<br>" + inline(t.trim()) + "</li>")); return; }
+    out.push(`<p>${inline(t.trim())}</p>`);
+  });
+  close();
+  return out.join("");
+}

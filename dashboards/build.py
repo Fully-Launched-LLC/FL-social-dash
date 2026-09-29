@@ -52,6 +52,10 @@ def main():
 
     write("editor/dashboard.html", inline_shell((TEMPLATE_DIR / "editor-dashboard.template.html").read_text()))
 
+    # A new client's onboarding, and the "Set a new password" page
+    # (/welcome?mode=reset). vercel.json rewrites /welcome here.
+    write("welcome.html", inline_shell((TEMPLATE_DIR / "welcome.template.html").read_text()))
+
     # The Fully Launched logo (white, from fullylaunched.com), shown in each
     # page's sidebar and on the login screen.
     (DIST_DIR / "assets").mkdir(parents=True, exist_ok=True)

@@ -42,7 +42,7 @@ const TODAY = (await db.query("select current_date::text d")).rows[0].d;
 const plus = (iso, n) => { const d = new Date(iso + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
 const BASE = "https://fl.test";
-const OP = () => openPage("operator/dashboard.html", U.op, BASE + "/operator/dashboard.html");
+const OP = o => openPage("operator/dashboard.html", U.op, BASE + "/operator/dashboard.html", o);
 const CL = () => openPage("clients/portal.html", U.cl, BASE + "/clients/test-fully-launched");
 const PREMP = () => openPage("clients/portal.html", U.prem, BASE + "/clients/premium-co");
 const ED = () => openPage("editor/dashboard.html", U.ed, BASE + "/editor/dashboard.html");
@@ -316,7 +316,7 @@ for (const t of ["Prem 1", "Prem 2"]) { await click(btn(portalCard(prem, "#listF
 chk("premium videos ready to post", (await count("client_id=$1 and status='ready_to_post'", [PREM])) === 2);
 
 // ── 9. New client with contact details; invite ──
-op = track(await OP());
+op = track(await OP({ fetch: async (u, o) => ({ ok: true, status: 200, json: async () => ({ sent: true, email: JSON.parse(o.body).clientId ? "pat@gradgig.test" : "" }) }) }));
 await click($(op, "#newClientBtn"), "new client");
 $(op, "#cpName").value = "Grad Gig Test"; $(op, "#cpName").dispatchEvent(new op.w.Event("input"));
 $(op, "#cpContactName").value = "Pat Client"; $(op, "#cpContactPhone").value = "555-0100"; $(op, "#cpContactEmail").value = "Pat@GradGig.test";
@@ -326,10 +326,10 @@ chk("new client saved with contact details", nc && nc.slug === "grad-gig-test" &
 const ncRow = $$(op, "#allClientsList .row").find(r => r.textContent.includes("Grad Gig Test"));
 chk("client list shows the contact", ncRow && ncRow.textContent.includes("Pat Client") && ncRow.textContent.includes("555-0100"));
 await click(btn(ncRow, "Invite to portal"), "invite");
-const otp = op.ui.log.find(l => l.otp);
-chk("Invite sends a sign-in link to the contact email, landing on their portal", otp && otp.otp.email === "pat@gradgig.test"
-  && otp.otp.options.shouldCreateUser === true && otp.otp.options.emailRedirectTo.endsWith("/clients/grad-gig-test"), otp);
-op.ui.alerts.length = 0;
+const inv0 = op.ui.log.find(l => l.fetch === "/api/invite");
+chk("Invite asks the invite service to email this client", inv0 && JSON.parse(inv0.body).clientId === nc.id && op.ui.confirms.at(-1).includes("pat@gradgig.test"), inv0);
+chk("…and says it's on its way", modal(op).textContent.includes("Invite sent") && modal(op).textContent.includes("pat@gradgig.test"));
+op.w.closeVideoModal();
 // The invited contact signs in for the first time (confirmed email) and is linked to their portal.
 await db.exec(`insert into auth.users (id, email, email_confirmed_at) values ('${U.invited}', 'pat@gradgig.test', now())`);
 const inv = track(await openPage("clients/portal.html", U.invited, BASE + "/clients/grad-gig-test"));
