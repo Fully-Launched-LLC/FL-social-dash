@@ -365,7 +365,7 @@ async function runVideoAction(actionKey, videoId, note, extra) {
 // set in the video form) if it has one, else the client's raw footage folder.
 function rawFootageLink(video, folders) {
   const own = (video.editorBrief || {}).rawFootageUrl;
-  if (own) return { url: own, label: "Raw footage for this video", own: true };
+  if (own) return { url: own, label: "Raw footage", own: true };
   if (folders && folders.footageUploads) return { url: folders.footageUploads, label: "Raw footage folder", own: false };
   return null;
 }

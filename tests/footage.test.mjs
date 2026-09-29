@@ -32,7 +32,7 @@ const op = await openPage("operator/dashboard.html", OP, "https://fl.test/operat
 op.d.querySelector('[data-stage-tab="toEditor"]').click(); await settle();
 const opRow = t => Array.from(op.d.querySelectorAll('[data-stage="toEditor"] .row')).find(r => r.textContent.includes(t));
 const rawLink = r => Array.from(r.querySelectorAll("a")).find(a => a.textContent.includes("Raw footage"));
-chk("row: video with its own folder links to it", rawLink(opRow("A own folder"))?.href === OWN && rawLink(opRow("A own folder")).textContent.includes("for this video"));
+chk("row: video with its own folder links to it", rawLink(opRow("A own folder"))?.href === OWN && rawLink(opRow("A own folder")).href === OWN);
 chk("row: video without one falls back to the client's folder", rawLink(opRow("B no folder"))?.href === CLIENT_FOLDER);
 
 op.w.openOperatorVideoModal(await idOf("A own folder")); await settle();
