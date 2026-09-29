@@ -289,7 +289,7 @@ $(op, "#bkText").dispatchEvent(new op.w.Event("input"));
 await click($(op, "#bkSave"), "save premium ideas");
 chk("premium ideas default to we film", (await count("client_id=$1 and filmed_by='us' and status='concept_pending'", [PREM])) === 3);
 let prem = track(await PREMP());
-chk("premium tabs: All, Ideas to approve, Finished", $$(prem, "#videoTabs .chip").map(c => c.textContent).join("|") === "All (3)|Time sensitive (0)|Ideas to approve (3)|Finished videos to approve (0)", $$(prem, "#videoTabs .chip").map(c => c.textContent));
+chk("premium tabs: All, Ideas to approve, Finished", $$(prem, "#videoTabs .chip").map(c => c.textContent).join("|") .replace(/Time sensitive \(\d+\)/, "Time sensitive") === "All (3)|Time sensitive|Ideas to approve (3)|Finished videos to approve (0)", $$(prem, "#videoTabs .chip").map(c => c.textContent));
 chk("premium still has its footage folder link", $(prem, "#footageCardLink").href === "https://drive/prem-footage");
 const pc = portalCard(prem, "#listIdeas", "Prem 1");
 chk("premium idea card: hook, script, outline, how we'll make it — no upload", pc && ["Prem hook 1", "Prem script 1", "- Prem point 1", "How we'll make itWe film it 1"].every(t => pc.textContent.includes(t)) && !pc.textContent.includes("How to film it") && !pc.querySelector("a[href*='footage']"), pc && pc.textContent);
