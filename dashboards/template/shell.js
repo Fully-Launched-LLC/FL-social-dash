@@ -58,11 +58,11 @@ function renderMonthCalendar(container, byDay, chipHtml, state, rerender) {
 // outline or dashed) is the .p-<platform> class in shell.css. A video's platform
 // list may say "instagram" or "ig"; normPlatform folds the spellings together.
 const PLATFORMS = {
-  instagram: { tag: "IG", name: "Instagram", color: "var(--gold)" },
-  tiktok:    { tag: "TT", name: "TikTok",    color: "var(--gold)" },
+  instagram: { tag: "IG", name: "Instagram", color: "var(--white)" },
+  tiktok:    { tag: "TT", name: "TikTok",    color: "var(--white)" },
   facebook:  { tag: "FB", name: "Facebook",  color: "var(--white)" },
   linkedin:  { tag: "LI", name: "LinkedIn",  color: "var(--white)" },
-  youtube:   { tag: "YT", name: "YouTube",   color: "var(--gold)" },
+  youtube:   { tag: "YT", name: "YouTube",   color: "var(--white)" },
 };
 const PLATFORM_ALIASES = { ig: "instagram", insta: "instagram", tt: "tiktok", "tik tok": "tiktok", fb: "facebook", li: "linkedin", yt: "youtube" };
 function normPlatform(p) { const k = String(p || "").trim().toLowerCase(); return PLATFORM_ALIASES[k] || k; }

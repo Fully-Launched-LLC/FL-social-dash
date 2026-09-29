@@ -478,7 +478,7 @@ kept out of All, and **⏰ Time sensitive** right after All (also kept out of
 it): Tait's next task on each video, from `nextTask` (re-send an idea,
 film it, send it to an editor, chase the editor, review the edit, nudge the
 client to approve, post it), when its date is overdue or within
-`TIME_SENSITIVE_DAYS` (3), soonest first; a client dropdown beside the tabs, synced with the top chips; "Add ideas with Claude" and "+ New idea"
+`TIME_SENSITIVE_DAYS` (3), soonest first; "Add ideas with Claude" and "+ New idea"
 buttons; within each stage, videos grouped by status in pipeline order,
 then by post date) →
 **Content Calendar** (one chip per platform on each post date, in that
@@ -512,13 +512,16 @@ suggests edit-by 7 days earlier.
 
 ### Look and feel
 
-Three colors only, from fullylaunched.com: navy `#04101f`, white, and
-gold/tan `#C4AB82` (tokens at the top of `shell.css`). Every surface is the
-one navy; cards and fields are outlined, never a second navy. Secondary
-text is white at lower opacity. Status badges and "overdue" use gold;
-platforms are gold or white, solid or outline (`.p-<platform>` classes).
-No emoji in the interface (they bring their own colors). Prata headings,
-Hanken Grotesk text. On phones the sidebar becomes a bar across the top.
+Navy `#04101f` and white do the work; gold/tan `#C4AB82` from
+fullylaunched.com is a rare accent, used only for what needs attention
+(Time sensitive when it has something in it, overdue, today on the
+calendar) and the one main action on a page (`.accent`: "Add ideas with
+Claude"). `.primary` buttons are white. One navy for every surface; cards
+and fields are outlined. Status badges are white (dimmed once done);
+platforms are white, told apart by their line (Facebook solid, LinkedIn
+outline, Instagram dashed, TikTok dotted, YouTube double). One typeface,
+Hanken Grotesk, with weight for headings. No emoji. Only the sidebar tabs
+are raised (white offset shadows). On phones the sidebar becomes a top bar.
 
 ### Client portal — `/clients/<slug>`
 

@@ -16,7 +16,7 @@ dashboards first with `python3 dashboards/build.py` if templates changed).
 | `operator-portal.test.mjs` | The operator in a client portal: every client button works for them, the Edit form saves, concierge clients get only their steps, all logged as the operator. |
 | `operator-editor.test.mjs` | The operator in the editor portal: links from the operator dashboard, opens on one editor's work, clicks Finished for any editor (including themself), logged as the operator. |
 | `date-dropdowns.test.mjs` | The Month · Day · Year dropdowns in the video forms: picking, the 7-day edit-by suggestion, Feb 31 → Feb 28, editing an existing date, saving (operator form and portal edit form). |
-| `todo-tabs.test.mjs` | To Do's stage tabs and counts, the client dropdown (in sync with the top chips), and marking posted from the Ready to post stage. |
+| `todo-tabs.test.mjs` | To Do's stage tabs and counts, filtering by client with the top chips, and marking posted from the Ready to post stage. |
 | `abandon-delete.test.mjs` | Abandon an idea (off the calendar and the client's portal, onto To Do → Abandoned), restore it to where it was, delete from the card, the Abandoned tab and the Edit form, and add a new idea. |
 | `client-calendar.test.mjs` | The client's Content Calendar: full titles, a platform pill per platform (aliases like ig/fb included), the Posts on key, the day-by-day list with hooks, and abandoned ideas hidden. |
 | `time-sensitive.test.mjs` | To Do's Time sensitive tab (Tait's tasks due within 3 days or overdue, soonest first; client tasks, far-off dates and abandoned ideas left out), and the client's video card: post date, stage, platforms, when we film it. |

@@ -29,14 +29,12 @@
   <div id="loadError"></div>
 
   <section class="view active" id="view-todo">
-    <div class="page-head"><h1>To Do</h1><p>Every video, by the stage it's in. Pick a stage, or All. Click any title to see the whole card.</p></div>
-    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-      <button class="primary" onclick="openBulkAdd(null)">Add ideas with Claude</button>
-      <button onclick="openVideoForm(null)">+ New idea</button>
-    </div>
-    <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
-      <label for="todoClient" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--sub)">Client</label>
-      <select id="todoClient" style="width:auto;min-width:200px"></select>
+    <div class="page-head">
+      <div><h1>To Do</h1><p>Every video, by the stage it's in. Click a title to see its card.</p></div>
+      <div class="page-actions">
+        <button class="accent" onclick="openBulkAdd(null)">Add ideas with Claude</button>
+        <button onclick="openVideoForm(null)">+ New idea</button>
+      </div>
     </div>
     <div class="chip-row" id="todoTabs"></div>
     <div class="card" data-stage="urgent"><h2>Time sensitive <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— what you need to do that's overdue or due in the next 3 days, soonest first</span></h2><div id="urgentList"></div></div>
@@ -50,10 +48,12 @@
   </section>
 
   <section class="view" id="view-calendar">
-    <div class="page-head"><h1>Content Calendar</h1><p>What posts where each day, colored by platform, and what has to be filmed, edited and approved by when. Click any item to open it.</p></div>
-    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-      <button class="primary" id="bulkAddBtn">Add ideas with Claude</button>
-      <button id="newVideoBtn">+ New idea</button>
+    <div class="page-head">
+      <div><h1>Content Calendar</h1><p>What posts where each day, and what has to be filmed, edited and approved by when.</p></div>
+      <div class="page-actions">
+        <button class="accent" id="bulkAddBtn">Add ideas with Claude</button>
+        <button id="newVideoBtn">+ New idea</button>
+      </div>
     </div>
     <div id="calFilters"></div>
     <div class="card"><div class="cal-grid" id="calGrid"></div></div>
@@ -664,16 +664,13 @@ function renderTodo() {
   const tabs = [{ key: "all", label: "All", n: TODO_STAGES.filter(s => !s.apart).reduce((t, s) => t + inStage(s.key).length, 0) },
     ...TODO_STAGES.map(s => ({ key: s.key, label: s.label, n: inStage(s.key).length }))];
   document.getElementById("todoTabs").innerHTML = tabs.map(t =>
-    `<div class="chip ${t.key === todoStage ? "active" : ""}" data-stage-tab="${t.key}">${escapeHtml(t.label)} (${t.n})</div>`).join("");
+    `<div class="chip ${t.key === todoStage ? "active" : ""}${t.key === "urgent" && t.n ? " urgent" : ""}" data-stage-tab="${t.key}">${escapeHtml(t.label)} (${t.n})</div>`).join("");
   document.querySelectorAll("#todoTabs .chip").forEach(c => c.onclick = () => { todoStage = c.dataset.stageTab; renderTodo(); });
   const apart = new Set(TODO_STAGES.filter(s => s.apart).map(s => s.key));
   document.querySelectorAll("#view-todo [data-stage]").forEach(el => {
     el.style.display = el.dataset.stage === todoStage || (todoStage === "all" && !apart.has(el.dataset.stage)) ? "" : "none";
   });
 
-  // Client picker — the same filter as the chips at the top of every page.
-  document.getElementById("todoClient").innerHTML = [{ id: "all", name: "All clients" }, ...CLIENTS]
-    .map(c => `<option value="${c.id}" ${c.id === globalClientFilter ? "selected" : ""}>${escapeHtml(c.name)}</option>`).join("");
 
   listOrEmpty("urgentList", inStage("urgent").sort((a, b) => timeSensitive(a).date.localeCompare(timeSensitive(b).date)),
     x => urgentBadge(timeSensitive(x)) + operatorActionsHtml(x), "Nothing time sensitive. You're on top of it.");
@@ -690,7 +687,6 @@ function renderTodo() {
   listOrEmpty("abandonedList", inStage("abandoned"), x => smallBtn("Restore", `restoreVideo('${x.video.id}')`, "primary") + smallBtn("Delete", `deleteVideo('${x.video.id}')`, "reject"),
     "Nothing abandoned. To abandon an idea, click it and choose Abandon.");
 }
-document.getElementById("todoClient").onchange = e => { globalClientFilter = e.target.value; renderAll(); };
 
 // ---------- Calendar ----------
 // Posts per platform (colored), plus approve-by, edit-due and film-by

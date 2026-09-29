@@ -1,24 +1,23 @@
-/* Fully Launched branding, matched to fullylaunched.com: three colors
-   only, its navy (#04101f), white and gold/tan (#C4AB82), with Prata for
-   headings and Hanken Grotesk for everything else. Every surface is the
-   one navy; cards and fields are set apart by thin white or gold lines,
-   never a second shade of navy. Secondary text is white at lower opacity.
-   Status and platform colors use only gold and white (solid or outline). */
-@import url("https://fonts.googleapis.com/css2?family=Prata&family=Hanken+Grotesk:wght@400;500;600;700&display=swap");
+/* Fully Launched branding, from fullylaunched.com: navy (#04101f) and
+   white do the work; gold/tan (#C4AB82) is a rare accent, kept for what
+   needs attention (Time sensitive, overdue, today) and the one main action
+   on a page. One navy for every surface; cards and fields are outlined.
+   One typeface, Hanken Grotesk, with weight doing the work of headings. */
+@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap");
 :root {
   --navy:#04101f; --white:#ffffff; --gold:#C4AB82;
   --bg:var(--navy); --sidebar:var(--navy); --card:var(--navy); --card2:var(--navy);
-  --border:rgba(255,255,255,.28); --line-strong:rgba(255,255,255,.55); --ink:var(--white); --sub:rgba(255,255,255,.72); --sub2:rgba(255,255,255,.5);
+  --border:rgba(255,255,255,.16); --line-strong:rgba(255,255,255,.4); --ink:var(--white); --sub:rgba(255,255,255,.66); --sub2:rgba(255,255,255,.45);
   --accent:var(--gold); --accent-ink:var(--navy);
-  --font-serif:'Prata', Georgia, serif;
+  --font-serif:'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-body:'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  /* Warnings, errors and "overdue" are gold, the brand's one accent. */
+  /* Warnings, errors and "overdue": the rare gold. */
   --green:var(--gold); --red:var(--gold); --amber:var(--gold); --purple:var(--gold);
-  /* Stages that need someone to act are gold; the rest are white. */
-  --status-concept_pending:var(--gold); --status-to_film:var(--gold); --status-filmed:var(--white);
-  --status-ready_to_edit:var(--gold); --status-rejected:var(--sub2); --status-with_editor:var(--white);
-  --status-in_review:var(--gold); --status-client_review:var(--gold);
-  --status-ready_to_post:var(--gold); --status-posted:var(--sub2);
+  /* Status badges: white while there's work to do, dimmed once done. */
+  --status-concept_pending:var(--white); --status-to_film:var(--white); --status-filmed:var(--white);
+  --status-ready_to_edit:var(--white); --status-rejected:var(--sub2); --status-with_editor:var(--white);
+  --status-in_review:var(--white); --status-client_review:var(--white);
+  --status-ready_to_post:var(--white); --status-posted:var(--sub2);
 }
 * { box-sizing:border-box; }
 html { color-scheme: dark; }
@@ -41,37 +40,42 @@ a { color:inherit; }
 .brand .brand-sub { font-family:var(--font-serif); font-size:0.95rem; color:var(--accent); letter-spacing:.02em; }
 .sync-badge { padding:0 8px 20px; font-size:0.72rem; color:var(--sub); line-height:1.4; min-height:1.4em; }
 .edit-panel textarea { font:0.88rem/1.5 inherit; }
-/* Raised, like binder tabs: no new colors, just crisp offset "shadows" in
-   white and gold (a soft dark shadow wouldn't show on the one navy). */
+/* Raised, like binder tabs: crisp white offset "shadows" (a soft dark
+   shadow wouldn't show on the one navy). */
 .nav-item {
   display:flex; align-items:center; gap:11px; padding:10px 13px; border-radius:10px;
   color:var(--ink); font-size:0.9rem; font-weight:500; cursor:pointer; margin:0 6px 12px 0; user-select:none;
   border:2px solid var(--line-strong); background:var(--navy); box-shadow:4px 4px 0 var(--line-strong);
   transition:transform .12s, box-shadow .12s, border-color .12s, color .12s;
 }
-.nav-item:hover { transform:translate(-2px,-2px); border-color:var(--gold); color:var(--gold); box-shadow:6px 6px 0 var(--gold); }
-.nav-item:active { transform:translate(2px,2px); box-shadow:1px 1px 0 var(--gold); }
-.nav-item.active { background:var(--gold); color:var(--navy); border-color:var(--gold); font-weight:700; box-shadow:5px 5px 0 var(--white); }
-.nav-item.active:hover { color:var(--navy); transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--white); }
-.nav-item:focus-visible, button:focus-visible, .btn:focus-visible, .chip:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
+.nav-item:hover { transform:translate(-2px,-2px); border-color:var(--white); box-shadow:6px 6px 0 var(--line-strong); }
+.nav-item:active { transform:translate(2px,2px); box-shadow:1px 1px 0 var(--line-strong); }
+.nav-item.active { background:var(--white); color:var(--navy); border-color:var(--white); font-weight:700; box-shadow:5px 5px 0 var(--line-strong); }
+.nav-item.active:hover { transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--line-strong); }
+.nav-item:focus-visible, button:focus-visible, .btn:focus-visible, .chip:focus-visible { outline:2px solid var(--white); outline-offset:3px; }
 .nav-item .ic { width:18px; text-align:center; flex:0 0 auto; }
 .nav-section-label { font-size:0.68rem; text-transform:uppercase; letter-spacing:.06em; color:var(--sub2); padding:16px 11px 6px; }
 
 /* Main */
 .main { flex:1; min-width:0; padding:30px 36px 90px; }
-.page-head { margin-bottom:24px; }
-.page-head h1 { font-family:var(--font-serif); font-weight:400; font-size:1.75rem; letter-spacing:.01em; margin:0 0 6px; }
+.page-head { margin-bottom:22px; display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; }
+.page-head h1 { font-weight:700; font-size:1.55rem; letter-spacing:-.01em; margin:0 0 4px; }
 .page-head p { margin:0; color:var(--sub); font-size:0.9rem; }
+.page-actions { display:flex; gap:8px; flex-wrap:wrap; }
 .view { display:none; }
 .view.active { display:block; }
 
 /* Chips / filters */
 .chip-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px; }
+/* Filter tabs: plain text until picked; the picked one gets a white outline. */
 .chip {
-  padding:6px 13px; border-radius:999px; border:2px solid var(--border); background:var(--card);
-  color:var(--sub); font-size:0.82rem; cursor:pointer; white-space:nowrap;
+  padding:6px 13px; border-radius:999px; border:2px solid transparent; background:transparent;
+  color:var(--sub); font-size:0.85rem; font-weight:500; cursor:pointer; white-space:nowrap;
 }
-.chip.active { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600; }
+.chip:hover { color:var(--ink); }
+.chip.active { color:var(--ink); border-color:var(--line-strong); font-weight:600; }
+.chip.urgent { color:var(--gold); }
+.chip.urgent.active { border-color:var(--gold); }
 
 /* Stat cards */
 .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-bottom:26px; }
@@ -88,7 +92,7 @@ a { color:inherit; }
   background:var(--card); border:2px solid var(--border); border-radius:14px; padding:18px 20px;
   cursor:pointer;
 }
-.section-card:hover { border-color:var(--accent); }
+.section-card:hover { border-color:var(--line-strong); }
 .section-card .ic { font-size:1.3rem; margin-bottom:10px; display:block; }
 .section-card h3 { margin:0 0 4px; font-size:1rem; }
 .section-card p { margin:0 0 10px; color:var(--sub); font-size:0.83rem; }
@@ -96,19 +100,19 @@ a { color:inherit; }
 
 /* Generic card / list rows */
 .card { background:var(--card); border:2px solid var(--border); border-radius:14px; padding:18px 20px; margin-bottom:14px; }
-.card h2 { font-family:var(--font-serif); font-weight:400; font-size:1.08rem; margin:0 0 14px; }
-.card h2 span { font-family:var(--font-body); }
-.panel-title { font-family:var(--font-serif); font-weight:400; font-size:1.15rem; margin:22px 0 2px; }
+.card h2 { font-weight:600; font-size:1.02rem; margin:0 0 14px; }
+.card h2 span { font-weight:400; }
+.panel-title { font-weight:600; font-size:1.1rem; margin:22px 0 2px; }
 .row { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:12px 0; border-bottom:2px solid var(--border); }
 .row:last-child { border-bottom:none; }
-.row .left b { display:block; font-size:0.93rem; }
+.row .left b { display:block; font-size:0.93rem; font-weight:600; }
 .row .left .meta { font-size:0.8rem; color:var(--sub); margin-top:2px; }
 .empty { color:var(--sub2); font-size:0.85rem; padding:14px 0; }
 p.meta, div.meta { color:var(--sub); font-size:0.88rem; line-height:1.5; }
 
 /* Video card (compact — used in calendars/queues) */
 .video-card { cursor:pointer; transition:border-color .1s; }
-.video-card:hover { border-color:var(--accent); }
+.video-card:hover { border-color:var(--line-strong); }
 
 /* Video detail modal — the "click a card, see the full record" view,
    shared by every dashboard so a video looks the same everywhere. */
@@ -127,7 +131,7 @@ p.meta, div.meta { color:var(--sub); font-size:0.88rem; line-height:1.5; }
   border-radius:8px; width:30px; height:30px; display:flex; align-items:center; justify-content:center;
   cursor:pointer; color:var(--sub); font-size:1rem; line-height:1;
 }
-.modal-box h2 { font-family:var(--font-serif); font-weight:400; font-size:1.3rem; margin:0 26px 6px 0; }
+.modal-box h2 { font-weight:700; font-size:1.25rem; letter-spacing:-.01em; margin:0 26px 6px 0; }
 .modal-box .modal-meta { color:var(--sub); font-size:0.85rem; margin-bottom:16px; }
 .modal-field { margin:0 0 14px; }
 .modal-field b { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--sub); margin-bottom:4px; }
@@ -146,7 +150,7 @@ p.meta, div.meta { color:var(--sub); font-size:0.88rem; line-height:1.5; }
 table { width:100%; border-collapse:collapse; font-size:0.85rem; }
 th { text-align:left; color:var(--sub); font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:.04em; padding:0 10px 10px; }
 td { padding:12px 10px; border-top:2px solid var(--border); }
-tr:hover td { color:var(--accent); }
+tr:hover td { color:var(--ink); }
 
 /* Calendar */
 .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
@@ -155,23 +159,23 @@ tr:hover td { color:var(--accent); }
 .cal-cell.today { border-color:var(--accent); }
 .cal-cell .daynum { font-size:0.78rem; color:var(--sub); margin-bottom:6px; }
 .cal-chip { font-size:0.7rem; padding:2px 6px; border-radius:5px; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
-/* Each platform: gold or white, solid or outline (--pc line, --pbg fill, --pfg text). */
-.p-instagram { --pc:var(--gold); --pbg:var(--gold); --pfg:var(--navy); }
+/* Each platform in white only, told apart by its line: solid fill, outline,
+   dashed, dotted or double (--pc line, --pbg fill, --pfg text, --pstyle). */
 .p-facebook  { --pc:var(--white); --pbg:var(--white); --pfg:var(--navy); }
 .p-linkedin  { --pc:var(--white); --pbg:transparent; --pfg:var(--white); }
-.p-tiktok    { --pc:var(--gold); --pbg:transparent; --pfg:var(--gold); }
-.p-youtube   { --pc:var(--gold); --pbg:transparent; --pfg:var(--gold); --pstyle:dashed; }
-.cal-chip.cal-post { border:2px solid var(--border); border-left:4px solid var(--pc, var(--sub)); color:var(--ink); }
-.cal-chip.cal-post b { background:var(--pbg); color:var(--pfg); border:1px var(--pstyle, solid) var(--pc); border-radius:3px; padding:0 3px; }
+.p-instagram { --pc:var(--white); --pbg:transparent; --pfg:var(--white); --pstyle:dashed; }
+.p-tiktok    { --pc:var(--white); --pbg:transparent; --pfg:var(--white); --pstyle:dotted; }
+.p-youtube   { --pc:var(--white); --pbg:transparent; --pfg:var(--white); --pstyle:double; }
+.cal-chip.cal-post { border:2px solid var(--border); color:var(--ink); }
+.cal-chip.cal-post b { background:var(--pbg); color:var(--pfg); border:2px var(--pstyle, solid) var(--pc); border-radius:4px; padding:0 3px; }
 .cal-chip.cal-deadline { border:2px dashed var(--border); color:var(--sub); }
 .cal-chip.cal-overdue { color:var(--red); border:2px solid var(--red); }
 .cal-chip.cal-done { opacity:.45; }
-.chip.cal-plat { border-left:4px var(--pstyle, solid) var(--pc); }
-.plat-pill { display:inline-block; font-size:0.62rem; font-weight:700; line-height:1.3; padding:1px 5px; border-radius:4px; margin:3px 3px 0 0; border:1px var(--pstyle, solid) var(--pc, var(--sub)); background:var(--pbg, transparent); color:var(--pfg, var(--ink)); white-space:nowrap; }
+.plat-pill { display:inline-block; font-size:0.62rem; font-weight:700; line-height:1.3; padding:1px 5px; border-radius:4px; margin:3px 3px 0 0; border:2px var(--pstyle, solid) var(--pc, var(--sub)); background:var(--pbg, transparent); color:var(--pfg, var(--ink)); white-space:nowrap; }
 /* Client calendar: the whole title (up to 3 lines) and where it posts. */
-.cal-item { font-size:0.72rem; line-height:1.25; padding:5px 6px; border-radius:6px; margin-bottom:5px; border:2px solid var(--border); border-left:4px solid var(--accent); cursor:pointer; }
+.cal-item { font-size:0.72rem; line-height:1.25; padding:5px 6px; border-radius:6px; margin-bottom:5px; border:2px solid var(--border); cursor:pointer; }
 .cal-item .t { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; color:var(--ink); }
-.cal-item.film { border-left-color:var(--sub); border-style:dashed; border-left-style:solid; }
+.cal-item.film { border-style:dashed; }
 .cal-item.film .t { color:var(--sub); }
 .cal-item.done { opacity:.5; }
 .card-facts { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:4px; }
@@ -189,21 +193,26 @@ tr:hover td { color:var(--accent); }
 .chart-legend .sw { width:9px; height:9px; border-radius:2px; }
 
 /* Buttons / inputs */
-button, .btn { font:inherit; font-size:0.85rem; padding:8px 16px; border-radius:999px; border:2px solid rgba(255,255,255,.35); background:transparent; color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s; }
-button:hover, .btn:hover { border-color:rgba(255,255,255,.6); }
-button.primary, .btn.primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
-button.primary:hover, .btn.primary:hover { background:var(--white); border-color:var(--white); }
+/* Buttons: outlined; .primary is white; .accent (tan) is for the one main
+   action on a page, so tan stays rare. */
+button, .btn { font:inherit; font-size:0.85rem; font-weight:500; padding:8px 16px; border-radius:999px; border:2px solid var(--border); background:transparent; color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s, color .15s; }
+button:hover, .btn:hover { border-color:var(--line-strong); }
+button.primary, .btn.primary { border-color:var(--white); font-weight:600; }
+button.primary:hover, .btn.primary:hover { background:var(--white); color:var(--navy); }
+button.accent, .btn.accent { background:var(--gold); border-color:var(--gold); color:var(--navy); font-weight:700; }
+button.accent:hover, .btn.accent:hover { background:var(--white); border-color:var(--white); }
 button:disabled { opacity:.55; cursor:default; }
-button.reject { color:var(--gold); border-color:var(--gold); }
+button.reject { color:var(--sub); }
+button.reject:hover { color:var(--ink); }
 a.btn { text-decoration:none; display:inline-block; }
 textarea, input[type=text], input[type=email], input[type=password], input[type=date], select {
   width:100%; font:inherit; padding:10px 12px; border-radius:9px; border:2px solid var(--border);
   background:var(--bg); color:var(--ink);
 }
-textarea { font:12px/1.5 ui-monospace,monospace; }
+textarea { line-height:1.5; resize:vertical; }
 select { cursor:pointer; }
 textarea:focus, input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, input[type=date]:focus, select:focus {
-  outline:none; border-color:var(--accent);
+  outline:none; border-color:var(--line-strong);
 }
 /* The native calendar-picker icon defaults to dark-on-transparent, which
    disappears against this dark background — flip it to match. */

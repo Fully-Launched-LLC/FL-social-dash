@@ -388,7 +388,7 @@ function renderVideoTabs() {
   const tabs = tabsForClient();
   if (!tabs.some(t => t.key === activeTab)) activeTab = "all";
   document.getElementById("videoTabs").innerHTML = tabs.map(t =>
-    `<div class="chip ${t.key === activeTab ? "active" : ""}" data-tab="${t.key}">${t.label} (${videosInTab(t.key).length})</div>`).join("");
+    `<div class="chip ${t.key === activeTab ? "active" : ""}${t.key === "urgent" && videosInTab(t.key).length ? " urgent" : ""}" data-tab="${t.key}">${t.label} (${videosInTab(t.key).length})</div>`).join("");
   document.querySelectorAll("#videoTabs .chip").forEach(c => c.onclick = () => { activeTab = c.dataset.tab; renderVideoTabs(); });
   // All: every kind that has something waiting, each under its heading.
   const all = activeTab === "all";
