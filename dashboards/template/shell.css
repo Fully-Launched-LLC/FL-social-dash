@@ -8,7 +8,7 @@
 :root {
   --navy:#04101f; --white:#ffffff; --gold:#C4AB82;
   --bg:var(--navy); --sidebar:var(--navy); --card:var(--navy); --card2:var(--navy);
-  --border:rgba(255,255,255,.28); --ink:var(--white); --sub:rgba(255,255,255,.72); --sub2:rgba(255,255,255,.5);
+  --border:rgba(255,255,255,.28); --line-strong:rgba(255,255,255,.55); --ink:var(--white); --sub:rgba(255,255,255,.72); --sub2:rgba(255,255,255,.5);
   --accent:var(--gold); --accent-ink:var(--navy);
   --font-serif:'Prata', Georgia, serif;
   --font-body:'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -41,13 +41,19 @@ a { color:inherit; }
 .brand .brand-sub { font-family:var(--font-serif); font-size:0.95rem; color:var(--accent); letter-spacing:.02em; }
 .sync-badge { padding:0 8px 20px; font-size:0.72rem; color:var(--sub); line-height:1.4; min-height:1.4em; }
 .edit-panel textarea { font:0.88rem/1.5 inherit; }
+/* Raised, like binder tabs: no new colors, just crisp offset "shadows" in
+   white and gold (a soft dark shadow wouldn't show on the one navy). */
 .nav-item {
-  display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:9px;
-  color:var(--sub); font-size:0.88rem; cursor:pointer; margin-bottom:2px; user-select:none;
-  border:2px solid transparent;
+  display:flex; align-items:center; gap:11px; padding:10px 13px; border-radius:10px;
+  color:var(--ink); font-size:0.9rem; font-weight:500; cursor:pointer; margin:0 6px 12px 0; user-select:none;
+  border:2px solid var(--line-strong); background:var(--navy); box-shadow:4px 4px 0 var(--line-strong);
+  transition:transform .12s, box-shadow .12s, border-color .12s, color .12s;
 }
-.nav-item:hover { color:var(--ink); border-color:var(--border); }
-.nav-item.active { color:var(--accent); border-color:var(--accent); font-weight:600; }
+.nav-item:hover { transform:translate(-2px,-2px); border-color:var(--gold); color:var(--gold); box-shadow:6px 6px 0 var(--gold); }
+.nav-item:active { transform:translate(2px,2px); box-shadow:1px 1px 0 var(--gold); }
+.nav-item.active { background:var(--gold); color:var(--navy); border-color:var(--gold); font-weight:700; box-shadow:5px 5px 0 var(--white); }
+.nav-item.active:hover { color:var(--navy); transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--white); }
+.nav-item:focus-visible, button:focus-visible, .btn:focus-visible, .chip:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
 .nav-item .ic { width:18px; text-align:center; flex:0 0 auto; }
 .nav-section-label { font-size:0.68rem; text-transform:uppercase; letter-spacing:.06em; color:var(--sub2); padding:16px 11px 6px; }
 
@@ -65,7 +71,10 @@ a { color:inherit; }
   padding:6px 13px; border-radius:999px; border:2px solid var(--border); background:var(--card);
   color:var(--sub); font-size:0.82rem; cursor:pointer; white-space:nowrap;
 }
-.chip.active { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600; }
+.chip { box-shadow:3px 3px 0 var(--border); transition:transform .12s, box-shadow .12s, border-color .12s; }
+.chip:hover { transform:translate(-1px,-1px); border-color:var(--gold); box-shadow:4px 4px 0 var(--gold); }
+.chip:active { transform:translate(2px,2px); box-shadow:1px 1px 0 var(--gold); }
+.chip.active { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600; box-shadow:3px 3px 0 var(--white); }
 
 /* Stat cards */
 .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-bottom:26px; }
@@ -113,7 +122,7 @@ p.meta, div.meta { color:var(--sub); font-size:0.88rem; line-height:1.5; }
 }
 .modal-backdrop.hidden { display:none; }
 .modal-box {
-  background:var(--card); border:2px solid var(--border); border-radius:16px;
+  background:var(--card); border:2px solid var(--gold); border-radius:16px; box-shadow:8px 8px 0 var(--gold);
   max-width:620px; width:100%; padding:26px 28px 24px; position:relative;
 }
 .modal-close {
@@ -183,10 +192,13 @@ tr:hover td { color:var(--accent); }
 .chart-legend .sw { width:9px; height:9px; border-radius:2px; }
 
 /* Buttons / inputs */
-button, .btn { font:inherit; font-size:0.85rem; padding:8px 16px; border-radius:999px; border:2px solid rgba(255,255,255,.35); background:transparent; color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s; }
-button:hover, .btn:hover { border-color:rgba(255,255,255,.6); }
-button.primary, .btn.primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
-button.primary:hover, .btn.primary:hover { background:var(--white); border-color:var(--white); }
+button, .btn { font:inherit; font-size:0.85rem; padding:8px 16px; border-radius:999px; border:2px solid var(--line-strong); background:var(--navy); color:var(--ink); cursor:pointer;
+  box-shadow:3px 3px 0 var(--border); transition:border-color .12s, background .12s, transform .12s, box-shadow .12s; }
+button:hover, .btn:hover { border-color:var(--gold); transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--gold); }
+button:active, .btn:active { transform:translate(2px,2px); box-shadow:1px 1px 0 var(--gold); }
+button.primary, .btn.primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; box-shadow:3px 3px 0 var(--white); }
+button.primary:hover, .btn.primary:hover { background:var(--white); border-color:var(--white); box-shadow:4px 4px 0 var(--gold); }
+button:disabled:hover, button:disabled:active { transform:none; }
 button:disabled { opacity:.55; cursor:default; }
 button.reject { color:var(--gold); border-color:var(--gold); }
 a.btn { text-decoration:none; display:inline-block; }
@@ -235,3 +247,8 @@ input[type=date]::-webkit-calendar-picker-indicator { filter:invert(1); cursor:p
 .auth-error { min-height:1.3em; font-size:0.82rem; margin:10px 0 4px; line-height:1.4; }
 .auth-forgot { display:block; text-align:center; margin-top:14px; font-size:0.8rem; color:var(--sub); text-decoration:none; }
 .auth-forgot:hover { color:var(--ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-item, .chip, button, .btn { transition:none; }
+  .nav-item:hover, .nav-item.active:hover, .chip:hover, button:hover, .btn:hover, .nav-item:active, .chip:active, button:active, .btn:active { transform:none; }
+}
