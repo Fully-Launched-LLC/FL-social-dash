@@ -325,7 +325,11 @@ const nc = (await db.query("select id, slug, contact_name, contact_phone, contac
 chk("new client saved with contact details", nc && nc.slug === "grad-gig-test" && nc.contact_name === "Pat Client" && nc.contact_phone === "555-0100" && nc.contact_email === "pat@gradgig.test" && nc.client_system === "self-serve", nc);
 const ncRow = $$(op, "#allClientsList .row").find(r => r.textContent.includes("Grad Gig Test"));
 chk("client list shows the contact", ncRow && ncRow.textContent.includes("Pat Client") && ncRow.textContent.includes("555-0100"));
-chk("invites are switched off until the CRM fix: no Invite button, nothing sent", !btn(ncRow, "Invite to portal") && !op.ui.log.some(l => l.otp));
+await click(btn(ncRow, "Invite to portal"), "invite");
+const otp = op.ui.log.find(l => l.otp);
+chk("Invite sends a sign-in link to the contact email, landing on their portal", otp && otp.otp.email === "pat@gradgig.test"
+  && otp.otp.options.shouldCreateUser === true && otp.otp.options.emailRedirectTo.endsWith("/clients/grad-gig-test"), otp);
+op.ui.alerts.length = 0;
 // The invited contact signs in for the first time (confirmed email) and is linked to their portal.
 await db.exec(`insert into auth.users (id, email, email_confirmed_at) values ('${U.invited}', 'pat@gradgig.test', now())`);
 const inv = track(await openPage("clients/portal.html", U.invited, BASE + "/clients/grad-gig-test"));
