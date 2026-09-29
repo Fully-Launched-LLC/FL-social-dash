@@ -339,7 +339,8 @@ fully-social-os/
                                (social_client_documents — each client's
                                important Google Drive docs), 008 (client
                                onboarding: social_client_onboarding,
-                               social_client_generated_docs, new folder links)
+                               social_client_generated_docs, new folder links), 009
+                               (voice memo texted, not uploaded)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -687,7 +688,7 @@ As of 2026-09-23:
 ## Backlog
 
 1. Run the CRM RLS fix (`supabase/crm/013_team_only_access.sql`) and
-   migration 008, then the rest of `ONBOARDING-SETUP.md`.
+   migrations 008 and 009, then the rest of `ONBOARDING-SETUP.md`.
 2. ~~Password reset~~ — done: `/welcome?mode=reset`.
 3. Repoint or retire `calendar-planner`; find where the skills live.
 4. Analytics (manual entry first), then the monthly performance loop tied

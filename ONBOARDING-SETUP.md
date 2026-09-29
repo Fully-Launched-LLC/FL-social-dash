@@ -31,7 +31,10 @@ to add it, or just run it here.)
 ## 2. Add the onboarding tables (Supabase, 1 min)
 
 Supabase → **SQL Editor**: paste and run
-`supabase/migrations/008_client_onboarding.sql`. Safe to run more than once.
+`supabase/migrations/008_client_onboarding.sql`, then
+`supabase/migrations/009_voice_memo_by_text.sql`. Both are safe to run more
+than once. (Already ran an earlier 008? Just run 009: it switches the
+voice memo step from uploading to texting.)
 
 ## 3. Where sign-in links may land (Supabase, 1 min)
 
