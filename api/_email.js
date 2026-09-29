@@ -16,9 +16,10 @@ function inviteEmail({ contactName, clientName, link, portal, returning }) {
       <b style="color:#C4AB82">What happens next</b><br>
       1. Create your password.<br>
       2. Share your brand, if you film your own videos.<br>
-      3. Record one voice memo answering a few questions about your business and your customers.<br>
+      3. Read a few questions about your business and your customers, then answer them in one voice memo on your phone and text it to us.<br>
       4. Drop in any footage you already have.<br>
-      5. We turn your voice memo into your first documents and walk you through them.
+      5. We turn your voice memo into your first documents and walk you through them.<br>
+      6. A quick tour of your portal.
     </td></tr>`;
   const html = `<!doctype html><html><body style="margin:0;padding:0;background:#04101f">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#04101f;padding:32px 12px">
