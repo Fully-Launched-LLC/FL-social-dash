@@ -517,13 +517,8 @@ gold/tan `#C4AB82` (tokens at the top of `shell.css`). Every surface is the
 one navy; cards and fields are outlined, never a second navy. Secondary
 text is white at lower opacity. Status badges and "overdue" use gold;
 platforms are gold or white, solid or outline (`.p-<platform>` classes).
-No emoji in the interface (they bring their own colors). Prata page
-titles, Hanken Grotesk for everything else (card titles included). Built
-for reading: roomy cards (20px corners), a clear type scale, secondary text
-at 80% white, and big-number summary cards at the top of each To Do
-(`statCardsHtml` in shell.js; clicking one opens that stage) under a
-greeting (`greetingHtml`). Only the sidebar tabs are raised (offset
-white/gold shadows); everything in the page is flat. On phones the sidebar becomes a bar across the top.
+No emoji in the interface (they bring their own colors). Prata headings,
+Hanken Grotesk text. On phones the sidebar becomes a bar across the top.
 
 ### Client portal — `/clients/<slug>`
 

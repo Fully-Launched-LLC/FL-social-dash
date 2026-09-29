@@ -29,8 +29,7 @@
   <div id="loadError"></div>
 
   <section class="view active" id="view-todo">
-    <div class="page-head"><div class="greet" id="todoGreet"></div><h1>To Do</h1><p>Every video, by the stage it's in. Pick a stage, or All. Click any title to see the whole card.</p></div>
-    <div class="stat-grid" id="todoStats"></div>
+    <div class="page-head"><h1>To Do</h1><p>Every video, by the stage it's in. Pick a stage, or All. Click any title to see the whole card.</p></div>
     <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
       <button class="primary" onclick="openBulkAdd(null)">Add ideas with Claude</button>
       <button onclick="openVideoForm(null)">+ New idea</button>
@@ -664,16 +663,6 @@ function renderTodo() {
   // Tabs, with counts for the client(s) shown.
   const tabs = [{ key: "all", label: "All", n: TODO_STAGES.filter(s => !s.apart).reduce((t, s) => t + inStage(s.key).length, 0) },
     ...TODO_STAGES.map(s => ({ key: s.key, label: s.label, n: inStage(s.key).length }))];
-  document.getElementById("todoGreet").innerHTML = greetingHtml(ME && ME.name);
-  const statsEl = document.getElementById("todoStats");
-  statsEl.innerHTML = statCardsHtml([
-    { key: "urgent", label: "Time sensitive", n: inStage("urgent").length, note: "late or due within 3 days", hot: true },
-    { key: "toEditor", label: "Ready for an editor", n: inStage("toEditor").length, note: "film it or send it" },
-    { key: "client", label: "Waiting on client", n: inStage("client").length, note: "ideas and final approvals" },
-    { key: "edits", label: "Edits to review", n: inStage("edits").length, note: "watch and approve", hot: true },
-    { key: "post", label: "Ready to post", n: inStage("post").length, note: "captions ready", hot: true },
-  ], todoStage);
-  wireStatCards(statsEl, key => { todoStage = key; renderTodo(); });
   document.getElementById("todoTabs").innerHTML = tabs.map(t =>
     `<div class="chip ${t.key === todoStage ? "active" : ""}" data-stage-tab="${t.key}">${escapeHtml(t.label)} (${t.n})</div>`).join("");
   document.querySelectorAll("#todoTabs .chip").forEach(c => c.onclick = () => { todoStage = c.dataset.stageTab; renderTodo(); });
