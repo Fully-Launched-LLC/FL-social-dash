@@ -35,10 +35,9 @@ const shown = () => Array.from(op.d.querySelectorAll("#view-todo [data-stage]"))
 const titlesIn = stage => Array.from(op.d.querySelectorAll(`#view-todo [data-stage="${stage}"] b.video-card`)).map(b => b.textContent);
 
 let t = tabs();
-chk("tabs in stage order with counts; empty ones hidden", Object.values(t).join(" | ") ===
-  "All (11) | Sent back with suggestions (1) | Waiting on client (4) | Ready for an editor (2) | With an editor (1) | Edits to review (1) | Ready to post (2)", Object.values(t));
+chk("tabs in stage order with counts", Object.values(t).join(" | ") ===
+  "All (11) | Time sensitive (0) | Sent back with suggestions (1) | Waiting on client (4) | Ready for an editor (2) | With an editor (1) | Edits to review (1) | Ready to post (2) | Abandoned (0)", Object.values(t));
 chk("All shows every stage", shown().join() === "sentBack,client,toEditor,withEditor,edits,post", shown());
-chk("All shows only stages with something in them", Array.from(op.d.querySelectorAll('#view-todo [data-stage="urgent"], #view-todo [data-stage="abandoned"]')).every(el => el.style.display === "none"));
 chk("posted videos aren't in To Do", !op.d.getElementById("view-todo").textContent.includes("A posted"));
 
 op.d.querySelector('[data-stage-tab="post"]').click(); await settle();

@@ -29,7 +29,7 @@ const modalBtn = label => Array.from(op.d.querySelectorAll("#videoModalBox butto
 const calTitles = () => Object.values(op.w.eval("calendarByDay(filteredVideos(), calState)")).flat().map(e => e.x.video.title);
 
 chk("both calendars' source: every scheduled video has its post date", ["Keep me", "Maybe not", "Delete me"].every(t => calTitles().includes(t)), calTitles());
-chk("Abandoned tab hidden while empty, and not part of All", !tabs().abandoned && tabs().all === "All (3)" && !shown().includes("abandoned"), tabs());
+chk("Abandoned tab exists, empty, and isn't part of All", tabs().abandoned === "Abandoned (0)" && tabs().all === "All (3)" && !shown().includes("abandoned"), tabs());
 
 // Abandon from the video card.
 op.w.openOperatorVideoModal(await idOf("Maybe not")); await settle();

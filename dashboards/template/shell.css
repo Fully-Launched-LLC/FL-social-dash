@@ -7,7 +7,7 @@
 :root {
   --navy:#04101f; --white:#ffffff; --gold:#C4AB82;
   --bg:var(--navy); --sidebar:var(--navy); --card:var(--navy); --card2:var(--navy);
-  --border:rgba(255,255,255,.16); --line-strong:rgba(255,255,255,.4); --ink:var(--white); --sub:rgba(255,255,255,.82); --sub2:rgba(255,255,255,.62);
+  --border:rgba(255,255,255,.16); --line-strong:rgba(255,255,255,.4); --ink:var(--white); --sub:rgba(255,255,255,.66); --sub2:rgba(255,255,255,.45);
   --accent:var(--gold); --accent-ink:var(--navy);
   --font-serif:'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-body:'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -38,13 +38,13 @@ a { color:inherit; }
 .brand { display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:6px 8px 10px; }
 .brand img { width:150px; max-width:100%; height:auto; display:block; }
 .brand .brand-sub { font-family:var(--font-serif); font-size:0.95rem; color:var(--accent); letter-spacing:.02em; }
-.sync-badge { padding:0 8px 20px; font-size:0.8rem; color:var(--sub); line-height:1.4; min-height:1.4em; }
+.sync-badge { padding:0 8px 20px; font-size:0.72rem; color:var(--sub); line-height:1.4; min-height:1.4em; }
 .edit-panel textarea { font:0.88rem/1.5 inherit; }
 /* Raised, like binder tabs: crisp white offset "shadows" (a soft dark
    shadow wouldn't show on the one navy). */
 .nav-item {
   display:flex; align-items:center; gap:11px; padding:10px 13px; border-radius:10px;
-  color:var(--ink); font-size:0.95rem; font-weight:500; cursor:pointer; margin:0 6px 12px 0; user-select:none;
+  color:var(--ink); font-size:0.9rem; font-weight:500; cursor:pointer; margin:0 6px 12px 0; user-select:none;
   border:2px solid var(--line-strong); background:var(--navy); box-shadow:4px 4px 0 var(--line-strong);
   transition:transform .12s, box-shadow .12s, border-color .12s, color .12s;
 }
@@ -60,7 +60,7 @@ a { color:inherit; }
 .main { flex:1; min-width:0; padding:30px 36px 90px; }
 .page-head { margin-bottom:22px; display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; }
 .page-head h1 { font-weight:700; font-size:1.55rem; letter-spacing:-.01em; margin:0 0 4px; }
-.page-head p { margin:0; color:var(--sub); font-size:0.98rem; line-height:1.5; }
+.page-head p { margin:0; color:var(--sub); font-size:0.9rem; }
 .page-actions { display:flex; gap:8px; flex-wrap:wrap; }
 .view { display:none; }
 .view.active { display:block; }
@@ -70,7 +70,7 @@ a { color:inherit; }
 /* Filter tabs: plain text until picked; the picked one gets a white outline. */
 .chip {
   padding:6px 13px; border-radius:999px; border:2px solid transparent; background:transparent;
-  color:var(--sub); font-size:0.92rem; font-weight:500; cursor:pointer; white-space:nowrap;
+  color:var(--sub); font-size:0.85rem; font-weight:500; cursor:pointer; white-space:nowrap;
 }
 .chip:hover { color:var(--ink); }
 .chip.active { color:var(--ink); border-color:var(--line-strong); font-weight:600; }
@@ -100,15 +100,15 @@ a { color:inherit; }
 
 /* Generic card / list rows */
 .card { background:var(--card); border:2px solid var(--border); border-radius:14px; padding:18px 20px; margin-bottom:14px; }
-.card h2 { font-weight:600; font-size:1.12rem; margin:0 0 14px; line-height:1.35; }
-.card h2 span { font-weight:400; font-size:0.9rem !important; color:var(--sub); }
+.card h2 { font-weight:600; font-size:1.02rem; margin:0 0 14px; }
+.card h2 span { font-weight:400; }
 .panel-title { font-weight:600; font-size:1.1rem; margin:22px 0 2px; }
-.row { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:14px 0; border-bottom:2px solid var(--border); }
+.row { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:12px 0; border-bottom:2px solid var(--border); }
 .row:last-child { border-bottom:none; }
-.row .left b { display:block; font-size:1.02rem; font-weight:600; line-height:1.35; }
-.row .left .meta { font-size:0.92rem; color:var(--sub); margin-top:4px; line-height:1.45; }
-.empty { color:var(--sub); font-size:0.95rem; padding:14px 0; }
-p.meta, div.meta { color:var(--sub); font-size:0.95rem; line-height:1.55; }
+.row .left b { display:block; font-size:0.93rem; font-weight:600; }
+.row .left .meta { font-size:0.8rem; color:var(--sub); margin-top:2px; }
+.empty { color:var(--sub2); font-size:0.85rem; padding:14px 0; }
+p.meta, div.meta { color:var(--sub); font-size:0.88rem; line-height:1.5; }
 
 /* Video card (compact — used in calendars/queues) */
 .video-card { cursor:pointer; transition:border-color .1s; }
@@ -132,18 +132,18 @@ p.meta, div.meta { color:var(--sub); font-size:0.95rem; line-height:1.55; }
   cursor:pointer; color:var(--sub); font-size:1rem; line-height:1;
 }
 .modal-box h2 { font-weight:700; font-size:1.25rem; letter-spacing:-.01em; margin:0 26px 6px 0; }
-.modal-box .modal-meta { color:var(--sub); font-size:0.95rem; margin-bottom:16px; }
+.modal-box .modal-meta { color:var(--sub); font-size:0.85rem; margin-bottom:16px; }
 .modal-field { margin:0 0 14px; }
-.modal-field b { display:block; font-size:0.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--sub); margin-bottom:4px; }
-.modal-field div, .modal-field p { font-size:1rem; line-height:1.6; margin:0; white-space:pre-wrap; }
+.modal-field b { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--sub); margin-bottom:4px; }
+.modal-field div, .modal-field p { font-size:0.92rem; line-height:1.55; margin:0; white-space:pre-wrap; }
 .modal-dates { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:0 0 16px; }
 .modal-dates div { border:2px solid var(--border); border-radius:10px; padding:10px 12px; }
-.modal-dates .lbl { font-size:0.78rem; text-transform:uppercase; color:var(--sub); margin-bottom:2px; }
+.modal-dates .lbl { font-size:0.7rem; text-transform:uppercase; color:var(--sub); margin-bottom:2px; }
 .modal-links { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 18px; }
 .modal-actions { display:flex; gap:8px; flex-wrap:wrap; padding-top:14px; border-top:2px solid var(--border); }
 
 /* Badges */
-.badge { display:inline-block; padding:4px 11px; border-radius:999px; font-size:0.84rem; font-weight:600; white-space:nowrap; border:2px solid var(--border); }
+.badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.76rem; font-weight:600; white-space:nowrap; border:2px solid var(--border); }
 .platform-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; }
 
 /* Table */
@@ -154,11 +154,11 @@ tr:hover td { color:var(--ink); }
 
 /* Calendar */
 .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
-.cal-dow { font-size:0.8rem; color:var(--sub2); text-transform:uppercase; letter-spacing:.05em; padding:0 4px 6px; }
+.cal-dow { font-size:0.72rem; color:var(--sub2); text-transform:uppercase; letter-spacing:.05em; padding:0 4px 6px; }
 .cal-cell { background:var(--card); border:2px solid var(--border); border-radius:10px; min-height:88px; padding:8px; min-width:0; overflow:hidden; }
 .cal-cell.today { border-color:var(--accent); }
-.cal-cell .daynum { font-size:0.88rem; font-weight:600; color:var(--sub); margin-bottom:6px; }
-.cal-chip { font-size:0.76rem; padding:3px 6px; border-radius:5px; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+.cal-cell .daynum { font-size:0.78rem; color:var(--sub); margin-bottom:6px; }
+.cal-chip { font-size:0.7rem; padding:2px 6px; border-radius:5px; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
 /* Each platform in white only, told apart by its line: solid fill, outline,
    dashed, dotted or double (--pc line, --pbg fill, --pfg text, --pstyle). */
 .p-facebook  { --pc:var(--white); --pbg:var(--white); --pfg:var(--navy); }
@@ -173,7 +173,7 @@ tr:hover td { color:var(--ink); }
 .cal-chip.cal-done { opacity:.45; }
 .plat-pill { display:inline-block; font-size:0.62rem; font-weight:700; line-height:1.3; padding:1px 5px; border-radius:4px; margin:3px 3px 0 0; border:2px var(--pstyle, solid) var(--pc, var(--sub)); background:var(--pbg, transparent); color:var(--pfg, var(--ink)); white-space:nowrap; }
 /* Client calendar: the whole title (up to 3 lines) and where it posts. */
-.cal-item { font-size:0.78rem; line-height:1.25; padding:5px 6px; border-radius:6px; margin-bottom:5px; border:2px solid var(--border); cursor:pointer; }
+.cal-item { font-size:0.72rem; line-height:1.25; padding:5px 6px; border-radius:6px; margin-bottom:5px; border:2px solid var(--border); cursor:pointer; }
 .cal-item .t { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; color:var(--ink); }
 .cal-item.film { border-style:dashed; }
 .cal-item.film .t { color:var(--sub); }
@@ -181,9 +181,9 @@ tr:hover td { color:var(--ink); }
 .card-facts { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:4px; }
 .agenda-day { padding:12px 0; border-top:2px solid var(--border); }
 .agenda-day:first-child { border-top:none; padding-top:0; }
-.agenda-day h3 { font-size:0.95rem; margin:0 0 8px; color:var(--sub); font-weight:600; }
+.agenda-day h3 { font-size:0.85rem; margin:0 0 8px; color:var(--sub); font-weight:600; }
 .agenda-post { padding:8px 10px; border-radius:8px; border:2px solid var(--border); margin-bottom:6px; cursor:pointer; }
-.agenda-post .hook { font-size:0.9rem; color:var(--sub); margin-top:3px; }
+.agenda-post .hook { font-size:0.82rem; color:var(--sub); margin-top:3px; }
 @media (max-width: 640px) { .cal-item .t { -webkit-line-clamp:2; } }
 
 /* Chart */
@@ -195,7 +195,7 @@ tr:hover td { color:var(--ink); }
 /* Buttons / inputs */
 /* Buttons: outlined; .primary is white; .accent (tan) is for the one main
    action on a page, so tan stays rare. */
-button, .btn { font:inherit; font-size:0.9rem; font-weight:500; padding:8px 16px; border-radius:999px; border:2px solid var(--border); background:transparent; color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s, color .15s; }
+button, .btn { font:inherit; font-size:0.85rem; font-weight:500; padding:8px 16px; border-radius:999px; border:2px solid var(--border); background:transparent; color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s, color .15s; }
 button:hover, .btn:hover { border-color:var(--line-strong); }
 button.primary, .btn.primary { border-color:var(--white); font-weight:600; }
 button.primary:hover, .btn.primary:hover { background:var(--white); color:var(--navy); }
@@ -247,7 +247,7 @@ input[type=date]::-webkit-calendar-picker-indicator { filter:invert(1); cursor:p
 #appShell { display:flex; width:100%; min-height:100vh; }
 .auth-gate { position:fixed; inset:0; z-index:2000; display:flex; align-items:center; justify-content:center; background:var(--bg); }
 .auth-card { width:100%; max-width:340px; background:var(--card); border:2px solid var(--border); border-radius:16px; padding:30px 26px 26px; }
-.auth-card label { display:block; font-size:0.9rem; color:var(--sub); margin-bottom:14px; }
+.auth-card label { display:block; font-size:0.8rem; color:var(--sub); margin-bottom:14px; }
 .auth-card input { display:block; width:100%; margin-top:6px; }
 .auth-card button { width:100%; margin-top:2px; }
 .auth-error { min-height:1.3em; font-size:0.82rem; margin:10px 0 4px; line-height:1.4; }

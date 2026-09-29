@@ -37,15 +37,14 @@
       </div>
     </div>
     <div class="chip-row" id="todoTabs"></div>
-    <div class="card empty" id="todoAllEmpty" style="display:none">Nothing to do right now.</div>
-    <div class="card" data-stage="urgent"><h2>Time sensitive <span style="font-weight:400;color:var(--sub);font-size:0.86rem">— what you need to do that's overdue or due in the next 3 days, soonest first</span></h2><div id="urgentList"></div></div>
-    <div class="card" data-stage="sentBack"><h2>Sent back with suggestions <span style="font-weight:400;color:var(--sub);font-size:0.86rem">— edit them, then send them to the client again</span></h2><div id="sendAllWrap"></div><div id="ideasList"></div></div>
-    <div class="card" data-stage="client"><h2>Waiting on the client <span style="font-weight:400;color:var(--sub);font-size:0.86rem">— ideas to approve, videos to film, finished videos to approve</span></h2><div id="clientWaitingList"></div></div>
-    <div class="card" data-stage="toEditor"><h2>Ready for an editor <span style="font-weight:400;color:var(--sub);font-size:0.86rem">— footage the client uploaded, and videos you film</span></h2><div id="toEditorList"></div></div>
+    <div class="card" data-stage="urgent"><h2>Time sensitive <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— what you need to do that's overdue or due in the next 3 days, soonest first</span></h2><div id="urgentList"></div></div>
+    <div class="card" data-stage="sentBack"><h2>Sent back with suggestions <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— edit them, then send them to the client again</span></h2><div id="sendAllWrap"></div><div id="ideasList"></div></div>
+    <div class="card" data-stage="client"><h2>Waiting on the client <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— ideas to approve, videos to film, finished videos to approve</span></h2><div id="clientWaitingList"></div></div>
+    <div class="card" data-stage="toEditor"><h2>Ready for an editor <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— footage the client uploaded, and videos you film</span></h2><div id="toEditorList"></div></div>
     <div class="card" data-stage="withEditor"><h2>With an editor</h2><div id="withEditorList"></div></div>
     <div class="card" data-stage="edits"><h2>Edits to review</h2><div id="editsList"></div></div>
     <div class="card" data-stage="post"><h2>Ready to post</h2><div id="todoPostList"></div></div>
-    <div class="card" data-stage="abandoned"><h2>Abandoned <span style="font-weight:400;color:var(--sub);font-size:0.86rem">— ideas that won't happen. Off the calendar and the client's portal. Restore one to put it back where it was</span></h2><div id="abandonedList"></div></div>
+    <div class="card" data-stage="abandoned"><h2>Abandoned <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— ideas that won't happen. Off the calendar and the client's portal. Restore one to put it back where it was</span></h2><div id="abandonedList"></div></div>
   </section>
 
   <section class="view" id="view-calendar">
@@ -305,22 +304,21 @@ async function deleteVideo(id) {
 // ---------- shared row + modal ----------
 function rowHtml(x, rightHtml) {
   const v = x.video, watch = finishedVideoLink(v, x.client.driveFolders);
-  const meta = [x.client.name,
-    v.postDate ? "Posts " + niceDate(v.postDate) : null,
-    v.dueToFilm && ["concept_pending","to_film"].includes(v.status) ? "Film by " + niceDate(v.dueToFilm) : null,
-    v.dueToEdit && ["ready_to_edit","with_editor"].includes(v.status) ? "Edit by " + niceDate(v.dueToEdit) : null,
-    v.assignedEditor && v.status === "with_editor" ? "Editor: " + v.assignedEditor : null,
-    platformNames(v.platform)].filter(Boolean).join(" · ");
+  const meta = [x.client.name, (v.platform || []).join(" · "),
+    v.dueToFilm && ["concept_pending","to_film"].includes(v.status) ? "film by " + v.dueToFilm : null,
+    v.dueToEdit && ["ready_to_edit","with_editor"].includes(v.status) ? "edit by " + v.dueToEdit : null,
+    v.postDate ? "post " + v.postDate : null,
+    v.assignedEditor && v.status === "with_editor" ? "editor: " + v.assignedEditor : null].filter(Boolean).join(" · ");
   return `<div class="row">
     <div class="left"><b class="video-card" style="display:inline-block" onclick="openOperatorVideoModal('${v.id}')">${escapeHtml(v.title || "(untitled)")}</b>
       <div class="meta">${escapeHtml(meta)}</div>
       ${v.note ? `<div class="meta">Note: ${escapeHtml(v.note)}</div>` : ""}</div>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${watch && ["in_review","client_review","ready_to_post","posted"].includes(v.status)
-      ? `<a class="btn" style="font-size:0.86rem;padding:5px 10px" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${watch.label}</a>` : ""}${rightHtml || statusBadge(v.status, STATUS_LABEL)}</div>
+      ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${watch.label}</a>` : ""}${rightHtml || statusBadge(v.status, STATUS_LABEL)}</div>
   </div>`;
 }
 function smallBtn(label, onclick, cls) {
-  return `<button class="${cls || ""}" style="font-size:0.86rem;padding:5px 10px" onclick="${onclick}">${escapeHtml(label)}</button>`;
+  return `<button class="${cls || ""}" style="font-size:0.78rem;padding:5px 10px" onclick="${onclick}">${escapeHtml(label)}</button>`;
 }
 function editorSelect(selected) {
   if (!EDITORS.length) return `<span class="meta">No editors set up yet — see "Adding an editor" in CLAUDE.md</span>`;
@@ -348,7 +346,7 @@ function operatorActionsHtml(x, inCard) {
   // Only when there's filming (a film-by date): stock/graphics posts have none.
   if (filmedByX(x) === "us" && v.status === "to_film" && v.dueToFilm) out.push(smallBtn("✓ Mark filmed", `updateVideo('${id}', { status: 'filmed' })`));
   if (!inCard && raw && (isOperatorFilmed(x) || v.status === "ready_to_edit")) {
-    out.push(`<a class="btn" style="font-size:0.86rem;padding:5px 10px" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">${raw.label}</a>`);
+    out.push(`<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">${raw.label}</a>`);
   }
   if (isReadyForEditor(x)) out.push(editorSelect(v.editorId), smallBtn("Send to editor", `sendToEditor('${id}', this)`, "primary"));
   if (v.status === "in_review") {
@@ -364,8 +362,8 @@ function openOperatorVideoModal(id) {
   if (!x) return;
   const abandoned = x.video.status === "rejected";
   const actions = (abandoned ? smallBtn("Restore", `restoreVideo('${id}')`, "primary") : operatorActionsHtml(x, true)) + smallBtn("Edit", `closeVideoModal();openVideoForm('${id}')`) +
-    `<a class="btn" style="font-size:0.86rem;padding:5px 10px" href="/clients/${encodeURIComponent(x.client.slug)}" target="_blank" rel="noopener">Open portal</a>` +
-    (x.video.editorId && x.video.status === "with_editor" ? `<a class="btn" style="font-size:0.86rem;padding:5px 10px" href="/editor/dashboard.html?editor=${encodeURIComponent(x.video.editorId)}" target="_blank" rel="noopener">Open editor portal</a>` : "") +
+    `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/clients/${encodeURIComponent(x.client.slug)}" target="_blank" rel="noopener">Open portal</a>` +
+    (x.video.editorId && x.video.status === "with_editor" ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/editor/dashboard.html?editor=${encodeURIComponent(x.video.editorId)}" target="_blank" rel="noopener">Open editor portal</a>` : "") +
     (abandoned ? "" : smallBtn("Abandon", `abandonVideo('${id}')`)) + smallBtn("Delete", `deleteVideo('${id}')`, "reject");
   openVideoModal(x.client, x.video, { actionsHtml: actions });
   if (x.video.status === "concept_pending" && !x.video.conceptApprovedAt) {
@@ -375,7 +373,7 @@ function openOperatorVideoModal(id) {
 }
 
 // ---------- video form (new + edit) ----------
-function lbl(text) { return `<label style="display:block;font-size:0.8rem;text-transform:uppercase;color:var(--sub);margin:0 0 3px">${escapeHtml(text)}</label>`; }
+function lbl(text) { return `<label style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin:0 0 3px">${escapeHtml(text)}</label>`; }
 function textField(key, label, value, rows) {
   return lbl(label) + (rows
     ? `<textarea data-f="${key}" rows="${rows}" style="width:100%;margin-bottom:10px">${escapeHtml(value || "")}</textarea>`
@@ -565,7 +563,7 @@ function openBulkAdd(presetClientId) {
     parsed = parseBulk(text.value);
     if (parsed.error) { preview.innerHTML = ""; err.textContent = parsed.error; save.disabled = true; return; }
     preview.innerHTML = `<b>${parsed.rows.length} idea(s) ready:</b><br>` +
-      parsed.rows.map(r => `• ${escapeHtml(r.title)}${r.dueToFilm ? " · film " + escapeHtml(niceDate(r.dueToFilm)) : ""}${r.dueToEdit ? ", edit " + escapeHtml(niceDate(r.dueToEdit)) : ""}${r.postDate ? ", post " + escapeHtml(niceDate(r.postDate)) : ""}`).join("<br>") +
+      parsed.rows.map(r => `• ${escapeHtml(r.title)}${r.dueToFilm ? " — film " + escapeHtml(r.dueToFilm) : ""}${r.dueToEdit ? ", edit " + escapeHtml(r.dueToEdit) : ""}${r.postDate ? ", post " + escapeHtml(r.postDate) : ""}`).join("<br>") +
       (parsed.problems.length ? `<br><span style="color:var(--red)">Skipped ${parsed.problems.length}:<br>${parsed.problems.map(escapeHtml).join("<br>")}</span>` : "");
     save.disabled = !parsed.rows.length;
   });
@@ -665,17 +663,13 @@ function renderTodo() {
   // Tabs, with counts for the client(s) shown.
   const tabs = [{ key: "all", label: "All", n: TODO_STAGES.filter(s => !s.apart).reduce((t, s) => t + inStage(s.key).length, 0) },
     ...TODO_STAGES.map(s => ({ key: s.key, label: s.label, n: inStage(s.key).length }))];
-  // Simple: only tabs with something in them (plus All and the one open).
-  document.getElementById("todoTabs").innerHTML = tabs.filter(t => t.key === "all" || t.n || t.key === todoStage).map(t =>
+  document.getElementById("todoTabs").innerHTML = tabs.map(t =>
     `<div class="chip ${t.key === todoStage ? "active" : ""}${t.key === "urgent" && t.n ? " urgent" : ""}" data-stage-tab="${t.key}">${escapeHtml(t.label)} (${t.n})</div>`).join("");
   document.querySelectorAll("#todoTabs .chip").forEach(c => c.onclick = () => { todoStage = c.dataset.stageTab; renderTodo(); });
-  // All shows only the stages that have something in them.
   const apart = new Set(TODO_STAGES.filter(s => s.apart).map(s => s.key));
   document.querySelectorAll("#view-todo [data-stage]").forEach(el => {
-    const key = el.dataset.stage;
-    el.style.display = key === todoStage || (todoStage === "all" && !apart.has(key) && inStage(key).length) ? "" : "none";
+    el.style.display = el.dataset.stage === todoStage || (todoStage === "all" && !apart.has(el.dataset.stage)) ? "" : "none";
   });
-  document.getElementById("todoAllEmpty").style.display = todoStage === "all" && !tabs[0].n ? "" : "none";
 
 
   listOrEmpty("urgentList", inStage("urgent").sort((a, b) => timeSensitive(a).date.localeCompare(timeSensitive(b).date)),
@@ -687,7 +681,7 @@ function renderTodo() {
   listOrEmpty("clientWaitingList", inStage("client"), x => operatorActionsHtml(x) + statusBadge(x.video.status, STATUS_LABEL), "Nothing waiting on a client.");
   listOrEmpty("toEditorList", inStage("toEditor"), x => operatorActionsHtml(x), "Nothing waiting for an editor.");
   listOrEmpty("withEditorList", inStage("withEditor"), x => (x.video.editorId
-    ? `<a class="btn" style="font-size:0.86rem;padding:5px 10px" href="/editor/dashboard.html?editor=${encodeURIComponent(x.video.editorId)}" target="_blank" rel="noopener">Open editor portal</a>` : "") + statusBadge(x.video.status, STATUS_LABEL), "Nothing with an editor.");
+    ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/editor/dashboard.html?editor=${encodeURIComponent(x.video.editorId)}" target="_blank" rel="noopener">Open editor portal</a>` : "") + statusBadge(x.video.status, STATUS_LABEL), "Nothing with an editor.");
   listOrEmpty("editsList", inStage("edits"), x => operatorActionsHtml(x), "No edits waiting.");
   document.getElementById("todoPostList").innerHTML = inStage("post").map(postCardHtml).join("") || '<div class="empty">Nothing ready to post right now.</div>';
   listOrEmpty("abandonedList", inStage("abandoned"), x => smallBtn("Restore", `restoreVideo('${x.video.id}')`, "primary") + smallBtn("Delete", `deleteVideo('${x.video.id}')`, "reject"),
@@ -715,13 +709,13 @@ function postCardHtml(x) {
     return `<div class="card" style="margin-bottom:10px">
       <div class="row" style="border:none;padding:0">
         <div class="left"><b class="video-card" style="display:inline-block" onclick="openOperatorVideoModal('${v.id}')">${escapeHtml(v.title || "(untitled)")}</b>
-          <div class="meta">${escapeHtml(x.client.name)}${(v.platform || []).length ? " · " + escapeHtml(platformNames(v.platform)) : ""}</div></div>
-        <span class="badge" style="color:${v.postDate && v.postDate < todayISO() ? "var(--red)" : "var(--ink)"}">${v.postDate ? "Posts " + escapeHtml(niceDate(v.postDate)) : "No post date yet"}</span>
+          <div class="meta">${escapeHtml(x.client.name)}${(v.platform || []).length ? " · " + escapeHtml(v.platform.join(" · ")) : ""}</div></div>
+        <span class="badge" style="background:var(--card2);color:${v.postDate && v.postDate < todayISO() ? "var(--red)" : "var(--ink)"}">Post ${escapeHtml(v.postDate || "— no date")}</span>
       </div>
-      ${v.onScreenCaption ? `<div style="margin-top:8px"><b style="display:block;font-size:0.8rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">On-screen caption</b><div style="white-space:pre-wrap;font-size:0.9rem">${escapeHtml(v.onScreenCaption)}</div></div>` : ""}
-      ${v.caption ? `<div style="margin-top:8px"><b style="display:block;font-size:0.8rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">Caption</b><div style="white-space:pre-wrap;font-size:0.9rem">${escapeHtml(v.caption)}</div></div>` : ""}
+      ${v.onScreenCaption ? `<div style="margin-top:8px"><b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">On-screen caption</b><div style="white-space:pre-wrap;font-size:0.9rem">${escapeHtml(v.onScreenCaption)}</div></div>` : ""}
+      ${v.caption ? `<div style="margin-top:8px"><b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">Caption</b><div style="white-space:pre-wrap;font-size:0.9rem">${escapeHtml(v.caption)}</div></div>` : ""}
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-        ${watch ? `<a class="btn" style="font-size:0.86rem;padding:5px 10px" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${watch.label}</a>` : ""}
+        ${watch ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${watch.label}</a>` : ""}
         ${v.caption ? smallBtn("Copy caption", `copyCaption('${v.id}', this)`) : ""}
         ${smallBtn("Mark posted", `markPosted('${v.id}')`, "primary")}
       </div>
@@ -748,9 +742,9 @@ function renderAllClients() {
       <div class="meta">${c.contactName || c.contactEmail || c.contactPhone
         ? "Contact: " + [c.contactName, c.contactEmail, c.contactPhone].filter(Boolean).map(escapeHtml).join(" · ")
         : `<span style="color:var(--red)">No contact yet</span>`}</div></div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn primary" style="font-size:0.84rem;padding:4px 9px" href="/clients/${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Open portal</a>
-      ${INVITES_ENABLED ? `<button style="font-size:0.84rem;padding:4px 9px" onclick="inviteClient('${c.id}', this)">Invite to portal</button>` : ""}
-      <button style="font-size:0.84rem;padding:4px 9px" onclick="openClientPanel('${c.id}')">Edit</button></div></div>`;
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn primary" style="font-size:0.75rem;padding:4px 9px" href="/clients/${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Open portal</a>
+      ${INVITES_ENABLED ? `<button style="font-size:0.75rem;padding:4px 9px" onclick="inviteClient('${c.id}', this)">Invite to portal</button>` : ""}
+      <button style="font-size:0.75rem;padding:4px 9px" onclick="openClientPanel('${c.id}')">Edit</button></div></div>`;
   }).join("");
 }
 
@@ -786,7 +780,7 @@ function openClientPanel(clientId) {
     ${lbl("Brand guidelines (Google Doc link — the editor sees it on every video)")}<input type="text" id="cpBrand" value="${escapeHtml(f.brandVoice || "")}" style="width:100%;margin-bottom:10px">
     <h3 style="font-size:0.85rem;margin:16px 0 4px;color:var(--sub)">Documents <span style="font-weight:400">— the client sees these on their portal's Documents page</span></h3>
     <div id="cpDocs"></div>
-    <button type="button" id="cpAddDoc" style="font-size:0.86rem;padding:5px 12px;margin:4px 0 14px">+ Add document</button>
+    <button type="button" id="cpAddDoc" style="font-size:0.78rem;padding:5px 12px;margin:4px 0 14px">+ Add document</button>
     <div class="auth-error" id="cpError"></div>
     <div style="display:flex;gap:8px">
       <button class="primary" id="cpSave">${clientId ? "Save changes" : "Create client"}</button>
