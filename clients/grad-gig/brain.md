@@ -14,6 +14,10 @@ The four working docs (built 2026-09-28 with `client-onboarding`):
 - Customer Data: `sources/customer-data.md` (https://docs.google.com/document/d/1neXfq9oX6PwNnBgPsiFawDvyPA3jU28iZdTsRGCICtY/edit)
 - Your Voice (3-3-3 and voice profile): `sources/positioning.md` + `sources/voice.md` (https://docs.google.com/document/d/1WjPXhiubV-p133P3YpyyRy6aOJUfGtJElBRLflpzJrk/edit). This replaced the old "Brand Voice" doc, same link.
 - Content Ideas: `concepts/content-ideas.md` (https://docs.google.com/document/d/1pLjTP26vgJHZgBXcFaGHNd5xjnaF9OOBqD_Y6oxsgU4/edit)
+- Drive folder (main): https://drive.google.com/drive/folders/1nOD5dj0UU_0h715kvmHik3j4FJoXYTU2
+- 06 Important Documents (onboarding: brand files): https://drive.google.com/drive/folders/1PlQEUGW50kPEqPZXIY3UIA2nUWTJZdkz
+- 07 Previous Content (onboarding: existing footage): https://drive.google.com/drive/folders/1QaRb04b4gGvrUfYHXtiVQ202A-lLfh_w
+  (Add these three on the operator dashboard, Clients → Grad Gig → Edit, once migration 008 is run.)
 - Content Research: `research/content-research.md` (https://docs.google.com/document/d/177RaHVYclmhJLB3Zr4KC7AE-dC_4JQZaOuAilrDNQsA/edit)
 
 **Marketing target (Tait, 2026-09-28):** people who hire, "moms slash dads in
