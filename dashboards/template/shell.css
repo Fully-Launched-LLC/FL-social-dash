@@ -278,8 +278,8 @@ input[type=date]::-webkit-calendar-picker-indicator { filter:invert(1); cursor:p
    Clicking a row (or its title) opens the video's card. */
 .vtable { overflow-x:auto; margin:0 -20px -18px; }
 /* Fixed column widths, so every row (and the header) lines up exactly. */
-.vrow { display:grid; grid-template-columns:minmax(200px,1fr) 118px 112px 150px 470px; align-items:center; gap:16px;
-  padding:14px 20px; border-bottom:1px solid var(--border); min-width:1000px; }
+.vrow { display:grid; grid-template-columns:minmax(200px,1fr) 112px 104px 120px 440px; align-items:center; gap:16px;
+  padding:14px 20px; border-bottom:1px solid var(--border); min-width:960px; }
 .vrow:last-child { border-bottom:0; }
 .vrow[data-id] { cursor:pointer; }
 .vrow[data-id]:hover .video-card { text-decoration:underline; text-underline-offset:3px; }
@@ -289,6 +289,7 @@ input[type=date]::-webkit-calendar-picker-indicator { filter:invert(1); cursor:p
 .vrow .when { font-variant-numeric:tabular-nums; white-space:nowrap; font-size:13.5px; }
 .vrow .when small { display:block; color:var(--sub2); font-size:12px; margin-top:2px; }
 .vrow .acts { display:flex; gap:6px; justify-content:flex-end; align-items:center; flex-wrap:wrap; }
+.vrow .acts .btn, .vrow .acts button { padding:6px 11px; font-size:12px; border-radius:8px; }
 .vrow .note-line { grid-column:1 / -1; font-size:12.5px; color:var(--sub); margin-top:-6px; }
 .dot { display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600; white-space:nowrap; }
 .dot::before { content:""; width:7px; height:7px; border-radius:50%; background:currentColor; }
