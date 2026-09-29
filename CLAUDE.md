@@ -520,7 +520,11 @@ Claude"). `.primary` buttons are white. One navy for every surface; cards
 and fields are outlined. Status badges are white (dimmed once done);
 platforms are white, told apart by their line (Facebook solid, LinkedIn
 outline, Instagram dashed, TikTok dotted, YouTube double). One typeface,
-Hanken Grotesk, with weight for headings. No emoji. Only the sidebar tabs
+Hanken Grotesk, with weight for headings. No emoji. Made to be read at a
+glance: secondary text at 82% white, nothing smaller than ~0.8rem, dates
+written as "Mon, Oct 5" (`niceDate`) and platforms by name
+(`platformNames`), never raw values. Empty tabs are hidden (except All and
+the open one), and All shows only stages that have something in them. Only the sidebar tabs
 are raised (white offset shadows). On phones the sidebar becomes a top bar.
 
 ### Client portal — `/clients/<slug>`
