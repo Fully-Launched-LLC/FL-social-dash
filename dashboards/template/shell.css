@@ -211,6 +211,9 @@ textarea, input[type=text], input[type=email], input[type=password], input[type=
 }
 textarea { line-height:1.5; resize:vertical; }
 select { cursor:pointer; }
+/* A dropdown inside a list row (e.g. Pick editor) sizes to its text, so the
+   row's actions stay on one line. */
+.row select { width:auto; padding:7px 12px; font-size:0.85rem; }
 textarea:focus, input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, input[type=date]:focus, select:focus {
   outline:none; border-color:var(--line-strong);
 }
