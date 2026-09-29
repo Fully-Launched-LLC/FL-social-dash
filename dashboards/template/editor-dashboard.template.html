@@ -140,7 +140,7 @@ function finishButton(videoId) {
 // (editor_brief.revisions) and any change the client asked for (note).
 function revisionsBox(video) {
   const items = [(video.editorBrief || {}).revisions, video.note].filter(Boolean);
-  return items.length ? `<div style="margin:0 0 12px;padding:10px 12px;border:1px solid var(--accent);border-radius:8px">
+  return items.length ? `<div style="margin:0 0 12px;padding:10px 12px;border:2px solid var(--accent);border-radius:8px">
     <b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--accent);margin-bottom:4px">Revisions needed</b>
     <div style="white-space:pre-wrap;font-size:0.9rem;line-height:1.5">${items.map(escapeHtml).join("\n\n")}</div></div>` : "";
 }
@@ -214,7 +214,7 @@ function renderCalendar() {
   const byDay = {};
   queue().forEach(x => { if (x.video.dueToEdit) (byDay[x.video.dueToEdit] = byDay[x.video.dueToEdit] || []).push(x); });
   renderMonthCalendar(document.getElementById("calGrid"), byDay, x =>
-    `<div class="cal-chip video-card" style="border:1px solid var(--status-${x.video.status}); color:var(--ink)" onclick="openEditorVideoModal('${x.video.id}')">${hasRevisions(x.video) ? "Revisions: " : ""}${escapeHtml(x.client.name)}: ${escapeHtml(x.video.title || "(untitled)")}</div>`,
+    `<div class="cal-chip video-card" style="border:2px solid var(--status-${x.video.status}); color:var(--ink)" onclick="openEditorVideoModal('${x.video.id}')">${hasRevisions(x.video) ? "Revisions: " : ""}${escapeHtml(x.client.name)}: ${escapeHtml(x.video.title || "(untitled)")}</div>`,
     calState, renderCalendar);
 }
 
