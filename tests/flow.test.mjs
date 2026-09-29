@@ -58,6 +58,9 @@ const plan = Array.from({ length: 30 }, (_, i) => ({
 
 const $ = (p, s) => p.d.querySelector(s);
 const $$ = (p, s) => Array.from(p.d.querySelectorAll(s));
+// Tab text as "Label (n)" (the count shows as a bubble on the page).
+const tabsText = p => $$(p, "#videoTabs .chip").map(c => c.textContent.trim().replace(/\s+(\d+)$/, " ($1)")).join("");
+const firstTab = p => $$(p, "#videoTabs .chip")[0].textContent.trim().replace(/\s+(\d+)$/, " ($1)");
 const btn = (root, text) => root && Array.from(root.querySelectorAll("button")).find(b => b.textContent.trim().startsWith(text));
 async function click(el, what) { if (!el) throw new Error("not found: " + what); el.click(); await settle(); }
 const portalCard = (p, listSel, t) => $$(p, listSel + " .card").find(c => (c.querySelector("[data-open]") || {}).textContent === t);
@@ -109,12 +112,12 @@ const clientFilmed = idx.filter(i => !V.switchToUs.includes(i));
 let cl = track(await CL());
 chk("client nav: To Do, Calendar, Documents, footage folder", $$(cl, ".nav-item").map(n => n.textContent.trim()).join("|") === "To Do|Content Calendar|Documents|My footage folder ↗", $$(cl, ".nav-item").map(n => n.textContent.trim()));
 chk("footage folder card on My Videos", $(cl, "#footageCard").style.display !== "none" && $(cl, "#footageCardLink").href === "https://drive/fl-footage");
-chk("My Videos opens on All", $(cl, "#videoTabs .chip.active").dataset.tab === "all" && $(cl, "#videoTabs .chip").textContent === `All (30)`, $(cl, "#videoTabs").textContent);
+chk("My Videos opens on All", $(cl, "#videoTabs .chip.active").dataset.tab === "all" && firstTab(cl) === `All (30)`, tabsText(cl));
 chk("All shows the To film group with its heading", $(cl, '[data-panel="film"]').style.display !== "none" && $(cl, '[data-panel="film"] .panel-title').style.display !== "none");
 chk("client can't edit anything on a card", !$$(cl, "#view-videos button").some(b => b.textContent.includes("Edit")) && !$(cl, "#view-videos textarea:not(.note-box textarea)"));
-chk(`To film shows ${clientFilmed.length}`, $(cl, "#videoTabs").textContent.includes(`To film (${clientFilmed.length})`), $(cl, "#videoTabs").textContent);
-if (V.switchToUs.length) chk("switched video shows under Ideas to approve", $(cl, "#videoTabs").textContent.includes(`Ideas to approve (${V.switchToUs.length})`), $(cl, "#videoTabs").textContent);
-else chk("no Ideas to approve tab for a client who films", !$(cl, "#videoTabs").textContent.includes("Ideas to approve"));
+chk(`To film shows ${clientFilmed.length}`, tabsText(cl).includes(`To film (${clientFilmed.length})`), tabsText(cl));
+if (V.switchToUs.length) chk("switched video shows under Ideas to approve", tabsText(cl).includes(`Ideas to approve (${V.switchToUs.length})`), tabsText(cl));
+else chk("no Ideas to approve tab for a client who films", !tabsText(cl).includes("Ideas to approve"));
 const c0 = portalCard(cl, "#listToFilm", title(0));
 chk("to-film card: film-by, hook, script, outline, how to film", c0 && ["Film by " + nice(day(-10)), "Hook 1", "Talking points 1", "- Point A1\n- Point B1", "Film it like this: 1"].every(t => c0.textContent.includes(t)), c0 && c0.textContent);
 chk("to-film card: upload link + only Video has been filmed / Suggest changes", c0 && !!c0.querySelector('a[href="https://drive/fl-footage"]')
@@ -161,7 +164,7 @@ const s0 = await statusOf(title(0)), s29 = await statusOf(title(clientFilmed.at(
 chk("edit due 7 days after filming", s0.due_to_edit === plus(TODAY, 7), s0);
 chk("posts 14 days after filming, or on the planned date if later",
   s0.post_date === (day(0) > plus(TODAY, 14) ? day(0) : plus(TODAY, 14)) && s29.post_date === (day(clientFilmed.at(-1)) > plus(TODAY, 14) ? day(clientFilmed.at(-1)) : plus(TODAY, 14)), [s0.post_date, s29.post_date]);
-chk("To film now empty with a stay-tuned note", $(cl, "#videoTabs").textContent.includes("To film (0)") && $(cl, "#listToFilm").textContent.includes("Stay tuned"), $(cl, "#videoTabs").textContent);
+chk("To film now empty with a stay-tuned note", tabsText(cl).includes("To film (0)") && $(cl, "#listToFilm").textContent.includes("Stay tuned"), tabsText(cl));
 
 // A "we film" video on this client: approve the idea, then Tait films it.
 if (V.switchToUs.length) {
@@ -246,12 +249,12 @@ chk("all 30 with the client, both captions", (await count("status='client_review
 
 // ── 6. Client final approval ──
 cl = track(await CL());
-chk("Finished videos to approve (30)", $(cl, "#videoTabs").textContent.includes("Finished videos to approve (30)"), $(cl, "#videoTabs").textContent);
+chk("Finished videos to approve (30)", tabsText(cl).includes("Finished videos to approve (30)"), tabsText(cl));
 const fr = portalCard(cl, "#listFinal", title(0));
 chk("final card: watch link + both captions, read-only", fr && !!fr.querySelector('a[href="https://drive/fl-final"]')
   && fr.textContent.includes("Caption 1") && fr.textContent.includes("On screen 1") && !fr.querySelector("[data-cap]")
   && Array.from(fr.querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Approve for posting|Request changes to the video");
-chk("All lists the finished videos to approve", $(cl, '[data-panel="final"]').style.display !== "none" && $(cl, "#videoTabs .chip").textContent === "All (30)");
+chk("All lists the finished videos to approve", $(cl, '[data-panel="final"]').style.display !== "none" && firstTab(cl) === "All (30)");
 for (const i of idx) {
   const card = portalCard(cl, "#listFinal", title(i));
   if (V.clientRev.includes(i)) {
@@ -289,7 +292,7 @@ $(op, "#bkText").dispatchEvent(new op.w.Event("input"));
 await click($(op, "#bkSave"), "save premium ideas");
 chk("premium ideas default to we film", (await count("client_id=$1 and filmed_by='us' and status='concept_pending'", [PREM])) === 3);
 let prem = track(await PREMP());
-chk("premium tabs: All, Ideas to approve, Finished", $$(prem, "#videoTabs .chip").map(c => c.textContent).join("|") .replace(/Time sensitive \(\d+\)/, "Time sensitive") === "All (3)|Time sensitive|Ideas to approve (3)|Finished videos to approve (0)", $$(prem, "#videoTabs .chip").map(c => c.textContent));
+chk("premium tabs: All, Ideas to approve, Finished", $$(prem, "#videoTabs .chip").map(c => c.textContent.trim().replace(/\s+(\d+)$/, " ($1)")).join("|") .replace(/Time sensitive \(\d+\)/, "Time sensitive") === "All (3)|Time sensitive|Ideas to approve (3)|Finished videos to approve (0)", $$(prem, "#videoTabs .chip").map(c => c.textContent.trim().replace(/\s+(\d+)$/, " ($1)")));
 chk("premium still has its footage folder link", $(prem, "#footageCardLink").href === "https://drive/prem-footage");
 const pc = portalCard(prem, "#listIdeas", "Prem 1");
 chk("premium idea card: hook, script, outline, how we'll make it — no upload", pc && ["Prem hook 1", "Prem script 1", "- Prem point 1", "How we'll make itWe film it 1"].every(t => pc.textContent.includes(t)) && !pc.textContent.includes("How to film it") && !pc.querySelector("a[href*='footage']"), pc && pc.textContent);

@@ -67,6 +67,19 @@ const PLATFORMS = {
 const PLATFORM_ALIASES = { ig: "instagram", insta: "instagram", tt: "tiktok", "tik tok": "tiktok", fb: "facebook", li: "linkedin", yt: "youtube" };
 function normPlatform(p) { const k = String(p || "").trim().toLowerCase(); return PLATFORM_ALIASES[k] || k; }
 // A video's platforms as colored pills: short tags ("IG") or full names.
+// "Mon, Oct 5"
+function niceDate(iso) {
+  return iso ? new Date(iso + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : "";
+}
+// A filter tab's label with its count as a bubble: "Ready to post <2>".
+function chipLabel(label, n) {
+  return `${escapeHtml(label)} <span class="c">${n}</span>`;
+}
+// A status as a dot and a word; gold when it's time sensitive, dim when done.
+function statusDot(status, labelMap, soon) {
+  const done = ["posted", "rejected"].includes(status);
+  return `<span class="dot${soon ? " soon" : done ? " done" : ""}">${escapeHtml((labelMap && labelMap[status]) || status)}</span>`;
+}
 // Colors come from the .p-<platform> classes in shell.css (gold or white,
 // solid or outline), so a platform looks the same everywhere.
 function platformPills(platforms, full) {
@@ -177,6 +190,9 @@ function initRouter(defaultView) {
     const el = document.getElementById("view-" + view);
     if (el) el.classList.add("active");
     items.forEach(i => i.classList.toggle("active", i.dataset.view === view));
+    // The top bar's "where you are" label, from the tab's own words.
+    const crumb = document.getElementById("crumbPage"), on = Array.from(items).find(i => i.dataset.view === view);
+    if (crumb && on) crumb.textContent = (on.dataset.label || on.childNodes[0].textContent).trim();
     window.location.hash = view;
   }
   items.forEach(i => i.addEventListener("click", () => activate(i.dataset.view)));

@@ -30,7 +30,7 @@ await db.exec(`
 `);
 
 const op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
-const tabs = () => Object.fromEntries(Array.from(op.d.querySelectorAll("#todoTabs .chip")).map(c => [c.dataset.stageTab, c.textContent]));
+const tabs = () => Object.fromEntries(Array.from(op.d.querySelectorAll("#todoTabs .chip")).map(c => [c.dataset.stageTab, c.textContent.trim().replace(/\s+(\d+)$/, " ($1)")]));
 const shown = () => Array.from(op.d.querySelectorAll("#view-todo [data-stage]")).filter(el => el.style.display !== "none").map(el => el.dataset.stage);
 const titlesIn = stage => Array.from(op.d.querySelectorAll(`#view-todo [data-stage="${stage}"] b.video-card`)).map(b => b.textContent);
 
@@ -48,7 +48,7 @@ op.d.querySelector('[data-stage-tab="toEditor"]').click(); await settle();
 chk("Ready for an editor: client footage + we-film video", shown().join() === "toEditor" && titlesIn("toEditor").sort().join() === "A footage in,B we film");
 op.d.querySelector('[data-stage-tab="client"]').click(); await settle();
 chk("Waiting on client: grouped by status in pipeline order (ideas → to film → final)", titlesIn("client").join() === "A idea,B idea,A to film,A final", titlesIn("client"));
-const labels = Array.from(op.d.querySelectorAll('[data-stage="client"] .badge')).map(b => b.textContent);
+const labels = Array.from(op.d.querySelectorAll('[data-stage="client"] .dot')).map(b => b.textContent);
 chk("status labels line up in order", labels.join() === "Idea,Idea,To film,Client final review", labels);
 
 // The client chips at the top filter everything (the To Do dropdown that
@@ -75,6 +75,21 @@ op.w.closeVideoModal();
 todoBtn("Add ideas with Claude").click(); await settle();
 chk("Add ideas with Claude on To Do opens the paste box", !!op.d.getElementById("bkText"));
 op.w.closeVideoModal();
+
+// Clicking a video's row opens its card; its buttons don't.
+op.w.closeVideoModal();
+op.d.querySelector('[data-stage-tab="all"]').click(); await settle();
+const aRow = Array.from(op.d.querySelectorAll("#view-todo .vrow[data-id]")).find(r => r.textContent.includes("A to film"));
+aRow.querySelector(".when").click(); await settle();
+chk("clicking a row opens the video's card", op.d.getElementById("videoModalBox")?.textContent.includes("A to film") && !op.d.getElementById("videoModalRoot").classList.contains("hidden"));
+op.w.closeVideoModal();
+aRow.querySelector(".video-card").click(); await settle();
+chk("clicking the title opens it too", !op.d.getElementById("videoModalRoot").classList.contains("hidden"));
+op.w.closeVideoModal();
+const rowBtn = Array.from(op.d.querySelectorAll("#view-todo .vrow[data-id] .acts button")).find(b => b.textContent === "Send to editor");
+rowBtn.click(); await settle();
+chk("a row's own buttons don't open the card", op.d.getElementById("videoModalRoot").classList.contains("hidden"));
+op.ui.alerts.length = 0;
 
 chk("no page errors", !op.ui.errors.length && !op.ui.alerts.length, [op.ui.errors, op.ui.alerts]);
 console.log(`${counts.pass} passed, ${counts.fail} failed`);
