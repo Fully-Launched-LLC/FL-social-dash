@@ -1,13 +1,12 @@
 // Shared helpers for the /api functions (Vercel serverless, Node 18+).
 // No npm dependencies: everything is a plain fetch to Supabase, Resend,
-// OpenAI or Anthropic. Keys come from Vercel environment variables and
+// or Anthropic. Keys come from Vercel environment variables and
 // never reach the browser:
 //
 //   SUPABASE_URL, SUPABASE_ANON_KEY   already set (the pages use them too)
 //   SUPABASE_SERVICE_ROLE_KEY         lets these functions act as admin
 //   PORTAL_URL                        e.g. https://social.fullylaunched.com
 //   RESEND_API_KEY, EMAIL_FROM        sending the invite email
-//   OPENAI_API_KEY                    transcribing the voice memo
 //   ANTHROPIC_API_KEY, ANTHROPIC_MODEL  building the documents
 //
 // Every function checks who's calling from their Supabase login (the

@@ -2,16 +2,16 @@
 --
 -- A new client gets an invite email (api/invite.js), clicks through to
 -- /welcome, sets a password, then walks through: brand (if they film),
--- the voice-memo questions, recording or uploading the voice memo, their
--- existing footage, and a short tour of the portal. The voice memo is
--- transcribed and turned into their Customer Data and Your Voice documents
--- by api/voice-memo.js (service role, so it bypasses RLS).
+-- the voice-memo questions, texting their voice memo to Tait, their
+-- existing footage, and a short tour of the portal. Tait gets the
+-- transcript himself, pastes it on the operator dashboard (Clients →
+-- Onboarding), and api/build-documents.js turns it into their Customer Data
+-- and Your Voice documents (service role, so it bypasses RLS).
 --
 --   social_client_onboarding      one row per client: where they are, and
 --                                 what they've given us.
 --   social_client_generated_docs  the documents built from the voice memo.
 --   social_drive_folder_links     + root, important_documents, previous_content.
---   storage bucket onboarding-audio  private; <client_id>/<file>.
 --
 -- Clients never write these tables directly: every step goes through
 -- social_client_onboarding_save(), which checks who's calling.
@@ -30,9 +30,8 @@ create table if not exists social_client_onboarding (
   password_set_at timestamptz,
   brand jsonb not null default '{}'::jsonb,      -- { fonts, colors, aesthetic, links }
   answers jsonb not null default '{}'::jsonb,    -- optional written notes, by question id
-  voice_memo_path text,                          -- storage path in onboarding-audio
-  voice_memo_uploaded_at timestamptz,
-  transcript text,
+  voice_memo_sent_at timestamptz,                -- client says they've texted it to Tait
+  transcript text,                               -- pasted by Tait (operators only)
   docs_status text not null default 'waiting'
     check (docs_status in ('waiting', 'processing', 'ready', 'failed')),
   docs_error text,
@@ -85,8 +84,7 @@ create policy "client users read own generated docs" on social_client_generated_
 --   password   → password_set_at
 --   brand      → brand (fonts, colors, aesthetic, links; text only)
 --   answers    → answers (optional written notes)
---   voice_memo → voice_memo_path (must be inside this client's folder),
---                docs_status 'processing'
+--   memo_sent  → voice_memo_sent_at (they've texted it to Tait)
 --   footage    → footage_done_at
 --   docs_seen  → docs_seen_at
 --   done       → completed_at
@@ -98,7 +96,6 @@ set search_path = public
 as $$
 declare
   v_row social_client_onboarding;
-  v_path text;
 begin
   if auth.uid() is null then raise exception 'Not signed in'; end if;
   -- coalesce: a login with no client has a NULL client id, and NULL = x is
@@ -121,15 +118,8 @@ begin
   elsif p_step = 'answers' then
     if jsonb_typeof(coalesce(p_data, '{}'::jsonb)) <> 'object' then raise exception 'Answers must be an object'; end if;
     update social_client_onboarding set answers = coalesce(p_data, '{}'::jsonb), updated_at = now() where client_id = p_client_id;
-  elsif p_step = 'voice_memo' then
-    v_path := p_data ->> 'path';
-    if v_path is null or v_path not like p_client_id::text || '/%' then
-      raise exception 'The voice memo must be in this client''s folder';
-    end if;
-    update social_client_onboarding
-       set voice_memo_path = v_path, voice_memo_uploaded_at = now(),
-           docs_status = 'processing', docs_error = null, updated_at = now()
-     where client_id = p_client_id;
+  elsif p_step = 'memo_sent' then
+    update social_client_onboarding set voice_memo_sent_at = now(), updated_at = now() where client_id = p_client_id;
   elsif p_step = 'footage' then
     update social_client_onboarding set footage_done_at = now(), updated_at = now() where client_id = p_client_id;
   elsif p_step = 'docs_seen' then
@@ -147,26 +137,3 @@ $$;
 
 revoke all on function social_client_onboarding_save(uuid, text, jsonb) from public, anon;
 grant execute on function social_client_onboarding_save(uuid, text, jsonb) to authenticated;
-
--- ── Voice memo storage (Supabase projects only; skipped where there's no
--- storage schema, e.g. the local tests) ──────────────────────────────────
-do $$
-begin
-  if exists (select 1 from information_schema.schemata where schema_name = 'storage') then
-    insert into storage.buckets (id, name, public)
-    values ('onboarding-audio', 'onboarding-audio', false)
-    on conflict (id) do nothing;
-
-    execute 'drop policy if exists "onboarding audio: client uploads own" on storage.objects';
-    execute $p$create policy "onboarding audio: client uploads own" on storage.objects
-      for insert to authenticated
-      with check (bucket_id = 'onboarding-audio'
-        and (social_is_operator() or (storage.foldername(name))[1] = social_current_client_id()::text))$p$;
-
-    execute 'drop policy if exists "onboarding audio: read own" on storage.objects';
-    execute $p$create policy "onboarding audio: read own" on storage.objects
-      for select to authenticated
-      using (bucket_id = 'onboarding-audio'
-        and (social_is_operator() or (storage.foldername(name))[1] = social_current_client_id()::text))$p$;
-  end if;
-end $$;

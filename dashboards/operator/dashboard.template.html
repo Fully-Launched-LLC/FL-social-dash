@@ -945,8 +945,9 @@ async function sendInvite(clientId) {
   }
 }
 
-// What a client has given us during onboarding: brand, notes, voice memo,
-// transcript, and the documents built from it.
+// What a client has given us during onboarding (brand, notes), and where
+// Tait pastes the transcript of the voice memo they texted him, then
+// builds their documents (/api/build-documents).
 async function openOnboarding(clientId) {
   const c = CLIENT_BY_ID[clientId];
   if (!c) return;
@@ -957,39 +958,41 @@ async function openOnboarding(clientId) {
   const ob = o || {};
   const s = onboardingSummary(o, c.clientSystem !== "concierge");
   const b = ob.brand || {}, a = ob.answers || {};
-  let memoLink = "";
-  if (ob.voice_memo_path) {
-    const { data: signed } = await sbClient.storage.from("onboarding-audio").createSignedUrl(ob.voice_memo_path, 3600);
-    if (signed && signed.signedUrl) memoLink = `<a class="btn" href="${escapeHtml(signed.signedUrl)}" target="_blank" rel="noopener">Listen to the voice memo</a>`;
-  }
   const qText = id => { for (const sec of ONBOARDING_QUESTIONS) for (const it of sec.items) if (it.id === id) return it.q; return id; };
+  const built = (docs || []).length;
   const box = openModal(`
     <h2>${escapeHtml(c.name)}: onboarding</h2>
     <div class="modal-meta">${escapeHtml(s.label)}${ob.invited_email ? " · invited " + escapeHtml(ob.invited_email) : ""}</div>
-    ${ob.docs_error ? modalField("Why the documents failed", ob.docs_error) : ""}
     ${Object.keys(b).length ? modalField("Brand", [b.fonts && "Fonts: " + b.fonts, (b.colors || []).length && "Colors: " + b.colors.join(", "), b.aesthetic && "Look and feel: " + b.aesthetic, b.links && "Looks they love: " + b.links].filter(Boolean).join("\n")) : ""}
     ${Object.keys(a).length ? modalField("Their written notes", Object.entries(a).map(([k, v]) => qText(k) + "\n" + v).join("\n\n")) : ""}
-    ${ob.transcript ? `<details class="modal-field"><summary style="cursor:pointer"><b style="display:inline">Transcript</b> (${ob.transcript.length.toLocaleString()} characters)</summary><div style="white-space:pre-wrap;margin-top:8px">${escapeHtml(ob.transcript)}</div></details>` : ""}
+    <div class="modal-field">
+      <b>Voice memo transcript</b>
+      <div class="meta" style="margin-bottom:6px">${ob.voice_memo_sent_at ? "They say they've texted you their voice memo. " : ""}Paste the whole transcript here, then build their Customer Data and Your Voice documents.</div>
+      <textarea id="obTranscript" rows="8" style="width:100%" placeholder="Paste the transcript…">${escapeHtml(ob.transcript || "")}</textarea>
+    </div>
+    ${ob.docs_error ? `<div class="modal-field"><b>Last build failed</b><div style="color:var(--red)">${escapeHtml(ob.docs_error)}</div></div>` : ""}
     ${(docs || []).map(d => `<details class="modal-field"><summary style="cursor:pointer"><b style="display:inline">${escapeHtml(d.title)}</b></summary><div class="doc-body" style="margin-top:8px">${docBodyHtml(d)}</div></details>`).join("")}
     <div class="modal-actions">
-      ${memoLink}
-      ${ob.voice_memo_path ? `<button id="obRebuild">${(docs || []).length ? "Rebuild documents" : "Build documents"}</button>` : ""}
+      <button class="primary" id="obBuild">${built ? "Save and rebuild documents" : "Save and build documents"}</button>
       <a class="btn" href="/welcome?client=${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Preview their onboarding</a>
-      <button class="primary" onclick="closeVideoModal()">Close</button>
+      <button onclick="closeVideoModal()">Close</button>
     </div>
     <div class="auth-error" id="obErr"></div>`);
-  const rb = box.querySelector("#obRebuild");
-  if (rb) rb.onclick = async () => {
-    rb.disabled = true; rb.textContent = "Building… (a few minutes)";
+  const btn = box.querySelector("#obBuild");
+  btn.onclick = async () => {
+    const err = box.querySelector("#obErr"); err.textContent = "";
+    const transcript = box.querySelector("#obTranscript").value.trim();
+    if (transcript.length < 200) { err.textContent = transcript ? "That's too short to build documents from. Paste the whole transcript." : "Paste the transcript first."; return; }
+    btn.disabled = true; btn.textContent = "Building… (a minute or two)";
     const { data } = await sbClient.auth.getSession();
     let out = {};
     try {
-      const res = await fetch("/api/voice-memo", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + ((data && data.session && data.session.access_token) || "") }, body: JSON.stringify({ clientId }) });
+      const res = await fetch("/api/build-documents", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + ((data && data.session && data.session.access_token) || "") }, body: JSON.stringify({ clientId, transcript }) });
       out = await res.json().catch(() => ({}));
       if (!res.ok) out.error = out.error || "The document service answered " + res.status + ".";
     } catch (e) { out.error = "Couldn't reach the document service: " + (e.message || e); }
     await loadLiveData();
-    if (out.error) { box.querySelector("#obErr").textContent = out.error; rb.disabled = false; rb.textContent = "Try again"; }
+    if (out.error) { err.textContent = out.error; btn.disabled = false; btn.textContent = "Try again"; }
     else openOnboarding(clientId);
   };
 }

@@ -24,7 +24,7 @@
     }
   ],
   "functions": {
-    "api/voice-memo.js": {
+    "api/build-documents.js": {
       "maxDuration": 300
     },
     "api/invite.js": {

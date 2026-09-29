@@ -339,13 +339,13 @@ fully-social-os/
                                (social_client_documents — each client's
                                important Google Drive docs), 008 (client
                                onboarding: social_client_onboarding,
-                               social_client_generated_docs, new folder links,
-                               the onboarding-audio bucket)
+                               social_client_generated_docs, new folder links)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
-                               invite.js (branded invite email), voice-memo.js
-                               (transcribe + build documents); _lib.js, _email.js
+                               invite.js (branded invite email),
+                               build-documents.js (documents from a pasted
+                               transcript); _lib.js, _email.js
   ONBOARDING-SETUP.md          the steps only Tait can do to turn onboarding on
     config.example.js          template for supabase/config.js (gitignored —
                                the real Supabase URL/anon key, local dev only)
@@ -452,13 +452,15 @@ password → how it works → **brand** (only if they film: logo and files to
 their Important Documents folder, fonts, colors, look and feel, looks they
 love) → **the questions** (`ONBOARDING_QUESTIONS` in shell.js: the order
 Luke's own recordings answered, plus the 3-3-3 perspective questions;
-optional written notes) → **voice memo** (recorded in the browser or
-uploaded, 25 MB max, into the private `onboarding-audio` bucket) →
-**footage** (their Previous Content Drive folder) → **their documents** →
-**portal tour** → their portal.
+optional written notes) → **voice memo** (recorded on their phone and
+texted to Tait, `TEXT_MEMO_TO` in the welcome template; "I've texted it"
+records `voice_memo_sent_at`) → **footage** (their Previous Content Drive
+folder) → **their documents** → **portal tour** → their portal.
 
-Sending the voice memo calls `/api/voice-memo`: Whisper transcribes it,
-then Claude builds **Customer Data** (Tait's voice-of-customer prompt, word
+Tait gets the transcript himself and pastes it in Clients → **Onboarding**;
+**Save and build documents** calls `/api/build-documents` (operators only,
+needs `ANTHROPIC_API_KEY`, no transcription service), and Claude builds
+**Customer Data** (Tait's voice-of-customer prompt, word
 for word) and **Your Voice** (candidate 3-3-3 marked To confirm, plus the
 voice profile) under the skills' rules: nothing invented, quotes word for
 word. Every quote is then checked against the transcript and any that isn't
@@ -466,8 +468,8 @@ found is flagged in the document. They're saved in
 `social_client_generated_docs` and shown in the welcome steps and on the
 portal's Documents page. The Content Ideas document still comes later, from
 Tait's content research. Operators see each client's progress on Clients,
-and **Onboarding** shows what they sent, the transcript, the documents,
-the voice memo, "Rebuild documents", and a preview of their steps
+and **Onboarding** shows what they sent, the transcript box, the documents,
+"Save and build / rebuild documents", and a preview of their steps
 (`/welcome?client=<slug>`). A client who hasn't finished gets a "Finish
 setting up" card on their To Do.
 
@@ -701,7 +703,7 @@ As of 2026-09-23:
 |---|---|---|
 | 0 | Client creation — operator adds a client, gets a working (empty) portal instantly | ✅ Live |
 | 1 | Onboarding — invite, password, brand, voice-memo questions, voice memo, existing footage, portal tour | ✅ Built (`/welcome`); needs `ONBOARDING-SETUP.md` to go live. Platform access not included. |
-| 2 | Onboarding data lands in Supabase; documents built from the voice memo | ✅ Built (`social_client_onboarding`, `/api/voice-memo`) |
+| 2 | Onboarding data lands in Supabase; documents built from the voice memo | ✅ Built (`social_client_onboarding`, `/api/build-documents` from a pasted transcript) |
 | 3 | Operator generates content ideas, AI-assisted | 🧩 Claude + "Add ideas with Claude"; not in-app |
 | 4 | Operator schedules content and writes filming instructions | ✅ Live |
 | 5 | Client films and uploads (self-serve) or Tait films (concierge) | ✅ Status live; upload is a Drive deep link |

@@ -25,11 +25,12 @@
 <script>
 // /welcome — a new client's onboarding, one step at a time:
 //   password → welcome → brand (only if they film) → questions → voice memo
-//   → footage → documents → portal tour → their portal.
+//   (recorded on their phone and texted to Tait) → footage → documents →
+//   portal tour → their portal.
 // Every step is saved with social_client_onboarding_save() (migration 008),
-// so they can stop and come back. The voice memo goes to the private
-// onboarding-audio bucket; api/voice-memo.js transcribes it and builds
-// their Customer Data and Your Voice documents.
+// so they can stop and come back. Tait pastes the voice memo's transcript
+// on the operator dashboard, which builds their Customer Data and Your
+// Voice documents (api/build-documents.js); they show up here when ready.
 //
 // /welcome?mode=reset is the "Set a new password" page for anyone (the
 // Forgot password email lands here), then sends them to their dashboard.
@@ -40,7 +41,9 @@ const params = new URLSearchParams(location.search);
 const RESET = params.get("mode") === "reset";
 let ME = null, ROLE = null, CLIENT = null, FOLDERS = {}, OB = null, DOCS = [];
 let current = null;
-const MAX_AUDIO_BYTES = 25 * 1024 * 1024; // the transcription service's limit
+// Where clients text their voice memo. Tait's number, e.g. "(555) 123-4567".
+// Empty: the page just says "text it to Tait".
+const TEXT_MEMO_TO = "";
 
 const clientFilms = () => CLIENT && CLIENT.client_system !== "concierge";
 
@@ -62,8 +65,8 @@ function isDone(key) {
   return {
     password: !!o.password_set_at, welcome: !!o.password_set_at,
     brand: !!(o.brand && Object.keys(o.brand).length),
-    questions: !!(o.voice_memo_path || (o.answers && Object.keys(o.answers).length)),
-    memo: !!o.voice_memo_path, footage: !!o.footage_done_at,
+    questions: !!(o.voice_memo_sent_at || o.transcript || (o.answers && Object.keys(o.answers).length)),
+    memo: !!(o.voice_memo_sent_at || o.transcript), footage: !!o.footage_done_at,
     docs: !!o.docs_seen_at, tour: !!o.completed_at,
   }[key];
 }
@@ -165,18 +168,22 @@ const STEPS = {
     ${navHtml("Next: record your voice memo")}`;
   },
 
-  memo: () => `
+  memo: () => {
+    const to = TEXT_MEMO_TO ? `Tait at <b><a href="sms:${escapeHtml(TEXT_MEMO_TO.replace(/[^0-9+]/g, ""))}" style="color:inherit">${escapeHtml(TEXT_MEMO_TO)}</a></b>` : "Tait";
+    const sent = OB && (OB.voice_memo_sent_at || OB.transcript);
+    return `
     <h1>Record your voice memo</h1>
-    <p class="lead">Answer the questions in one go, in your own words. Aim for 15 to 25 minutes. Don't worry about being polished: the way you naturally talk is exactly what we want.</p>
-    ${OB && OB.voice_memo_path ? `<div class="card"><b>Got it. Your voice memo is in.</b><div class="meta">We're turning it into your documents. You can record a new one if you'd like to replace it.</div></div>` : ""}
-    <div class="card">
-      <div class="rec"><button type="button" class="accent" id="recBtn">Start recording</button><span class="time" id="recTime">0:00</span><span class="meta" id="recState"></span></div>
-      <audio id="recPreview" controls style="width:100%;margin-top:12px;display:none"></audio>
-      <div style="margin-top:14px" class="meta">Recorded on your phone already? <label for="memoFile" style="display:inline;color:var(--ink);text-decoration:underline;cursor:pointer">Upload an audio file</label> instead.</div>
-      <input type="file" id="memoFile" accept="audio/*" style="display:none">
-      <div id="memoReady" style="display:none;margin-top:14px"><button type="button" class="primary" id="memoUpload">Send my voice memo</button></div>
-    </div>
-    ${navHtml(OB && OB.voice_memo_path ? "Continue" : "Skip for now")}`,
+    <p class="lead">Answer the questions in one voice memo, in your own words. Aim for 15 to 25 minutes. Don't worry about being polished: the way you naturally talk is exactly what we want.</p>
+    <div class="card"><ol class="doc-body" style="margin:0">
+      <li>Open the <b>Voice Memos</b> app on your phone (or any recorder) and tap record.</li>
+      <li>Talk through the questions from the last step. Keep them open on another screen if that helps.</li>
+      <li>Text the recording to ${to}.</li>
+    </ol>
+    ${TEXT_MEMO_TO ? `<div class="meta" style="margin-top:10px">Tait's number: <b>${escapeHtml(TEXT_MEMO_TO)}</b></div>` : ""}</div>
+    ${sent ? `<div class="card"><b>Got it, thanks.</b><div class="meta">We'll turn your voice memo into your documents. They'll show up in the Your documents step and on your portal's Documents page.</div></div>` : ""}
+    ${navHtml(sent ? "Continue" : "I've texted it", { accent: !sent })}
+    <div style="margin-top:10px"><button type="button" class="reject" data-later>I'll send it later</button></div>`;
+  },
 
   footage: () => `
     <h1>Your existing footage</h1>
@@ -197,7 +204,7 @@ const STEPS = {
       <h1>Your documents</h1>
       <p class="lead">${st === "processing" ? "We're building your Customer Data and Your Voice documents from your voice memo. This takes a few minutes. You can keep going: they'll be on your portal's Documents page when they're ready."
         : st === "failed" ? "Something went wrong building your documents. We've been told and will take care of it. You can keep going."
-        : "Once you send your voice memo, we'll turn it into your Customer Data and Your Voice documents, and they'll show up here and on your portal's Documents page."}</p>
+        : "Once we have your voice memo, we'll turn it into your Customer Data and Your Voice documents, and they'll show up here and on your portal's Documents page. You can keep going."}</p>
       ${st === "processing" ? `<div class="card meta" id="docsWait">Building… this page checks every few seconds.</div>` : ""}
       ${navHtml("Continue")}`;
   },
@@ -245,50 +252,12 @@ const WIRE = {
     return r.error ? r.error.message : null;
   }),
   memo: body => {
-    wireNav(body);
-    let rec = null, chunks = [], blob = null, timer = null, started = 0;
-    const btn = body.querySelector("#recBtn"), time = body.querySelector("#recTime"), state = body.querySelector("#recState");
-    const preview = body.querySelector("#recPreview"), ready = body.querySelector("#memoReady");
-    const showReady = b => {
-      blob = b; ready.style.display = "";
-      // A preview to listen back to; sending doesn't depend on it.
-      try { preview.src = URL.createObjectURL(b); preview.style.display = ""; } catch (e) { preview.style.display = "none"; }
-    };
-    btn.onclick = async () => {
-      if (rec && rec.state === "recording") { rec.stop(); return; }
-      if (!navigator.mediaDevices || !window.MediaRecorder) { state.textContent = "Recording isn't available in this browser. Upload an audio file instead."; return; }
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const type = ["audio/webm;codecs=opus", "audio/mp4", "audio/webm"].find(t => MediaRecorder.isTypeSupported(t)) || "";
-        rec = new MediaRecorder(stream, type ? { mimeType: type, audioBitsPerSecond: 32000 } : undefined);
-        chunks = [];
-        rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-        rec.onstop = () => {
-          clearInterval(timer); stream.getTracks().forEach(t => t.stop());
-          btn.textContent = "Record again"; time.classList.remove("live"); state.textContent = "Listen back, then send it.";
-          showReady(new Blob(chunks, { type: rec.mimeType || "audio/webm" }));
-        };
-        rec.start(1000); started = Date.now();
-        btn.textContent = "Stop recording"; time.classList.add("live"); state.textContent = "Recording…"; ready.style.display = "none";
-        timer = setInterval(() => { const s = Math.floor((Date.now() - started) / 1000); time.textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }, 500);
-      } catch (e) { state.textContent = "We couldn't use your microphone (" + (e.message || e) + "). Upload an audio file instead."; }
-    };
-    body.querySelector("#memoFile").onchange = e => { const f = e.target.files[0]; if (f) { state.textContent = f.name; showReady(f); } };
-    body.querySelector("#memoUpload").onclick = async e => {
-      const err = body.querySelector("[data-err]"); err.textContent = "";
-      if (!blob) return;
-      if (blob.size > MAX_AUDIO_BYTES) { err.textContent = "That file is over 25 MB. Record here instead (it's much smaller), or send a shorter file."; return; }
-      e.target.disabled = true; e.target.textContent = "Sending…";
-      const type = blob.type || "audio/webm";
-      const ext = (blob.name && blob.name.split(".").pop()) || (type.includes("mp4") ? "m4a" : type.includes("mpeg") ? "mp3" : "webm");
-      const path = `${CLIENT.id}/${Date.now()}-voice-memo.${ext}`;
-      const up = await sbClient.storage.from("onboarding-audio").upload(path, blob, { contentType: type, upsert: false });
-      if (up.error) { err.textContent = "Upload failed: " + up.error.message; e.target.disabled = false; e.target.textContent = "Send my voice memo"; return; }
-      const r = await save("voice_memo", { path });
-      if (r.error) { err.textContent = r.error.message; e.target.disabled = false; e.target.textContent = "Send my voice memo"; return; }
-      buildDocs();  // runs in the background; the docs step shows progress
-      next();
-    };
+    wireNav(body, async () => {
+      if (OB && (OB.voice_memo_sent_at || OB.transcript)) return null;
+      const r = await save("memo_sent");
+      return r.error ? r.error.message : null;
+    });
+    body.querySelector("[data-later]").onclick = next;
   },
   footage: body => {
     body.querySelector("[data-back]").onclick = back;
@@ -309,16 +278,6 @@ const WIRE = {
 };
 
 // ---------- documents ----------
-async function buildDocs() {
-  try {
-    const { data } = await sbClient.auth.getSession();
-    const token = data && data.session && data.session.access_token;
-    const res = await fetch("/api/voice-memo", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + (token || "") }, body: JSON.stringify({ clientId: CLIENT.id }) });
-    await refresh();
-    if (current === "docs") render();
-    return res.ok;
-  } catch (e) { return false; }
-}
 let polling = false;
 async function pollDocs() {
   if (polling) return; polling = true;
