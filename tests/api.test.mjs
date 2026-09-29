@@ -27,7 +27,7 @@ function world(o) {
     if (u.includes("/rest/v1/social_client_onboarding") && method === "GET") return json(o.onboarding ? [o.onboarding] : []);
     if (u.includes("/rest/v1/")) return json(null, 201);
     if (u.includes("/auth/v1/admin/generate_link")) return o.generateLink(JSON.parse(init.body), json);
-    if (u.startsWith("https://api.resend.com")) return json({ id: "email_1" });
+    if (u.startsWith("https://api.resend.com")) return o.resend ? o.resend(JSON.parse(init.body), json) : json({ id: "email_1" });
     if (u.includes("/storage/v1/object/onboarding-audio/")) return json("audio");
     if (u.startsWith("https://api.openai.com")) return o.transcribe ? o.transcribe(json) : json(o.transcript);
     if (u.startsWith("https://api.anthropic.com")) { const p = JSON.parse(init.body).messages[0].content; return json({ content: [{ type: "text", text: p.includes("Customer Data") && p.includes("voice-of-customer") ? o.customerData : o.yourVoice }] }); }
@@ -75,6 +75,16 @@ const m = mail && JSON.parse(mail.body);
 chk("invite: existing login → sign-in link instead", r.body.sent === true && r.body.returning === true);
 chk("invite: branded email sent from Fully Launched", m && m.to[0] === "pat@newco.test" && /Fully Launched/.test(m.from) && m.html.includes("token=t2") && m.html.includes("https://social.fullylaunched.com/assets/logo-white.png") && m.html.includes("#C4AB82") && m.html.includes("Hi Pat,"), m && m.subject);
 chk("invite: plain-text version too", m && m.text.includes("token=t2"));
+
+setEnv({ RESEND_API_KEY: "re_1", EMAIL_FROM: "Fully Launched <hello@fullylaunched.om>" });
+calls = world({ ...base, generateLink: (b, json) => json({ action_link: "https://sb.test/verify?type=invite&token=t3" }),
+  resend: (b, json) => b.from.includes("fullylaunched.om>") ? json({ message: "The fullylaunched.om domain is not verified." }, 403) : json({ id: "email_2" }) });
+r = await call(invite, "opTok", { clientId: C1 });
+const froms = calls.filter(c => c.url.startsWith("https://api.resend.com")).map(c => JSON.parse(c.body).from);
+chk("invite: EMAIL_FROM on an unverified domain → resent from the default, with a warning", r.body.sent === true && froms.length === 2 && froms[1] === "Fully Launched <hello@fullylaunched.com>" && /Fix EMAIL_FROM/.test(r.body.warning), r.body);
+calls = world({ ...base, generateLink: (b, json) => json({ action_link: "https://sb.test/verify?type=invite&token=t4" }), resend: (b, json) => json({ message: "Rate limited" }, 429) });
+r = await call(invite, "opTok", { clientId: C1 });
+chk("invite: other Resend errors → the link to copy, no retry", r.body.sent === false && r.body.link.includes("token=t4") && calls.filter(c => c.url.startsWith("https://api.resend.com")).length === 1, r.body);
 
 setEnv(); delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 world(base);
