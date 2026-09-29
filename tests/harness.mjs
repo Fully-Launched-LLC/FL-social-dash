@@ -113,7 +113,7 @@ export function makeHarness(db) {
         } finally { inflight--; }
       },
       auth: {
-        getSession: async () => ({ data: { session: { user: { id: uid, email: uid + "@test" } } } }),
+        getSession: async () => ({ data: { session: uid ? { user: { id: uid, email: uid + "@test" } } : null } }),
         onAuthStateChange: () => {}, signOut: async () => {},
         signInWithOtp: async o => { log.push({ otp: o }); return { error: null }; }, signInWithPassword: async () => ({}),
         resetPasswordForEmail: async (email, o) => { log.push({ reset: email, opts: o }); return { error: null }; },
