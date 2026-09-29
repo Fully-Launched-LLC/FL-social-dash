@@ -8,7 +8,7 @@ import { readFileSync } from "fs";
 
 import { fileURLToPath } from "url";
 export const REPO = fileURLToPath(new URL("../", import.meta.url));
-const MIGRATIONS = ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql"];
+const MIGRATIONS = ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "008_client_onboarding.sql"];
 
 export async function freshDb() {
   const passthrough = v => v;
@@ -115,8 +115,15 @@ export function makeHarness(db) {
       auth: {
         getSession: async () => ({ data: { session: { user: { id: uid, email: uid + "@test" } } } }),
         onAuthStateChange: () => {}, signOut: async () => {},
-        signInWithOtp: async o => { log.push({ otp: o }); return { error: null }; }, signInWithPassword: async () => ({}), resetPasswordForEmail: async () => ({}),
+        signInWithOtp: async o => { log.push({ otp: o }); return { error: null }; }, signInWithPassword: async () => ({}),
+        resetPasswordForEmail: async (email, o) => { log.push({ reset: email, opts: o }); return { error: null }; },
+        updateUser: async o => { log.push({ updateUser: o }); return { data: {}, error: null }; },
       },
+      // Storage: uploads are recorded, not stored.
+      storage: { from: bucket => ({
+        upload: async (path, file, o) => { log.push({ upload: { bucket, path, type: o && o.contentType, size: file && file.size } }); return { data: { path }, error: null }; },
+        createSignedUrl: async path => ({ data: { signedUrl: "https://signed/" + path }, error: null }),
+      }) },
     };
   }
 
@@ -142,6 +149,8 @@ export function makeHarness(db) {
         w.confirm = m => { ui.confirms.push(String(m)); return true; };
         w.prompt = m => (ui.promptsShown.push(String(m)), ui.prompts.length) ? ui.prompts.shift() : (opts.promptDefault ?? "a note");
         Object.defineProperty(w.navigator, "clipboard", { value: { writeText: async () => {} } });
+        // The page's calls to our own /api functions: opts.fetch answers them.
+        w.fetch = async (u, o) => { ui.log.push({ fetch: String(u), body: o && o.body }); return opts.fetch ? opts.fetch(String(u), o) : { ok: false, status: 404, json: async () => ({ error: "Not found" }) }; };
       },
     });
     const page = { w: dom.window, d: dom.window.document, ui };

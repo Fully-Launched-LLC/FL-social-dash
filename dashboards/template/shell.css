@@ -295,3 +295,33 @@ input[type=date]::-webkit-calendar-picker-indicator { filter:invert(1); cursor:p
 .dot::before { content:""; width:7px; height:7px; border-radius:50%; background:currentColor; }
 .dot.soon { color:var(--gold); }
 .dot.done { color:var(--sub2); }
+
+/* Generated documents (Customer Data, Your Voice), rendered from Markdown. */
+.doc-body { line-height:1.6; font-size:14.5px; }
+.doc-body h2 { font-size:18px; margin:22px 0 8px; } .doc-body h3 { font-size:15.5px; margin:18px 0 6px; } .doc-body h4 { font-size:14.5px; margin:14px 0 4px; }
+.doc-body ul, .doc-body ol { padding-left:22px; margin:6px 0 10px; } .doc-body li { margin:4px 0; }
+.doc-body blockquote { margin:8px 0; padding:6px 14px; border-left:3px solid var(--gold); color:var(--sub); }
+.doc-body hr { border:0; border-top:1px solid var(--border); margin:18px 0; }
+.doc-body p { margin:6px 0 10px; }
+
+/* Onboarding (/welcome): one centered column with a step bar. */
+.welcome { max-width:720px; margin:0 auto; padding:34px 20px 80px; }
+.welcome .brand { align-items:center; margin-bottom:22px; }
+.steps { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 22px; }
+.steps button { padding:6px 11px; font-size:12px; border-radius:999px; border:1px solid var(--border); color:var(--sub); }
+.steps button.on { background:var(--white); color:var(--navy); border-color:var(--white); }
+.steps button.done { color:var(--ink); border-color:var(--line-2); }
+.wstep h1 { font-size:26px; font-weight:700; letter-spacing:-.02em; margin:0 0 8px; }
+.wstep .lead { color:var(--sub); font-size:15px; line-height:1.55; margin:0 0 20px; }
+.wstep .card label { display:block; font-size:13px; color:var(--sub); margin:12px 0 6px; }
+.wnav { display:flex; justify-content:space-between; gap:10px; margin-top:22px; flex-wrap:wrap; }
+.qsec h3 { font-size:15px; margin:20px 0 8px; }
+.qitem { padding:10px 0; border-bottom:1px solid var(--border); }
+.qitem:last-child { border-bottom:0; }
+.qitem .q { font-size:14.5px; line-height:1.45; }
+.qitem textarea { margin-top:8px; }
+.rec { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.rec .time { font-variant-numeric:tabular-nums; font-size:22px; font-weight:700; min-width:70px; }
+.rec .live { color:var(--gold); }
+.color-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.color-row input[type=color] { width:44px; height:38px; padding:2px; border-radius:8px; border:1px solid var(--line-2); background:var(--navy); }

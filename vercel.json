@@ -3,10 +3,32 @@
   "buildCommand": "python3 dashboards/build.py && mkdir -p dashboards/dist/supabase && printf 'window.SUPABASE_CONFIG = { url: \"%s\", anonKey: \"%s\" };\\n' \"$SUPABASE_URL\" \"$SUPABASE_ANON_KEY\" > dashboards/dist/supabase/config.js",
   "outputDirectory": "dashboards/dist",
   "redirects": [
-    { "source": "/", "destination": "/operator/dashboard.html", "permanent": false }
+    {
+      "source": "/",
+      "destination": "/operator/dashboard.html",
+      "permanent": false
+    }
   ],
   "rewrites": [
-    { "source": "/clients/:slug/portal.html", "destination": "/clients/portal.html" },
-    { "source": "/clients/:slug", "destination": "/clients/portal.html" }
-  ]
+    {
+      "source": "/welcome",
+      "destination": "/welcome.html"
+    },
+    {
+      "source": "/clients/:slug/portal.html",
+      "destination": "/clients/portal.html"
+    },
+    {
+      "source": "/clients/:slug",
+      "destination": "/clients/portal.html"
+    }
+  ],
+  "functions": {
+    "api/voice-memo.js": {
+      "maxDuration": 300
+    },
+    "api/invite.js": {
+      "maxDuration": 30
+    }
+  }
 }

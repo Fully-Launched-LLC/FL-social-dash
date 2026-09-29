@@ -29,6 +29,7 @@
   <div id="loadError"></div>
 
   <section class="view active" id="view-videos">
+    <div id="onboardBanner"></div>
     <div class="page-head"><h1>To Do</h1><p id="videosSubhead"></p></div>
     <div class="card" id="footageCard" style="display:none">
       <div class="row" style="border:none;padding:0">
@@ -101,6 +102,8 @@
 let CLIENT = null;          // the social_clients row
 let DRIVE_FOLDERS = {};     // from social_drive_folder_links
 let DOCUMENTS = [];         // from social_client_documents, in order
+let GEN_DOCS = [];          // built from their onboarding voice memo (social_client_generated_docs)
+let ONBOARDING = null;      // their social_client_onboarding row, if any
 let VIDEOS = [];            // from social_videos (videoFromRow shape)
 let HIDDEN_CONCEPTS = 0;    // operator view only: ideas the client can't see (sent back with suggestions)
 let IS_OPERATOR = false;
@@ -439,10 +442,27 @@ function renderAgenda() {
 }
 
 function renderDocuments() {
-  document.getElementById("docsList").innerHTML = DOCUMENTS.length ? DOCUMENTS.map(d => `
+  const gen = GEN_DOCS.map(d => `
+    <div class="row"><div class="left"><b>${escapeHtml(d.title)}</b><div class="meta">Built from your onboarding voice memo</div></div>
+      <button class="primary" data-gen="${escapeHtml(d.id)}">Read</button></div>`).join("");
+  const drive = DOCUMENTS.map(d => `
     <div class="row"><div class="left"><b>${escapeHtml(d.title)}</b></div>
-      <a class="btn primary" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">Open</a></div>`).join("")
-    : `<div class="empty">No documents yet.${IS_OPERATOR ? " Add them on the operator dashboard: Clients → Edit → Documents." : ""}</div>`;
+      <a class="btn primary" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">Open</a></div>`).join("");
+  document.getElementById("docsList").innerHTML = gen + drive
+    || `<div class="empty">No documents yet.${IS_OPERATOR ? " Add them on the operator dashboard: Clients → Edit → Documents." : ""}</div>`;
+  document.querySelectorAll("#docsList [data-gen]").forEach(b => b.onclick = () => {
+    const d = GEN_DOCS.find(x => x.id === b.dataset.gen);
+    openModal(`<h2>${escapeHtml(d.title)}</h2><div class="doc-body">${docBodyHtml(d)}</div>
+      <div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Close</button></div>`);
+  });
+}
+// A client who hasn't finished onboarding gets a way back into it.
+function renderOnboardBanner() {
+  const o = ONBOARDING;
+  document.getElementById("onboardBanner").innerHTML = o && o.invited_at && !o.completed_at ? `
+    <div class="card" style="border-color:var(--gold)"><div class="row" style="border:0;padding:0">
+      <div class="left"><b>Finish setting up your account</b><div class="meta">A few quick steps, including your voice memo, so we can make content that sounds like you.</div></div>
+      <a class="btn accent" href="/welcome${IS_OPERATOR ? "?client=" + encodeURIComponent(CLIENT.slug) : ""}">Continue</a></div></div>` : "";
 }
 
 // Two logins can open a portal: any operator (any client), or this
@@ -488,9 +508,16 @@ async function startApp(user, access) {
     document.getElementById("footageCard").style.display = "";
   }
 
-  const { data: docs } = await sbClient.from("social_client_documents").select("*").eq("client_id", CLIENT.id).order("position");
+  const [{ data: docs }, gen, ob] = await Promise.all([
+    sbClient.from("social_client_documents").select("*").eq("client_id", CLIENT.id).order("position"),
+    sbClient.from("social_client_generated_docs").select("*").eq("client_id", CLIENT.id).order("kind"),
+    sbClient.from("social_client_onboarding").select("*").eq("client_id", CLIENT.id).maybeSingle(),
+  ]);
   DOCUMENTS = docs || [];
+  GEN_DOCS = (gen && gen.data) || [];
+  ONBOARDING = (ob && ob.data) || null;
   renderDocuments();
+  renderOnboardBanner();
 
   initRouter("videos");
   await loadVideos();

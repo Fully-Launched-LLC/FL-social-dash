@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Welcome to Fully Launched</title>
+<style>/*__SHELL_CSS__*/</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase/config.js"></script>
+</head>
+<body style="display:block">
+
+<div id="authGate" class="auth-gate"></div>
+<div id="appShell" class="hidden" style="display:block">
+  <div class="welcome">
+    <div class="brand"><img src="/assets/logo-white.png" alt="Fully Launched" style="width:180px"></div>
+    <div id="opBanner"></div>
+    <nav class="steps" id="steps" aria-label="Onboarding steps"></nav>
+    <main id="stepBody"></main>
+  </div>
+</div>
+
+<script>/*__SHELL_JS__*/</script>
+<script>/*__AUTH_JS__*/</script>
+<script>
+// /welcome — a new client's onboarding, one step at a time:
+//   password → welcome → brand (only if they film) → questions → voice memo
+//   → footage → documents → portal tour → their portal.
+// Every step is saved with social_client_onboarding_save() (migration 008),
+// so they can stop and come back. The voice memo goes to the private
+// onboarding-audio bucket; api/voice-memo.js transcribes it and builds
+// their Customer Data and Your Voice documents.
+//
+// /welcome?mode=reset is the "Set a new password" page for anyone (the
+// Forgot password email lands here), then sends them to their dashboard.
+// An operator can open /welcome?client=<slug> to see a client's steps
+// (nothing they do there changes their own password).
+
+const params = new URLSearchParams(location.search);
+const RESET = params.get("mode") === "reset";
+let ME = null, ROLE = null, CLIENT = null, FOLDERS = {}, OB = null, DOCS = [];
+let current = null;
+const MAX_AUDIO_BYTES = 25 * 1024 * 1024; // the transcription service's limit
+
+const clientFilms = () => CLIENT && CLIENT.client_system !== "concierge";
+
+function stepList() {
+  if (RESET) return [{ key: "password", label: "New password" }];
+  return [
+    { key: "password", label: "Password" },
+    { key: "welcome", label: "Welcome" },
+    ...(clientFilms() ? [{ key: "brand", label: "Your brand" }] : []),
+    { key: "questions", label: "The questions" },
+    { key: "memo", label: "Voice memo" },
+    { key: "footage", label: "Your footage" },
+    { key: "docs", label: "Your documents" },
+    { key: "tour", label: "Your portal" },
+  ];
+}
+function isDone(key) {
+  const o = OB || {};
+  return {
+    password: !!o.password_set_at, welcome: !!o.password_set_at,
+    brand: !!(o.brand && Object.keys(o.brand).length),
+    questions: !!(o.voice_memo_path || (o.answers && Object.keys(o.answers).length)),
+    memo: !!o.voice_memo_path, footage: !!o.footage_done_at,
+    docs: !!o.docs_seen_at, tour: !!o.completed_at,
+  }[key];
+}
+function firstOpenStep() {
+  const s = stepList();
+  // An operator previewing skips the password step (it's the client's).
+  const open = s.find(x => !(ROLE === "operator" && x.key === "password") && !isDone(x.key));
+  return (open || s[s.length - 1]).key;
+}
+
+async function save(step, data) {
+  if (RESET) return { data: null, error: null };
+  const r = await sbClient.rpc("social_client_onboarding_save", { p_client_id: CLIENT.id, p_step: step, p_data: data || {} });
+  if (!r.error && r.data) OB = r.data;
+  return r;
+}
+
+function go(key) { current = key; render(); window.scrollTo(0, 0); }
+function next() { const s = stepList(), i = s.findIndex(x => x.key === current); go(s[Math.min(i + 1, s.length - 1)].key); }
+function back() { const s = stepList(), i = s.findIndex(x => x.key === current); go(s[Math.max(i - 1, 0)].key); }
+
+function render() {
+  document.getElementById("steps").innerHTML = RESET ? "" : stepList().map(s =>
+    `<button type="button" class="${s.key === current ? "on" : isDone(s.key) ? "done" : ""}" data-step="${s.key}">${isDone(s.key) ? "✓ " : ""}${escapeHtml(s.label)}</button>`).join("");
+  document.querySelectorAll("#steps [data-step]").forEach(b => b.onclick = () => go(b.dataset.step));
+  const body = document.getElementById("stepBody");
+  body.innerHTML = `<section class="wstep" data-current="${current}">${STEPS[current]()}</section>`;
+  (WIRE[current] || (() => {}))(body);
+}
+const navHtml = (nextLabel, opts = {}) => `<div class="wnav">
+  ${opts.noBack ? "<span></span>" : `<button type="button" data-back>Back</button>`}
+  <button type="button" class="${opts.accent ? "accent" : "primary"}" data-next ${opts.disabled ? "disabled" : ""}>${escapeHtml(nextLabel)}</button></div>
+  <div class="auth-error" data-err></div>`;
+function wireNav(body, onNext) {
+  const b = body.querySelector("[data-back]"); if (b) b.onclick = back;
+  const n = body.querySelector("[data-next]");
+  if (n) n.onclick = async () => {
+    const err = body.querySelector("[data-err]"); err.textContent = "";
+    n.disabled = true;
+    try { const msg = onNext ? await onNext() : null; if (msg) { err.textContent = msg; n.disabled = false; return; } next(); }
+    catch (e) { err.textContent = e.message || String(e); n.disabled = false; }
+  };
+}
+const folderBtn = (url, label) => url
+  ? `<a class="btn primary" href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(label)}</a>`
+  : `<span class="meta">We're setting up this folder. You can skip this for now and come back.</span>`;
+
+// ---------- the steps ----------
+const STEPS = {
+  password: () => `
+    <h1>${RESET ? "Set a new password" : "Create your password"}</h1>
+    <p class="lead">${RESET ? "Choose a new password for your Fully Launched login." : `Welcome to Fully Launched${CLIENT ? ", " + escapeHtml(CLIENT.name) : ""}. First, choose a password so you can sign in any time at this address.`}</p>
+    ${ROLE === "operator" && !RESET ? `<div class="card meta">You're previewing as the operator. The client sets their own password here; nothing changes yours.</div>` : `
+    <div class="card">
+      <label for="pw1">Password (at least 8 characters)</label><input type="password" id="pw1" autocomplete="new-password">
+      <label for="pw2">Type it again</label><input type="password" id="pw2" autocomplete="new-password">
+    </div>`}
+    ${navHtml(RESET ? "Save password" : "Save and continue", { noBack: true })}`,
+
+  welcome: () => `
+    <h1>Here's how this works</h1>
+    <p class="lead">A few short steps, and we'll have what we need to make content that sounds like you. It takes about 30 minutes, and you can stop and come back any time.</p>
+    <div class="card"><ol class="doc-body" style="margin:0">
+      ${clientFilms() ? "<li><b>Your brand.</b> Your logo, fonts, colors and the look you like.</li>" : ""}
+      <li><b>The questions.</b> Read through them so you know what to talk about.</li>
+      <li><b>One voice memo.</b> Just talk through your answers. No script, no editing. This is how we learn your voice and your customer.</li>
+      <li><b>Your footage.</b> Drop any videos you already have into your folder.</li>
+      <li><b>Your documents.</b> We turn your voice memo into your Customer Data and Your Voice documents, and walk you through them.</li>
+      <li><b>Your portal.</b> A quick look at where everything lives.</li>
+    </ol></div>
+    ${navHtml("Let's start")}`,
+
+  brand: () => {
+    const b = (OB && OB.brand) || {};
+    const colors = (b.colors || []).concat(["", "", "", ""]).slice(0, 4);
+    return `
+    <h1>Your brand</h1>
+    <p class="lead">So your videos look like you. Share what you have. It's fine to leave something blank.</p>
+    <div class="card">
+      <label>Logo and brand files</label>
+      <div>${folderBtn(FOLDERS.important_documents, "Upload to your Important Documents folder")}</div>
+      <label for="bFonts">Fonts (names, or "not sure")</label><input type="text" id="bFonts" value="${escapeHtml(b.fonts || "")}">
+      <label>Brand colors</label>
+      <div class="color-row">${colors.map((c, i) => `<input type="color" data-color="${i}" value="${/^#[0-9a-f]{6}$/i.test(c) ? c : "#04101f"}" aria-label="Color ${i + 1}"><input type="text" data-hex="${i}" value="${escapeHtml(c)}" placeholder="#hex" style="width:92px">`).join("")}</div>
+      <label for="bAesthetic">Your look and feel (a few words: clean, bold, warm, playful…)</label><textarea id="bAesthetic" rows="3">${escapeHtml(b.aesthetic || "")}</textarea>
+      <label for="bLinks">Accounts or videos whose look you love (links)</label><textarea id="bLinks" rows="3">${escapeHtml(b.links || "")}</textarea>
+    </div>
+    ${navHtml("Save and continue")}`;
+  },
+
+  questions: () => {
+    const a = (OB && OB.answers) || {};
+    return `
+    <h1>The questions</h1>
+    <p class="lead">Read these through. In the next step you'll record one voice memo answering them, in your own words. Talk the way you'd explain it to a friend. If you want, jot a note under any question to remind yourself.</p>
+    <div class="card">${ONBOARDING_QUESTIONS.map(s => `<div class="qsec"><h3>${escapeHtml(s.section)}</h3>${s.items.map((it, i) => `
+      <div class="qitem"><div class="q">${escapeHtml(it.q)}</div>
+        <textarea rows="2" data-ans="${it.id}" placeholder="Optional note">${escapeHtml(a[it.id] || "")}</textarea></div>`).join("")}</div>`).join("")}</div>
+    ${navHtml("Next: record your voice memo")}`;
+  },
+
+  memo: () => `
+    <h1>Record your voice memo</h1>
+    <p class="lead">Answer the questions in one go, in your own words. Aim for 15 to 25 minutes. Don't worry about being polished: the way you naturally talk is exactly what we want.</p>
+    ${OB && OB.voice_memo_path ? `<div class="card"><b>Got it. Your voice memo is in.</b><div class="meta">We're turning it into your documents. You can record a new one if you'd like to replace it.</div></div>` : ""}
+    <div class="card">
+      <div class="rec"><button type="button" class="accent" id="recBtn">Start recording</button><span class="time" id="recTime">0:00</span><span class="meta" id="recState"></span></div>
+      <audio id="recPreview" controls style="width:100%;margin-top:12px;display:none"></audio>
+      <div style="margin-top:14px" class="meta">Recorded on your phone already? <label for="memoFile" style="display:inline;color:var(--ink);text-decoration:underline;cursor:pointer">Upload an audio file</label> instead.</div>
+      <input type="file" id="memoFile" accept="audio/*" style="display:none">
+      <div id="memoReady" style="display:none;margin-top:14px"><button type="button" class="primary" id="memoUpload">Send my voice memo</button></div>
+    </div>
+    ${navHtml(OB && OB.voice_memo_path ? "Continue" : "Skip for now")}`,
+
+  footage: () => `
+    <h1>Your existing footage</h1>
+    <p class="lead">Any videos you've already made, like past posts, clips or interviews, help us learn what works for you. Drop them into your Previous Content folder. Big files are fine.</p>
+    <div class="card">${folderBtn(FOLDERS.previous_content || FOLDERS.footage_uploads, "Open my Previous Content folder")}</div>
+    <div class="wnav"><button type="button" data-back>Back</button>
+      <span style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" data-none>I don't have any</button><button type="button" class="primary" data-uploaded>I've uploaded my footage</button></span></div>
+    <div class="auth-error" data-err></div>`,
+
+  docs: () => {
+    const st = OB ? OB.docs_status : "waiting";
+    if (st === "ready" && DOCS.length) return `
+      <h1>Your documents</h1>
+      <p class="lead">We turned your voice memo into these. Read them through: they're the foundation for every piece of content we make with you. They live on your portal's Documents page too.</p>
+      ${DOCS.map(d => `<div class="card"><h2>${escapeHtml(d.title)}</h2><div class="doc-body">${docBodyHtml(d)}</div></div>`).join("")}
+      ${navHtml("I've read them")}`;
+    return `
+      <h1>Your documents</h1>
+      <p class="lead">${st === "processing" ? "We're building your Customer Data and Your Voice documents from your voice memo. This takes a few minutes. You can keep going: they'll be on your portal's Documents page when they're ready."
+        : st === "failed" ? "Something went wrong building your documents. We've been told and will take care of it. You can keep going."
+        : "Once you send your voice memo, we'll turn it into your Customer Data and Your Voice documents, and they'll show up here and on your portal's Documents page."}</p>
+      ${st === "processing" ? `<div class="card meta" id="docsWait">Building… this page checks every few seconds.</div>` : ""}
+      ${navHtml("Continue")}`;
+  },
+
+  tour: () => `
+    <h1>Your portal</h1>
+    <p class="lead">Here's where everything lives from now on.</p>
+    <div class="card"><div class="doc-body">
+      <p><b>To Do.</b> Everything that needs you: ideas to approve, videos to film, and finished videos to approve before they post. The Time sensitive tab shows what's due soon.</p>
+      <p><b>Content Calendar.</b> What posts each day and where.</p>
+      <p><b>Documents.</b> Your Customer Data, Your Voice and other important documents.</p>
+      <p><b>Your footage folder.</b> Where your raw clips go${clientFilms() ? " when you film" : ""}.</p>
+      <p>Sign in any time at <b>${escapeHtml(location.host)}</b> with your email and password.</p>
+    </div></div>
+    ${navHtml("Go to my portal", { accent: true })}`,
+};
+
+const WIRE = {
+  password: body => wireNav(body, async () => {
+    if (ROLE === "operator" && !RESET) return null;
+    const a = body.querySelector("#pw1").value, b = body.querySelector("#pw2").value;
+    if (a.length < 8) return "Use at least 8 characters.";
+    if (a !== b) return "Those two don't match.";
+    const { error } = await sbClient.auth.updateUser({ password: a });
+    if (error) return error.message;
+    if (RESET) { location.href = await homeFor(ME); return "Saved. Taking you to your dashboard…"; }
+    const r = await save("password");
+    return r.error ? r.error.message : null;
+  }),
+  welcome: body => wireNav(body),
+  brand: body => {
+    body.querySelectorAll("[data-color]").forEach(el => el.oninput = () => { body.querySelector(`[data-hex="${el.dataset.color}"]`).value = el.value; });
+    wireNav(body, async () => {
+      const colors = Array.from(body.querySelectorAll("[data-hex]")).map(el => el.value.trim()).filter(Boolean);
+      const brand = { fonts: body.querySelector("#bFonts").value.trim(), colors, aesthetic: body.querySelector("#bAesthetic").value.trim(), links: body.querySelector("#bLinks").value.trim() };
+      const r = await save("brand", brand);
+      return r.error ? r.error.message : null;
+    });
+  },
+  questions: body => wireNav(body, async () => {
+    const answers = {};
+    body.querySelectorAll("[data-ans]").forEach(el => { if (el.value.trim()) answers[el.dataset.ans] = el.value.trim(); });
+    if (!Object.keys(answers).length) return null;
+    const r = await save("answers", answers);
+    return r.error ? r.error.message : null;
+  }),
+  memo: body => {
+    wireNav(body);
+    let rec = null, chunks = [], blob = null, timer = null, started = 0;
+    const btn = body.querySelector("#recBtn"), time = body.querySelector("#recTime"), state = body.querySelector("#recState");
+    const preview = body.querySelector("#recPreview"), ready = body.querySelector("#memoReady");
+    const showReady = b => {
+      blob = b; ready.style.display = "";
+      // A preview to listen back to; sending doesn't depend on it.
+      try { preview.src = URL.createObjectURL(b); preview.style.display = ""; } catch (e) { preview.style.display = "none"; }
+    };
+    btn.onclick = async () => {
+      if (rec && rec.state === "recording") { rec.stop(); return; }
+      if (!navigator.mediaDevices || !window.MediaRecorder) { state.textContent = "Recording isn't available in this browser. Upload an audio file instead."; return; }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const type = ["audio/webm;codecs=opus", "audio/mp4", "audio/webm"].find(t => MediaRecorder.isTypeSupported(t)) || "";
+        rec = new MediaRecorder(stream, type ? { mimeType: type, audioBitsPerSecond: 32000 } : undefined);
+        chunks = [];
+        rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+        rec.onstop = () => {
+          clearInterval(timer); stream.getTracks().forEach(t => t.stop());
+          btn.textContent = "Record again"; time.classList.remove("live"); state.textContent = "Listen back, then send it.";
+          showReady(new Blob(chunks, { type: rec.mimeType || "audio/webm" }));
+        };
+        rec.start(1000); started = Date.now();
+        btn.textContent = "Stop recording"; time.classList.add("live"); state.textContent = "Recording…"; ready.style.display = "none";
+        timer = setInterval(() => { const s = Math.floor((Date.now() - started) / 1000); time.textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }, 500);
+      } catch (e) { state.textContent = "We couldn't use your microphone (" + (e.message || e) + "). Upload an audio file instead."; }
+    };
+    body.querySelector("#memoFile").onchange = e => { const f = e.target.files[0]; if (f) { state.textContent = f.name; showReady(f); } };
+    body.querySelector("#memoUpload").onclick = async e => {
+      const err = body.querySelector("[data-err]"); err.textContent = "";
+      if (!blob) return;
+      if (blob.size > MAX_AUDIO_BYTES) { err.textContent = "That file is over 25 MB. Record here instead (it's much smaller), or send a shorter file."; return; }
+      e.target.disabled = true; e.target.textContent = "Sending…";
+      const type = blob.type || "audio/webm";
+      const ext = (blob.name && blob.name.split(".").pop()) || (type.includes("mp4") ? "m4a" : type.includes("mpeg") ? "mp3" : "webm");
+      const path = `${CLIENT.id}/${Date.now()}-voice-memo.${ext}`;
+      const up = await sbClient.storage.from("onboarding-audio").upload(path, blob, { contentType: type, upsert: false });
+      if (up.error) { err.textContent = "Upload failed: " + up.error.message; e.target.disabled = false; e.target.textContent = "Send my voice memo"; return; }
+      const r = await save("voice_memo", { path });
+      if (r.error) { err.textContent = r.error.message; e.target.disabled = false; e.target.textContent = "Send my voice memo"; return; }
+      buildDocs();  // runs in the background; the docs step shows progress
+      next();
+    };
+  },
+  footage: body => {
+    body.querySelector("[data-back]").onclick = back;
+    const done = async () => { const r = await save("footage"); if (r.error) body.querySelector("[data-err]").textContent = r.error.message; else next(); };
+    body.querySelector("[data-none]").onclick = done;
+    body.querySelector("[data-uploaded]").onclick = done;
+  },
+  docs: body => {
+    wireNav(body, async () => { if (OB && OB.docs_status === "ready" && DOCS.length) await save("docs_seen"); return null; });
+    if (OB && OB.docs_status === "processing") pollDocs();
+  },
+  tour: body => wireNav(body, async () => {
+    const r = await save("done");
+    if (r.error) return r.error.message;
+    location.href = "/clients/" + encodeURIComponent(CLIENT.slug);
+    return "Taking you to your portal…";
+  }),
+};
+
+// ---------- documents ----------
+async function buildDocs() {
+  try {
+    const { data } = await sbClient.auth.getSession();
+    const token = data && data.session && data.session.access_token;
+    const res = await fetch("/api/voice-memo", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + (token || "") }, body: JSON.stringify({ clientId: CLIENT.id }) });
+    await refresh();
+    if (current === "docs") render();
+    return res.ok;
+  } catch (e) { return false; }
+}
+let polling = false;
+async function pollDocs() {
+  if (polling) return; polling = true;
+  for (let i = 0; i < 80 && OB && OB.docs_status === "processing"; i++) {
+    await new Promise(r => setTimeout(r, 6000));
+    await refresh();
+  }
+  polling = false;
+  if (current === "docs") render();
+}
+async function refresh() {
+  const [o, d] = await Promise.all([
+    sbClient.from("social_client_onboarding").select("*").eq("client_id", CLIENT.id).maybeSingle(),
+    sbClient.from("social_client_generated_docs").select("*").eq("client_id", CLIENT.id).order("kind"),
+  ]);
+  OB = o.data || OB; DOCS = d.data || [];
+}
+
+// ---------- who's here ----------
+async function homeFor(user) {
+  if (ROLE === "operator") return "/operator/dashboard.html";
+  const { data: ed } = await sbClient.from("social_editors").select("id").eq("id", user.id).maybeSingle();
+  if (ed) return "/editor/dashboard.html";
+  return CLIENT ? "/clients/" + encodeURIComponent(CLIENT.slug) : "/";
+}
+async function resolveWelcomeAccess(sb, user) {
+  const { data: op } = await sb.from("social_operators").select("id").eq("id", user.id).maybeSingle();
+  ROLE = op ? "operator" : "client";
+  if (RESET && op) return { ok: true, role: "operator" };
+  let client = null;
+  if (op) {
+    const slug = params.get("client");
+    if (!slug) return RESET ? { ok: true, role: "operator" } : { ok: false, reason: "Add ?client=<portal address> to preview a client's onboarding." };
+    ({ data: client } = await sb.from("social_clients").select("*").eq("slug", slug).maybeSingle());
+  } else {
+    const { data: claimed } = await sb.rpc("social_claim_client_invite");
+    let id = claimed;
+    if (!id) { const { data: cu } = await sb.from("social_client_users").select("client_id").eq("id", user.id).maybeSingle(); id = cu && cu.client_id; }
+    if (id) ({ data: client } = await sb.from("social_clients").select("*").eq("id", id).maybeSingle());
+  }
+  if (!client) return RESET ? { ok: true, role: ROLE } : { ok: false, reason: "We couldn't find your account. Use the link from your invite email, or ask Fully Launched to send a new one." };
+  return { ok: true, role: ROLE, client };
+}
+
+initAuthGate({
+  resolveAccess: resolveWelcomeAccess,
+  onReady: async (user, access) => {
+    ME = user; CLIENT = access.client || null;
+    if (CLIENT) {
+      const { data: f } = await sbClient.from("social_drive_folder_links").select("*").eq("client_id", CLIENT.id).maybeSingle();
+      FOLDERS = f || {};
+      await refresh();
+    }
+    if (ROLE === "operator" && !RESET) document.getElementById("opBanner").innerHTML =
+      `<div class="card meta">Previewing ${escapeHtml(CLIENT.name)}'s onboarding as the operator. What you save here is saved for them.</div>`;
+    current = RESET ? "password" : firstOpenStep();
+    render();
+  },
+});
+</script>
+</body>
+</html>

@@ -19,6 +19,38 @@ and style exactly.
 - The client's `brain.md` is read first and updated last. Its Do / don't
   list binds every document (Grad Gig: never imply background checks).
 
+## Before the order: the client's Drive folders
+
+When Tait adds a client (or says "make <client>'s Drive folders"), create in
+Google Drive, inside the shared **Fully Social OS** folder (find it with Drive
+search, `title contains 'Fully Social OS'`):
+
+```
+<Client Name>/
+  Important Documents   brand files from onboarding; their Google Docs
+  Previous Content      footage they already have (onboarding asks for it)
+  Raw Footage           new clips; per-video folders go in here
+  Finished Videos       editors' cuts
+```
+
+Then put the links on the operator dashboard, Clients → Edit: main folder,
+Important Documents, Previous Content, raw footage, finished videos. Their
+onboarding steps' folder buttons use these. Per-video raw footage folders
+(`NN. Title (posts Mon D)`) go inside Raw Footage and on each video's
+"Raw footage folder for this video" field.
+
+## If they onboarded through the portal
+
+Their voice memo is already transcribed and their Customer Data and Your
+Voice documents are already built (`/welcome`, `api/voice-memo.js`). Operator
+dashboard → Clients → **Onboarding** shows the transcript, their brand and
+written notes, and the documents. Then:
+- Step 1: save that transcript verbatim as
+  `clients/<slug>/sources/YYYY-MM-DD-<who>-voice-memo.md`.
+- Steps 2 to 4: review the built documents against this skill's rules
+  (fix anything flagged "check: not word for word"), write them to the repo
+  files, then continue with the Google Docs (step 6) and portal (step 7).
+
 ## The order
 
 ### 1. Save the transcripts
