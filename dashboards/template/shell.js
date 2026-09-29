@@ -67,6 +67,14 @@ const PLATFORMS = {
 const PLATFORM_ALIASES = { ig: "instagram", insta: "instagram", tt: "tiktok", "tik tok": "tiktok", fb: "facebook", li: "linkedin", yt: "youtube" };
 function normPlatform(p) { const k = String(p || "").trim().toLowerCase(); return PLATFORM_ALIASES[k] || k; }
 // A video's platforms as colored pills: short tags ("IG") or full names.
+// "Mon, Oct 5" — every date people read is written this way, never 2026-10-05.
+function niceDate(iso) {
+  return iso ? new Date(iso + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : "";
+}
+// "LinkedIn, Facebook, Instagram"
+function platformNames(platforms) {
+  return (platforms || []).map(normPlatform).filter(Boolean).map(k => (PLATFORMS[k] || { name: k }).name).join(", ");
+}
 // Colors come from the .p-<platform> classes in shell.css (gold or white,
 // solid or outline), so a platform looks the same everywhere.
 function platformPills(platforms, full) {
@@ -468,12 +476,12 @@ function openVideoModal(client, video, opts) {
   document.getElementById("videoModalBox").innerHTML = `
     <div class="modal-close" onclick="closeVideoModal()">✕</div>
     <h2>${escapeHtml(video.title || video.id)}</h2>
-    <div class="modal-meta">${escapeHtml(client.displayName || "")} · ${(video.platform||[]).join(" · ")} ${statusBadge(video.status, STATUS_LABEL)}</div>
+    <div class="modal-meta">${escapeHtml(client.displayName || "")} · ${escapeHtml(platformNames(video.platform))} ${statusBadge(video.status, STATUS_LABEL)}</div>
 
     <div class="modal-dates">
-      <div><div class="lbl">Due to film</div>${escapeHtml(video.dueToFilm || "—")}</div>
-      <div><div class="lbl">Due to edit</div>${escapeHtml(video.dueToEdit || "—")}</div>
-      <div><div class="lbl">Post date</div>${escapeHtml(video.postDate || "—")}</div>
+      <div><div class="lbl">Film by</div>${escapeHtml(niceDate(video.dueToFilm) || "No filming")}</div>
+      <div><div class="lbl">Edit by</div>${escapeHtml(niceDate(video.dueToEdit) || "Not set")}</div>
+      <div><div class="lbl">Posts</div>${escapeHtml(niceDate(video.postDate) || "Not set")}</div>
     </div>
 
     ${modalField("Overview", video.overview)}

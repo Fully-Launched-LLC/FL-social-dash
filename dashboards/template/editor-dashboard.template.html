@@ -141,13 +141,13 @@ function finishButton(videoId) {
 function revisionsBox(video) {
   const items = [(video.editorBrief || {}).revisions, video.note].filter(Boolean);
   return items.length ? `<div style="margin:0 0 12px;padding:10px 12px;border:2px solid var(--accent);border-radius:8px">
-    <b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--accent);margin-bottom:4px">Revisions needed</b>
+    <b style="display:block;font-size:0.8rem;text-transform:uppercase;color:var(--accent);margin-bottom:4px">Revisions needed</b>
     <div style="white-space:pre-wrap;font-size:0.9rem;line-height:1.5">${items.map(escapeHtml).join("\n\n")}</div></div>` : "";
 }
 function hasRevisions(video) { return !!((video.editorBrief || {}).revisions || video.note); }
 
 function fieldBlock(label, value) {
-  return value ? `<div style="margin:0 0 10px"><b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">${escapeHtml(label)}</b><div style="font-size:0.9rem;line-height:1.5;white-space:pre-wrap">${escapeHtml(value)}</div></div>` : "";
+  return value ? `<div style="margin:0 0 10px"><b style="display:block;font-size:0.8rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">${escapeHtml(label)}</b><div style="font-size:0.9rem;line-height:1.5;white-space:pre-wrap">${escapeHtml(value)}</div></div>` : "";
 }
 
 function renderEditorChips() {
@@ -172,7 +172,7 @@ function renderQueue() {
       <div class="row" style="border:none;padding:0 0 10px">
         <div class="left"><b class="video-card" style="display:inline-block" data-open>${escapeHtml(video.title || "(untitled)")}</b>
         <div class="meta">${escapeHtml(client.name)}${ROLE === "operator" && video.assignedEditor ? " · " + escapeHtml(video.assignedEditor) : ""}</div></div>
-        ${video.dueToEdit ? `<span class="badge" style="border-color:${overdue ? "var(--red)" : "var(--border)"};color:${overdue ? "var(--red)" : "var(--sub)"}">${overdue ? "Overdue — " : "Edit by "}${escapeHtml(video.dueToEdit)}</span>` : ""}
+        ${video.dueToEdit ? `<span class="badge" style="border-color:${overdue ? "var(--red)" : "var(--border)"};color:${overdue ? "var(--red)" : "var(--sub)"}">${overdue ? "Overdue, was due " : "Edit by "}${escapeHtml(niceDate(video.dueToEdit))}</span>` : ""}
       </div>
       ${editorCardBody(client, video)}
     `;
@@ -205,7 +205,7 @@ function openEditorVideoModal(videoId) {
   const x = VIDEOS.find(y => y.video.id === videoId);
   if (!x) return;
   const box = openModal(`<h2>${escapeHtml(x.video.title || "(untitled)")}</h2>
-    <div class="meta" style="margin-bottom:10px">${escapeHtml(x.client.name)}${x.video.dueToEdit ? " · edit by " + escapeHtml(x.video.dueToEdit) : ""}</div>
+    <div class="meta" style="margin-bottom:10px">${escapeHtml(x.client.name)}${x.video.dueToEdit ? " · Edit by " + escapeHtml(niceDate(x.video.dueToEdit)) : ""}</div>
     ${editorCardBody(x.client, x.video)}`);
   box.querySelector(".actions").appendChild(finishButton(videoId));
 }
