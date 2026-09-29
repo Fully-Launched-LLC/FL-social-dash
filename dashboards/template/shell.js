@@ -216,13 +216,11 @@ function drawLineChart(container, series, opts) {
   container.innerHTML = svg;
 }
 
-// "Good morning, Tait · Tuesday, September 29" for the top of a page. A
-// person's name is cut to the first name; a business name (full) is kept.
-function greetingHtml(name, full) {
+// "Good morning, Tait · Tuesday, September 29" for the top of a page.
+function greetingHtml(name) {
   const h = new Date().getHours(), part = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
   const day = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
-  const who = name ? (full ? String(name) : String(name).split(" ")[0]) : "";
-  return `${part}${who ? ", <b>" + escapeHtml(who) + "</b>" : ""} · ${escapeHtml(day)}`;
+  return `${part}${name ? ", <b>" + escapeHtml(String(name).split(" ")[0]) + "</b>" : ""} · ${escapeHtml(day)}`;
 }
 // Big-number summary cards; clicking one runs onPick(key).
 function statCardsHtml(cards, activeKey) {

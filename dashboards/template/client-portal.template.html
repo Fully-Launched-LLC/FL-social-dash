@@ -388,14 +388,14 @@ function renderVideos() {
 function renderVideoTabs() {
   const tabs = tabsForClient();
   if (!tabs.some(t => t.key === activeTab)) activeTab = "all";
-  document.getElementById("clientGreet").innerHTML = CLIENT.contact_name ? greetingHtml(CLIENT.contact_name) : greetingHtml(CLIENT.name, true);
-  const today = todayISO(), statsEl = document.getElementById("clientStats");
+  document.getElementById("clientGreet").innerHTML = greetingHtml(CLIENT.contact_name || CLIENT.name);
+  const month = todayISO().slice(0, 7), statsEl = document.getElementById("clientStats");
   statsEl.innerHTML = statCardsHtml([
     { key: "urgent", label: "Time sensitive", n: videosInTab("urgent").length, note: "late or due within 3 days", hot: true },
     clientFilms() ? { key: "film", label: "To film", n: videosInTab("film").length, note: "film and upload" }
                   : { key: "ideas", label: "Ideas to approve", n: videosInTab("ideas").length, note: "say yes or suggest changes" },
     { key: "final", label: "Finished to approve", n: videosInTab("final").length, note: "watch and approve", hot: true },
-    { key: "calendar", label: "Posts coming up", n: VIDEOS.filter(v => v.postDate && v.postDate >= today && v.status !== "posted").length, note: "see the calendar" },
+    { key: "calendar", label: "Posting this month", n: VIDEOS.filter(v => (v.postDate || "").startsWith(month)).length, note: "see the calendar" },
   ], activeTab);
   wireStatCards(statsEl, key => {
     if (key === "calendar") { const nav = document.querySelector('.nav-item[data-view="calendar"]'); if (nav) nav.click(); return; }
