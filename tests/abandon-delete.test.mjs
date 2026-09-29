@@ -33,7 +33,7 @@ chk("Abandoned tab exists, empty, and isn't part of All", tabs().abandoned === "
 
 // Abandon from the video card.
 op.w.openOperatorVideoModal(await idOf("Maybe not")); await settle();
-chk("video card has Abandon and Delete", !!modalBtn("Abandon") && !!modalBtn("🗑 Delete"));
+chk("video card has Abandon and Delete", !!modalBtn("Abandon") && !!modalBtn("Delete"));
 modalBtn("Abandon").click(); await settle();
 let s = await status("Maybe not");
 chk("abandoned: status rejected, where it was remembered", s.status === "rejected" && s.editor_brief.abandonedFrom === "to_film" && s.editor_brief.instructions === "Talking head", s);
@@ -42,7 +42,7 @@ chk("abandoned: counts move to the Abandoned tab", tabs().abandoned === "Abandon
 op.d.querySelector('[data-stage-tab="abandoned"]').click(); await settle();
 chk("Abandoned tab shows it alone, with Restore and Delete", shown().join() === "abandoned"
   && op.d.querySelector('[data-stage="abandoned"]').textContent.includes("Maybe not")
-  && ["Restore", "🗑 Delete"].every(l => Array.from(op.d.querySelectorAll('[data-stage="abandoned"] button')).some(b => b.textContent === l)));
+  && ["Restore", "Delete"].every(l => Array.from(op.d.querySelectorAll('[data-stage="abandoned"] button')).some(b => b.textContent === l)));
 op.d.querySelector('[data-stage-tab="all"]').click(); await settle();
 chk("All doesn't show abandoned ideas", !shown().includes("abandoned") && !op.d.getElementById("view-todo").querySelector('[data-stage="toEditor"]').textContent.includes("Maybe not"));
 
@@ -60,14 +60,14 @@ chk("Abandoned tab empty again", tabs().abandoned === "Abandoned (0)" && tabs().
 
 // Delete from the card: gone for good.
 op.w.openOperatorVideoModal(await idOf("Delete me")); await settle();
-modalBtn("🗑 Delete").click(); await settle();
+modalBtn("Delete").click(); await settle();
 chk("deleted from the card", !(await status("Delete me")) && !calTitles().includes("Delete me") && op.ui.confirms.at(-1).includes("permanently"));
 
 // Delete an abandoned idea from the Abandoned tab.
 op.w.openOperatorVideoModal(await idOf("Maybe not")); await settle();
 modalBtn("Abandon").click(); await settle();
 op.d.querySelector('[data-stage-tab="abandoned"]').click(); await settle();
-Array.from(op.d.querySelectorAll('[data-stage="abandoned"] button')).find(b => b.textContent === "🗑 Delete").click(); await settle();
+Array.from(op.d.querySelectorAll('[data-stage="abandoned"] button')).find(b => b.textContent === "Delete").click(); await settle();
 chk("deleted from the Abandoned tab", !(await status("Maybe not")) && tabs().abandoned === "Abandoned (0)");
 
 // Delete still works from the Edit form, and editing an abandoned idea keeps it abandoned.

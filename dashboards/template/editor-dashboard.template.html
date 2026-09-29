@@ -16,9 +16,9 @@
 <nav class="sidebar">
   <div class="brand"><img src="/assets/logo-white.png" alt="Fully Launched"></div>
   <div class="sync-badge" id="authUserBadge"></div>
-  <div class="sync-badge" id="operatorBadge" style="display:none">🔧 Viewing as operator</div>
-  <div class="nav-item active" data-view="queue"><span class="ic">🎞️</span> To Edit</div>
-  <div class="nav-item" data-view="calendar"><span class="ic">📅</span> Calendar</div>
+  <div class="sync-badge" id="operatorBadge" style="display:none">Viewing as operator</div>
+  <div class="nav-item active" data-view="queue">To Edit</div>
+  <div class="nav-item" data-view="calendar">Calendar</div>
 </nav>
 
 <main class="main">
@@ -102,7 +102,7 @@ function finishVideo(videoId, btn) {
     <p style="line-height:1.55;margin:8px 0 14px">Before you send <b>${escapeHtml(t)}</b> to the operator, make sure the finished video is uploaded to
       ${escapeHtml(x.client.name)}'s finished video folder, named <b>${escapeHtml(t)}</b>. The operator and the client watch it from there.</p>
     ${f.finalEdits
-      ? `<a class="btn" href="${escapeHtml(f.finalEdits)}" target="_blank" rel="noopener" style="margin-bottom:16px">⬆️ Open the finished video folder</a>`
+      ? `<a class="btn" href="${escapeHtml(f.finalEdits)}" target="_blank" rel="noopener" style="margin-bottom:16px">Open the finished video folder</a>`
       : `<p style="color:var(--red);margin:0 0 16px">This client has no finished video folder yet. Ask the operator to add one.</p>`}
     <div class="modal-actions"><button class="primary" id="efYes">Yes — it's in Google Drive, send it</button><button id="efNo">Not yet</button></div>`);
   box.querySelector("#efNo").onclick = closeVideoModal;
@@ -124,7 +124,7 @@ async function sendFinished(videoId, btn, t) {
     return;
   }
   await loadData();
-  const box = openModal(`<h2>Sent to the operator ✅</h2>
+  const box = openModal(`<h2>Sent to the operator</h2>
     <p style="line-height:1.55;margin:8px 0 18px"><b>${escapeHtml(t)}</b> is off for review. If it needs changes, it'll come back here with them under <b>Revisions needed</b>.</p>
     <div class="modal-actions" style="border:none;padding:0"><button class="primary" id="efDone">Got it</button></div>`);
   box.querySelector("#efDone").onclick = closeVideoModal;
@@ -140,8 +140,8 @@ function finishButton(videoId) {
 // (editor_brief.revisions) and any change the client asked for (note).
 function revisionsBox(video) {
   const items = [(video.editorBrief || {}).revisions, video.note].filter(Boolean);
-  return items.length ? `<div style="margin:0 0 12px;padding:10px 12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:8px">
-    <b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--accent);margin-bottom:4px">📝 Revisions needed</b>
+  return items.length ? `<div style="margin:0 0 12px;padding:10px 12px;border:1px solid var(--accent);border-radius:8px">
+    <b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--accent);margin-bottom:4px">Revisions needed</b>
     <div style="white-space:pre-wrap;font-size:0.9rem;line-height:1.5">${items.map(escapeHtml).join("\n\n")}</div></div>` : "";
 }
 function hasRevisions(video) { return !!((video.editorBrief || {}).revisions || video.note); }
@@ -172,7 +172,7 @@ function renderQueue() {
       <div class="row" style="border:none;padding:0 0 10px">
         <div class="left"><b class="video-card" style="display:inline-block" data-open>${escapeHtml(video.title || "(untitled)")}</b>
         <div class="meta">${escapeHtml(client.name)}${ROLE === "operator" && video.assignedEditor ? " · " + escapeHtml(video.assignedEditor) : ""}</div></div>
-        ${video.dueToEdit ? `<span class="badge" style="background:${overdue ? "rgba(239,68,68,0.15)" : "var(--card2)"};color:${overdue ? "var(--red)" : "var(--sub)"}">${overdue ? "Overdue — " : "Edit by "}${escapeHtml(video.dueToEdit)}</span>` : ""}
+        ${video.dueToEdit ? `<span class="badge" style="border-color:${overdue ? "var(--red)" : "var(--border)"};color:${overdue ? "var(--red)" : "var(--sub)"}">${overdue ? "Overdue — " : "Edit by "}${escapeHtml(video.dueToEdit)}</span>` : ""}
       </div>
       ${editorCardBody(client, video)}
     `;
@@ -194,9 +194,9 @@ function editorCardBody(client, video) {
       ? `Upload the finished video to the finished video folder and name it <b>${escapeHtml(video.title || "after the video")}</b>.`
       : `<b style="color:var(--red)">This client has no finished video folder yet.</b> Ask the operator to add one before you finish this.`}</div>
     <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-      ${f.brandVoice ? `<a class="btn" href="${escapeHtml(f.brandVoice)}" target="_blank" rel="noopener">📘 Brand guidelines</a>` : ""}
+      ${f.brandVoice ? `<a class="btn" href="${escapeHtml(f.brandVoice)}" target="_blank" rel="noopener">Brand guidelines</a>` : ""}
       ${raw ? `<a class="btn" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">${raw.label}</a>` : ""}
-      ${f.finalEdits ? `<a class="btn" href="${escapeHtml(f.finalEdits)}" target="_blank" rel="noopener">⬆️ Finished video folder</a>` : ""}
+      ${f.finalEdits ? `<a class="btn" href="${escapeHtml(f.finalEdits)}" target="_blank" rel="noopener">Finished video folder</a>` : ""}
     </div>`;
 }
 
@@ -214,7 +214,7 @@ function renderCalendar() {
   const byDay = {};
   queue().forEach(x => { if (x.video.dueToEdit) (byDay[x.video.dueToEdit] = byDay[x.video.dueToEdit] || []).push(x); });
   renderMonthCalendar(document.getElementById("calGrid"), byDay, x =>
-    `<div class="cal-chip video-card" style="background:color-mix(in srgb, var(--status-${x.video.status}) 20%, transparent); color:var(--status-${x.video.status})" onclick="openEditorVideoModal('${x.video.id}')">${hasRevisions(x.video) ? "📝 " : ""}${escapeHtml(x.client.name)}: ${escapeHtml(x.video.title || "(untitled)")}</div>`,
+    `<div class="cal-chip video-card" style="border:1px solid var(--status-${x.video.status}); color:var(--ink)" onclick="openEditorVideoModal('${x.video.id}')">${hasRevisions(x.video) ? "Revisions: " : ""}${escapeHtml(x.client.name)}: ${escapeHtml(x.video.title || "(untitled)")}</div>`,
     calState, renderCalendar);
 }
 

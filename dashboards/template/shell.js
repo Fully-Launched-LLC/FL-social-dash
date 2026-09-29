@@ -54,22 +54,25 @@ function renderMonthCalendar(container, byDay, chipHtml, state, rerender) {
 }
 
 // ---------- Platform calendar ----------
-// Each platform's short tag and color on the calendar. A video's platform
+// Each platform's short tag and name. How each looks (gold or white, solid,
+// outline or dashed) is the .p-<platform> class in shell.css. A video's platform
 // list may say "instagram" or "ig"; normPlatform folds the spellings together.
 const PLATFORMS = {
-  instagram: { tag: "IG", name: "Instagram", color: "#e1306c" },
-  tiktok:    { tag: "TT", name: "TikTok",    color: "#25f4ee" },
-  facebook:  { tag: "FB", name: "Facebook",  color: "#1877f2" },
-  linkedin:  { tag: "LI", name: "LinkedIn",  color: "#22c55e" },
-  youtube:   { tag: "YT", name: "YouTube",   color: "#ff3b30" },
+  instagram: { tag: "IG", name: "Instagram", color: "var(--gold)" },
+  tiktok:    { tag: "TT", name: "TikTok",    color: "var(--gold)" },
+  facebook:  { tag: "FB", name: "Facebook",  color: "var(--white)" },
+  linkedin:  { tag: "LI", name: "LinkedIn",  color: "var(--white)" },
+  youtube:   { tag: "YT", name: "YouTube",   color: "var(--gold)" },
 };
 const PLATFORM_ALIASES = { ig: "instagram", insta: "instagram", tt: "tiktok", "tik tok": "tiktok", fb: "facebook", li: "linkedin", yt: "youtube" };
 function normPlatform(p) { const k = String(p || "").trim().toLowerCase(); return PLATFORM_ALIASES[k] || k; }
 // A video's platforms as colored pills: short tags ("IG") or full names.
+// Colors come from the .p-<platform> classes in shell.css (gold or white,
+// solid or outline), so a platform looks the same everywhere.
 function platformPills(platforms, full) {
   return (platforms || []).map(normPlatform).filter(Boolean).map(k => {
     const P = PLATFORMS[k];
-    return `<span class="plat-pill" style="--pc:${P ? P.color : "var(--sub)"}" title="${escapeHtml(P ? P.name : k)}">${escapeHtml(P ? (full ? P.name : P.tag) : k)}</span>`;
+    return `<span class="plat-pill p-${escapeHtml(k)}" title="${escapeHtml(P ? P.name : k)}">${escapeHtml(P ? (full ? P.name : P.tag) : k)}</span>`;
   }).join("");
 }
 
@@ -79,10 +82,10 @@ const APPROVE_DAYS_BEFORE_POST = 3;
 function addDaysISO(iso, n) { const d = new Date(iso + "T00:00:00"); d.setDate(d.getDate() + n); return localISODate(d); }
 
 const CAL_KINDS = {
-  post:    { icon: "📤", label: "Post" },
-  approve: { icon: "✅", label: "Approve by" },
-  edit:    { icon: "✂️", label: "Edit due" },
-  film:    { icon: "🎬", label: "Film by" },
+  post:    { label: "Post" },
+  approve: { label: "Approve by" },
+  edit:    { label: "Edit due" },
+  film:    { label: "Film by" },
 };
 
 // Everything one video puts on the calendar:
@@ -110,8 +113,8 @@ function calendarEntries(x) {
   return out;
 }
 
-// One calendar entry as a chip. Posts wear their platform's color; deadlines
-// are neutral with an icon. Overdue deadlines turn red; posted posts fade.
+// One calendar entry as a chip. Posts wear their platform's style; deadlines
+// are dashed and say what's due. Overdue deadlines turn gold; posted posts fade.
 function calEntryChip(e, { showClient, onclick }) {
   const v = e.x.video, P = PLATFORMS[e.platform];
   const overdue = !e.done && e.date < todayISO();
@@ -119,8 +122,8 @@ function calEntryChip(e, { showClient, onclick }) {
   const name = (showClient ? e.x.client.name + ": " : "") + (v.title || "(untitled)");
   const tip = `${CAL_KINDS[e.kind].label}${P ? " on " + P.name : ""}: ${v.title || "(untitled)"} (${STATUS_LABEL[v.status] || v.status})${overdue ? ". Overdue" : ""}`;
   const cls = ["cal-chip", "video-card", e.kind === "post" ? "cal-post" : "cal-deadline", overdue ? "cal-overdue" : "", e.done ? "cal-done" : ""].join(" ");
-  const style = e.kind === "post" ? ` style="--pc:${P ? P.color : "var(--sub)"}"` : "";
-  return `<div class="${cls}"${style} title="${escapeHtml(tip)}" onclick="${onclick}('${v.id}')">${e.done ? "✓ " : CAL_KINDS[e.kind].icon + " "}<b>${escapeHtml(tag)}</b> ${escapeHtml(name)}</div>`;
+  const plat = e.kind === "post" && e.platform ? " p-" + escapeHtml(e.platform) : "";
+  return `<div class="${cls}${plat}" title="${escapeHtml(tip)}" onclick="${onclick}('${v.id}')">${e.done ? "✓ " : ""}<b>${escapeHtml(tag)}</b> ${escapeHtml(name)}</div>`;
 }
 
 // Filter chips above the calendar: which platforms and which kinds to show.
@@ -128,9 +131,9 @@ function calEntryChip(e, { showClient, onclick }) {
 function calFilterHtml(state) {
   const plat = [`<button class="chip ${state.platforms.size ? "" : "active"}" data-calplat="">All platforms</button>`]
     .concat(Object.entries(PLATFORMS).map(([k, P]) =>
-      `<button class="chip cal-plat ${state.platforms.has(k) ? "active" : ""}" style="--pc:${P.color}" data-calplat="${k}">${P.name}</button>`));
+      `<button class="chip cal-plat p-${k} ${state.platforms.has(k) ? "active" : ""}" data-calplat="${k}">${P.name}</button>`));
   const kinds = Object.entries(CAL_KINDS).map(([k, K]) =>
-    `<button class="chip ${state.kinds.has(k) ? "active" : ""}" data-calkind="${k}">${K.icon} ${K.label}</button>`);
+    `<button class="chip ${state.kinds.has(k) ? "active" : ""}" data-calkind="${k}">${K.label}</button>`);
   return `<div class="chip-row" style="margin-bottom:8px">${plat.join("")}</div><div class="chip-row" style="margin-bottom:14px">${kinds.join("")}</div>`;
 }
 function wireCalFilters(container, state, rerender) {
@@ -212,7 +215,7 @@ function drawLineChart(container, series, opts) {
 
 function statusBadge(status, labelMap) {
   const label = (labelMap && labelMap[status]) || status;
-  return `<span class="badge" style="background:color-mix(in srgb, var(--status-${status}) 18%, transparent); color:var(--status-${status})">${escapeHtml(label)}</span>`;
+  return `<span class="badge" style="border-color:var(--status-${status}); color:var(--status-${status})">${escapeHtml(label)}</span>`;
 }
 
 const STATUS_LABEL = {
@@ -343,13 +346,13 @@ async function runVideoAction(actionKey, videoId, note, extra) {
 // set in the video form) if it has one, else the client's raw footage folder.
 function rawFootageLink(video, folders) {
   const own = (video.editorBrief || {}).rawFootageUrl;
-  if (own) return { url: own, label: "📁 Raw footage for this video", own: true };
-  if (folders && folders.footageUploads) return { url: folders.footageUploads, label: "📁 Raw footage folder", own: false };
+  if (own) return { url: own, label: "Raw footage for this video", own: true };
+  if (folders && folders.footageUploads) return { url: folders.footageUploads, label: "Raw footage folder", own: false };
   return null;
 }
 function finishedVideoLink(video, folders) {
-  if (video.finalCutUrl) return { url: video.finalCutUrl, label: "▶ Watch" };
-  if (folders && folders.finalEdits) return { url: folders.finalEdits, label: "📁 Finished videos" };
+  if (video.finalCutUrl) return { url: video.finalCutUrl, label: "Watch" };
+  if (folders && folders.finalEdits) return { url: folders.finalEdits, label: "Finished videos" };
   return null;
 }
 
@@ -484,7 +487,7 @@ function openVideoModal(client, video, opts) {
     ${instructions && video.assignedEditor ? modalField("Editor", video.assignedEditor) : ""}
 
     <div class="modal-links">
-      ${video.finalCutUrl && !opts.hideFinalCut ? `<a class="btn primary" href="${escapeHtml(video.finalCutUrl)}" target="_blank" rel="noopener">▶ Watch the finished video</a>` : ""}
+      ${video.finalCutUrl && !opts.hideFinalCut ? `<a class="btn primary" href="${escapeHtml(video.finalCutUrl)}" target="_blank" rel="noopener">Watch the finished video</a>` : ""}
       ${linkKeys.filter(k => f[k]).map(k => {
         const raw = k === "footageUploads" ? rawFootageLink(video, f) : null;
         return `<a class="btn" href="${escapeHtml(raw ? raw.url : f[k])}" target="_blank" rel="noopener">${escapeHtml(raw ? raw.label : linkLabels[k] || k)}</a>`;

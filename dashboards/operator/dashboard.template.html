@@ -16,10 +16,10 @@
 <nav class="sidebar">
   <div class="brand"><img src="/assets/logo-white.png" alt="Fully Launched"></div>
   <div class="sync-badge" id="authUserBadge"></div>
-  <div class="nav-item active" data-view="todo"><span class="ic">🛎️</span> To Do</div>
-  <div class="nav-item" data-view="calendar"><span class="ic">📅</span> Content Calendar</div>
-  <div class="nav-item" data-view="clients"><span class="ic">👥</span> Clients</div>
-  <a class="nav-item" href="/editor/dashboard.html" target="_blank" rel="noopener" style="text-decoration:none"><span class="ic">🎞️</span> Editor portal ↗</a>
+  <div class="nav-item active" data-view="todo">To Do</div>
+  <div class="nav-item" data-view="calendar">Content Calendar</div>
+  <div class="nav-item" data-view="clients">Clients</div>
+  <a class="nav-item" href="/editor/dashboard.html" target="_blank" rel="noopener" style="text-decoration:none">Editor portal ↗</a>
 </nav>
 
 <main class="main">
@@ -31,7 +31,7 @@
   <section class="view active" id="view-todo">
     <div class="page-head"><h1>To Do</h1><p>Every video, by the stage it's in. Pick a stage, or All. Click any title to see the whole card.</p></div>
     <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-      <button class="primary" onclick="openBulkAdd(null)">📋 Add ideas with Claude</button>
+      <button class="primary" onclick="openBulkAdd(null)">Add ideas with Claude</button>
       <button onclick="openVideoForm(null)">+ New idea</button>
     </div>
     <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
@@ -39,7 +39,7 @@
       <select id="todoClient" style="width:auto;min-width:200px"></select>
     </div>
     <div class="chip-row" id="todoTabs"></div>
-    <div class="card" data-stage="urgent"><h2>⏰ Time sensitive <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— what you need to do that's overdue or due in the next 3 days, soonest first</span></h2><div id="urgentList"></div></div>
+    <div class="card" data-stage="urgent"><h2>Time sensitive <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— what you need to do that's overdue or due in the next 3 days, soonest first</span></h2><div id="urgentList"></div></div>
     <div class="card" data-stage="sentBack"><h2>Sent back with suggestions <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— edit them, then send them to the client again</span></h2><div id="sendAllWrap"></div><div id="ideasList"></div></div>
     <div class="card" data-stage="client"><h2>Waiting on the client <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— ideas to approve, videos to film, finished videos to approve</span></h2><div id="clientWaitingList"></div></div>
     <div class="card" data-stage="toEditor"><h2>Ready for an editor <span style="font-weight:400;color:var(--sub);font-size:0.78rem">— footage the client uploaded, and videos you film</span></h2><div id="toEditorList"></div></div>
@@ -52,7 +52,7 @@
   <section class="view" id="view-calendar">
     <div class="page-head"><h1>Content Calendar</h1><p>What posts where each day, colored by platform, and what has to be filmed, edited and approved by when. Click any item to open it.</p></div>
     <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-      <button class="primary" id="bulkAddBtn">📋 Add ideas with Claude</button>
+      <button class="primary" id="bulkAddBtn">Add ideas with Claude</button>
       <button id="newVideoBtn">+ New idea</button>
     </div>
     <div id="calFilters"></div>
@@ -150,7 +150,9 @@ function filteredVideos() {
   return globalClientFilter === "all" ? VIDEOS : VIDEOS.filter(x => x.client.id === globalClientFilter);
 }
 function findVideo(id) { return VIDEOS.find(x => x.video.id === id); }
-const byPostDate = (a, b) => (a.video.postDate || "9999").localeCompare(b.video.postDate || "9999");
+// Same day: by title, numbers in order ("2." before "10."), so ties never shuffle.
+const byPostDate = (a, b) => (a.video.postDate || "9999").localeCompare(b.video.postDate || "9999")
+  || (a.video.title || "").localeCompare(b.video.title || "", undefined, { numeric: true });
 
 // Direct write (operator RLS). Checks a row actually came back, so an update
 // RLS silently filtered out is reported instead of looking like a success.
@@ -359,10 +361,10 @@ function openOperatorVideoModal(id) {
   const x = findVideo(id);
   if (!x) return;
   const abandoned = x.video.status === "rejected";
-  const actions = (abandoned ? smallBtn("Restore", `restoreVideo('${id}')`, "primary") : operatorActionsHtml(x, true)) + smallBtn("✏️ Edit", `closeVideoModal();openVideoForm('${id}')`) +
+  const actions = (abandoned ? smallBtn("Restore", `restoreVideo('${id}')`, "primary") : operatorActionsHtml(x, true)) + smallBtn("Edit", `closeVideoModal();openVideoForm('${id}')`) +
     `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/clients/${encodeURIComponent(x.client.slug)}" target="_blank" rel="noopener">Open portal</a>` +
     (x.video.editorId && x.video.status === "with_editor" ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/editor/dashboard.html?editor=${encodeURIComponent(x.video.editorId)}" target="_blank" rel="noopener">Open editor portal</a>` : "") +
-    (abandoned ? "" : smallBtn("Abandon", `abandonVideo('${id}')`)) + smallBtn("🗑 Delete", `deleteVideo('${id}')`, "reject");
+    (abandoned ? "" : smallBtn("Abandon", `abandonVideo('${id}')`)) + smallBtn("Delete", `deleteVideo('${id}')`, "reject");
   openVideoModal(x.client, x.video, { actionsHtml: actions });
   if (x.video.status === "concept_pending" && !x.video.conceptApprovedAt) {
     const meta = document.querySelector("#videoModalBox .modal-meta");
@@ -615,7 +617,7 @@ function unsentIdeas() {
 // Posted videos are done, so they're not here.
 const TODO_STAGES = [
   // Its own tab, kept out of All (everything in it is also in a stage below).
-  { key: "urgent",     label: "⏰ Time sensitive",           match: x => !!timeSensitive(x), apart: true },
+  { key: "urgent",     label: "Time sensitive",           match: x => !!timeSensitive(x), apart: true },
   { key: "sentBack",   label: "Sent back with suggestions", match: x => x.video.status === "concept_pending" && !x.video.conceptApprovedAt },
   { key: "client",     label: "Waiting on client",          match: x => isWaitingOnClient(x) },
   { key: "toEditor",   label: "Ready for an editor",        match: x => isReadyForEditor(x) },
@@ -678,14 +680,14 @@ function renderTodo() {
   const unsent = inStage("sentBack");
   document.getElementById("sendAllWrap").innerHTML = unsent.length > 1
     ? `<div style="margin-bottom:10px">${smallBtn(`Send all ${unsent.length} to the client`, "sendAllToClient(this)", "primary")}</div>` : "";
-  listOrEmpty("ideasList", unsent, x => smallBtn("✏️ Edit", `openVideoForm('${x.video.id}')`) + operatorActionsHtml(x), "Nothing sent back.");
+  listOrEmpty("ideasList", unsent, x => smallBtn("Edit", `openVideoForm('${x.video.id}')`) + operatorActionsHtml(x), "Nothing sent back.");
   listOrEmpty("clientWaitingList", inStage("client"), x => operatorActionsHtml(x) + statusBadge(x.video.status, STATUS_LABEL), "Nothing waiting on a client.");
   listOrEmpty("toEditorList", inStage("toEditor"), x => operatorActionsHtml(x), "Nothing waiting for an editor.");
   listOrEmpty("withEditorList", inStage("withEditor"), x => (x.video.editorId
     ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/editor/dashboard.html?editor=${encodeURIComponent(x.video.editorId)}" target="_blank" rel="noopener">Open editor portal</a>` : "") + statusBadge(x.video.status, STATUS_LABEL), "Nothing with an editor.");
   listOrEmpty("editsList", inStage("edits"), x => operatorActionsHtml(x), "No edits waiting.");
   document.getElementById("todoPostList").innerHTML = inStage("post").map(postCardHtml).join("") || '<div class="empty">Nothing ready to post right now.</div>';
-  listOrEmpty("abandonedList", inStage("abandoned"), x => smallBtn("Restore", `restoreVideo('${x.video.id}')`, "primary") + smallBtn("🗑 Delete", `deleteVideo('${x.video.id}')`, "reject"),
+  listOrEmpty("abandonedList", inStage("abandoned"), x => smallBtn("Restore", `restoreVideo('${x.video.id}')`, "primary") + smallBtn("Delete", `deleteVideo('${x.video.id}')`, "reject"),
     "Nothing abandoned. To abandon an idea, click it and choose Abandon.");
 }
 document.getElementById("todoClient").onchange = e => { globalClientFilter = e.target.value; renderAll(); };
@@ -745,7 +747,7 @@ function renderAllClients() {
         ? "Contact: " + [c.contactName, c.contactEmail, c.contactPhone].filter(Boolean).map(escapeHtml).join(" · ")
         : `<span style="color:var(--red)">No contact yet</span>`}</div></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn primary" style="font-size:0.75rem;padding:4px 9px" href="/clients/${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Open portal</a>
-      ${INVITES_ENABLED ? `<button style="font-size:0.75rem;padding:4px 9px" onclick="inviteClient('${c.id}', this)">✉️ Invite to portal</button>` : ""}
+      ${INVITES_ENABLED ? `<button style="font-size:0.75rem;padding:4px 9px" onclick="inviteClient('${c.id}', this)">Invite to portal</button>` : ""}
       <button style="font-size:0.75rem;padding:4px 9px" onclick="openClientPanel('${c.id}')">Edit</button></div></div>`;
   }).join("");
 }

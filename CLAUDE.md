@@ -510,11 +510,24 @@ instructions" field stored as `editor_brief.instructions` — older videos'
 separate brief fields are folded into it for display). Entering a post date
 suggests edit-by 7 days earlier.
 
+### Look and feel
+
+Three colors only, from fullylaunched.com: navy `#04101f`, white, and
+gold/tan `#C4AB82` (tokens at the top of `shell.css`). Every surface is the
+one navy; cards and fields are outlined, never a second navy. Secondary
+text is white at lower opacity. Status badges and "overdue" use gold;
+platforms are gold or white, solid or outline (`.p-<platform>` classes).
+No emoji in the interface (they bring their own colors). Prata headings,
+Hanken Grotesk text. On phones the sidebar becomes a bar across the top.
+
 ### Client portal — `/clients/<slug>`
 
-One shared file; the slug comes from the URL. **My Videos** (a "Your
+One shared file; the slug comes from the URL. **To Do** (a "Your
 footage folder" card, then tabs: **All** — the default, every action the
-client has to take, grouped under headings; To film — client-filmed
+client has to take, grouped under headings; **Time sensitive** — the
+client's own next step on each video (film it, approve the idea, approve the
+finished video) when it's late or due within 3 days, soonest first, kept out
+of All; To film — client-filmed
 ideas; Ideas to approve — we-film ideas; Finished videos to approve. A
 tab shows when it fits the client's default or has something in it), **Content Calendar**
 (each post date shows the video's full title and a colored pill per
