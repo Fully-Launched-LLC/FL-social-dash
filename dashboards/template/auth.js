@@ -116,6 +116,15 @@ async function authSignOut() {
 //   in place.
 function initAuthGate(opts) {
   authRenderForm();
+  // A sign-in or invite link that expired or was already used comes back
+  // as #error=...&error_code=otp_expired. Say so, instead of a bare form.
+  const hash = new URLSearchParams(location.hash.replace(/^#/, ""));
+  if (hash.get("error")) {
+    authSetMessage(hash.get("error_code") === "otp_expired"
+      ? "That link has expired or was already used. If you've set a password, sign in below. If not, ask Fully Launched to send you a new invite."
+      : "That link didn't work (" + (hash.get("error_description") || hash.get("error")) + "). Ask Fully Launched to send you a new one.", false);
+    history.replaceState(null, "", location.pathname + location.search);
+  }
 
   if (typeof window.supabase === "undefined") {
     authSetMessage("Supabase library failed to load — check your connection and reload.", false);

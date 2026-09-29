@@ -91,6 +91,10 @@ nextBtn().click(); await settle();
 chk("finishing marks onboarding done", !!(await row()).completed_at);
 chk("no page errors on /welcome (besides leaving the page)", w.ui.errors.every(e => /navigation/i.test(e)), w.ui.errors);
 
+// An invite link opened a second time (already used / expired).
+const exp = await openPage("welcome.html", null, "https://fl.test/welcome?client=newco#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired");
+chk("an expired or used link says so on the sign-in screen", /expired or was already used/.test(exp.d.getElementById("authError").textContent) && !exp.w.location.hash, exp.d.getElementById("authError").textContent);
+
 // Coming back later: straight to the step they left off (here: done → last step).
 w = await openPage("welcome.html", CL, "https://fl.test/welcome");
 chk("returning after finishing opens on the last step", w.d.querySelector("#stepBody section").dataset.current === "tour");
