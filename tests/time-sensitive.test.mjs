@@ -69,6 +69,8 @@ const ctabs = Object.fromEntries(Array.from(cl.d.querySelectorAll("#videoTabs .c
 chk("client Time sensitive tab after All: only the client's own soon-due step", Object.keys(ctabs)[1] === "urgent" && ctabs.urgent === "Time sensitive (1)", ctabs);
 const cstat = cl.d.querySelector('#clientStats [data-stat="urgent"]');
 chk("client summary card: Time sensitive 1", cstat && cstat.querySelector(".value").textContent === "1");
+chk("client greeting keeps a business name whole", cl.d.getElementById("clientGreet").textContent.includes(", Grad Gig ·"), cl.d.getElementById("clientGreet").textContent);
+chk("Posts coming up counts every upcoming post", cl.d.querySelector('#clientStats [data-stat="calendar"] .value').textContent === "9", cl.d.querySelector('#clientStats [data-stat="calendar"] .value').textContent);
 cstat.click(); await settle();
 const ucards = Array.from(cl.d.querySelectorAll("#listUrgent > .card"));
 chk("it lists the idea they film tomorrow, saying what and by when", ucards.length === 1 && ucards[0].textContent.includes("Client idea") && ucards[0].textContent.includes("Film it · by"), ucards.map(c => c.textContent));
