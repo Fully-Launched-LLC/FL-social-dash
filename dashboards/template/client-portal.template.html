@@ -192,7 +192,7 @@ async function runAsOperator(actionKey, videoId, note, extra) {
 
 // What the client is told after each step.
 function thanksFor(actionKey, video) {
-  const posts = video.postDate ? ` It's set to post on <b>${escapeHtml(niceDate(video.postDate))}</b>.` : "";
+  const posts = video.postDate ? ` It's set to post on <b>${escapeHtml(video.postDate)}</b>.` : "";
   return {
     submit_footage: ["Thanks for submitting your video!",
       `Our editor has it now. In about <b>7 days</b> you'll get the finished video right here to approve for posting.${posts}`],
@@ -235,10 +235,13 @@ async function doAction(actionKey, videoId, btnEl, note, extra) {
 
 // ---------- cards ----------
 function fieldRow(label, value) {
-  return value ? `<div style="margin:10px 0 4px"><b style="display:block;font-size:0.8rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">${label}</b><div style="white-space:pre-wrap;font-size:0.92rem;line-height:1.5">${escapeHtml(value)}</div></div>` : "";
+  return value ? `<div style="margin:10px 0 4px"><b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">${label}</b><div style="white-space:pre-wrap;font-size:0.92rem;line-height:1.5">${escapeHtml(value)}</div></div>` : "";
 }
-function lbl(text) { return `<label style="display:block;font-size:0.8rem;text-transform:uppercase;color:var(--sub);margin:12px 0 4px">${escapeHtml(text)}</label>`; }
+function lbl(text) { return `<label style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin:12px 0 4px">${escapeHtml(text)}</label>`; }
 
+function niceDate(iso) {
+  return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+}
 // Where a video is, in the client's words.
 function clientStage(video, fb) {
   switch (video.status) {
@@ -384,8 +387,7 @@ function renderVideos() {
 function renderVideoTabs() {
   const tabs = tabsForClient();
   if (!tabs.some(t => t.key === activeTab)) activeTab = "all";
-  // Simple: only tabs with something in them (plus All and the one open).
-  document.getElementById("videoTabs").innerHTML = tabs.filter(t => t.key === "all" || t.key === activeTab || videosInTab(t.key).length).map(t =>
+  document.getElementById("videoTabs").innerHTML = tabs.map(t =>
     `<div class="chip ${t.key === activeTab ? "active" : ""}${t.key === "urgent" && videosInTab(t.key).length ? " urgent" : ""}" data-tab="${t.key}">${t.label} (${videosInTab(t.key).length})</div>`).join("");
   document.querySelectorAll("#videoTabs .chip").forEach(c => c.onclick = () => { activeTab = c.dataset.tab; renderVideoTabs(); });
   // All: every kind that has something waiting, each under its heading.

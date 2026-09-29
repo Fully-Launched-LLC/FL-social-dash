@@ -161,7 +161,7 @@ const s0 = await statusOf(title(0)), s29 = await statusOf(title(clientFilmed.at(
 chk("edit due 7 days after filming", s0.due_to_edit === plus(TODAY, 7), s0);
 chk("posts 14 days after filming, or on the planned date if later",
   s0.post_date === (day(0) > plus(TODAY, 14) ? day(0) : plus(TODAY, 14)) && s29.post_date === (day(clientFilmed.at(-1)) > plus(TODAY, 14) ? day(clientFilmed.at(-1)) : plus(TODAY, 14)), [s0.post_date, s29.post_date]);
-chk("nothing left to film: the empty To film tab hides", !$(cl, "#videoTabs").textContent.includes("To film") && $(cl, "#listToFilm").textContent.includes("Stay tuned"), $(cl, "#videoTabs").textContent);
+chk("To film now empty with a stay-tuned note", $(cl, "#videoTabs").textContent.includes("To film (0)") && $(cl, "#listToFilm").textContent.includes("Stay tuned"), $(cl, "#videoTabs").textContent);
 
 // A "we film" video on this client: approve the idea, then Tait films it.
 if (V.switchToUs.length) {
@@ -209,7 +209,7 @@ async function editorFinish(list) {
 let ed = track(await ED());
 const e0 = edCard(ed, title(0));
 chk("editor card: edit-by, instructions, brand guidelines, raw footage, finished folder",
-  e0.textContent.includes(nice(plus(TODAY, 7))) && e0.textContent.includes("Cut it like this: 1") && !!e0.querySelector('a[href="https://docs/fl-brand"]')
+  e0.textContent.includes(plus(TODAY, 7)) && e0.textContent.includes("Cut it like this: 1") && !!e0.querySelector('a[href="https://docs/fl-brand"]')
   && !!e0.querySelector('a[href="https://drive/fl-footage"]') && !!e0.querySelector('a[href="https://drive/fl-final"]'));
 // Backing out: "Not yet" leaves it with the editor.
 await click(btn(e0, "Finished"), "finish (not yet)");
@@ -277,7 +277,7 @@ chk("all 30 ready to post", (await count("status='ready_to_post'")) === 30);
 op = track(await OP());
 chk("no separate Ready to Post page", !$(op, "#view-post") && !$$(op, ".nav-item").some(n => n.textContent.includes("Ready to Post")));
 const p0 = $$(op, "#todoPostList > .card")[0];
-chk("To Do → Ready to post: date, both captions, finished video", p0 && /Posts \w{3}, \w{3} \d{1,2}/.test(p0.textContent) && p0.textContent.includes("Caption") && p0.textContent.includes("On-screen caption") && !!p0.querySelector('a[href="https://drive/fl-final"]'));
+chk("To Do → Ready to post: date, both captions, finished video", p0 && /Post \d{4}-\d{2}-\d{2}/.test(p0.textContent) && p0.textContent.includes("Caption") && p0.textContent.includes("On-screen caption") && !!p0.querySelector('a[href="https://drive/fl-final"]'));
 for (let n = 0; n < V.post; n++) await click(btn($$(op, "#todoPostList > .card")[0], "Mark posted"), "post " + n);
 chk(`${V.post} posted`, (await count("status='posted'")) === V.post);
 
@@ -289,7 +289,7 @@ $(op, "#bkText").dispatchEvent(new op.w.Event("input"));
 await click($(op, "#bkSave"), "save premium ideas");
 chk("premium ideas default to we film", (await count("client_id=$1 and filmed_by='us' and status='concept_pending'", [PREM])) === 3);
 let prem = track(await PREMP());
-chk("premium tabs: All and Ideas to approve (empty ones hidden)", $$(prem, "#videoTabs .chip").map(c => c.textContent).join("|") .replace(/Time sensitive \(\d+\)\|/, "") === "All (3)|Ideas to approve (3)", $$(prem, "#videoTabs .chip").map(c => c.textContent));
+chk("premium tabs: All, Ideas to approve, Finished", $$(prem, "#videoTabs .chip").map(c => c.textContent).join("|") .replace(/Time sensitive \(\d+\)/, "Time sensitive") === "All (3)|Time sensitive|Ideas to approve (3)|Finished videos to approve (0)", $$(prem, "#videoTabs .chip").map(c => c.textContent));
 chk("premium still has its footage folder link", $(prem, "#footageCardLink").href === "https://drive/prem-footage");
 const pc = portalCard(prem, "#listIdeas", "Prem 1");
 chk("premium idea card: hook, script, outline, how we'll make it — no upload", pc && ["Prem hook 1", "Prem script 1", "- Prem point 1", "How we'll make itWe film it 1"].every(t => pc.textContent.includes(t)) && !pc.textContent.includes("How to film it") && !pc.querySelector("a[href*='footage']"), pc && pc.textContent);
