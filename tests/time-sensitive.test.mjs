@@ -33,7 +33,10 @@ const tabs = () => Object.fromEntries(Array.from(op.d.querySelectorAll("#todoTab
 const shown = () => Array.from(op.d.querySelectorAll("#view-todo [data-stage]")).filter(el => el.style.display !== "none").map(el => el.dataset.stage);
 chk("Time sensitive tab right after All, with its count", Object.keys(tabs())[1] === "urgent" && tabs().urgent === "Time sensitive (4)", tabs());
 chk("not shown under All", !shown().includes("urgent"));
-op.d.querySelector('[data-stage-tab="urgent"]').click(); await settle();
+const stat = k => op.d.querySelector(`#todoStats [data-stat="${k}"]`);
+chk("summary cards show the counts", stat("urgent").querySelector(".value").textContent === "4" && stat("toEditor").querySelector(".value").textContent === "2", op.d.getElementById("todoStats").textContent);
+chk("greeting names the operator", /Good (morning|afternoon|evening), Tait/.test(op.d.getElementById("todoGreet").textContent));
+stat("urgent").click(); await settle();
 const rows = Array.from(op.d.querySelectorAll('[data-stage="urgent"] .row'));
 const titles = rows.map(r => r.querySelector("b.video-card").textContent);
 chk("only Tait's tasks due within 3 days or overdue, soonest first", titles.join() === "Edit overdue,Review now,Post today,Film soon", titles);
@@ -64,7 +67,9 @@ chk("client page is called To Do", cl.d.querySelector("#view-videos h1").textCon
 cl.w.closeVideoModal();
 const ctabs = Object.fromEntries(Array.from(cl.d.querySelectorAll("#videoTabs .chip")).map(c => [c.dataset.tab, c.textContent]));
 chk("client Time sensitive tab after All: only the client's own soon-due step", Object.keys(ctabs)[1] === "urgent" && ctabs.urgent === "Time sensitive (1)", ctabs);
-cl.d.querySelector('#videoTabs [data-tab="urgent"]').click(); await settle();
+const cstat = cl.d.querySelector('#clientStats [data-stat="urgent"]');
+chk("client summary card: Time sensitive 1", cstat && cstat.querySelector(".value").textContent === "1");
+cstat.click(); await settle();
 const ucards = Array.from(cl.d.querySelectorAll("#listUrgent > .card"));
 chk("it lists the idea they film tomorrow, saying what and by when", ucards.length === 1 && ucards[0].textContent.includes("Client idea") && ucards[0].textContent.includes("Film it · by"), ucards.map(c => c.textContent));
 cl.d.querySelector('#videoTabs [data-tab="all"]').click(); await settle();

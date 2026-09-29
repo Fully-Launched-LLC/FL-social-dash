@@ -29,7 +29,8 @@
   <div id="loadError"></div>
 
   <section class="view active" id="view-videos">
-    <div class="page-head"><h1>To Do</h1><p id="videosSubhead"></p></div>
+    <div class="page-head"><div class="greet" id="clientGreet"></div><h1>To Do</h1><p id="videosSubhead"></p></div>
+    <div class="stat-grid" id="clientStats"></div>
     <div class="card" id="footageCard" style="display:none">
       <div class="row" style="border:none;padding:0">
         <div class="left"><b>Your footage folder</b>
@@ -387,6 +388,19 @@ function renderVideos() {
 function renderVideoTabs() {
   const tabs = tabsForClient();
   if (!tabs.some(t => t.key === activeTab)) activeTab = "all";
+  document.getElementById("clientGreet").innerHTML = greetingHtml(CLIENT.contact_name || CLIENT.name);
+  const month = todayISO().slice(0, 7), statsEl = document.getElementById("clientStats");
+  statsEl.innerHTML = statCardsHtml([
+    { key: "urgent", label: "Time sensitive", n: videosInTab("urgent").length, note: "late or due within 3 days", hot: true },
+    clientFilms() ? { key: "film", label: "To film", n: videosInTab("film").length, note: "film and upload" }
+                  : { key: "ideas", label: "Ideas to approve", n: videosInTab("ideas").length, note: "say yes or suggest changes" },
+    { key: "final", label: "Finished to approve", n: videosInTab("final").length, note: "watch and approve", hot: true },
+    { key: "calendar", label: "Posting this month", n: VIDEOS.filter(v => (v.postDate || "").startsWith(month)).length, note: "see the calendar" },
+  ], activeTab);
+  wireStatCards(statsEl, key => {
+    if (key === "calendar") { const nav = document.querySelector('.nav-item[data-view="calendar"]'); if (nav) nav.click(); return; }
+    activeTab = key; renderVideoTabs();
+  });
   document.getElementById("videoTabs").innerHTML = tabs.map(t =>
     `<div class="chip ${t.key === activeTab ? "active" : ""}" data-tab="${t.key}">${t.label} (${videosInTab(t.key).length})</div>`).join("");
   document.querySelectorAll("#videoTabs .chip").forEach(c => c.onclick = () => { activeTab = c.dataset.tab; renderVideoTabs(); });
