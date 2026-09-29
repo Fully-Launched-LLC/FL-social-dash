@@ -467,7 +467,11 @@ voice profile) under the skills' rules: nothing invented, quotes word for
 word. Every quote is then checked against the transcript and any that isn't
 found is flagged in the document. They're saved in
 `social_client_generated_docs` and shown in the welcome steps and on the
-portal's Documents page. The Content Ideas document still comes later, from
+portal's Documents page. For now Tait builds the documents by hand (no
+`ANTHROPIC_API_KEY`, his choice, 2026-09-29) as Google Docs added on Clients
+→ Edit → Documents; the welcome page's Your documents step lists those too.
+Don't click Save and build documents without the key: it marks the
+documents failed, and the client's welcome page says so. The Content Ideas document still comes later, from
 Tait's content research. Operators see each client's progress on Clients,
 and **Onboarding** shows what they sent, the transcript box, the documents,
 "Save and build / rebuild documents", and a preview of their steps
