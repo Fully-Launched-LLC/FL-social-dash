@@ -13,6 +13,8 @@
 const { env, need, rest, callerFrom, handler, portalUrl } = require("./_lib");
 const { inviteEmail } = require("./_email");
 
+const DEFAULT_FROM = "Fully Launched <hello@fullylaunched.com>";
+
 async function generateLink(type, email, redirectTo) {
   const res = await fetch(env("SUPABASE_URL") + "/auth/v1/admin/generate_link", {
     method: "POST",
@@ -56,14 +58,21 @@ module.exports = handler(async (req, { clientId }) => {
   if (!env("RESEND_API_KEY")) return { sent: false, link, email, reason: "Email sending isn't set up yet (RESEND_API_KEY). Copy the link and send it yourself." };
 
   const { subject, html, text } = inviteEmail({ contactName: client.contact_name, clientName: client.name, link, portal, returning });
-  const mail = await fetch("https://api.resend.com/emails", {
+  const send = from => fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: "Bearer " + env("RESEND_API_KEY"), "Content-Type": "application/json" },
-    body: JSON.stringify({ from: env("EMAIL_FROM") || "Fully Launched <hello@fullylaunched.com>", to: [email], subject, html, text }),
+    body: JSON.stringify({ from, to: [email], subject, html, text }),
   });
-  if (!mail.ok) {
-    const m = await mail.json().catch(() => ({}));
-    return { sent: false, link, email, reason: "The email didn't send (" + (m.message || mail.status) + "). Copy the link and send it yourself." };
+  let mail = await send(env("EMAIL_FROM") || DEFAULT_FROM);
+  let m = mail.ok ? {} : await mail.json().catch(() => ({}));
+  // EMAIL_FROM on a domain Resend hasn't verified (e.g. a typo): try once
+  // more from the default sender, and say so.
+  let warning;
+  if (!mail.ok && env("EMAIL_FROM") && /not verified/i.test(m.message || "")) {
+    warning = `EMAIL_FROM (${env("EMAIL_FROM")}) isn't a verified Resend domain: ${m.message} Sent from ${DEFAULT_FROM} instead. Fix EMAIL_FROM in Vercel.`;
+    mail = await send(DEFAULT_FROM);
+    m = mail.ok ? {} : await mail.json().catch(() => ({}));
   }
-  return { sent: true, email, returning };
+  if (!mail.ok) return { sent: false, link, email, reason: "The email didn't send (" + (m.message || mail.status) + "). Copy the link and send it yourself." };
+  return { sent: true, email, returning, ...(warning ? { warning } : {}) };
 });

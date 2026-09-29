@@ -930,6 +930,7 @@ async function sendInvite(clientId) {
   await loadLiveData();
   if (out.sent) {
     openModal(`<h2>Invite sent</h2><p style="line-height:1.55">${escapeHtml(c.name)}'s invite is on its way to <b>${escapeHtml(out.email)}</b>. The link takes them to their onboarding: create a password, then the steps.</p>
+      ${out.warning ? `<p class="meta" style="line-height:1.55">${escapeHtml(out.warning)}</p>` : ""}
       <div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Got it</button></div>`);
   } else if (out.link) {
     const box = openModal(`<h2>Send this link yourself</h2><p class="meta" style="line-height:1.55">${escapeHtml(out.reason || "The email didn't send.")}</p>
