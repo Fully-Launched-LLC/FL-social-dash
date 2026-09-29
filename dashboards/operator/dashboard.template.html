@@ -105,9 +105,10 @@ const FILMED_BY_LABEL = { client: "Client films it", us: "We film it" };
 
 // Invites send a sign-in link to the client's contact email; opening it
 // links that login to the client (social_claim_client_invite, migration
-// 006). OFF until the CRM security fix — see CLAUDE.md → Auth: a client
-// login could otherwise read the CRM's tables. Flip to true once it's done.
-const INVITES_ENABLED = false;
+// 006). ON since 2026-09-29, Tait's call, to invite Luke to Grad Gig: until
+// the CRM security fix, a client login can read the CRM's tables (see
+// CLAUDE.md → Auth), so only invite people you'd trust with that.
+const INVITES_ENABLED = true;
 
 // ---------- data ----------
 async function loadLiveData() {

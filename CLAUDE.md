@@ -421,8 +421,10 @@ email matching a client's `contact_email` opens a portal,
 `social_claim_client_invite()` links it to that client
 (`social_client_users`); operators and editors are never linked. Clients
 sign in again with "Email me a sign-in link" on the login screen.
-Invites are **switched off** (`INVITES_ENABLED = false` in the operator
-template) until the CRM fix above. Before turning them on, Supabase also
+Invites are **on** (`INVITES_ENABLED = true` in the operator template)
+since 2026-09-29, Tait's decision, to invite Luke to Grad Gig's portal. Until
+the CRM fix above, any client login can read the CRM, so only invite people
+trusted with that. Before turning them on, Supabase also
 needs: Authentication → URL Configuration → Redirect URLs including
 `https://fl-social-dash.vercel.app/**`, and custom SMTP (Supabase's built-in
 email only reaches the project's own team, and is heavily rate-limited).
