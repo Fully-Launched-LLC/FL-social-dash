@@ -43,7 +43,7 @@ async function call(mod, token, body) {
 }
 
 const invite = require("../api/invite.js");
-const voice = require("../api/voice-memo.js");
+const build = require("../api/build-documents.js");
 const C1 = "11111111-1111-1111-1111-111111111111", C2 = "22222222-2222-2222-2222-222222222222";
 const base = {
   users: { opTok: { id: "op1", email: "tait@x" }, clTok: { id: "cl1", email: "pat@x" }, edTok: { id: "ed1", email: "ed@x" } },
@@ -81,51 +81,45 @@ world(base);
 r = await call(invite, "opTok", { clientId: C1 });
 chk("invite: not set up → 503 naming the missing key", r.status === 503 && /SUPABASE_SERVICE_ROLE_KEY/.test(r.body.error), r.body);
 
-// ── voice memo ──
+// ── build documents from a pasted transcript ──
 const TRANSCRIPT = "Our best customer is a busy parent who never has a minute to spare. They told us we just need somebody we can trust in the house. The dream is that the evenings belong to the family again. ".repeat(3);
 const docs = {
   customerData: '# NewCo: Customer Data\n## 1. Pains, verbatim\n1. "never has a minute to spare"\n*Founder, on time.*\n2. "we are drowning in paperwork every single week"\n*Founder.*\n3. "we just need somebody ... trust in the house"\n*Founder.*',
   yourVoice: "# NewCo: Your Voice\n## Pillars (3) [To confirm]\n### Trust — at home\n\"the evenings belong to the family again\"",
 };
-setEnv({ OPENAI_API_KEY: "sk-o", ANTHROPIC_API_KEY: "sk-a" });
-calls = world({ ...base, onboarding: { client_id: C1, voice_memo_path: C1 + "/1-voice-memo.m4a", brand: { fonts: "Inter" }, answers: { best: "Busy parents" } }, transcript: TRANSCRIPT, ...docs });
-r = await call(voice, "clTok", { clientId: C2 });
-chk("voice memo: another client's memo → 403", r.status === 403);
-r = await call(voice, "edTok", { clientId: C1 });
-chk("voice memo: an editor → 403", r.status === 403);
-calls = world({ ...base, onboarding: { client_id: C1, voice_memo_path: C1 + "/1-voice-memo.m4a", brand: { fonts: "Inter" }, answers: { best: "Busy parents" } }, transcript: TRANSCRIPT, ...docs });
-r = await call(voice, "clTok", { clientId: C1 });
-chk("voice memo: the client's own memo → built", r.status === 200 && r.body.ok === true, r.body);
-chk("voice memo: reads the audio from the private bucket", calls.some(c => c.url === "https://sb.test/storage/v1/object/onboarding-audio/" + C1 + "/1-voice-memo.m4a"));
-const tr = calls.find(c => c.url.startsWith("https://api.openai.com"));
-chk("voice memo: transcribed with Whisper", tr && tr.body.get("model") === "whisper-1");
+setEnv({ ANTHROPIC_API_KEY: "sk-a" });
+calls = world({ ...base, onboarding: { client_id: C1, brand: { fonts: "Inter" }, answers: { best: "Busy parents" } }, ...docs });
+r = await call(build, "clTok", { clientId: C1, transcript: TRANSCRIPT });
+chk("build: a client can't → 403 (team only)", r.status === 403);
+r = await call(build, "opTok", { clientId: C1, transcript: "too short" });
+chk("build: too-short transcript → 400", r.status === 400 && /too short/.test(r.body.error));
+calls = world({ ...base, onboarding: { client_id: C1, brand: { fonts: "Inter" }, answers: { best: "Busy parents" } }, ...docs });
+r = await call(build, "opTok", { clientId: C1, transcript: TRANSCRIPT });
+chk("build: pasted transcript → built", r.status === 200 && r.body.ok === true, r.body);
+chk("build: no transcription service is called", !calls.some(c => c.url.startsWith("https://api.openai.com")));
+const savedT = calls.find(c => c.url.includes("social_client_onboarding?on_conflict=client_id"));
+chk("build: the transcript is saved", savedT && JSON.parse(savedT.body).transcript === TRANSCRIPT.trim());
 const prompts = calls.filter(c => c.url.startsWith("https://api.anthropic.com")).map(c => JSON.parse(c.body));
-chk("voice memo: Claude builds both documents from the transcript", prompts.length === 2 && prompts.every(p => p.messages[0].content.includes(TRANSCRIPT.slice(0, 60)) && /Never invent/.test(p.messages[0].content)));
-chk("voice memo: Customer Data uses Tait's prompt word for word", prompts.some(p => p.messages[0].content.startsWith("You are my voice-of-customer analyst. I am pasting in transcripts from real calls with my customers.")));
-chk("voice memo: form notes and brand are context, never quotes", prompts.every(p => p.messages[0].content.includes("Busy parents") && /never as recording quotes/.test(p.messages[0].content)));
+chk("build: Claude builds both documents from the transcript", prompts.length === 2 && prompts.every(p => p.messages[0].content.includes(TRANSCRIPT.slice(0, 60)) && /Never invent/.test(p.messages[0].content)));
+chk("build: Customer Data uses Tait's prompt word for word", prompts.some(p => p.messages[0].content.startsWith("You are my voice-of-customer analyst. I am pasting in transcripts from real calls with my customers.")));
+chk("build: form notes and brand are context, never quotes", prompts.every(p => p.messages[0].content.includes("Busy parents") && /never as recording quotes/.test(p.messages[0].content)));
 const saved = calls.filter(c => c.url.includes("social_client_generated_docs")).map(c => JSON.parse(c.body));
 const cd = saved.find(d => d.kind === "customer_data"), yv = saved.find(d => d.kind === "your_voice");
-chk("voice memo: both documents saved", cd && yv && cd.title === "NewCo: Customer Data" && yv.title === "NewCo: Your Voice");
-chk("voice memo: real quotes pass (with ... cuts)", !/never has a minute to spare" \*\(check/.test(cd.body_md) && !/trust in the house" \*\(check/.test(cd.body_md), cd.body_md);
-chk("voice memo: a quote that isn't in the recording is flagged", /drowning in paperwork every single week" \*\(check: not word for word in the recording\)\*/.test(cd.body_md) && r.body.flaggedQuotes === 1, cd.body_md);
-chk("voice memo: no em dashes survive", !yv.body_md.includes("—"));
-const patches = calls.filter(c => c.method === "PATCH").map(c => JSON.parse(c.body));
-chk("voice memo: transcript saved, then status ready", patches.some(p => p.transcript === TRANSCRIPT.trim()) && patches.at(-1).docs_status === "ready");
+chk("build: both documents saved", cd && yv && cd.title === "NewCo: Customer Data" && yv.title === "NewCo: Your Voice");
+chk("build: real quotes pass (with ... cuts)", !/never has a minute to spare" \*\(check/.test(cd.body_md) && !/trust in the house" \*\(check/.test(cd.body_md), cd.body_md);
+chk("build: a quote that isn't in the transcript is flagged", /drowning in paperwork every single week" \*\(check: not word for word in the recording\)\*/.test(cd.body_md) && r.body.flaggedQuotes === 1, cd.body_md);
+chk("build: no em dashes survive", !yv.body_md.includes("—"));
+chk("build: status ready", calls.filter(c => c.method === "PATCH").map(c => JSON.parse(c.body)).at(-1).docs_status === "ready");
 
-calls = world({ ...base, onboarding: { client_id: C1, voice_memo_path: C1 + "/1.webm" }, transcribe: json => json({ error: "bad audio" }, 400), ...docs });
-r = await call(voice, "opTok", { clientId: C1 });
-const last = calls.filter(c => c.method === "PATCH").map(c => JSON.parse(c.body)).at(-1);
-chk("voice memo: a failure is saved for the operator to see", r.status === 500 && last.docs_status === "failed" && /Transcription failed/.test(last.docs_error), last);
-
-calls = world({ ...base, onboarding: { client_id: C1, voice_memo_path: C1 + "/1.webm" }, transcript: "too short", ...docs });
-r = await call(voice, "opTok", { clientId: C1 });
-chk("voice memo: too little speech → a clear failure", r.status === 500 && /too short/.test(r.body.error));
+calls = world({ ...base, onboarding: { client_id: C1, transcript: TRANSCRIPT }, ...docs });
+r = await call(build, "opTok", { clientId: C1 });
+chk("build: rebuild uses the saved transcript", r.status === 200 && calls.filter(c => c.url.startsWith("https://api.anthropic.com")).length === 2);
 
 setEnv();
-calls = world({ ...base, onboarding: { client_id: C1, voice_memo_path: C1 + "/1.webm" }, transcript: TRANSCRIPT, ...docs });
-r = await call(voice, "opTok", { clientId: C1 });
-const lastNoKeys = calls.filter(c => c.method === "PATCH").map(c => JSON.parse(c.body)).at(-1);
-chk("voice memo: missing keys → failed, naming them", r.status === 503 && /OPENAI_API_KEY, ANTHROPIC_API_KEY/.test(r.body.error) && lastNoKeys.docs_status === "failed", r.body);
+calls = world({ ...base, onboarding: { client_id: C1 }, ...docs });
+r = await call(build, "opTok", { clientId: C1, transcript: TRANSCRIPT });
+const lastNoKey = calls.filter(c => c.method === "PATCH").map(c => JSON.parse(c.body)).at(-1);
+chk("build: no Anthropic key → failed, naming it (OpenAI never needed)", r.status === 503 && /ANTHROPIC_API_KEY/.test(r.body.error) && !/OPENAI/.test(r.body.error) && lastNoKey.docs_status === "failed", r.body);
 
 console.log(`${counts.pass} passed, ${counts.fail} failed`);
 process.exit(counts.fail ? 1 : 0);

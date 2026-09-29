@@ -558,7 +558,7 @@ function onboardingSummary(o, clientFilms) {
   const steps = [
     ["Invited", !!o.invited_at], ["Password", !!o.password_set_at],
     ...(clientFilms ? [["Brand", o.brand && Object.keys(o.brand).length > 0]] : []),
-    ["Voice memo", !!o.voice_memo_path],
+    ["Voice memo sent", !!(o.voice_memo_sent_at || o.transcript)], ["Transcript added", !!o.transcript],
     ["Documents " + (o.docs_status === "ready" ? "ready" : o.docs_status === "failed" ? "failed" : o.docs_status === "processing" ? "building" : "waiting"), o.docs_status === "ready"],
     ["Footage", !!o.footage_done_at],
   ];

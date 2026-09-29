@@ -1,17 +1,19 @@
-// POST /api/voice-memo { clientId }  (that client's own login, or an operator)
+// POST /api/build-documents { clientId, transcript? }  (operators only)
 //
-// Takes the voice memo the client just uploaded (social_client_onboarding
-// .voice_memo_path, in the private onboarding-audio bucket), transcribes it
-// (OpenAI), and has Claude build their two documents from it, following the
-// same rules as the customer-data-doc and tasteful-content skills:
+// Clients text their voice memo to Tait; he gets the transcript himself
+// and pastes it on the operator dashboard (Clients → Onboarding). This
+// saves it (if given, else uses the one already saved) and has Claude build
+// their two documents from it, following the same rules as the
+// customer-data-doc and tasteful-content skills:
 //   Customer Data  — verbatim pains, dreams and 5 hook phrases
 //   Your Voice     — candidate 3-3-3 (marked To confirm) and voice profile
 // Nothing is invented: every quote must be in the transcript. After Claude
-// writes Customer Data, every quote is checked against the transcript word
-// for word, and any that isn't found is flagged in the document.
+// writes them, every quote is checked against the transcript word for word,
+// and any that isn't found is flagged in the document.
 //
-// Saves the transcript and the documents, and sets docs_status to 'ready'
-// (or 'failed' with the reason, shown to the operator).
+// Needs ANTHROPIC_API_KEY. No transcription service is used.
+// Saves the documents and sets docs_status to 'ready' (or 'failed' with the
+// reason, shown to the operator).
 
 const { env, need, rest, callerFrom, handler } = require("./_lib");
 
@@ -31,7 +33,7 @@ For each quote, add a one-line note on where it came from.
 Then give me the 5 phrases I should use in my hooks and headlines, because they are already how my buyer talks.
 Never invent a quote. Only use what is in the transcripts. No em dashes.
 
-Context: the transcript below is a voice memo from the founder of ${name}, describing their business and their customers. It is not a call with a customer.
+Context: the transcript below is a voice memo from the founder of ${name} (transcribed by hand or by an app, so expect spelling slips), describing their business and their customers. It is not a call with a customer.
 
 ${RULES}
 
@@ -88,19 +90,6 @@ ${transcript}
 """`;
 }
 
-async function transcribe(audio, filename, type) {
-  const form = new FormData();
-  form.append("file", new Blob([audio], { type: type || "audio/webm" }), filename);
-  form.append("model", "whisper-1");
-  form.append("response_format", "text");
-  const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-    method: "POST", headers: { Authorization: "Bearer " + env("OPENAI_API_KEY") }, body: form,
-  });
-  const text = await res.text();
-  if (!res.ok) throw new Error("Transcription failed: " + text.slice(0, 300));
-  return text.trim();
-}
-
 async function claude(prompt) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -145,42 +134,33 @@ async function saveDoc(clientId, kind, title, body_md) {
   });
 }
 
-const run = async (req, { clientId }) => {
+const run = async (req, { clientId, transcript: pasted }) => {
   need("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY");
   const caller = await callerFrom(req);
-  if (!(caller.isOperator || (caller.clientId && caller.clientId === clientId))) {
-    const e = new Error("Not allowed."); e.status = 403; throw e;
-  }
+  if (!caller.isOperator) { const e = new Error("Only the Fully Launched team can build documents."); e.status = 403; throw e; }
   const [client] = await rest("social_clients?select=id,name&id=eq." + encodeURIComponent(clientId || ""));
-  const [ob] = await rest("social_client_onboarding?select=*&client_id=eq." + encodeURIComponent(clientId || ""));
-  if (!client || !ob || !ob.voice_memo_path) { const e = new Error("No voice memo uploaded yet."); e.status = 400; throw e; }
-  const mark = body => rest("social_client_onboarding?client_id=eq." + client.id, { method: "PATCH", prefer: "return=minimal", body: { ...body, updated_at: new Date().toISOString() } });
+  if (!client) { const e = new Error("Client not found."); e.status = 404; throw e; }
+  const [existing] = await rest("social_client_onboarding?select=*&client_id=eq." + client.id);
+  const ob = existing || {};
+  const transcript = String(pasted != null ? pasted : ob.transcript || "").trim();
+  if (transcript.length < 200) { const e = new Error(transcript ? "That transcript is too short to build documents from (" + transcript.length + " characters). Paste the whole thing." : "Paste the transcript first."); e.status = 400; throw e; }
+  // Save the transcript (creating their onboarding row if there isn't one).
+  const now = () => new Date().toISOString();
+  await rest("social_client_onboarding?on_conflict=client_id", {
+    method: "POST", prefer: "resolution=merge-duplicates,return=minimal",
+    body: { client_id: client.id, transcript, docs_status: "processing", docs_error: null, updated_at: now() },
+  });
+  const mark = body => rest("social_client_onboarding?client_id=eq." + client.id, { method: "PATCH", prefer: "return=minimal", body: { ...body, updated_at: now() } });
 
   try {
-    need("OPENAI_API_KEY", "ANTHROPIC_API_KEY");
-    await mark({ docs_status: "processing", docs_error: null });
-
-    // 1. The audio, from the private bucket.
-    const path = ob.voice_memo_path;
-    const file = await fetch(env("SUPABASE_URL") + "/storage/v1/object/onboarding-audio/" + path.split("/").map(encodeURIComponent).join("/"), {
-      headers: { apikey: env("SUPABASE_SERVICE_ROLE_KEY"), Authorization: "Bearer " + env("SUPABASE_SERVICE_ROLE_KEY") },
-    });
-    if (!file.ok) throw new Error("Couldn't read the voice memo (" + file.status + ").");
-    const audio = Buffer.from(await file.arrayBuffer());
-
-    // 2. Transcript (kept word for word).
-    const transcript = await transcribe(audio, path.split("/").pop(), file.headers.get("content-type"));
-    if (transcript.length < 200) throw new Error("The recording is too short to build documents from (" + transcript.length + " characters of speech).");
-    await mark({ transcript });
-
-    // 3. Both documents, side by side.
+    need("ANTHROPIC_API_KEY");
     const extra = extraContext(ob);
     const [cd, yv] = await Promise.all([claude(customerDataPrompt(client.name, transcript, extra)), claude(yourVoicePrompt(client.name, transcript, extra))]);
     const cdChecked = flagUnverifiedQuotes(cd, transcript);
     const yvChecked = flagUnverifiedQuotes(yv, transcript);
     await saveDoc(client.id, "customer_data", client.name + ": Customer Data", cdChecked.md);
     await saveDoc(client.id, "your_voice", client.name + ": Your Voice", yvChecked.md);
-    await mark({ docs_status: "ready", docs_built_at: new Date().toISOString(), docs_error: null });
+    await mark({ docs_status: "ready", docs_built_at: now(), docs_error: null });
     return { ok: true, transcriptChars: transcript.length, flaggedQuotes: cdChecked.flagged + yvChecked.flagged };
   } catch (e) {
     await mark({ docs_status: "failed", docs_error: e.message || String(e) }).catch(() => {});

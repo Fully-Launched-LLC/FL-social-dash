@@ -32,7 +32,7 @@ const row = async () => (await db.query(`select * from social_client_onboarding 
 chk("another client can't save NewCo's steps", !!(await as(CL2, `select * from social_client_onboarding_save('${NC}','password','{}')`)).error);
 chk("an editor can't either", !!(await as(ED, `select * from social_client_onboarding_save('${NC}','password','{}')`)).error);
 chk("an operator can", !(await as(OP, `select * from social_client_onboarding_save('${OTHER}','footage','{}')`)).error);
-chk("a voice memo outside the client's own folder is refused", /this client's folder/.test((await as(OP, `select * from social_client_onboarding_save('${NC}','voice_memo','{"path":"${OTHER}/x.webm"}')`)).error?.message || ""));
+chk("clients can't write the transcript themselves (no such step)", /Unknown step/.test((await as(CL2, `select * from social_client_onboarding_save('${OTHER}','transcript','{"text":"x"}')`)).error?.message || ""));
 chk("unknown steps are refused", !!(await as(OP, `select * from social_client_onboarding_save('${NC}','hack','{}')`)).error);
 chk("clients read only their own onboarding", (await as(CL2, `select count(*)::int n from social_client_onboarding`)).data[0].n === 1);
 await db.exec(`insert into social_client_generated_docs (client_id, kind, title, body_md) values ('${OTHER}','customer_data','OtherCo: Customer Data','# x')`);
@@ -65,23 +65,15 @@ chk("brand saved", r.brand.fonts === "Inter, Playfair" && r.brand.colors.join() 
 chk("the questions are all there", w.d.querySelectorAll("#stepBody .qitem").length === 19 && $("#stepBody").textContent.includes("What tips them over right before they find you"));
 $('[data-ans="best"]').value = "Busy parents"; nextBtn().click(); await settle();
 chk("written notes saved", (await row()).answers.best === "Busy parents" && cur() === "memo");
-// Upload a recording from a file (a microphone isn't available here).
-const file = new w.w.File(["x".repeat(2048)], "memo.m4a", { type: "audio/mp4" });
-Object.defineProperty($("#memoFile"), "files", { value: [file] });
-$("#memoFile").dispatchEvent(new w.w.Event("change")); await settle();
-chk("a chosen file shows Send my voice memo", $("#memoReady").style.display !== "none");
-$("#memoUpload").click(); await settle();
-const up = w.ui.log.find(l => l.upload);
-r = await row();
-chk("uploaded into NewCo's private folder", up && up.upload.bucket === "onboarding-audio" && up.upload.path.startsWith(NC + "/") && up.upload.path.endsWith(".m4a"), up);
-chk("recorded, and documents start building", r.voice_memo_path === up.upload.path && r.docs_status === "processing");
-chk("the document service is asked to build them", w.ui.log.some(l => l.fetch === "/api/voice-memo" && JSON.parse(l.body).clientId === NC));
+chk("the voice memo step says to text it to Tait (no upload)", $("#stepBody").textContent.includes("Text the recording to Tait") && !$("#stepBody input[type=file]"));
+nextBtn().click(); await settle();
+chk("I've texted it is recorded", !!(await row()).voice_memo_sent_at);
 chk("then Your footage, with the Previous Content folder", cur() === "footage" && $('#stepBody a[href="https://drive/previous"]'));
 $("#stepBody [data-uploaded]").click(); await settle();
 chk("footage done", !!(await row()).footage_done_at && cur() === "docs");
-chk("documents step waits while they build", $("#stepBody").textContent.includes("We're building"));
-// The documents finish building (as api/voice-memo.js would).
-await db.exec(`update social_client_onboarding set docs_status='ready' where client_id='${NC}';
+chk("documents step says they come once we have the memo", $("#stepBody").textContent.includes("Once we have your voice memo"));
+// Tait pastes the transcript and the documents are built (as api/build-documents.js would).
+await db.exec(`update social_client_onboarding set docs_status='ready', transcript='we never have time' where client_id='${NC}';
   insert into social_client_generated_docs (client_id, kind, title, body_md) values
   ('${NC}','customer_data','NewCo: Customer Data','# NewCo: Customer Data\n## 1. Pains, verbatim\n1. "we never have time"\n*Founder, on time.*'),
   ('${NC}','your_voice','NewCo: Your Voice','# NewCo: Your Voice\n- **Pillar** [To confirm]')`);
@@ -108,9 +100,20 @@ const ncRow = Array.from(op.d.querySelectorAll("#allClientsList .row")).find(r =
 chk("Clients list shows onboarding progress", ncRow.textContent.includes("Onboarding done") && Array.from(ncRow.querySelectorAll("button")).some(b => b.textContent === "Resend invite"), ncRow.textContent);
 Array.from(ncRow.querySelectorAll("button")).find(b => b.textContent === "Onboarding").click(); await settle();
 const box = op.d.getElementById("videoModalBox").textContent;
-chk("Onboarding view: brand, notes, documents, voice memo, preview", box.includes("Inter, Playfair") && box.includes("Busy parents") && box.includes("NewCo: Customer Data")
-  && !!op.d.querySelector('#videoModalBox a[href^="https://signed/"]') && !!op.d.querySelector('#videoModalBox a[href="/welcome?client=newco"]'), box.slice(0, 300));
+chk("Onboarding view: brand, notes, transcript, documents, preview", box.includes("Inter, Playfair") && box.includes("Busy parents") && box.includes("NewCo: Customer Data")
+  && op.d.getElementById("obTranscript").value === "we never have time" && !!op.d.querySelector('#videoModalBox a[href="/welcome?client=newco"]'), box.slice(0, 300));
 op.w.closeVideoModal();
+// Pasting a transcript and building: too short is caught, a real one goes to the document service.
+const opB = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html", {
+  fetch: async (u, o) => ({ ok: true, status: 200, json: async () => ({ ok: true, flaggedQuotes: 0 }) }),
+});
+opB.w.openOnboarding(OTHER); await settle();
+opB.d.getElementById("obTranscript").value = "too short"; opB.d.getElementById("obBuild").click(); await settle();
+chk("a too-short transcript is caught before sending", /too short/.test(opB.d.getElementById("obErr").textContent) && !opB.ui.log.some(l => l.fetch));
+const TR = "Our best customer is a busy parent. ".repeat(10);
+opB.d.getElementById("obTranscript").value = TR; opB.d.getElementById("obBuild").click(); await settle();
+const bd = opB.ui.log.find(l => l.fetch === "/api/build-documents");
+chk("Save and build sends the pasted transcript for this client", bd && JSON.parse(bd.body).clientId === OTHER && JSON.parse(bd.body).transcript === TR.trim(), bd);
 // New client form: email is required; creating sends the invite.
 const opI = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html", {
   fetch: async (u, o) => ({ ok: true, status: 200, json: async () => ({ sent: false, link: "https://supabase/verify?token=abc", reason: "Email sending isn't set up yet (RESEND_API_KEY). Copy the link and send it yourself.", email: "jo@fresh.test" }) }),

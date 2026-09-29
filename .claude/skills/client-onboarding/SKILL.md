@@ -41,9 +41,9 @@ onboarding steps' folder buttons use these. Per-video raw footage folders
 
 ## If they onboarded through the portal
 
-Their voice memo is already transcribed and their Customer Data and Your
-Voice documents are already built (`/welcome`, `api/voice-memo.js`). Operator
-dashboard → Clients → **Onboarding** shows the transcript, their brand and
+Clients text their voice memo to Tait; he pastes the transcript in Clients →
+**Onboarding** and builds their Customer Data and Your Voice documents
+(`api/build-documents.js`). That view shows the transcript, their brand and
 written notes, and the documents. Then:
 - Step 1: save that transcript verbatim as
   `clients/<slug>/sources/YYYY-MM-DD-<who>-voice-memo.md`.
