@@ -38,7 +38,7 @@ a { color:inherit; }
 .brand { display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:6px 8px 10px; }
 .brand img { width:150px; max-width:100%; height:auto; display:block; }
 .brand .brand-sub { font-family:var(--font-serif); font-size:0.95rem; color:var(--accent); letter-spacing:.02em; }
-.sync-badge { padding:0 8px 20px; font-size:0.78rem; overflow-wrap:anywhere; color:var(--sub); line-height:1.4; min-height:1.4em; }
+.sync-badge { padding:0 8px 20px; font-size:0.8rem; color:var(--sub); line-height:1.4; min-height:1.4em; }
 .edit-panel textarea { font:0.88rem/1.5 inherit; }
 /* Raised, like binder tabs: crisp white offset "shadows" (a soft dark
    shadow wouldn't show on the one navy). */
