@@ -93,10 +93,10 @@ copy and send yourself.
 
 ## Your number on the voice memo step
 
-The voice memo step tells clients to text their recording to "Tait". To show
-your number (tap-to-text on phones), send it to Claude, or set
-`TEXT_MEMO_TO` near the top of the script in
-`dashboards/template/welcome.template.html`, then rebuild and deploy.
+The voice memo step tells clients to text their recording to Tait at
+980-312-1255 (tap-to-text on phones). To change it, set `TEXT_MEMO_TO` near
+the top of the script in `dashboards/template/welcome.template.html`, then
+rebuild and deploy.
 
 ## Each new client
 
