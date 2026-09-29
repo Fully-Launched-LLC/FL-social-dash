@@ -23,7 +23,7 @@ const status = async t => (await db.query("select status, editor_brief from soci
 const idOf = async t => (await db.query("select id from social_videos where title=$1", [t])).rows[0].id;
 
 let op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
-const tabs = () => Object.fromEntries(Array.from(op.d.querySelectorAll("#todoTabs .chip")).map(c => [c.dataset.stageTab, c.textContent]));
+const tabs = () => Object.fromEntries(Array.from(op.d.querySelectorAll("#todoTabs .chip")).map(c => [c.dataset.stageTab, c.textContent.trim().replace(/\s+(\d+)$/, " ($1)")]));
 const shown = () => Array.from(op.d.querySelectorAll("#view-todo [data-stage]")).filter(el => el.style.display !== "none").map(el => el.dataset.stage);
 const modalBtn = label => Array.from(op.d.querySelectorAll("#videoModalBox button")).find(b => b.textContent.trim() === label);
 const calTitles = () => Object.values(op.w.eval("calendarByDay(filteredVideos(), calState)")).flat().map(e => e.x.video.title);

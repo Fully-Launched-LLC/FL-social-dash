@@ -520,7 +520,11 @@ Claude"). `.primary` buttons are white. One navy for every surface; cards
 and fields are outlined. Status badges are white (dimmed once done);
 platforms are white, told apart by their line (Facebook solid, LinkedIn
 outline, Instagram dashed, TikTok dotted, YouTube double). One typeface,
-Hanken Grotesk, with weight for headings. No emoji. Only the sidebar tabs
+Hanken Grotesk, with weight for headings. No emoji. Layout: a top bar
+(where you are, and the client switch on the right); filter tabs as one
+segmented bar with count bubbles (`chipLabel`); To Do's stages as tables
+(Video · Posts · Platforms · Status · Actions, `vrowHtml`), where clicking
+a row or its title opens the video's card and its own buttons don't. Only the sidebar tabs
 are raised (white offset shadows). On phones the sidebar becomes a top bar.
 
 ### Client portal — `/clients/<slug>`

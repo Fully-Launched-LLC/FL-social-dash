@@ -16,21 +16,25 @@
 <nav class="sidebar">
   <div class="brand"><img src="/assets/logo-white.png" alt="Fully Launched"></div>
   <div class="sync-badge" id="authUserBadge"></div>
-  <div class="nav-item active" data-view="todo">To Do</div>
-  <div class="nav-item" data-view="calendar">Content Calendar</div>
-  <div class="nav-item" data-view="clients">Clients</div>
+  <div class="nav-group">Workspace</div>
+  <div class="nav-item active" data-view="todo" data-label="To Do">To Do<span class="n" id="navTodoN" hidden></span></div>
+  <div class="nav-item" data-view="calendar" data-label="Content Calendar">Content Calendar</div>
+  <div class="nav-item" data-view="clients" data-label="Clients">Clients<span class="n" id="navClientsN" hidden></span></div>
   <a class="nav-item" href="/editor/dashboard.html" target="_blank" rel="noopener" style="text-decoration:none">Editor portal ↗</a>
 </nav>
 
 <main class="main">
 
-  <div class="chip-row" id="globalClientFilter" style="margin-bottom:10px"></div>
+  <div class="topbar">
+    <div class="crumbs">Operator / <b id="crumbPage">To Do</b></div>
+    <div class="seg" id="globalClientFilter" role="group" aria-label="Client"></div>
+  </div>
   <div id="globalClientBanner"></div>
   <div id="loadError"></div>
 
   <section class="view active" id="view-todo">
     <div class="page-head">
-      <div><h1>To Do</h1><p>Every video, by the stage it's in. Click a title to see its card.</p></div>
+      <div><h1>To Do<span class="hot-tag" id="todoHot" hidden></span></h1><p>Every video, by the stage it's in. Pick a stage, or All. Click any video to see its whole card.</p></div>
       <div class="page-actions">
         <button class="accent" onclick="openBulkAdd(null)">Add ideas with Claude</button>
         <button onclick="openVideoForm(null)">+ New idea</button>
@@ -302,6 +306,25 @@ async function deleteVideo(id) {
 }
 
 // ---------- shared row + modal ----------
+// One video as a table row: Video · Posts · Platforms · Status · Actions.
+// Clicking the row (anywhere but its buttons) or its title opens its card.
+const VROW_HEAD = `<div class="vrow vhead"><div>Video</div><div>Posts</div><div>Platforms</div><div>Status</div><div style="text-align:right">Actions</div></div>`;
+function vrowHtml(x, actionsHtml) {
+  const v = x.video, watch = finishedVideoLink(v, x.client.driveFolders);
+  const extra = v.dueToFilm && ["concept_pending", "to_film"].includes(v.status) ? "Film by " + niceDate(v.dueToFilm)
+    : v.dueToEdit && ["ready_to_edit", "with_editor"].includes(v.status) ? "Edit by " + niceDate(v.dueToEdit)
+    : filmedByX(x) === "us" && v.status === "to_film" ? "No filming" : "";
+  return `<div class="row vrow" data-id="${v.id}">
+    <div><b class="video-card title" onclick="openOperatorVideoModal('${v.id}')">${escapeHtml(v.title || "(untitled)")}</b>
+      <div class="sub">${escapeHtml(x.client.name)}${v.assignedEditor && v.status === "with_editor" ? " · Editor: " + escapeHtml(v.assignedEditor) : ""}</div></div>
+    <div class="when">${v.postDate ? escapeHtml(niceDate(v.postDate)) : "Not set"}${extra ? `<small>${escapeHtml(extra)}</small>` : ""}</div>
+    <div>${platformPills(v.platform)}</div>
+    <div>${statusDot(v.status, STATUS_LABEL, !!timeSensitive(x))}</div>
+    <div class="acts">${watch && ["in_review","client_review","ready_to_post","posted"].includes(v.status)
+      ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${watch.label}</a>` : ""}${actionsHtml || ""}</div>
+    ${v.note ? `<div class="note-line">Note: ${escapeHtml(v.note)}</div>` : ""}
+  </div>`;
+}
 function rowHtml(x, rightHtml) {
   const v = x.video, watch = finishedVideoLink(v, x.client.driveFolders);
   const meta = [x.client.name, (v.platform || []).join(" · "),
@@ -608,7 +631,8 @@ function isWaitingOnClient(x) {
     || v.status === "client_review";
 }
 function listOrEmpty(elId, items, rightFn, emptyText) {
-  document.getElementById(elId).innerHTML = items.length ? items.map(x => rowHtml(x, rightFn ? rightFn(x) : null)).join("") : `<div class="empty">${emptyText}</div>`;
+  document.getElementById(elId).innerHTML = items.length
+    ? `<div class="vtable">${VROW_HEAD}${items.map(x => vrowHtml(x, rightFn ? rightFn(x) : "")).join("")}</div>` : `<div class="empty">${emptyText}</div>`;
 }
 function unsentIdeas() {
   return filteredVideos().filter(x => x.video.status === "concept_pending" && !x.video.conceptApprovedAt);
@@ -664,7 +688,10 @@ function renderTodo() {
   const tabs = [{ key: "all", label: "All", n: TODO_STAGES.filter(s => !s.apart).reduce((t, s) => t + inStage(s.key).length, 0) },
     ...TODO_STAGES.map(s => ({ key: s.key, label: s.label, n: inStage(s.key).length }))];
   document.getElementById("todoTabs").innerHTML = tabs.map(t =>
-    `<div class="chip ${t.key === todoStage ? "active" : ""}${t.key === "urgent" && t.n ? " urgent" : ""}" data-stage-tab="${t.key}">${escapeHtml(t.label)} (${t.n})</div>`).join("");
+    `<div class="chip ${t.key === todoStage ? "active" : ""}${t.key === "urgent" && t.n ? " urgent" : ""}${t.n ? "" : " zero"}" data-stage-tab="${t.key}">${chipLabel(t.label, t.n)}</div>`).join("");
+  const hot = document.getElementById("todoHot"), hotN = inStage("urgent").length;
+  hot.hidden = !hotN; hot.textContent = hotN + " time sensitive";
+  const navN = document.getElementById("navTodoN"); navN.hidden = !tabs[0].n; navN.textContent = tabs[0].n;
   document.querySelectorAll("#todoTabs .chip").forEach(c => c.onclick = () => { todoStage = c.dataset.stageTab; renderTodo(); });
   const apart = new Set(TODO_STAGES.filter(s => s.apart).map(s => s.key));
   document.querySelectorAll("#view-todo [data-stage]").forEach(el => {
@@ -678,10 +705,10 @@ function renderTodo() {
   document.getElementById("sendAllWrap").innerHTML = unsent.length > 1
     ? `<div style="margin-bottom:10px">${smallBtn(`Send all ${unsent.length} to the client`, "sendAllToClient(this)", "primary")}</div>` : "";
   listOrEmpty("ideasList", unsent, x => smallBtn("Edit", `openVideoForm('${x.video.id}')`) + operatorActionsHtml(x), "Nothing sent back.");
-  listOrEmpty("clientWaitingList", inStage("client"), x => operatorActionsHtml(x) + statusBadge(x.video.status, STATUS_LABEL), "Nothing waiting on a client.");
+  listOrEmpty("clientWaitingList", inStage("client"), x => operatorActionsHtml(x), "Nothing waiting on a client.");
   listOrEmpty("toEditorList", inStage("toEditor"), x => operatorActionsHtml(x), "Nothing waiting for an editor.");
   listOrEmpty("withEditorList", inStage("withEditor"), x => (x.video.editorId
-    ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/editor/dashboard.html?editor=${encodeURIComponent(x.video.editorId)}" target="_blank" rel="noopener">Open editor portal</a>` : "") + statusBadge(x.video.status, STATUS_LABEL), "Nothing with an editor.");
+    ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/editor/dashboard.html?editor=${encodeURIComponent(x.video.editorId)}" target="_blank" rel="noopener">Open editor portal</a>` : ""), "Nothing with an editor.");
   listOrEmpty("editsList", inStage("edits"), x => operatorActionsHtml(x), "No edits waiting.");
   document.getElementById("todoPostList").innerHTML = inStage("post").map(postCardHtml).join("") || '<div class="empty">Nothing ready to post right now.</div>';
   listOrEmpty("abandonedList", inStage("abandoned"), x => smallBtn("Restore", `restoreVideo('${x.video.id}')`, "primary") + smallBtn("Delete", `deleteVideo('${x.video.id}')`, "reject"),
@@ -873,7 +900,14 @@ async function inviteClient(clientId, btn) {
     : `Invite sent to ${c.contactEmail}. When they open the link, they land in ${c.name}'s portal. Later, they can sign in again with "Email me a sign-in link".`);
 }
 
+// A click anywhere on a video's row opens its card, except on its own controls.
+document.getElementById("view-todo").addEventListener("click", e => {
+  const row = e.target.closest(".vrow[data-id]");
+  if (!row || e.target.closest("button, a, select, input, textarea, .video-card")) return;
+  openOperatorVideoModal(row.dataset.id);
+});
 function renderAll() {
+  const cn = document.getElementById("navClientsN"); cn.hidden = !CLIENTS.length; cn.textContent = CLIENTS.length;
   renderGlobalClientFilter();
   renderTodo(); renderCalendar(); renderAllClients();
 }
