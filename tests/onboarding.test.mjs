@@ -72,6 +72,10 @@ chk("then Your footage, with the Previous Content folder", cur() === "footage" &
 $("#stepBody [data-uploaded]").click(); await settle();
 chk("footage done", !!(await row()).footage_done_at && cur() === "docs");
 chk("documents step says they come once we have the memo", $("#stepBody").textContent.includes("Once we have your voice memo"));
+// Tait makes the documents by hand as Google Docs (Clients → Edit → Documents).
+await db.exec(`insert into social_client_documents (client_id, title, url, position) values ('${NC}','NewCo: Customer Data (Google Doc)','https://docs.google.com/document/d/cd',0)`);
+w.w.eval("refresh().then(render)"); await settle();
+chk("Google Docs Tait adds by hand show on the documents step, with Open", $("#stepBody").textContent.includes("NewCo: Customer Data (Google Doc)") && $('#stepBody a[href="https://docs.google.com/document/d/cd"]') && nextBtn().textContent === "I've read them");
 // Tait pastes the transcript and the documents are built (as api/build-documents.js would).
 await db.exec(`update social_client_onboarding set docs_status='ready', transcript='we never have time' where client_id='${NC}';
   insert into social_client_generated_docs (client_id, kind, title, body_md) values
@@ -79,6 +83,7 @@ await db.exec(`update social_client_onboarding set docs_status='ready', transcri
   ('${NC}','your_voice','NewCo: Your Voice','# NewCo: Your Voice\n- **Pillar** [To confirm]')`);
 w.w.eval("refresh().then(render)"); await settle();
 chk("documents show when ready, rendered", $("#stepBody").textContent.includes("NewCo: Customer Data") && $("#stepBody li").textContent.includes("we never have time") && $("#stepBody i"));
+chk("hand-made Google Docs still listed under the built ones", $("#stepBody").textContent.includes("More of your documents") && $('#stepBody a[href="https://docs.google.com/document/d/cd"]'));
 nextBtn().click(); await settle();
 chk("reading them is recorded", !!(await row()).docs_seen_at && cur() === "tour");
 w.ui.errors.length = 0;

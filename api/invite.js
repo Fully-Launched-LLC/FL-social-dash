@@ -35,7 +35,10 @@ module.exports = handler(async (req, { clientId }) => {
   if (!email) { const e = new Error(`Add ${client.name}'s contact email first.`); e.status = 400; throw e; }
 
   const portal = portalUrl(req);
-  const redirectTo = portal + "/welcome";
+  // ?client= only matters if the email belongs to a team login (an
+  // operator testing their own invite): it opens that client's preview
+  // instead of an error. A client's own login ignores it.
+  const redirectTo = portal + "/welcome?client=" + encodeURIComponent(client.slug);
   // New login → invite; existing login → magic link to sign in.
   let returning = false;
   let r = await generateLink("invite", email, redirectTo);

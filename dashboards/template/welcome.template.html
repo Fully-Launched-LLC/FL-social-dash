@@ -31,6 +31,8 @@
 // so they can stop and come back. Tait pastes the voice memo's transcript
 // on the operator dashboard, which builds their Customer Data and Your
 // Voice documents (api/build-documents.js); they show up here when ready.
+// Documents Tait makes by hand (Google Docs added on Clients → Edit →
+// Documents, social_client_documents) are listed on the same step.
 //
 // /welcome?mode=reset is the "Set a new password" page for anyone (the
 // Forgot password email lands here), then sends them to their dashboard.
@@ -39,7 +41,7 @@
 
 const params = new URLSearchParams(location.search);
 const RESET = params.get("mode") === "reset";
-let ME = null, ROLE = null, CLIENT = null, FOLDERS = {}, OB = null, DOCS = [];
+let ME = null, ROLE = null, CLIENT = null, FOLDERS = {}, OB = null, DOCS = [], LINKDOCS = [];
 let current = null;
 // Where clients text their voice memo. Tait's number, e.g. "(555) 123-4567".
 // Empty: the page just says "text it to Tait".
@@ -195,10 +197,18 @@ const STEPS = {
 
   docs: () => {
     const st = OB ? OB.docs_status : "waiting";
+    const links = LINKDOCS.length ? `<div class="card"><h2>${DOCS.length && st === "ready" ? "More of your documents" : "Your documents so far"}</h2>${LINKDOCS.map(d => `
+      <div class="doc-link" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0"><b>${escapeHtml(d.title)}</b><a class="btn primary" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">Open</a></div>`).join("")}</div>` : "";
     if (st === "ready" && DOCS.length) return `
       <h1>Your documents</h1>
       <p class="lead">We turned your voice memo into these. Read them through: they're the foundation for every piece of content we make with you. They live on your portal's Documents page too.</p>
       ${DOCS.map(d => `<div class="card"><h2>${escapeHtml(d.title)}</h2><div class="doc-body">${docBodyHtml(d)}</div></div>`).join("")}
+      ${links}
+      ${navHtml("I've read them")}`;
+    if (LINKDOCS.length && st !== "processing") return `
+      <h1>Your documents</h1>
+      <p class="lead">We turned your voice memo into these. Read them through: they're the foundation for every piece of content we make with you. They live on your portal's Documents page too.</p>
+      ${links}
       ${navHtml("I've read them")}`;
     return `
       <h1>Your documents</h1>
@@ -266,7 +276,7 @@ const WIRE = {
     body.querySelector("[data-uploaded]").onclick = done;
   },
   docs: body => {
-    wireNav(body, async () => { if (OB && OB.docs_status === "ready" && DOCS.length) await save("docs_seen"); return null; });
+    wireNav(body, async () => { if ((OB && OB.docs_status === "ready" && DOCS.length) || LINKDOCS.length) await save("docs_seen"); return null; });
     if (OB && OB.docs_status === "processing") pollDocs();
   },
   tour: body => wireNav(body, async () => {
@@ -289,11 +299,12 @@ async function pollDocs() {
   if (current === "docs") render();
 }
 async function refresh() {
-  const [o, d] = await Promise.all([
+  const [o, d, l] = await Promise.all([
     sbClient.from("social_client_onboarding").select("*").eq("client_id", CLIENT.id).maybeSingle(),
     sbClient.from("social_client_generated_docs").select("*").eq("client_id", CLIENT.id).order("kind"),
+    sbClient.from("social_client_documents").select("title,url").eq("client_id", CLIENT.id).order("position"),
   ]);
-  OB = o.data || OB; DOCS = d.data || [];
+  OB = o.data || OB; DOCS = d.data || []; LINKDOCS = l.data || [];
 }
 
 // ---------- who's here ----------
