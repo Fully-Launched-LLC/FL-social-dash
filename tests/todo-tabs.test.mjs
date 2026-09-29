@@ -51,16 +51,15 @@ chk("Waiting on client: grouped by status in pipeline order (ideas → to film �
 const labels = Array.from(op.d.querySelectorAll('[data-stage="client"] .badge')).map(b => b.textContent);
 chk("status labels line up in order", labels.join() === "Idea,Idea,To film,Client final review", labels);
 
-// Client dropdown filters everything, and matches the chips at the top.
-const sel = op.d.getElementById("todoClient");
-chk("client dropdown lists All clients + each client", Array.from(sel.options).map(o => o.textContent).join() === "All clients,Alpha,Beta");
-sel.value = B; sel.dispatchEvent(new op.w.Event("change")); await settle();
+// The client chips at the top filter everything (the To Do dropdown that
+// duplicated them is gone).
+chk("no separate client dropdown on To Do", !op.d.getElementById("todoClient"));
+op.d.querySelector(`#globalClientFilter [data-c="${B}"]`).click(); await settle();
 t = tabs();
 chk("filtered to Beta: counts update", t.all === "All (3)" && t.client === "Waiting on client (1)" && t.toEditor === "Ready for an editor (1)" && t.post === "Ready to post (1)", t);
 chk("stage tab kept while filtering", shown().join() === "client" && titlesIn("client").join() === "B idea");
-chk("top chips follow the dropdown", op.d.querySelector("#globalClientFilter .chip.active").textContent === "Beta");
 op.d.querySelector('#globalClientFilter [data-c="all"]').click(); await settle();
-chk("…and the dropdown follows the chips", op.d.getElementById("todoClient").value === "all" && tabs().all === "All (11)");
+chk("back to all clients", tabs().all === "All (11)");
 
 // Mark posted from To Do.
 op.d.querySelector('[data-stage-tab="post"]').click(); await settle();

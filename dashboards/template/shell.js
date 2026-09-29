@@ -58,11 +58,11 @@ function renderMonthCalendar(container, byDay, chipHtml, state, rerender) {
 // outline or dashed) is the .p-<platform> class in shell.css. A video's platform
 // list may say "instagram" or "ig"; normPlatform folds the spellings together.
 const PLATFORMS = {
-  instagram: { tag: "IG", name: "Instagram", color: "var(--gold)" },
-  tiktok:    { tag: "TT", name: "TikTok",    color: "var(--gold)" },
+  instagram: { tag: "IG", name: "Instagram", color: "var(--white)" },
+  tiktok:    { tag: "TT", name: "TikTok",    color: "var(--white)" },
   facebook:  { tag: "FB", name: "Facebook",  color: "var(--white)" },
   linkedin:  { tag: "LI", name: "LinkedIn",  color: "var(--white)" },
-  youtube:   { tag: "YT", name: "YouTube",   color: "var(--gold)" },
+  youtube:   { tag: "YT", name: "YouTube",   color: "var(--white)" },
 };
 const PLATFORM_ALIASES = { ig: "instagram", insta: "instagram", tt: "tiktok", "tik tok": "tiktok", fb: "facebook", li: "linkedin", yt: "youtube" };
 function normPlatform(p) { const k = String(p || "").trim().toLowerCase(); return PLATFORM_ALIASES[k] || k; }
@@ -216,27 +216,6 @@ function drawLineChart(container, series, opts) {
   container.innerHTML = svg;
 }
 
-// "Good morning, Tait · Tuesday, September 29" for the top of a page. A
-// person's name is cut to the first name; a business name (full) is kept.
-function greetingHtml(name, full) {
-  const h = new Date().getHours(), part = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-  const day = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
-  const who = name ? (full ? String(name) : String(name).split(" ")[0]) : "";
-  return `${part}${who ? ", <b>" + escapeHtml(who) + "</b>" : ""} · ${escapeHtml(day)}`;
-}
-// Big-number summary cards; clicking one runs onPick(key).
-function statCardsHtml(cards, activeKey) {
-  return cards.map(c => `<div class="stat-card${c.key === activeKey ? " active" : ""}" role="button" tabindex="0" data-stat="${c.key}">
-      <span class="label">${escapeHtml(c.label)}</span>
-      <span class="value${c.hot && c.n ? " hot" : ""}">${c.n}</span>
-      <span class="note">${escapeHtml(c.note)}</span></div>`).join("");
-}
-function wireStatCards(root, onPick) {
-  root.querySelectorAll("[data-stat]").forEach(el => {
-    el.onclick = () => onPick(el.dataset.stat);
-    el.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(el.dataset.stat); } };
-  });
-}
 function statusBadge(status, labelMap) {
   const label = (labelMap && labelMap[status]) || status;
   return `<span class="badge" style="border-color:var(--status-${status}); color:var(--status-${status})">${escapeHtml(label)}</span>`;
