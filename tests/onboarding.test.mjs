@@ -49,7 +49,7 @@ const err = () => $("#stepBody [data-err]")?.textContent;
 chk("the invite claims the login for NewCo", (await db.query(`select client_id from social_client_users where id='${CL}'`)).rows[0]?.client_id === NC);
 chk("starts on Create your password", cur() === "password" && $("#stepBody h1").textContent === "Create your password");
 chk("steps for a client who films include Your brand", Array.from(w.d.querySelectorAll("#steps button")).map(b => b.textContent).join("|") ===
-  "Password|Welcome|Your brand|The questions|Voice memo|Your footage|Your documents|Your portal");
+  "Password|Welcome|Your brand|The questions|Voice memo|Your footage|Your portal");
 $("#pw1").value = "short"; $("#pw2").value = "short"; nextBtn().click(); await settle();
 chk("too-short password is caught", /8 characters/.test(err()) && cur() === "password");
 $("#pw1").value = "longenough1"; $("#pw2").value = "different1"; nextBtn().click(); await settle();
@@ -58,34 +58,30 @@ $("#pw2").value = "longenough1"; nextBtn().click(); await settle();
 chk("password saved with Supabase and recorded", w.ui.log.some(l => l.updateUser && l.updateUser.password === "longenough1") && !!(await row()).password_set_at && cur() === "welcome");
 nextBtn().click(); await settle();
 chk("then Your brand, with the Important Documents folder", cur() === "brand" && $('#stepBody a[href="https://drive/important"]'));
-$("#bFonts").value = "Inter, Playfair"; $('[data-hex="0"]').value = "#04101f"; $('[data-hex="1"]').value = "#C4AB82"; $("#bAesthetic").value = "clean and warm";
-nextBtn().click(); await settle();
+chk("brand step has no fonts, colors or look-and-feel boxes", !$("#bFonts") && !$("[data-hex]") && !$("#bAesthetic") && !!$("#bLinks"));
+chk("brand step offers to create brand files", /I don't have any brand files yet, create them for me/.test($("#stepBody [data-create]").textContent));
+$("#bLinks").value = "https://instagram.com/somebrand";
+$("#stepBody [data-uploaded]").click(); await settle();
 let r = await row();
-chk("brand saved", r.brand.fonts === "Inter, Playfair" && r.brand.colors.join() === "#04101f,#C4AB82" && r.brand.aesthetic === "clean and warm" && cur() === "questions", r.brand);
+chk("brand saved (files uploaded + links)", r.brand.files === "uploaded" && r.brand.links === "https://instagram.com/somebrand" && cur() === "questions", r.brand);
 chk("the questions are all there", w.d.querySelectorAll("#stepBody .qitem").length === 19 && $("#stepBody").textContent.includes("What tips them over right before they find you"));
-$('[data-ans="best"]').value = "Busy parents"; nextBtn().click(); await settle();
-chk("written notes saved", (await row()).answers.best === "Busy parents" && cur() === "memo");
+chk("the questions are a readable list, no note boxes", !$("#stepBody textarea"));
+chk("the note at the top says record a voice memo and send it to Tait at the number", /Record your answers in a voice memo and send it to Tait at 980-312-1255/.test($("#stepBody").textContent));
+nextBtn().click(); await settle();
+chk("then the voice memo step", cur() === "memo");
 chk("the voice memo step says to text it to Tait (no upload)", $("#stepBody").textContent.includes("Text the recording to Tait") && !$("#stepBody input[type=file]"));
 nextBtn().click(); await settle();
 chk("I've texted it is recorded", !!(await row()).voice_memo_sent_at);
 chk("then Your footage, with the Previous Content folder", cur() === "footage" && $('#stepBody a[href="https://drive/previous"]'));
 $("#stepBody [data-uploaded]").click(); await settle();
-chk("footage done", !!(await row()).footage_done_at && cur() === "docs");
-chk("documents step says they come once we have the memo", $("#stepBody").textContent.includes("Once we have your voice memo"));
-// Tait makes the documents by hand as Google Docs (Clients → Edit → Documents).
-await db.exec(`insert into social_client_documents (client_id, title, url, position) values ('${NC}','NewCo: Customer Data (Google Doc)','https://docs.google.com/document/d/cd',0)`);
-w.w.eval("refresh().then(render)"); await settle();
-chk("Google Docs Tait adds by hand show on the documents step, with Open", $("#stepBody").textContent.includes("NewCo: Customer Data (Google Doc)") && $('#stepBody a[href="https://docs.google.com/document/d/cd"]') && nextBtn().textContent === "I've read them");
-// Tait pastes the transcript and the documents are built (as api/build-documents.js would).
-await db.exec(`update social_client_onboarding set docs_status='ready', transcript='we never have time' where client_id='${NC}';
+chk("footage done, then straight to the portal tour (no documents step)", !!(await row()).footage_done_at && cur() === "tour");
+chk("no Your documents step anywhere", !Array.from(w.d.querySelectorAll("#steps button")).some(b => /documents/i.test(b.textContent)));
+// Later, Tait adds their documents by hand and the transcript (as he would on the operator dashboard).
+await db.exec(`insert into social_client_documents (client_id, title, url, position) values ('${NC}','NewCo: Customer Data (Google Doc)','https://docs.google.com/document/d/cd',0);
+  update social_client_onboarding set docs_status='ready', transcript='we never have time' where client_id='${NC}';
   insert into social_client_generated_docs (client_id, kind, title, body_md) values
   ('${NC}','customer_data','NewCo: Customer Data','# NewCo: Customer Data\n## 1. Pains, verbatim\n1. "we never have time"\n*Founder, on time.*'),
   ('${NC}','your_voice','NewCo: Your Voice','# NewCo: Your Voice\n- **Pillar** [To confirm]')`);
-w.w.eval("refresh().then(render)"); await settle();
-chk("documents show when ready, rendered", $("#stepBody").textContent.includes("NewCo: Customer Data") && $("#stepBody li").textContent.includes("we never have time") && $("#stepBody i"));
-chk("hand-made Google Docs still listed under the built ones", $("#stepBody").textContent.includes("More of your documents") && $('#stepBody a[href="https://docs.google.com/document/d/cd"]'));
-nextBtn().click(); await settle();
-chk("reading them is recorded", !!(await row()).docs_seen_at && cur() === "tour");
 w.ui.errors.length = 0;
 nextBtn().click(); await settle();
 chk("finishing marks onboarding done", !!(await row()).completed_at);
@@ -109,13 +105,20 @@ const ncRow = Array.from(op.d.querySelectorAll("#allClientsList .row")).find(r =
 chk("Clients list shows onboarding progress", ncRow.textContent.includes("Onboarding done") && Array.from(ncRow.querySelectorAll("button")).some(b => b.textContent === "Resend invite"), ncRow.textContent);
 Array.from(ncRow.querySelectorAll("button")).find(b => b.textContent === "Onboarding").click(); await settle();
 const box = op.d.getElementById("videoModalBox").textContent;
-chk("Onboarding view: brand, notes, transcript, documents, preview", box.includes("Inter, Playfair") && box.includes("Busy parents") && box.includes("NewCo: Customer Data")
+chk("Onboarding view: brand choice, transcript, send-documents button, preview", box.includes("Brand files: uploaded to their Important Documents folder") && box.includes("https://instagram.com/somebrand") && !!op.d.getElementById("obSendDocs")
   && op.d.getElementById("obTranscript").value === "we never have time" && !!op.d.querySelector('#videoModalBox a[href="/welcome?client=newco"]'), box.slice(0, 300));
 op.w.closeVideoModal();
 // Pasting a transcript and building: too short is caught, a real one goes to the document service.
 const opB = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html", {
   fetch: async (u, o) => ({ ok: true, status: 200, json: async () => ({ ok: true, flaggedQuotes: 0 }) }),
 });
+opB.w.confirm = () => true;
+opB.w.openOnboarding(NC); await settle();
+opB.d.getElementById("obSendDocs").click(); await settle();
+const sendCall = opB.ui.log.find(l => l.fetch && /send-documents/.test(String(l.fetch.url || l.fetch)));
+chk("Email them their documents calls /api/send-documents for that client", !!sendCall && JSON.stringify(sendCall).includes(NC), opB.ui.log.filter(l => l.fetch));
+opB.w.closeVideoModal();
+opB.ui.log.length = 0;
 opB.w.openOnboarding(OTHER); await settle();
 opB.d.getElementById("obTranscript").value = "too short"; opB.d.getElementById("obBuild").click(); await settle();
 chk("a too-short transcript is caught before sending", /too short/.test(opB.d.getElementById("obErr").textContent) && !opB.ui.log.some(l => l.fetch));

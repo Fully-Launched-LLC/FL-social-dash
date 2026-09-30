@@ -30,9 +30,9 @@
 // Every step is saved with social_client_onboarding_save() (migration 008),
 // so they can stop and come back. Tait pastes the voice memo's transcript
 // on the operator dashboard, which builds their Customer Data and Your
-// Voice documents (api/build-documents.js); they show up here when ready.
-// Documents Tait makes by hand (Google Docs added on Clients → Edit →
-// Documents, social_client_documents) are listed on the same step.
+// Voice documents (api/build-documents.js). Documents aren't a step here:
+// once Tait has made them, he sends them from the operator dashboard
+// (Onboarding → "Email them their documents", api/send-documents.js).
 //
 // /welcome?mode=reset is the "Set a new password" page for anyone (the
 // Forgot password email lands here), then sends them to their dashboard.
@@ -58,7 +58,6 @@ function stepList() {
     { key: "questions", label: "The questions" },
     { key: "memo", label: "Voice memo" },
     { key: "footage", label: "Your footage" },
-    { key: "docs", label: "Your documents" },
     { key: "tour", label: "Your portal" },
   ];
 }
@@ -69,7 +68,7 @@ function isDone(key) {
     brand: !!(o.brand && Object.keys(o.brand).length),
     questions: !!(o.voice_memo_sent_at || o.transcript || (o.answers && Object.keys(o.answers).length)),
     memo: !!(o.voice_memo_sent_at || o.transcript), footage: !!o.footage_done_at,
-    docs: !!o.docs_seen_at, tour: !!o.completed_at,
+    tour: !!o.completed_at,
   }[key];
 }
 function firstOpenStep() {
@@ -132,41 +131,37 @@ const STEPS = {
     <h1>Here's how this works</h1>
     <p class="lead">A few short steps, and we'll have what we need to make content that sounds like you. It takes about 30 minutes, and you can stop and come back any time.</p>
     <div class="card"><ol class="doc-body" style="margin:0">
-      ${clientFilms() ? "<li><b>Your brand.</b> Your logo, fonts, colors and the look you like.</li>" : ""}
-      <li><b>The questions.</b> Read through them so you know what to talk about.</li>
+      ${clientFilms() ? "<li><b>Your brand.</b> Upload your brand files, or we'll make them for you.</li>" : ""}
+      <li><b>The questions.</b> Read them, then answer them in one voice memo.</li>
       <li><b>One voice memo.</b> Just talk through your answers. No script, no editing. This is how we learn your voice and your customer.</li>
       <li><b>Your footage.</b> Drop any videos you already have into your folder.</li>
-      <li><b>Your documents.</b> We turn your voice memo into your Customer Data and Your Voice documents, and walk you through them.</li>
       <li><b>Your portal.</b> A quick look at where everything lives.</li>
     </ol></div>
     ${navHtml("Let's start")}`,
 
   brand: () => {
     const b = (OB && OB.brand) || {};
-    const colors = (b.colors || []).concat(["", "", "", ""]).slice(0, 4);
     return `
     <h1>Your brand</h1>
-    <p class="lead">So your videos look like you. Share what you have. It's fine to leave something blank.</p>
+    <p class="lead">So your videos look like you. Upload any brand files you have: your logo, fonts, colors, a brand guide, anything that shows your look.</p>
     <div class="card">
-      <label>Logo and brand files</label>
+      <label>Your brand files</label>
       <div>${folderBtn(FOLDERS.important_documents, "Upload to your Important Documents folder")}</div>
-      <label for="bFonts">Fonts (names, or "not sure")</label><input type="text" id="bFonts" value="${escapeHtml(b.fonts || "")}">
-      <label>Brand colors</label>
-      <div class="color-row">${colors.map((c, i) => `<input type="color" data-color="${i}" value="${/^#[0-9a-f]{6}$/i.test(c) ? c : "#04101f"}" aria-label="Color ${i + 1}"><input type="text" data-hex="${i}" value="${escapeHtml(c)}" placeholder="#hex" style="width:92px">`).join("")}</div>
-      <label for="bAesthetic">Your look and feel (a few words: clean, bold, warm, playful…)</label><textarea id="bAesthetic" rows="3">${escapeHtml(b.aesthetic || "")}</textarea>
       <label for="bLinks">Accounts or videos whose look you love (links)</label><textarea id="bLinks" rows="3">${escapeHtml(b.links || "")}</textarea>
     </div>
-    ${navHtml("Save and continue")}`;
+    <div class="wnav"><button type="button" data-back>Back</button>
+      <span style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" data-create>I don't have any brand files yet, create them for me</button><button type="button" class="primary" data-uploaded>I've uploaded my brand files</button></span></div>
+    <div class="auth-error" data-err></div>`;
   },
 
   questions: () => {
-    const a = (OB && OB.answers) || {};
+    const num = TEXT_MEMO_TO ? ` at <b><a href="sms:${escapeHtml(TEXT_MEMO_TO.replace(/[^0-9+]/g, ""))}" style="color:inherit">${escapeHtml(TEXT_MEMO_TO)}</a></b>` : "";
     return `
     <h1>The questions</h1>
-    <p class="lead">Read these through. In the next step you'll record one voice memo answering them, in your own words. Talk the way you'd explain it to a friend. If you want, jot a note under any question to remind yourself.</p>
-    <div class="card">${ONBOARDING_QUESTIONS.map(s => `<div class="qsec"><h3>${escapeHtml(s.section)}</h3>${s.items.map((it, i) => `
-      <div class="qitem"><div class="q">${escapeHtml(it.q)}</div>
-        <textarea rows="2" data-ans="${it.id}" placeholder="Optional note">${escapeHtml(a[it.id] || "")}</textarea></div>`).join("")}</div>`).join("")}</div>
+    <div class="card"><b>Record your answers in a voice memo and send it to Tait${num}.</b>
+      <div class="meta" style="margin-top:6px">Read the questions below, then talk through your answers in your own words, the way you'd explain it to a friend. The next step shows you how.</div></div>
+    <div class="card">${ONBOARDING_QUESTIONS.map(s => `<div class="qsec"><h3>${escapeHtml(s.section)}</h3><ol class="doc-body" style="margin:0 0 6px">${s.items.map(it => `
+      <li class="qitem"><div class="q">${escapeHtml(it.q)}</div></li>`).join("")}</ol></div>`).join("")}</div>
     ${navHtml("Next: record your voice memo")}`;
   },
 
@@ -182,7 +177,7 @@ const STEPS = {
       <li>Text the recording to ${to}.</li>
     </ol>
     ${TEXT_MEMO_TO ? `<div class="meta" style="margin-top:10px">Tait's number: <b>${escapeHtml(TEXT_MEMO_TO)}</b></div>` : ""}</div>
-    ${sent ? `<div class="card"><b>Got it, thanks.</b><div class="meta">We'll turn your voice memo into your documents. They'll show up in the Your documents step and on your portal's Documents page.</div></div>` : ""}
+    ${sent ? `<div class="card"><b>Got it, thanks.</b><div class="meta">We'll turn your voice memo into your documents and email them to you when they're ready. They'll also be on your portal's Documents page.</div></div>` : ""}
     ${navHtml(sent ? "Continue" : "I've texted it", { accent: !sent })}
     <div style="margin-top:10px"><button type="button" class="reject" data-later>I'll send it later</button></div>`;
   },
@@ -195,37 +190,13 @@ const STEPS = {
       <span style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" data-none>I don't have any</button><button type="button" class="primary" data-uploaded>I've uploaded my footage</button></span></div>
     <div class="auth-error" data-err></div>`,
 
-  docs: () => {
-    const st = OB ? OB.docs_status : "waiting";
-    const links = LINKDOCS.length ? `<div class="card"><h2>${DOCS.length && st === "ready" ? "More of your documents" : "Your documents so far"}</h2>${LINKDOCS.map(d => `
-      <div class="doc-link" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0"><b>${escapeHtml(d.title)}</b><a class="btn primary" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">Open</a></div>`).join("")}</div>` : "";
-    if (st === "ready" && DOCS.length) return `
-      <h1>Your documents</h1>
-      <p class="lead">We turned your voice memo into these. Read them through: they're the foundation for every piece of content we make with you. They live on your portal's Documents page too.</p>
-      ${DOCS.map(d => `<div class="card"><h2>${escapeHtml(d.title)}</h2><div class="doc-body">${docBodyHtml(d)}</div></div>`).join("")}
-      ${links}
-      ${navHtml("I've read them")}`;
-    if (LINKDOCS.length && st !== "processing") return `
-      <h1>Your documents</h1>
-      <p class="lead">We turned your voice memo into these. Read them through: they're the foundation for every piece of content we make with you. They live on your portal's Documents page too.</p>
-      ${links}
-      ${navHtml("I've read them")}`;
-    return `
-      <h1>Your documents</h1>
-      <p class="lead">${st === "processing" ? "We're building your Customer Data and Your Voice documents from your voice memo. This takes a few minutes. You can keep going: they'll be on your portal's Documents page when they're ready."
-        : st === "failed" ? "Something went wrong building your documents. We've been told and will take care of it. You can keep going."
-        : "Once we have your voice memo, we'll turn it into your Customer Data and Your Voice documents, and they'll show up here and on your portal's Documents page. You can keep going."}</p>
-      ${st === "processing" ? `<div class="card meta" id="docsWait">Building… this page checks every few seconds.</div>` : ""}
-      ${navHtml("Continue")}`;
-  },
-
   tour: () => `
     <h1>Your portal</h1>
     <p class="lead">Here's where everything lives from now on.</p>
     <div class="card"><div class="doc-body">
       <p><b>To Do.</b> Everything that needs you: ideas to approve, videos to film, and finished videos to approve before they post. The Time sensitive tab shows what's due soon.</p>
       <p><b>Content Calendar.</b> What posts each day and where.</p>
-      <p><b>Documents.</b> Your Customer Data, Your Voice and other important documents.</p>
+      <p><b>Documents.</b> Your Customer Data, Your Voice and other important documents. We'll email you when they're ready.</p>
       <p><b>Your footage folder.</b> Where your raw clips go${clientFilms() ? " when you film" : ""}.</p>
       <p>Sign in any time at <b>${escapeHtml(location.host)}</b> with your email and password.</p>
     </div></div>
@@ -246,21 +217,15 @@ const WIRE = {
   }),
   welcome: body => wireNav(body),
   brand: body => {
-    body.querySelectorAll("[data-color]").forEach(el => el.oninput = () => { body.querySelector(`[data-hex="${el.dataset.color}"]`).value = el.value; });
-    wireNav(body, async () => {
-      const colors = Array.from(body.querySelectorAll("[data-hex]")).map(el => el.value.trim()).filter(Boolean);
-      const brand = { fonts: body.querySelector("#bFonts").value.trim(), colors, aesthetic: body.querySelector("#bAesthetic").value.trim(), links: body.querySelector("#bLinks").value.trim() };
-      const r = await save("brand", brand);
-      return r.error ? r.error.message : null;
-    });
+    body.querySelector("[data-back]").onclick = back;
+    const done = files => async () => {
+      const r = await save("brand", { files, links: body.querySelector("#bLinks").value.trim() });
+      if (r.error) body.querySelector("[data-err]").textContent = r.error.message; else next();
+    };
+    body.querySelector("[data-create]").onclick = done("create_for_me");
+    body.querySelector("[data-uploaded]").onclick = done("uploaded");
   },
-  questions: body => wireNav(body, async () => {
-    const answers = {};
-    body.querySelectorAll("[data-ans]").forEach(el => { if (el.value.trim()) answers[el.dataset.ans] = el.value.trim(); });
-    if (!Object.keys(answers).length) return null;
-    const r = await save("answers", answers);
-    return r.error ? r.error.message : null;
-  }),
+  questions: body => wireNav(body),
   memo: body => {
     wireNav(body, async () => {
       if (OB && (OB.voice_memo_sent_at || OB.transcript)) return null;
@@ -275,10 +240,6 @@ const WIRE = {
     body.querySelector("[data-none]").onclick = done;
     body.querySelector("[data-uploaded]").onclick = done;
   },
-  docs: body => {
-    wireNav(body, async () => { if ((OB && OB.docs_status === "ready" && DOCS.length) || LINKDOCS.length) await save("docs_seen"); return null; });
-    if (OB && OB.docs_status === "processing") pollDocs();
-  },
   tour: body => wireNav(body, async () => {
     const r = await save("done");
     if (r.error) return r.error.message;
@@ -288,16 +249,6 @@ const WIRE = {
 };
 
 // ---------- documents ----------
-let polling = false;
-async function pollDocs() {
-  if (polling) return; polling = true;
-  for (let i = 0; i < 80 && OB && OB.docs_status === "processing"; i++) {
-    await new Promise(r => setTimeout(r, 6000));
-    await refresh();
-  }
-  polling = false;
-  if (current === "docs") render();
-}
 async function refresh() {
   const [o, d, l] = await Promise.all([
     sbClient.from("social_client_onboarding").select("*").eq("client_id", CLIENT.id).maybeSingle(),

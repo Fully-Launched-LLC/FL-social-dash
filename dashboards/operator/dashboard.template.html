@@ -946,6 +946,28 @@ async function sendInvite(clientId) {
   }
 }
 
+// Once their important documents are made: one branded email listing them
+// all (api/send-documents.js).
+async function sendDocumentsEmail(clientId, box) {
+  const c = CLIENT_BY_ID[clientId];
+  const err = box.querySelector("#obErr"); err.textContent = "";
+  const to = (c.onboarding && c.onboarding.invited_email) || c.contactEmail;
+  if (!confirm(`Email ${c.name} their documents at ${to || "their contact email"}?`)) return;
+  const btn = box.querySelector("#obSendDocs"); btn.disabled = true; btn.textContent = "Sending…";
+  let out;
+  try {
+    const { data } = await sbClient.auth.getSession();
+    const res = await fetch("/api/send-documents", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + ((data && data.session && data.session.access_token) || "") }, body: JSON.stringify({ clientId }) });
+    out = await res.json().catch(() => ({ error: "No response from the email service." }));
+    if (!res.ok && !out.error) out.error = "The email service answered " + res.status + ".";
+  } catch (e) { out = { error: "Couldn't reach the email service: " + (e.message || e) }; }
+  btn.disabled = false; btn.textContent = "Email them their documents";
+  if (out.error) { err.textContent = out.error; return; }
+  openModal(`<h2>Documents sent</h2><p style="line-height:1.55">${escapeHtml(c.name)}'s ${out.count} document${out.count === 1 ? "" : "s"} went to <b>${escapeHtml(out.email)}</b>.</p>
+    ${out.warning ? `<p class="meta" style="line-height:1.55">${escapeHtml(out.warning)}</p>` : ""}
+    <div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Got it</button></div>`);
+}
+
 // What a client has given us during onboarding (brand, notes), and where
 // Tait pastes the transcript of the voice memo they texted him, then
 // builds their documents (/api/build-documents).
@@ -964,7 +986,7 @@ async function openOnboarding(clientId) {
   const box = openModal(`
     <h2>${escapeHtml(c.name)}: onboarding</h2>
     <div class="modal-meta">${escapeHtml(s.label)}${ob.invited_email ? " · invited " + escapeHtml(ob.invited_email) : ""}</div>
-    ${Object.keys(b).length ? modalField("Brand", [b.fonts && "Fonts: " + b.fonts, (b.colors || []).length && "Colors: " + b.colors.join(", "), b.aesthetic && "Look and feel: " + b.aesthetic, b.links && "Looks they love: " + b.links].filter(Boolean).join("\n")) : ""}
+    ${Object.keys(b).length ? modalField("Brand", [b.files === "create_for_me" ? "No brand files yet: they asked us to create them" : b.files === "uploaded" ? "Brand files: uploaded to their Important Documents folder" : "", b.fonts && "Fonts: " + b.fonts, (b.colors || []).length && "Colors: " + b.colors.join(", "), b.aesthetic && "Look and feel: " + b.aesthetic, b.links && "Looks they love: " + b.links].filter(Boolean).join("\n")) : ""}
     ${Object.keys(a).length ? modalField("Their written notes", Object.entries(a).map(([k, v]) => qText(k) + "\n" + v).join("\n\n")) : ""}
     <div class="modal-field">
       <b>Voice memo transcript</b>
@@ -975,10 +997,12 @@ async function openOnboarding(clientId) {
     ${(docs || []).map(d => `<details class="modal-field"><summary style="cursor:pointer"><b style="display:inline">${escapeHtml(d.title)}</b></summary><div class="doc-body" style="margin-top:8px">${docBodyHtml(d)}</div></details>`).join("")}
     <div class="modal-actions">
       <button class="primary" id="obBuild">${built ? "Save and rebuild documents" : "Save and build documents"}</button>
+      <button id="obSendDocs" title="Send one email listing all their documents (Clients → Edit → Documents), branded like the invite">Email them their documents</button>
       <a class="btn" href="/welcome?client=${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Preview their onboarding</a>
       <button onclick="closeVideoModal()">Close</button>
     </div>
     <div class="auth-error" id="obErr"></div>`);
+  box.querySelector("#obSendDocs").onclick = () => sendDocumentsEmail(clientId, box);
   const btn = box.querySelector("#obBuild");
   btn.onclick = async () => {
     const err = box.querySelector("#obErr"); err.textContent = "";
