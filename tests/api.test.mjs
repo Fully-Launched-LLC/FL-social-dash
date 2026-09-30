@@ -25,6 +25,8 @@ function world(o) {
     if (u.includes("/rest/v1/social_client_users")) return json((o.clientUsers || []).filter(x => u.includes(x.id)).map(x => ({ client_id: x.client_id })));
     if (u.includes("/rest/v1/social_clients")) return json((o.clients || []).filter(c => u.includes(c.id)));
     if (u.includes("/rest/v1/social_client_onboarding") && method === "GET") return json(o.onboarding ? [o.onboarding] : []);
+    if (u.includes("/rest/v1/social_client_documents") && method === "GET") return json(o.docLinks || []);
+    if (u.includes("/rest/v1/social_client_generated_docs") && method === "GET" && o.builtDocs) return json(o.builtDocs);
     if (u.includes("/rest/v1/")) return json(null, 201);
     if (u.includes("/auth/v1/admin/generate_link")) return o.generateLink(JSON.parse(init.body), json);
     if (u.startsWith("https://api.resend.com")) return o.resend ? o.resend(JSON.parse(init.body), json) : json({ id: "email_1" });
@@ -44,6 +46,7 @@ async function call(mod, token, body) {
 
 const invite = require("../api/invite.js");
 const build = require("../api/build-documents.js");
+const sendDocs = require("../api/send-documents.js");
 const C1 = "11111111-1111-1111-1111-111111111111", C2 = "22222222-2222-2222-2222-222222222222";
 const base = {
   users: { opTok: { id: "op1", email: "tait@x" }, clTok: { id: "cl1", email: "pat@x" }, edTok: { id: "ed1", email: "ed@x" } },
@@ -131,5 +134,21 @@ r = await call(build, "opTok", { clientId: C1, transcript: TRANSCRIPT });
 const lastNoKey = calls.filter(c => c.method === "PATCH").map(c => JSON.parse(c.body)).at(-1);
 chk("build: no Anthropic key → failed, naming it (OpenAI never needed)", r.status === 503 && /ANTHROPIC_API_KEY/.test(r.body.error) && !/OPENAI/.test(r.body.error) && lastNoKey.docs_status === "failed", r.body);
 
+
+// ── email them their documents ──
+setEnv({ RESEND_API_KEY: "re_1" });
+calls = world({ ...base, docLinks: [], builtDocs: [] });
+r = await call(sendDocs, "clTok", { clientId: C1 });
+chk("documents email: a client can't send it → 403", r.status === 403);
+r = await call(sendDocs, "opTok", { clientId: C1 });
+chk("documents email: no documents yet → 400 saying to add them", r.status === 400 && /no documents yet/.test(r.body.error), r.body);
+calls = world({ ...base, onboarding: { client_id: C1, invited_email: "pat@newco.test" },
+  docLinks: [{ title: "NewCo: Customer Data", url: "https://docs.google.com/document/d/cd" }, { title: "NewCo: Your Voice", url: "https://docs.google.com/document/d/yv" }],
+  builtDocs: [] });
+r = await call(sendDocs, "opTok", { clientId: C1 });
+const dm = calls.find(c => c.url.startsWith("https://api.resend.com")); const d = dm && JSON.parse(dm.body);
+chk("documents email: sent to the invited email, both documents counted", r.status === 200 && r.body.sent === true && r.body.count === 2 && d.to[0] === "pat@newco.test", r.body);
+chk("documents email: branded like the invite, with every document linked and the portal button", d && d.subject === "Here are your important documents, NewCo" && d.html.includes("https://social.fullylaunched.com/assets/logo-white.png") && d.html.includes("#C4AB82") && d.html.includes("Hi Pat,") && d.html.includes("https://docs.google.com/document/d/cd") && d.html.includes("https://docs.google.com/document/d/yv") && d.html.includes("https://social.fullylaunched.com/clients/newco#documents"), d && d.subject);
+chk("documents email: plain-text version lists them too", d && d.text.includes("NewCo: Your Voice: https://docs.google.com/document/d/yv"));
 console.log(`${counts.pass} passed, ${counts.fail} failed`);
 process.exit(counts.fail ? 1 : 0);

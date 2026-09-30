@@ -345,6 +345,8 @@ fully-social-os/
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
                                invite.js (branded invite email),
+                               send-documents.js (branded "here are your
+                               important documents" email),
                                build-documents.js (documents from a pasted
                                transcript); _lib.js, _email.js
   ONBOARDING-SETUP.md          the steps only Tait can do to turn onboarding on
@@ -454,14 +456,19 @@ page sends a client or editor who signs in there to their own dashboard.
 A new client's invite lands on `/welcome` (`dashboards/template/welcome.template.html`),
 one step at a time, each saved with `social_client_onboarding_save()` so
 they can stop and come back:
-password → how it works → **brand** (only if they film: logo and files to
-their Important Documents folder, fonts, colors, look and feel, looks they
-love) → **the questions** (`ONBOARDING_QUESTIONS` in shell.js: the order
-Luke's own recordings answered, plus the 3-3-3 perspective questions;
-optional written notes) → **voice memo** (recorded on their phone and
-texted to Tait, `TEXT_MEMO_TO` in the welcome template; "I've texted it"
-records `voice_memo_sent_at`) → **footage** (their Previous Content Drive
-folder) → **their documents** → **portal tour** → their portal.
+password → how it works → **brand** (only if they film: upload brand files
+to their Important Documents folder, or "I don't have any brand files yet,
+create them for me"; plus accounts or videos whose look they love; saved as
+`brand.files` = `uploaded` / `create_for_me` and `brand.links`) → **the
+questions** (`ONBOARDING_QUESTIONS` in shell.js, a read-only list; the note
+at the top says to record the answers in a voice memo and send it to Tait
+at `TEXT_MEMO_TO`) → **voice memo** (recorded on their phone and texted to
+Tait; "I've texted it" records `voice_memo_sent_at`) → **footage** (their
+Previous Content Drive folder) → **portal tour** → their portal. There is no
+documents step (Tait's call, 2026-09-30): once he has made their documents,
+Clients → **Onboarding** → **Email them their documents** sends one branded
+email listing every document (`/api/send-documents`, same frame as the
+invite, `api/_email.js`).
 
 Tait gets the transcript himself and pastes it in Clients → **Onboarding**;
 **Save and build documents** calls `/api/build-documents` (operators only,
@@ -474,7 +481,7 @@ found is flagged in the document. They're saved in
 `social_client_generated_docs` and shown in the welcome steps and on the
 portal's Documents page. For now Tait builds the documents by hand (no
 `ANTHROPIC_API_KEY`, his choice, 2026-09-29) as Google Docs added on Clients
-→ Edit → Documents; the welcome page's Your documents step lists those too.
+→ Edit → Documents, then emails them with **Email them their documents**.
 Don't click Save and build documents without the key: it marks the
 documents failed, and the client's welcome page says so. The Content Ideas document still comes later, from
 Tait's content research. Operators see each client's progress on Clients,
