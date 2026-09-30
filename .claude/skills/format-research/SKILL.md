@@ -64,12 +64,22 @@ If Tait named a niche, competitor or angle in his request, that comes first.
 
 ## 2. Plan the searches (show Tait, then go)
 
-Write a short plan: 6 to 10 search terms and any accounts to check, built
-from the client's niche, the customer's own phrases, the competitors in
-`brain.md`, and Tait's notes. Include a couple of adjacent niches that share
-the same customer (for Grad Gig: parents in the western suburbs, local
-realtors doing area videos). Show the plan in one short list and go, unless
-Tait asked to approve it first.
+Some of the best formats come from **other industries**, not competitors. A
+format that's blowing up for a plumber or a finance creator can carry the
+client's message just as well. So every run searches in two lanes, roughly
+half the time each:
+
+- **Lane A, the client's world:** the niche, the customer's own phrases, the
+  competitors in `brain.md`, adjacent niches that share the same customer
+  (for Grad Gig: parents in the western suburbs, local realtors doing area
+  videos), and Tait's notes.
+- **Lane B, trending across all industries:** what's outperforming right now
+  in any niche, especially small and local businesses, founders, service
+  businesses, and creators explaining things. Look for formats that repeat
+  across unrelated accounts; those are the ones that travel.
+
+Write a short plan: 4 to 6 searches or accounts per lane. Show it in one
+short list and go, unless Tait asked to approve it first.
 
 ## 3. Search each platform
 
@@ -111,13 +121,24 @@ For each format, record:
 
 - **Name:** a plain name for it ("Street question to a local", "Three-things
   list over B-roll").
+- **Presentation:** how the video is actually presented. This is the most
+  important field. Name it from what you see, for example: talking head to
+  camera; storytelling (one story, start to finish); whiteboard / drawing;
+  all B-roll with text on screen; B-roll with voiceover; green screen over a
+  screenshot or article; street interview; two-person skit; POV; screen
+  recording; tier list / ranking; before and after; day-in-the-life vlog;
+  photo carousel. Add the look: one shot or many cuts, caption style,
+  setting, how fast the cuts are.
+- **Where it came from:** Lane A (the client's niche) or Lane B (another
+  industry, and which one).
 - **How it's built:** the beats in order, as observed (for example: on-screen
   question, 1 to 2 s; answer; payoff line; CTA). Length, and talking head /
   voiceover / text-on-screen.
 - **Hook shape:** the pattern of the opening, with one or two real hooks
   quoted briefly as examples.
-- **Examples:** 2 to 4, each with platform, account, link, views vs. the
-  account's usual, and date.
+- **Examples:** 2 to 4, each with platform, account, **a direct link to the
+  video itself** (not the profile), views vs. the account's usual, and date.
+  Every high-performing video you mention anywhere in the doc gets its link.
 - **Our read, why it works:** one or two lines, tied to the V.I.D. method
   (`templates/vid-method.md`): what's the visual hook, where does the viewer
   see themselves.
@@ -143,6 +164,8 @@ In `clients/<slug>/research/content-research.md`:
   Views as shown on <date>.*
 
   ### 1. <Format name>
+  - **Presentation:** ...
+  - **Where it came from:** <the client's niche / another industry: which>
   - **How it's built:** ...
   - **Hook shape:** ... e.g. "<quote>" (<account>, <platform>)
   - **Examples:**
@@ -156,7 +179,8 @@ In `clients/<slug>/research/content-research.md`:
 
 - Where findings fit the existing sections (**YouTube: strong titles**,
   **Competitors: what's performing**, **Local creators**, **Trending on
-  social media right now**), add rows there too and remove that section's
+  social media right now**, and **Ideas from other industries**, where Lane B
+  finds go), add rows there too, each with its video link, and remove that section's
   *Nothing added yet.* line. Keep sections that are still empty as they are.
 - Update **Last updated** and **Sources** in the header.
 - On a later run, keep earlier formats; add new ones, refresh numbers only if
