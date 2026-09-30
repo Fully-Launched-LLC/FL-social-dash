@@ -96,6 +96,9 @@ takeaways (quoted), then one table per source, **What people are asking**
 empty sections (YouTube, Competitors, Trending, Other industries) with
 *Nothing added yet.* Research shapes packaging only (principle 1). If Tait
 sent no research, create the file with only the empty sections and say so.
+Formats from YouTube, Instagram and TikTok come from the `format-research`
+skill, run when Tait asks: it adds a "Formats that are working" section to
+this same file.
 
 ### 6. Google Docs, one per file
 

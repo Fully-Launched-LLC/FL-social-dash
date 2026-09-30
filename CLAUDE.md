@@ -363,7 +363,12 @@ the client's Customer Data Google Doc). `tasteful-content` lives at
 `.claude/skills/tasteful-content/` (installed 2026-09-28 from Founder OS's
 Tasteful AI Content Playbook, adapted per client): run once per new client,
 after `customer-data-doc`, it builds `sources/voice.md` and the first
-`concepts/content-ideas.md`. The other skills in the table are not in this
+`concepts/content-ideas.md`. `format-research` lives at
+`.claude/skills/format-research/` (built 2026-09-30): on demand, it searches
+YouTube, Instagram and TikTok in Tait's Chrome (read only, never Poppy),
+finds outlier videos in the client's niche, groups them into formats, and
+adds them to `research/content-research.md` and its Google Doc. It's this
+repo's version of `research-sweep`. The other skills in the table are not in this
 repo — where they live is an open question. `calendar-planner` in
 particular was written to update the old per-client `config.json` files,
 which no longer exist; it needs repointing at Supabase or retiring.
