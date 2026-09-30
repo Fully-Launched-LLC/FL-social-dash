@@ -2,10 +2,10 @@
 
 **The 3-3-3 framework: pillars, formats, perspectives**
 
-**Last updated:** 2026-09-28
+**Last updated:** 2026-09-30
 **Drive:** https://docs.google.com/document/d/1CzaSXHTk_25Qb6GoueDd_wxzHpAV0efVmD6REdf9k_4/edit (mirror of this file, with `sources/voice.md` added at the end)
-**Sources:** Tait's voice memo and notes in chat, and Luke Bothun's answers (2026-09-25). See Customer Data for the full recordings.
-**Tags:** **[Tait]** / **[Luke]** mean said by them. **[To confirm]** means Tait hasn't decided yet.
+**Sources:** Tait's voice memo and notes in chat, and Luke Bothun's answers (2026-09-25), and Matteo's voice memo (2026-09-30). See Customer Data for the full recordings.
+**Tags:** **[Tait]** / **[Luke]** / **[Matteo]** mean said by them. **[To confirm]** means Tait hasn't decided yet.
 
 ---
 
@@ -22,6 +22,7 @@ Every client gets a **3-3-3**: **3 pillars** (what we always talk about), **3 fo
 ### 1. Websites
 - **What we do:** redesign business websites to bring in new customers. **[Tait]**
 - **Our angle:** custom websites that actually drive results and don't just look cool. Anyone can design a website with AI now; our strategy is making it simple, a simple, easy-to-use website. **[Tait]**
+- **Why it matters:** *"your listings and your website are, are your salespeople. They work every hour of every day. If they're weak, they're losing sales you'll never see."* **[Matteo]**
 
 ### 2. Organic content (social media)
 - **What we do:** help businesses and founders bring in new clients and more cash flow through content on social media. **[Tait]**
@@ -35,7 +36,10 @@ Every client gets a **3-3-3**: **3 pillars** (what we always talk about), **3 fo
 ### 4. Marketplaces (e-commerce)
 - **What we do:** get people launched and selling on Shopify, Etsy, Amazon and TikTok Shop, and connect custom websites to Shopify. **[Tait]**
 - **Who it's for:** the small business that wants to sell online but doesn't know how (the art shop), or the Etsy seller ready for their own Shopify store. **[Tait]**
+- **Who it's for, in Matteo's words:** *"a small product business, usually doing somewhere between a few thousand and a few hundred thousand a year that's outgrown its setup."* A niche supplier or small brand with a solid product and real demand, run by an owner who's still doing everything himself. **[Matteo]**
 - **Our angle:** listings that actually sell and stay profitable. More marketplaces don't mean more sales if the listing is bad. **[Luke]**
+- **How we do it:** *"we take a messy, overwhelming e-commerce operation and turn it into a clean system quickly. Most agencies do the work by hand, but we build custom AI tools and automations around each client so we can move at a scale and speed that a normal team can't without sacrificing quality."* **[Matteo]**
+- **Proof:** Creative Cut Supplies, a plywood and MDF supplier for laser cutting and CNC makers. An automated workflow rewrote every title and description, cleaned up inventory and pricing, upscaled the photos and audited all 392 Etsy listings, while protecting the search terms already bringing in traffic. Now we're building his Shopify store so he's not dependent on one marketplace. **[Matteo]**
 
 ### Recurring series (runs across every pillar): Building Fully Launched
 - **At least 4 videos a week** documenting the build of the business. It goes on the content calendar. **[Tait]**
@@ -67,6 +71,14 @@ Tait hasn't named the third perspective yet. **The strongest candidate is in Luk
 - Agencies love to sell big retainers and AI strategy instead of shipping the one thing that works. We start with one specific task or channel and measure it in hours saved or dollars kept. **[Luke]**
 
 *Tait: keep this, change it, or replace it.*
+
+### [To confirm] New candidate from Matteo: built around your business
+Luke and Matteo both said this, separately:
+- *"none of it worked because none of it was built around their business. It, it was either too generic or too slow, or, or it gave them one more tool to manage"* **[Matteo]**, on the freelancers, cheap agencies, YouTube tutorials and apps customers tried first.
+- *"most agencies just sell hours and templates. They hand every client the same package and bill for manual work that software can do better. I think if you're not using AI to build around the client's specific business, you're, you're charging them for inefficiency."* **[Matteo]**
+- *"we build around how your business actually run"* **[Luke]**, on what we solve.
+
+*Tait: this could be the third perspective, or fold into ③ Start small.*
 
 ---
 

@@ -1,10 +1,10 @@
 # Fully Launched: Content Ideas
 
-**Last updated:** 2026-09-28
+**Last updated:** 2026-09-30
 **Drive:** https://docs.google.com/document/d/1Lax_VKFYEeJxhJhOvdRn_Y6ALFtkF4Jyd0AZYnFi9jE/edit (mirror of this file)
-**Built from:** Customer Data, Your Voice and Content Research (all 2026-09-25), and Tait's LinkedIn posts and notes (added 2026-09-28: B10, B11, O13 to O19).
+**Built from:** Customer Data, Your Voice and Content Research (all 2026-09-25), and Tait's LinkedIn posts and notes (added 2026-09-28: B10, B11, O13 to O19), and Matteo's voice memo (added 2026-09-30: B12 to B14, A11 to A15, W5, M18 to M26).
 
-**The rule for this doc:** Claude organizes *your* ideas, from Tait's memos and posts, Luke's answers and the Reddit research, into clear, usable ideas. Nothing new is invented. Each idea shows where it came from.
+**The rule for this doc:** Claude organizes *your* ideas, from Tait's memos and posts, Luke's and Matteo's answers and the Reddit research, into clear, usable ideas. Nothing new is invented. Each idea shows where it came from.
 
 **Each idea has:**
 - **Hook:** the opening line
@@ -17,7 +17,7 @@
 - **Source:** where it came from
 - **Needs from you:** only where an idea needs a detail we don't have yet
 
-**Perspectives:** ① Make it simple · ② Service media · ③ Start small *(to confirm)* · ④ Less input, better ideas *(new from your posts, to confirm)*
+**Perspectives:** ① Make it simple · ② Service media · ③ Start small *(to confirm)* · ④ Less input, better ideas *(new from your posts, to confirm)* · ⑤ Built around your business *(new from Matteo and Luke, to confirm)*
 
 ---
 
@@ -168,6 +168,50 @@ Documenting the build of the business, on the calendar every week. **[Tait]** Th
 - **Ask on camera:** "What's the lesson a wiener dog taught you when you were 5?"
 - **CTA:** Free social media audit
 - **Source:** Tait's LinkedIn post 5
+
+**B12. I could do in an afternoon what took business owners weeks**
+- **Hook:** "I got into building AI tools and realized I could do in an afternoon what took business owners weeks."
+- **Format:** How I · **Perspective:** ⑤ Built around your business
+- **Seed:** "I got into building AI tools and, and realized that I could do it in an afternoon what took business owners weeks."
+- **The idea:** Matteo's side of why we started, on camera. Good small businesses losing to bigger players because their online presence was weak. "That felt fixable." Pairs with B9 (Luke's version).
+- **Talking points:**
+  - Where it started: "I got into building AI tools and, and realized that I could do it in an afternoon what took business owners weeks."
+  - What he kept seeing: "good small businesses with great products losing to bigger players just because their online presence was weak."
+  - "That felt fixable."
+  - Where it lands: "give the smallest sellers the kind of systems only big companies used to afford."
+- **Ask on camera:** "What made you realize small businesses needed this?"
+- **CTA:** Free store audit
+- **Source:** Matteo's voice memo
+
+**B13. It started as Luke's idea**
+- **Hook:** "Fully Launched started as one idea. Then it kept growing."
+- **Format:** Behind the scenes · **Perspective:** ③ Start small
+- **Seed:** "It was Luke's idea initially, and we just started growing this and growing it and growing it"
+- **The idea:** How a marketplace for automation work became four services, told by the four of us: Luke, Tait, Elias and Matteo.
+- **Talking points:**
+  - The first idea: "a marketplace where we would be able to be doing automation work for companies that didn't have the time."
+  - "It was Luke's idea initially"
+  - Then "branching out into social media, branching out into AI, branching out into web development."
+  - Where it is now: "so many ideas and so many different avenues that we're going down at the same time"
+- **Ask on camera:** "How did Fully Launched go from one idea to four services?"
+- **CTA:** Free social media audit
+- **Source:** Matteo's voice memo
+- **Needs from you:** whether all four of us film it, and a line on what Elias and Matteo each do
+
+**B14. Building Creative Cut Supplies' Shopify store**
+- **Hook:** "We're building a Shopify store so this business isn't dependent on one marketplace."
+- **Format:** Behind the scenes · **Perspective:** ⑤ Built around your business
+- **Seed:** "now we're building his Shopify store so he's not dependent on one marketplace."
+- **The idea:** The next step after the 392 listings (M18). Document the store as it gets built, one video per milestone.
+- **Talking points:**
+  - Where David started: "nearly four hundred Etsy listings across a huge catalog."
+  - The fear this answers: "the marketplace changes its algorithm or fees, and their income drops overnight"
+  - What we're building this week, on screen.
+  - The goal: "Sales come from more than one channel"
+- **Ask on camera:** "Why build him a Shopify store when his Etsy shop already works?"
+- **CTA:** Free store audit
+- **Source:** Matteo's voice memo
+- **Needs from you:** David's permission to name the business and show the store, and what's built so far
 
 ---
 
@@ -588,6 +632,76 @@ Documenting the build of the business, on the calendar every week. **[Tait]** Th
 - **CTA:** Questionnaire: simplify your business with an AI system
 - **Source:** Luke's answers
 
+**A11. An entire day of busy work, and nothing moved**
+- **Hook:** "It's 9 PM. You spent the whole day on busy work, and nothing moved."
+- **Format:** Behind the scenes · **Perspective:** ③ Start small
+- **Seed:** "it's nine p.m., and they realize they did an entire day of busy work and nothing's moved."
+- **The idea:** The online seller's version of A2. Fixing listings, answering the same questions, correcting inventory, all day. Matteo calls it "the grind."
+- **Talking points:**
+  - The bad day: "spending hours fixing listings, and you're answering the same customer questions and correcting inventory errors instead of growing the business."
+  - "it's nine p.m., and they realize they did an entire day of busy work and nothing's moved."
+  - The fear: "they'll still be stuck doing the same manual work five years from now."
+  - The dream: "the repetitive work runs in systems instead of their evenings."
+- **Ask on camera:** "What does a bad day look like for an online seller?"
+- **CTA:** Questionnaire: simplify your business with an AI system
+- **Source:** Matteo's voice memo
+
+**A12. "Is this AI stuff actually gonna help me, or is it just all hype?"**
+- **Hook:** "Is this AI stuff actually gonna help me, or is it just all hype?"
+- **Format:** How we · **Perspective:** ③ Start small
+- **Seed:** "Is this AI stuff actually gonna help me, or is it just all hype?"
+- **The idea:** The question Matteo hears over and over, and the feeling under it. Answer it with one real job we did.
+- **Talking points:**
+  - The question, word for word.
+  - What they won't say: "they feel behind in AI while everyone around them seems to have it all figured out."
+  - Luke hears it too: "not really understanding what they should do about AI and how they feel behind it"
+  - One real answer: the 392-listing workflow (M18). "we can overhaul hundreds of listings in the time it used to take to do a few dozen."
+- **Ask on camera:** "When a customer asks if AI is just hype, what do you tell them?"
+- **CTA:** Questionnaire: simplify your business with an AI system
+- **Source:** Matteo's voice memo and Luke's answers
+
+**A13. The app that promised automation**
+- **Hook:** "You bought the app that promised automation. Now you have one more tool to manage."
+- **Format:** How to · **Perspective:** ⑤ Built around your business
+- **Seed:** "it gave them one more tool to manage, which they don't need."
+- **The idea:** The tools and apps owners pay for and don't use, and why none of them fixed the problem. Pairs with A8.
+- **Talking points:**
+  - What they tried: "Doing it themselves with YouTube tutorials or, or buying apps that promised automation"
+  - "paying for tools and, and apps that, that they don't really use."
+  - Why it didn't work: "none of it was built around their business. It, it was either too generic or too slow"
+  - Luke's version: "It's like an 80% fit but that it's missing the 20% that actually makes the workflow perfect."
+- **Ask on camera:** "Why don't the automation apps work for small businesses?"
+- **CTA:** Questionnaire: simplify your business with an AI system
+- **Source:** Matteo's voice memo and Luke's answers
+
+**A14. Most agencies sell hours and templates**
+- **Hook:** "Most agencies just sell hours and templates."
+- **Format:** How we · **Perspective:** ⑤ Built around your business
+- **Seed:** "most agencies just sell hours and templates."
+- **The idea:** What Matteo thinks the industry gets wrong, and how we work instead.
+- **Talking points:**
+  - "They hand every client the same package and bill for manual work that software can do better."
+  - "if you're not using AI to build around the client's specific business, you're, you're charging them for inefficiency."
+  - How we do it: "we build custom AI tools and automations around each client so we can move at a scale and speed that a normal team can't without sacrificing quality."
+  - Proof: the 392 listings (M18).
+- **Ask on camera:** "What do most agencies get wrong?"
+- **CTA:** Questionnaire: simplify your business with an AI system
+- **Source:** Matteo's voice memo
+
+**A15. "I tried hiring someone, and it didn't go anywhere."**
+- **Hook:** "I tried hiring someone, and it didn't go anywhere."
+- **Format:** How we · **Perspective:** ③ Start small
+- **Seed:** "I tried hiring someone, and it didn't go anywhere."
+- **The idea:** The line Matteo says "We hear that one a lot." Who they hired before, and what we do differently.
+- **Talking points:**
+  - Who they hired: "freelancers who did a handful of things and, and disappeared" and "cheap agencies with templated work that just doesn't fit their niche."
+  - Luke hears it too: "generic agencies that have long retainers ... and they don't actually ship anything"
+  - What we do: "ship a working solution in weeks not months" (Luke)
+  - And start with one thing: "one process automated or one channel done right" (Luke)
+- **Ask on camera:** "What do customers tell you happened with the last person they hired?"
+- **CTA:** Questionnaire: simplify your business with an AI system
+- **Source:** Matteo's voice memo and Luke's answers
+
 ---
 
 ## Pillar: Websites
@@ -635,6 +749,21 @@ Documenting the build of the business, on the calendar every week. **[Tait]** Th
 - **CTA:** Free guide: 3 steps to simplify your website
 - **Source:** Reddit
 - **Needs from you:** your process
+
+**W5. "I've been meaning to get a website for years"**
+- **Hook:** "I've been meaning to get a website for years."
+- **Format:** How to · **Perspective:** ① Make it simple
+- **Seed:** "I've been meaning to get a website for years"
+- **The idea:** The owner with no real website, or one that looks outdated and doesn't sell. Why it keeps getting put off, and why it matters.
+- **Talking points:**
+  - What we hear: "I've been meaning to get a website for years"
+  - Where they are: "they just don't really have a real website or, uh, one that kind of looks outdated and it just doesn't sell."
+  - Why it matters: "your listings and your website are, are your salespeople. They work every hour of every day."
+  - What they want: "a real website that they're proud of." Tait: "a simple, easy to use website"
+- **Ask on camera:** "Why do business owners put off getting a website for years?"
+- **CTA:** Free guide: 3 steps to simplify your website
+- **Source:** Matteo's voice memo and Tait's voice memo
+- **Needs from you:** the 3 steps (the same gap as W3)
 
 ---
 
@@ -832,16 +961,148 @@ Documenting the build of the business, on the calendar every week. **[Tait]** Th
 - **CTA:** Free store audit
 - **Source:** Reddit + Tait's voice memo
 
+**M18. 392 Etsy listings, rewritten with one workflow**
+- **Hook:** "He had nearly 400 Etsy listings. We rewrote every single one."
+- **Format:** How we · **Perspective:** ⑤ Built around your business
+- **Seed:** "we built an automated workflow that rewrote every single title and description, cleaned up the inventory and pricing, upscaled their photos, and audited the whole thing, all three hundred and ninety-two listings."
+- **The idea:** The Creative Cut Supplies story. A catalog too big to fix by hand, and the workflow we built around it.
+- **Talking points:**
+  - The client: "a plywood and MDF supplier that, that they serve laser cutting and CNC makers."
+  - The problem: "You got birch, walnut, maple, cherry ... They're all in different sizes, different thicknesses. Updating it by hand would have taken genuinely forever"
+  - What we built: titles, descriptions, inventory and pricing, photos, "all three hundred and ninety-two listings."
+  - The careful part: "protecting the search terms that were already bringing in traffic."
+- **Ask on camera:** "What would it have taken to fix 392 listings by hand?"
+- **CTA:** Free store audit
+- **Source:** Matteo's voice memo
+- **Needs from you:** David's permission to name the business and show listings, and any before and after numbers (views, sales) if we have them
+
+**M19. Your listings are your salespeople**
+- **Hook:** "Your listings and your website are your salespeople. They work every hour of every day."
+- **Format:** How to · **Perspective:** ② Service media
+- **Seed:** "your listings and your website are, are your salespeople. They work every hour of every day."
+- **The idea:** What Matteo wishes every customer understood. Weak listings lose sales you never see.
+- **Talking points:**
+  - "your listings and your website are, are your salespeople. They work every hour of every day."
+  - "If they're weak, they're losing sales you'll never see."
+  - "Fixing this is the highest leverage thing that you can do"
+  - "it doesn't have to be slow or expensive anymore."
+- **Ask on camera:** "What do you wish every customer understood about their listings?"
+- **CTA:** Free store audit
+- **Source:** Matteo's voice memo
+
+**M20. People are already showing up. And leaving.**
+- **Hook:** "The people are already showing up and leaving."
+- **Format:** How to · **Perspective:** ① Make it simple
+- **Seed:** "The people are already showing up and leaving."
+- **The idea:** What sellers believe that isn't true: that they need more traffic. Usually it's conversion.
+- **Talking points:**
+  - The belief: "What they believe that isn't true is that the problem is traffic."
+  - "Usually, it's conversion." "The people are already showing up and leaving."
+  - What makes them leave: "bad titles, their, their descriptions are weak, their photos are weak."
+  - How a seller can check this in their own shop (needs from you).
+- **Ask on camera:** "Why do sellers think they have a traffic problem?"
+- **CTA:** Free Etsy shop critique
+- **Source:** Matteo's voice memo
+- **Needs from you:** how a seller can tell which problem they have (which numbers to look at)
+
+**M21. A competitor with a worse product is taking your sales**
+- **Hook:** "A competitor with a worse product but better listings is taking your sales."
+- **Format:** How to · **Perspective:** ② Service media
+- **Seed:** "a competitor with a worse product but better listings takes their sales."
+- **The idea:** The fear Matteo hears. The better product loses to the better listing.
+- **Talking points:**
+  - The fear: "they'll get passed, like a competitor with a worse product but better listings takes their sales."
+  - Why: "listings that don't rank or convert."
+  - The three parts: titles, descriptions, photos.
+  - Land it with M19: your listings are your salespeople.
+- **Ask on camera:** "What happens when the better product has the worse listing?"
+- **CTA:** Free Etsy shop critique
+- **Source:** Matteo's voice memo
+- **Needs from you:** what makes a good title, description and photo (a real before and after, with permission)
+
+**M22. If your marketplace changed its fees tomorrow**
+- **Hook:** "If your marketplace changed its algorithm or fees tomorrow, what happens to your income?"
+- **Format:** How we · **Perspective:** ③ Start small
+- **Seed:** "the marketplace changes its algorithm or fees, and their income drops overnight"
+- **The idea:** Being stuck in one marketplace, and adding one more channel done right. Pairs with M10 and B14.
+- **Talking points:**
+  - "sometimes they're stuck in a single marketplace, and they're just really nervous about depending on that"
+  - The risk: "the marketplace changes its algorithm or fees, and their income drops overnight"
+  - Start with one: "one process automated or one channel done right" (Luke)
+  - Example: "now we're building his Shopify store so he's not dependent on one marketplace."
+- **Ask on camera:** "What happens to a seller who only sells in one place?"
+- **CTA:** Free store audit
+- **Source:** Matteo's voice memo and Luke's answers
+
+**M23. Your inventory and prices don't match across channels**
+- **Hook:** "Your inventory and your prices don't match from one channel to the next."
+- **Format:** How to · **Perspective:** ① Make it simple
+- **Seed:** "their inventory and their pricing that it just doesn't match across channels."
+- **The idea:** "That's just some of the simple stuff," and what it costs every day.
+- **Talking points:**
+  - "their inventory and their pricing that it just doesn't match across channels."
+  - The bad day: "correcting inventory errors instead of growing the business."
+  - The dream: "their product can sell on 2 to 4 channels without managing each one separately" (Luke)
+  - How we fix it (needs from you).
+- **Ask on camera:** "What goes wrong when your inventory doesn't match across channels?"
+- **CTA:** Free store audit
+- **Source:** Matteo's voice memo and Luke's answers
+- **Needs from you:** how we keep inventory and pricing in sync for a client
+
+**M24. Fixing hundreds of listings doesn't take months anymore**
+- **Hook:** "You think fixing your whole catalog is a months-long, expensive project."
+- **Format:** How we · **Perspective:** ⑤ Built around your business
+- **Seed:** "we can overhaul hundreds of listings in the time it used to take to do a few dozen."
+- **The idea:** The second belief that isn't true, and the proof.
+- **Talking points:**
+  - The belief: "They also think fixing a bigger catalog i- is a months-long, like, expensive project."
+  - "with the right automation, we can overhaul hundreds of listings in the time it used to take to do a few dozen."
+  - Proof: 392 listings for Creative Cut Supplies (M18).
+  - "it doesn't have to be slow or expensive anymore."
+- **Ask on camera:** "How long does it take to fix a few hundred listings now?"
+- **CTA:** Free store audit
+- **Source:** Matteo's voice memo
+- **Needs from you:** how long the Creative Cut job actually took
+
+**M25. Update your listings without breaking what already works**
+- **Hook:** "I don't wanna mess up what's already working."
+- **Format:** How we · **Perspective:** ③ Start small
+- **Seed:** "I don't wanna mess up what's already working."
+- **The idea:** The worry Matteo hears, and how we changed 392 listings while keeping the search terms that already brought traffic.
+- **Talking points:**
+  - The worry: "I don't wanna mess up what's already working."
+  - The same fear Luke hears about AI: "What if it breaks"
+  - For Creative Cut: "protecting the search terms that were already bringing in traffic."
+  - How we found and kept those search terms (needs from you).
+- **Ask on camera:** "How do you change hundreds of listings without losing the traffic you already have?"
+- **CTA:** Free Etsy shop critique
+- **Source:** Matteo's voice memo and Luke's answers
+- **Needs from you:** the steps we used to protect the search terms
+
+**M26. Embarrassed by your storefront**
+- **Hook:** "You know your photos and descriptions look amateur. You're not the only one."
+- **Format:** How we · **Perspective:** ② Service media
+- **Seed:** "they're embarrassed by their storefront. They know their photos and descriptions look amateur"
+- **The idea:** What sellers feel and won't say out loud, and what fixing it looked like for one shop.
+- **Talking points:**
+  - What they won't say: "they're embarrassed by their storefront."
+  - "They know their photos and descriptions look amateur"
+  - What we did for Creative Cut: "upscaled their photos" and rewrote "every single title and description."
+  - The dream: "their catalog is clean and optimized everywhere they sell."
+- **Ask on camera:** "What do sellers feel about their shop that they won't say out loud?"
+- **CTA:** Free Etsy shop critique
+- **Source:** Matteo's voice memo
+
 ---
 
 ## Summary
 
-- **Building Fully Launched:** 11 ideas (B1–B11). **At least 4 go on the calendar every week.**
+- **Building Fully Launched:** 14 ideas (B1–B14). **At least 4 go on the calendar every week.**
 - **Authority Hacking:** 4 slots (AH1–AH4), one pillar a week in rotation. **1 goes on the calendar every week.** People still to pick.
 - **Organic content:** 19 (O1–O19)
-- **AI systems:** 10 (A1–A10)
-- **Websites:** 4 (W1–W4)
-- **Marketplaces:** 17 (M1–M17)
+- **AI systems:** 15 (A1–A15)
+- **Websites:** 5 (W1–W5)
+- **Marketplaces:** 26 (M1–M26)
 
 **Ready to film as-is:** every idea without a **Needs from you** line.
 **Next step:** pick dates and add them with **📋 Add ideas with Claude** on the dashboard.
