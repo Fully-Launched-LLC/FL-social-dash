@@ -1,9 +1,9 @@
 # Fully Launched — Brain
 
-Last updated: 2026-09-25
+Last updated: 2026-09-30
 Interviewed by: Tait Allen (founder) and Luke Bothun (cofounder), talking about their own agency
 Sources: `sources/2026-09-25-tait-voice-memo.md` · `sources/2026-09-25-luke-bothun-answers.md` ·
-`research/2026-09-25-reddit-tait-memo.md`. Replaces the old fake "home-fitness coach" test
+`research/2026-09-25-reddit-tait-memo.md` · `sources/2026-09-30-matteo-voice-memo.md` (Matteo, cofounder). Replaces the old fake "home-fitness coach" test
 client; nothing from that carries over.
 
 Drive: Fully Social OS → Clients → Fully Launched
@@ -21,6 +21,11 @@ docs are on the client portal's Documents page:
 - Posts on LinkedIn, Instagram, Facebook [Tait].
 - Proof: a customer proven in in-person markets, launched on Etsy, Walmart, Amazon —
   sales doubled in a few months [Luke].
+- Proof: Creative Cut Supplies (owner David), a plywood and MDF supplier for laser cutting and
+  CNC makers. Nearly 400 Etsy listings; an automated workflow rewrote every title and
+  description, cleaned up inventory and pricing, upscaled photos and audited all 392 listings,
+  protecting the search terms already bringing traffic. Now building his Shopify store so he's
+  not dependent on one marketplace [Matteo]. Client permission to name him on camera: pending.
 
 ## Unique solution
 We take one painful manual process or sales channel and ship a working solution in weeks,
@@ -33,6 +38,11 @@ Full detail: `sources/customer-data.md` → "Our unique solution".
 See `sources/customer-data.md`.
 
 ## Founder facts
+- The team is four: Luke, Tait, Elias and Matteo [Matteo]. Elias's and Matteo's roles: pending.
+- Why we started, Matteo's version: "I could do it in an afternoon what took business owners
+  weeks"; good small businesses "losing to bigger players just because their online presence
+  was weak. That felt fixable." Fully Launched "was Luke's idea initially", then it branched
+  out into social media, AI and web development [Matteo].
 - Luke Bothun also owns Grad Gig, a separate client. Fully Launched's documents only use
   Luke's Fully Launched material; Grad Gig's only use his Grad Gig material.
 - Why we started [Luke]: great local businesses stuck because the owner did everything;
@@ -54,5 +64,6 @@ systems, marketplaces) + the "Building Fully Launched" series (4+ videos/week), 
 ## Open questions
 - Third unique perspective — Luke's "start small, ship the one thing" is the candidate.
 - Fourth perspective candidate from Tait's posts: less input, better ideas.
+- Fifth candidate from Matteo (and Luke): built around your business.
 - Answers the Content Ideas doc marks "Needs from you" (privacy, maintenance, Etsy ads,
   the 3 website steps, results examples, client permission for the case study, etc.).
