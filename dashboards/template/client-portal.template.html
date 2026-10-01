@@ -460,7 +460,7 @@ function renderOnboardBanner() {
   const o = ONBOARDING;
   document.getElementById("onboardBanner").innerHTML = o && o.invited_at && !o.completed_at ? `
     <div class="card" style="border-color:var(--gold)"><div class="row" style="border:0;padding:0">
-      <div class="left"><b>Finish setting up your account</b><div class="meta">A few quick steps, including your voice memo, so we can make content that sounds like you.</div></div>
+      <div class="left"><b>Finish setting up your account</b><div class="meta">A few quick steps (your brand, a voice memo and your footage) so we can make content that sounds like you.</div></div>
       <a class="btn accent" href="/welcome${IS_OPERATOR ? "?client=" + encodeURIComponent(CLIENT.slug) : ""}">Continue</a></div></div>` : "";
 }
 
@@ -520,6 +520,49 @@ async function startApp(user, access) {
 
   initRouter("videos");
   await loadVideos();
+  if (new URLSearchParams(location.search).get("tour") === "1") startTour();
+}
+
+// ---------- the walkthrough ----------
+// Straight after onboarding (/clients/<slug>?tour=1): a few cards that point
+// at each part of the portal, then "bookmark this page" (Tait, 2026-10-01).
+const TOUR = [
+  { sel: '.nav-item[data-view="videos"]', title: "To Do", text: "Everything that needs you lives here: the videos to film, ideas to approve, and finished videos to approve before they post. Time sensitive shows what's due soon." },
+  { sel: '.nav-item[data-view="calendar"]', title: "Content Calendar", text: "What posts each day, and where." },
+  { sel: '.nav-item[data-view="documents"]', title: "Documents", text: "Your important documents. We'll email you when your Customer Data and Your Voice documents are ready, and they'll be here too." },
+  { sel: "#footageNav", title: "My footage folder", text: "Where your raw clips go when you film." },
+];
+function startTour() {
+  history.replaceState(null, "", location.pathname + location.hash);
+  const steps = TOUR.filter(t => { const el = document.querySelector(t.sel); return el && getComputedStyle(el).display !== "none"; });
+  const veil = document.createElement("div"); veil.className = "tour-veil"; veil.id = "tourVeil";
+  const card = document.createElement("div"); card.className = "tour-card"; card.id = "tourCard";
+  document.body.append(veil, card);
+  let i = 0, focused = null;
+  const end = () => { if (focused) focused.classList.remove("tour-focus"); veil.remove(); card.remove(); };
+  const bookmark = () => {
+    if (focused) focused.classList.remove("tour-focus"); focused = null;
+    const host = location.host;
+    card.className = "tour-card tour-bookmark";
+    card.innerHTML = `<h2>Bookmark this page</h2>
+      <p>Save <b>${escapeHtml(host)}</b> as a bookmark so you can come back any time. Sign in with your email and the password you just made.</p>
+      <div class="tour-url">${escapeHtml(host)}</div>
+      <p class="meta">On a computer, press ${/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘ + D" : "Ctrl + D"}. On a phone, use your browser's share or menu button, then "Add bookmark" or "Add to Home Screen".</p>
+      <div class="tour-actions"><span></span><button type="button" class="accent" data-tour-done>Got it</button></div>`;
+    card.querySelector("[data-tour-done]").onclick = end;
+  };
+  const show = () => {
+    if (i >= steps.length) return bookmark();
+    if (focused) focused.classList.remove("tour-focus");
+    const t = steps[i];
+    focused = document.querySelector(t.sel); focused.classList.add("tour-focus");
+    if (focused.scrollIntoView) focused.scrollIntoView({ block: "nearest" });
+    card.innerHTML = `<div class="tour-count">${i + 1} of ${steps.length}</div><h2>${escapeHtml(t.title)}</h2><p>${escapeHtml(t.text)}</p>
+      <div class="tour-actions"><button type="button" class="reject" data-tour-skip>Skip</button><button type="button" class="primary" data-tour-next>${i === steps.length - 1 ? "Finish" : "Next"}</button></div>`;
+    card.querySelector("[data-tour-next]").onclick = () => { i++; show(); };
+    card.querySelector("[data-tour-skip]").onclick = bookmark;
+  };
+  show();
 }
 
 initAuthGate({ resolveAccess: resolveClientPortalAccess, onReady: startApp });

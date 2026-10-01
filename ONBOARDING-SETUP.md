@@ -36,6 +36,18 @@ Supabase → **SQL Editor**: paste and run
 than once. (Already ran an earlier 008? Just run 009: it switches the
 voice memo step from uploading to texting.)
 
+## 2b. Uploads (Supabase, 2 min) — onboarding v2
+
+Clients now upload their brand files, voice memo and footage straight into
+onboarding.
+
+1. Supabase → **SQL Editor**: paste and run
+   `supabase/migrations/010_onboarding_uploads.sql` (safe to re-run). It
+   creates the private `onboarding` storage bucket and who can use it.
+2. Supabase → **Storage → Settings** → **Upload file size limit**: raise it
+   (Pro allows up to 500 GB per file; 50 GB is plenty for video). Without
+   this, anything over the old limit (50 MB by default) fails to upload.
+
 ## 3. Where sign-in links may land (Supabase, 1 min)
 
 Supabase → **Authentication → URL Configuration → Redirect URLs** → add:

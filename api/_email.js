@@ -14,46 +14,42 @@ const BODY = "font:15px/1.6 Helvetica,Arial,sans-serif;color:#ffffff";
 const SMALL = "font:12px/1.5 Helvetica,Arial,sans-serif;color:rgba(255,255,255,.6)";
 const button = (href, label) => `<a href="${esc(href)}" style="display:inline-block;background:#C4AB82;color:#04101f;font:700 15px Helvetica,Arial,sans-serif;text-decoration:none;padding:13px 24px;border-radius:10px">${esc(label)}</a>`;
 
-// The shared frame: logo, title, then the email's own rows, then the footer.
-function frame({ portal, title, rows }) {
-  return `<!doctype html><html><body style="margin:0;padding:0;background:#04101f">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#04101f;padding:32px 12px">
+// The shared frame: a white page with one navy box holding the logo, the
+// title, then the email's own rows (and a footer link unless footer:false).
+function frame({ portal, title, rows, footer = true }) {
+  return `<!doctype html><html><body style="margin:0;padding:0;background:#ffffff">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;padding:32px 12px">
     <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;border:1px solid rgba(255,255,255,.18);border-radius:16px">
-        <tr><td style="padding:28px 32px 8px"><img src="${esc(portal)}/assets/logo-white.png" alt="Fully Launched" width="170" style="display:block;border:0"></td></tr>
-        <tr><td style="padding:12px 32px 4px;font:700 22px/1.3 Helvetica,Arial,sans-serif;color:#ffffff">${esc(title)}</td></tr>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#04101f;border-radius:16px">
+        <tr><td style="padding:32px 32px 8px"><img src="${esc(portal)}/assets/logo-white.png" alt="Fully Launched" width="170" style="display:block;border:0"></td></tr>
+        <tr><td style="padding:14px 32px 4px;font:700 24px/1.3 Helvetica,Arial,sans-serif;color:#ffffff">${esc(title)}</td></tr>
         ${rows}
-        <tr><td style="padding:16px 32px 24px;border-top:1px solid rgba(255,255,255,.12);${SMALL}">Fully Launched · <a href="https://fullylaunched.com" style="color:rgba(255,255,255,.8)">fullylaunched.com</a></td></tr>
+        ${footer ? `<tr><td style="padding:16px 32px 24px;border-top:1px solid rgba(255,255,255,.12);${SMALL}">Fully Launched · <a href="https://fullylaunched.com" style="color:rgba(255,255,255,.8)">fullylaunched.com</a></td></tr>` : ""}
       </table>
     </td></tr>
   </table></body></html>`;
 }
 
+// The portal invite. A new client gets just the logo, "Welcome to your
+// social dashboard", one Start here button and "This link only works once"
+// (Tait, 2026-10-01: one thing to click, nothing else). Someone who has
+// already finished onboarding gets a plain sign-in email instead.
 function inviteEmail({ contactName, clientName, link, portal, returning }) {
+  if (!returning) {
+    const subject = "Welcome to your social dashboard";
+    const html = frame({ portal, title: subject, footer: false, rows: `
+        <tr><td style="padding:24px 32px 10px"><a href="${esc(link)}" style="display:inline-block;background:#C4AB82;color:#04101f;font:700 18px Helvetica,Arial,sans-serif;text-decoration:none;padding:16px 40px;border-radius:12px">Start here</a></td></tr>
+        <tr><td style="padding:6px 32px 30px;${SMALL}">This link only works once.</td></tr>` });
+    const text = `Welcome to your social dashboard\n\nStart here: ${link}\n\nThis link only works once.`;
+    return { subject, html, text };
+  }
   const first = firstName(contactName);
-  const hello = first ? `Hi ${esc(first)},` : "Hi,";
-  const subject = returning ? `Your Fully Launched sign-in link` : `Welcome to Fully Social, ${clientName}`;
-  const intro = returning
-    ? `Here's your link to sign in to ${esc(clientName)}'s Fully Launched portal.`
-    : `We're excited to start working with ${esc(clientName)}. Your client portal is ready. Click below to create your password, and we'll walk you through a few quick steps so we can start making content that sounds like you.`;
-  const steps = returning ? "" : `
-    <tr><td style="padding:0 32px 8px;${BODY}">
-      <b style="color:#C4AB82">What happens next</b><br>
-      1. Create your password.<br>
-      2. Upload your brand files, if you film your own videos (or we'll make them for you).<br>
-      3. Read a few questions about your business and your customers, then answer them in one voice memo on your phone and text it to us.<br>
-      4. Drop in any footage you already have.<br>
-      5. A quick tour of your portal.<br>
-      Then we turn your voice memo into your important documents and email them to you.
-    </td></tr>`;
-  const html = frame({ portal, title: subject, rows: `
-        <tr><td style="padding:8px 32px 18px;${BODY}">${hello}<br><br>${intro}</td></tr>
-        ${steps}
-        <tr><td style="padding:18px 32px 26px">
-          ${button(link, returning ? "Sign in" : "Create my password")}
-          <div style="${SMALL};padding-top:14px">This link works once and expires in 24 hours. After that, sign in at <a href="${esc(portal)}" style="color:#ffffff">${esc(portal.replace(/^https?:\/\//, ""))}</a>.</div>
-        </td></tr>` });
-  const text = `${first ? "Hi " + first + "," : "Hi,"}\n\n${returning ? `Here's your link to sign in to ${clientName}'s Fully Launched portal.` : `Your Fully Launched client portal for ${clientName} is ready. Create your password here:`}\n\n${link}\n\nThis link works once and expires in 24 hours. After that, sign in at ${portal}.\n\nFully Launched · fullylaunched.com`;
+  const subject = "Your social dashboard sign-in link";
+  const html = frame({ portal, title: subject, footer: false, rows: `
+        <tr><td style="padding:8px 32px 10px;${BODY}">${first ? `Hi ${esc(first)},` : "Hi,"}<br><br>Here's your link to sign in to ${esc(clientName)}'s social dashboard.</td></tr>
+        <tr><td style="padding:12px 32px 10px">${button(link, "Sign in")}</td></tr>
+        <tr><td style="padding:6px 32px 30px;${SMALL}">This link only works once.</td></tr>` });
+  const text = `${first ? "Hi " + first + "," : "Hi,"}\n\nHere's your link to sign in to ${clientName}'s social dashboard:\n\n${link}\n\nThis link only works once.`;
   return { subject, html, text };
 }
 

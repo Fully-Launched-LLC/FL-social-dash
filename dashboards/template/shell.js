@@ -558,8 +558,8 @@ function onboardingSummary(o, clientFilms) {
   if (o.completed_at) return { label: "Onboarding done", done: true };
   const steps = [
     ["Invited", !!o.invited_at], ["Password", !!o.password_set_at],
-    ...(clientFilms ? [["Brand", o.brand && Object.keys(o.brand).length > 0]] : []),
-    ["Voice memo sent", !!(o.voice_memo_sent_at || o.transcript)], ["Transcript added", !!o.transcript],
+    ["Brand", !!(o.brand && (o.brand.done || ["uploaded", "none", "create_for_me"].includes(o.brand.files)))],
+    ["Voice memo", !!(o.voice_memo_path || o.voice_memo_sent_at || o.transcript)], ["Transcript added", !!o.transcript],
     ["Footage", !!o.footage_done_at],
   ];
   return { label: steps.map(([l, ok]) => (ok ? "✓ " : "") + l).join(" · "), done: false, failed: o.docs_status === "failed" };
