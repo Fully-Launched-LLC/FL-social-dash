@@ -50,14 +50,8 @@
 
     <div data-panel="film">
       <h2 class="panel-title">To film</h2>
-      <p class="meta" style="margin:8px 0 12px">Film each video using its script or outline and upload the footage to your folder. Then tap <b>Video has been filmed</b>. Want something different? Tap <b>Suggest changes</b>.</p>
+      <p class="meta" style="margin:8px 0 12px">Every video that still needs filming. If you're filming it, use its script or outline, upload the footage to your folder, then tap <b>Video has been filmed</b>. If we're filming it, approve the idea or tap <b>Suggest changes</b>. Each card says who films it.</p>
       <div id="listToFilm"></div>
-    </div>
-
-    <div data-panel="ideas" style="display:none">
-      <h2 class="panel-title">Ideas to approve</h2>
-      <p class="meta" style="margin:8px 0 12px">We'll film these for you. Approve the ideas you like, or suggest changes and we'll rework them.</p>
-      <div id="listIdeas"></div>
     </div>
 
     <div data-panel="final" style="display:none">
@@ -113,10 +107,13 @@ let activeTab = "all";
 const filmedBy = v => filmedByOf(v, CLIENT.client_system);
 const clientFilms = () => CLIENT.client_system !== "concierge";   // the client's default
 
-// "All" gathers every action the client has to take, grouped by kind.
+// "All" gathers everything the client should see, grouped by kind.
+// To film is every video that still needs filming, whoever films it
+// (Tait's call, 2026-10-01): client-filmed ones to film, and ours, with
+// Approve the idea / Suggest changes on the card while it's still an idea.
+const needsFilming = v => ["concept_pending", "to_film"].includes(v.status) || (filmedBy(v) === "client" && v.status === "filmed");
 const ACTION_TABS = [
-  { key: "film",  label: "To film",                    match: v => filmedBy(v) === "client" && ["concept_pending", "to_film", "filmed"].includes(v.status), shownFor: () => clientFilms() },
-  { key: "ideas", label: "Ideas to approve",           match: v => filmedBy(v) === "us" && v.status === "concept_pending", shownFor: () => !clientFilms() },
+  { key: "film",  label: "To film",                    match: needsFilming, shownFor: () => true },
   { key: "final", label: "Finished videos to approve", match: v => v.status === "client_review", shownFor: () => true },
 ];
 // Time sensitive: the client's own next step on a video, and by when, if
@@ -124,9 +121,12 @@ const ACTION_TABS = [
 // (everything in it is also under its kind).
 const CLIENT_SOON_DAYS = 3;
 function clientTask(v) {
-  if (ACTION_TABS[0].match(v)) return { task: "Film it", date: v.dueToFilm };
-  if (ACTION_TABS[1].match(v)) return { task: "Approve the idea", date: v.dueToFilm || v.postDate };
-  if (ACTION_TABS[2].match(v)) return { task: "Approve the finished video", date: (calendarEntries({ video: v }).find(e => e.kind === "approve") || {}).date || v.postDate };
+  if (needsFilming(v)) {
+    if (filmedBy(v) === "client") return { task: "Film it", date: v.dueToFilm };
+    if (v.status === "concept_pending") return { task: "Approve the idea", date: v.dueToFilm || v.postDate };
+    return null;   // we're filming it: nothing for the client to do
+  }
+  if (v.status === "client_review") return { task: "Approve the finished video", date: (calendarEntries({ video: v }).find(e => e.kind === "approve") || {}).date || v.postDate };
   return null;
 }
 function clientTimeSensitive(v) {
@@ -375,8 +375,7 @@ function renderVideos() {
     if (!vids.length) { el.innerHTML = `<div class="empty">${empty}</div>`; return; }
     vids.forEach(v => el.appendChild(videoCard(v)));
   };
-  fill("listToFilm", videosInTab("film").sort(byFilmDate), "Nothing to film right now — nice work. Stay tuned for your finished edits.");
-  fill("listIdeas", videosInTab("ideas").sort(byPostDate), "No new ideas right now. Stay tuned for your finished edits.");
+  fill("listToFilm", videosInTab("film").sort((a, b) => byFilmDate(a, b) || byPostDate(a, b)), "Nothing to film right now. Stay tuned for your finished edits.");
   fill("listFinal", videosInTab("final").sort(byPostDate), "No finished videos waiting. They'll show up here as soon as they're edited.");
   const urgent = videosInTab("urgent").sort((a, b) => clientTimeSensitive(a).date.localeCompare(clientTimeSensitive(b).date));
   fill("listUrgent", urgent, "Nothing urgent. You're all caught up.");

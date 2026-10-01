@@ -593,9 +593,10 @@ footage folder" card, then tabs: **All** — the default, every action the
 client has to take, grouped under headings; **Time sensitive** — the
 client's own next step on each video (film it, approve the idea, approve the
 finished video) when it's late or due within 3 days, soonest first, kept out
-of All; To film — client-filmed
-ideas; Ideas to approve — we-film ideas; Finished videos to approve. A
-tab shows when it fits the client's default or has something in it), **Content Calendar**
+of All; **To film** — every video that still needs filming, whoever films
+it (Tait's call, 2026-10-01): client-filmed ones, and we-film ones (with
+Approve idea / Suggest changes while still an idea, then "We're filming it"
+with no buttons); Finished videos to approve), **Content Calendar**
 (each post date shows the video's full title and a colored pill per
 platform, with a "Posts on" key above; 🎥 film dates for client-filmed
 ideas; under the grid, "What posts each day": the month as a list with
