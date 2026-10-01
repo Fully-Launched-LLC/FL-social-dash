@@ -67,6 +67,8 @@ calls = world({ ...base, generateLink: (b, json) => json({ action_link: "https:/
 r = await call(invite, "opTok", { clientId: C1 });
 const gl = calls.find(c => c.url.includes("generate_link"));
 chk("invite: new login → invite link to /welcome, email lowercased", JSON.parse(gl.body).type === "invite" && JSON.parse(gl.body).email === "pat@newco.test" && JSON.parse(gl.body).redirect_to === "https://social.fullylaunched.com/welcome?client=newco");
+{ const { inviteEmail } = require("../api/_email.js"); const e = inviteEmail({ contactName: "Luke Bothun", clientName: "Grad Gig", link: "https://x", portal: "https://social.fullylaunched.com", returning: false });
+  chk("invite: new-client email says Welcome to Fully Social, <client> (subject and heading)", e.subject === "Welcome to Fully Social, Grad Gig" && e.html.includes("Welcome to Fully Social, Grad Gig") && !e.html.includes("Welcome to Fully Launched"), e.subject); }
 chk("invite: no email service yet → the link comes back to copy", r.status === 200 && r.body.sent === false && r.body.link.includes("token=t1") && /RESEND_API_KEY/.test(r.body.reason), r.body);
 chk("invite: recorded on their onboarding", calls.some(c => c.url.includes("social_client_onboarding?on_conflict=client_id") && JSON.parse(c.body).invite_count === 1));
 
