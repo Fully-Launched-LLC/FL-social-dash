@@ -394,3 +394,8 @@ button.big { padding:14px 40px; font-size:16px; }
 .tour-url { font-size:20px; font-weight:700; text-align:center; padding:14px; border:2px dashed rgba(4,16,31,.25); border-radius:12px; margin:0 0 12px; }
 @media (max-width:760px) { .tour-card:not(.tour-bookmark) { left:16px; top:auto; bottom:16px; } }
 
+
+/* "You're viewing ... as the operator": a navy bar, so it stands apart from
+   the client's own white cards (Tait, 2026-10-01). */
+.main .op-banner { background:#04101f; border-color:#04101f; color:#ffffff; }
+.main .op-banner .meta { color:rgba(255,255,255,.75); }
