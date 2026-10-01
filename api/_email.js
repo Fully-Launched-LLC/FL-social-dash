@@ -6,6 +6,8 @@
 const { env } = require("./_lib");
 
 const DEFAULT_FROM = "Fully Launched <hello@fullylaunched.com>";
+// Replies go to a real inbox (a reachable reply address also helps inboxes trust the mail).
+const DEFAULT_REPLY_TO = "Tait Allen <tait@fullylaunched.com>";
 
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const firstName = contactName => String(contactName || "").trim().split(/\s+/)[0];
@@ -30,26 +32,27 @@ function frame({ portal, title, rows, footer = true }) {
   </table></body></html>`;
 }
 
-// The portal invite. A new client gets just the logo, "Welcome to your
-// social dashboard", one Start here button and "This link only works once"
-// (Tait, 2026-10-01: one thing to click, nothing else). Someone who has
+// The portal invite (Tait, 2026-10-01): the logo, "Welcome to your Fully
+// Social dashboard", "Hi <first name>, we are excited to start working with
+// <company>.", and one Start here button at the bottom. Someone who has
 // already finished onboarding gets a plain sign-in email instead.
 function inviteEmail({ contactName, clientName, link, portal, returning }) {
+  const first = firstName(contactName);
+  const hi = first ? `Hi ${first},` : "Hi there,";
   if (!returning) {
-    const subject = "Welcome to your social dashboard";
+    const subject = "Welcome to your Fully Social dashboard";
     const html = frame({ portal, title: subject, footer: false, rows: `
-        <tr><td style="padding:24px 32px 10px"><a href="${esc(link)}" style="display:inline-block;background:#C4AB82;color:#04101f;font:700 18px Helvetica,Arial,sans-serif;text-decoration:none;padding:16px 40px;border-radius:12px">Start here</a></td></tr>
-        <tr><td style="padding:6px 32px 30px;${SMALL}">This link only works once.</td></tr>` });
-    const text = `Welcome to your social dashboard\n\nStart here: ${link}\n\nThis link only works once.`;
+        <tr><td style="padding:10px 32px 4px;${BODY};font-size:16px">${esc(hi)}<br><br>We are excited to start working with ${esc(clientName)}.</td></tr>
+        <tr><td style="padding:14px 32px 6px;${SMALL}">Click below to set up your account. This link only works once.</td></tr>
+        <tr><td style="padding:12px 32px 32px"><a href="${esc(link)}" style="display:inline-block;background:#C4AB82;color:#04101f;font:700 18px Helvetica,Arial,sans-serif;text-decoration:none;padding:16px 40px;border-radius:12px">Start here</a></td></tr>` });
+    const text = `Welcome to your Fully Social dashboard\n\n${hi}\n\nWe are excited to start working with ${clientName}.\n\nClick below to set up your account. This link only works once.\n\nStart here: ${link}`;
     return { subject, html, text };
   }
-  const first = firstName(contactName);
-  const subject = "Your social dashboard sign-in link";
+  const subject = "Your Fully Social dashboard sign-in link";
   const html = frame({ portal, title: subject, footer: false, rows: `
-        <tr><td style="padding:8px 32px 10px;${BODY}">${first ? `Hi ${esc(first)},` : "Hi,"}<br><br>Here's your link to sign in to ${esc(clientName)}'s social dashboard.</td></tr>
-        <tr><td style="padding:12px 32px 10px">${button(link, "Sign in")}</td></tr>
-        <tr><td style="padding:6px 32px 30px;${SMALL}">This link only works once.</td></tr>` });
-  const text = `${first ? "Hi " + first + "," : "Hi,"}\n\nHere's your link to sign in to ${clientName}'s social dashboard:\n\n${link}\n\nThis link only works once.`;
+        <tr><td style="padding:8px 32px 10px;${BODY}">${esc(hi)}<br><br>Here's your link to sign in to ${esc(clientName)}'s social dashboard. It only works once.</td></tr>
+        <tr><td style="padding:12px 32px 32px">${button(link, "Sign in")}</td></tr>` });
+  const text = `${hi}\n\nHere's your link to sign in to ${clientName}'s social dashboard. It only works once.\n\n${link}`;
   return { subject, html, text };
 }
 
@@ -84,7 +87,7 @@ async function sendEmail({ to, subject, html, text }) {
   const send = from => fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: "Bearer " + env("RESEND_API_KEY"), "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [to], subject, html, text }),
+    body: JSON.stringify({ from, to: [to], subject, html, text, reply_to: env("EMAIL_REPLY_TO") || DEFAULT_REPLY_TO }),
   });
   let mail = await send(env("EMAIL_FROM") || DEFAULT_FROM);
   let m = mail.ok ? {} : await mail.json().catch(() => ({}));

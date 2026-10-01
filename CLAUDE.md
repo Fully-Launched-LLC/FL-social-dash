@@ -457,8 +457,12 @@ page sends a client or editor who signs in there to their own dashboard.
 ## Client onboarding (`/welcome`)
 
 A new client's invite (`api/_email.js`: a white email with one navy box —
-the logo, "Welcome to your social dashboard", one **Start here** button and
-"This link only works once"; nothing else to click) lands on `/welcome`
+the logo, "Welcome to your Fully Social dashboard", "Hi <first name>, we are
+excited to start working with <company>.", and one **Start here** button at
+the bottom; replies go to tait@fullylaunched.com) lands on `/welcome`. The
+button links to our own site, `/welcome?client=<slug>&token_hash=…&type=…`,
+and auth.js signs them in with `verifyOtp` (a link to a different domain
+than the sender is a spam/phishing signal; it went to junk before)
 (`dashboards/template/welcome.template.html`, onboarding v2, Tait
 2026-10-01). Each step is saved with `social_client_onboarding_save()` so
 they can stop and come back:

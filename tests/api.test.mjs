@@ -68,10 +68,10 @@ r = await call(invite, "opTok", { clientId: C1 });
 const gl = calls.find(c => c.url.includes("generate_link"));
 chk("invite: new login → invite link to /welcome, email lowercased", JSON.parse(gl.body).type === "invite" && JSON.parse(gl.body).email === "pat@newco.test" && JSON.parse(gl.body).redirect_to === "https://social.fullylaunched.com/welcome?client=newco");
 { const { inviteEmail } = require("../api/_email.js"); const e = inviteEmail({ contactName: "Luke Bothun", clientName: "Grad Gig", link: "https://x", portal: "https://social.fullylaunched.com", returning: false });
-  chk("invite: new-client email is just the logo, 'Welcome to your social dashboard', one Start here button and 'This link only works once'", e.subject === "Welcome to your social dashboard" && e.html.includes("Welcome to your social dashboard") && e.html.includes(">Start here<") && e.html.includes("This link only works once.") && !e.html.includes("24 hours") && !e.html.includes("What happens next"), e.subject);
-  chk("invite: exactly one link in the email (the Start here button), and the logo", (e.html.match(/href=/g) || []).length === 1 && e.html.includes('href="https://x"') && e.html.includes("/assets/logo-white.png"));
+  chk("invite: new-client email: logo, 'Welcome to your Fully Social dashboard', 'Hi Luke, we are excited to start working with Grad Gig.', Start here at the bottom", e.subject === "Welcome to your Fully Social dashboard" && e.html.includes("Welcome to your Fully Social dashboard") && e.html.includes("Hi Luke,") && e.html.includes("We are excited to start working with Grad Gig.") && e.html.includes("/assets/logo-white.png") && e.html.trim().endsWith("</html>") && e.html.lastIndexOf(">Start here<") > e.html.lastIndexOf("excited"), e.subject);
+  chk("invite: exactly one link in the email (the Start here button)", (e.html.match(/href=/g) || []).length === 1 && e.html.includes('href="https://x"'));
   chk("invite: white outside, navy box inside", /<body style="margin:0;padding:0;background:#ffffff">/.test(e.html) && e.html.includes("background:#04101f;border-radius:16px"));
-  chk("invite: plain-text version is just as short", e.text === "Welcome to your social dashboard\n\nStart here: https://x\n\nThis link only works once.", e.text); }
+  chk("invite: plain-text version says the same", e.text.includes("Hi Luke,") && e.text.includes("We are excited to start working with Grad Gig.") && e.text.includes("Start here: https://x"), e.text); }
 chk("invite: no email service yet → the link comes back to copy", r.status === 200 && r.body.sent === false && r.body.link.includes("token=t1") && /RESEND_API_KEY/.test(r.body.reason), r.body);
 chk("invite: recorded on their onboarding", calls.some(c => c.url.includes("social_client_onboarding?on_conflict=client_id") && JSON.parse(c.body).invite_count === 1));
 
@@ -80,13 +80,18 @@ calls = world({ ...base, generateLink: (b, json) => b.type === "invite" ? json({
 r = await call(invite, "opTok", { clientId: C1 });
 const mail = calls.find(c => c.url.startsWith("https://api.resend.com"));
 const m = mail && JSON.parse(mail.body);
-chk("invite: existing login but onboarding not finished → still the welcome email with Start here", r.body.sent === true && r.body.returning === false && m.subject === "Welcome to your social dashboard" && m.html.includes(">Start here<") && m.html.includes("token=t2"), m && m.subject);
+chk("invite: existing login but onboarding not finished → still the welcome email with Start here", r.body.sent === true && r.body.returning === false && m.subject === "Welcome to your Fully Social dashboard" && m.html.includes(">Start here<") && m.html.includes("token=t2"), m && m.subject);
+chk("invite: replies go to Tait", m && /tait@fullylaunched.com/.test(m.reply_to), m && m.reply_to);
 { const c2 = world({ ...base, onboarding: { client_id: C1, invite_count: 1, completed_at: "2026-10-01T00:00:00Z" }, generateLink: (b, json) => b.type === "invite" ? json({ msg: "already registered" }, 422) : json({ properties: { action_link: "https://sb.test/verify?type=magiclink&token=t9" } }) });
   const r2 = await call(invite, "opTok", { clientId: C1 }); const m2 = JSON.parse(c2.find(c => c.url.startsWith("https://api.resend.com")).body);
-  chk("invite: existing login who finished onboarding → the sign-in email", r2.body.returning === true && m2.subject === "Your social dashboard sign-in link" && m2.html.includes(">Sign in<") && !m2.html.includes("Start here"), m2.subject); }
+  chk("invite: existing login who finished onboarding → the sign-in email", r2.body.returning === true && m2.subject === "Your Fully Social dashboard sign-in link" && m2.html.includes(">Sign in<") && !m2.html.includes("Start here"), m2.subject); }
 chk("invite: branded email sent from Fully Launched", m && m.to[0] === "pat@newco.test" && /Fully Launched/.test(m.from) && m.html.includes("token=t2") && m.html.includes("https://social.fullylaunched.com/assets/logo-white.png") && m.html.includes("#C4AB82"), m && m.subject);
 chk("invite: plain-text version too", m && m.text.includes("token=t2"));
 
+calls = world({ ...base, generateLink: (b, json) => json({ action_link: "https://sb.test/auth/v1/verify?token=t5", hashed_token: "hash5" }) });
+r = await call(invite, "opTok", { clientId: C1 });
+{ const mm = JSON.parse(calls.find(c => c.url.startsWith("https://api.resend.com")).body);
+  chk("invite: Start here links to our own site (no supabase.co link), so it doesn't look like phishing", mm.html.includes('href="https://social.fullylaunched.com/welcome?client=newco&amp;token_hash=hash5&amp;type=invite"') && !mm.html.includes("sb.test") && mm.text.includes("https://social.fullylaunched.com/welcome?client=newco&token_hash=hash5&type=invite"), mm.html.match(/href="[^"]*"/g)); }
 setEnv({ RESEND_API_KEY: "re_1", EMAIL_FROM: "Fully Launched <hello@fullylaunched.om>" });
 calls = world({ ...base, generateLink: (b, json) => json({ action_link: "https://sb.test/verify?type=invite&token=t3" }),
   resend: (b, json) => b.from.includes("fullylaunched.om>") ? json({ message: "The fullylaunched.om domain is not verified." }, 403) : json({ id: "email_2" }) });
