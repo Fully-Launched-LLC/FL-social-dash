@@ -54,15 +54,16 @@ function renderMonthCalendar(container, byDay, chipHtml, state, rerender) {
 }
 
 // ---------- Platform calendar ----------
-// Each platform's short tag and name. How each looks (gold or white, solid,
-// outline or dashed) is the .p-<platform> class in shell.css. A video's platform
+// Each platform's short tag, name and color (YouTube red, Instagram purple,
+// Facebook blue, LinkedIn green, TikTok cyan). The pill styles are the
+// .p-<platform> classes in shell.css; keep the two in step. A video's platform
 // list may say "instagram" or "ig"; normPlatform folds the spellings together.
 const PLATFORMS = {
-  instagram: { tag: "IG", name: "Instagram", color: "var(--white)" },
-  tiktok:    { tag: "TT", name: "TikTok",    color: "var(--white)" },
-  facebook:  { tag: "FB", name: "Facebook",  color: "var(--white)" },
-  linkedin:  { tag: "LI", name: "LinkedIn",  color: "var(--white)" },
-  youtube:   { tag: "YT", name: "YouTube",   color: "var(--white)" },
+  instagram: { tag: "IG", name: "Instagram", color: "#a855f7" },
+  tiktok:    { tag: "TT", name: "TikTok",    color: "#25f4ee" },
+  facebook:  { tag: "FB", name: "Facebook",  color: "#1877f2" },
+  linkedin:  { tag: "LI", name: "LinkedIn",  color: "#22c55e" },
+  youtube:   { tag: "YT", name: "YouTube",   color: "#ff3b30" },
 };
 const PLATFORM_ALIASES = { ig: "instagram", insta: "instagram", tt: "tiktok", "tik tok": "tiktok", fb: "facebook", li: "linkedin", yt: "youtube" };
 function normPlatform(p) { const k = String(p || "").trim().toLowerCase(); return PLATFORM_ALIASES[k] || k; }
