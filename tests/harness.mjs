@@ -8,7 +8,7 @@ import { readFileSync } from "fs";
 
 import { fileURLToPath } from "url";
 export const REPO = fileURLToPath(new URL("../", import.meta.url));
-const MIGRATIONS = ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "008_client_onboarding.sql", "009_voice_memo_by_text.sql"];
+const MIGRATIONS = ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "008_client_onboarding.sql", "009_voice_memo_by_text.sql", "010_onboarding_uploads.sql"];
 
 export async function freshDb() {
   const passthrough = v => v;
@@ -123,6 +123,7 @@ export function makeHarness(db) {
       storage: { from: bucket => ({
         upload: async (path, file, o) => { log.push({ upload: { bucket, path, type: o && o.contentType, size: file && file.size } }); return { data: { path }, error: null }; },
         createSignedUrl: async path => ({ data: { signedUrl: "https://signed/" + path }, error: null }),
+        createSignedUrls: async paths => ({ data: paths.map(path => ({ path, signedUrl: "https://signed/" + path })), error: null }),
       }) },
     };
   }
@@ -135,7 +136,7 @@ export function makeHarness(db) {
 
   async function openPage(distPath, uid, url, opts = {}) {
     let html = readFileSync(REPO + "dashboards/dist/" + distPath, "utf8");
-    html = html.replace(/<script src="https:\/\/cdn[^"]*"><\/script>/, "").replace(/<script src="\/supabase\/config.js"><\/script>/, "");
+    html = html.replace(/<script src="https:\/\/cdn[^"]*"><\/script>/g, "").replace(/<script src="\/supabase\/config.js"><\/script>/, "");
     const ui = { alerts: [], prompts: [], promptsShown: [], confirms: [], log: [], errors: [] };
     const vc = new VirtualConsole();
     vc.on("jsdomError", e => ui.errors.push(e.message));

@@ -338,6 +338,38 @@ input[type=date]::-webkit-calendar-picker-indicator { filter:invert(1); cursor:p
 .wstep .lead { color:var(--sub); font-size:15px; line-height:1.55; margin:0 0 20px; }
 .wstep .card label { display:block; font-size:13px; color:var(--sub); margin:12px 0 6px; }
 .wnav { display:flex; justify-content:space-between; gap:10px; margin-top:22px; flex-wrap:wrap; }
+/* Onboarding v2: the password page, locked steps, drop zones, the recorder. */
+.steps button.locked { opacity:.4; cursor:not-allowed; }
+.steps button.locked:hover { border-color:var(--border); }
+.wstep.pw-page { display:flex; justify-content:center; padding-top:4vh; }
+.pw-card { width:100%; max-width:480px; padding:34px 32px 30px; }
+.pw-card h1 { font-size:30px; }
+.pw-card label { display:block; font-size:14px; color:var(--sub); margin:18px 0 8px; }
+.pw-wrap { position:relative; }
+.pw-wrap input { padding:14px 52px 14px 14px; font-size:16px; }
+.pw-eye { position:absolute; right:6px; top:50%; transform:translateY(-50%); border:0; background:transparent; padding:8px; color:var(--sub); display:grid; place-items:center; }
+.pw-eye:hover { color:var(--ink); }
+.pw-go { width:100%; margin-top:24px; padding:14px 18px; font-size:15px; }
+.welcome-card { text-align:center; padding:44px 32px; }
+.welcome-card .lead { font-size:17px; margin:10px 0 26px; }
+button.big { padding:14px 40px; font-size:16px; }
+.dropzone { border:2px dashed var(--line-strong); border-radius:16px; padding:34px 20px; text-align:center; margin-bottom:12px; transition:border-color .15s, background .15s; }
+.dropzone.over { border-color:var(--gold); background:rgba(196,171,130,.08); }
+.dz-title { font-size:17px; font-weight:600; }
+.dz-or { color:var(--sub2); font-size:13px; margin:8px 0 12px; }
+.dz-buttons { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.memo-card .dz-buttons { justify-content:flex-start; }
+.upload-list { margin-bottom:8px; }
+.upload-row { padding:10px 12px; border:1px solid var(--border); border-radius:10px; margin-bottom:6px; }
+.upload-row.done .up-name { color:var(--ink); }
+.upload-row.error { border-color:var(--gold); }
+.up-name { font-size:14px; overflow-wrap:anywhere; }
+.up-bar { height:6px; border-radius:99px; background:var(--border); margin-top:8px; overflow:hidden; }
+.up-bar div { height:100%; background:var(--gold); transition:width .2s; }
+.memo-rec { display:flex; align-items:center; gap:10px; font-size:16px; margin-bottom:6px; }
+.rec-dot { width:12px; height:12px; border-radius:50%; background:#ff3b30; animation:recpulse 1.2s infinite; }
+@keyframes recpulse { 50% { opacity:.3; } }
+.memo-saved { font-size:16px; font-weight:600; margin-bottom:4px; }
 .qsec h3 { font-size:15px; margin:20px 0 8px; }
 .qitem { padding:10px 0; border-bottom:1px solid var(--border); }
 .qitem:last-child { border-bottom:0; }
@@ -345,3 +377,20 @@ input[type=date]::-webkit-calendar-picker-indicator { filter:invert(1); cursor:p
 .qitem textarea { margin-top:8px; }
 .color-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 .color-row input[type=color] { width:44px; height:38px; padding:2px; border-radius:8px; border:1px solid var(--line-2); background:var(--navy); }
+
+/* The portal walkthrough after onboarding (startTour in the client portal). */
+.tour-veil { position:fixed; inset:0; background:rgba(4,16,31,.6); z-index:2500; }
+.tour-focus { position:relative; z-index:2600; box-shadow:0 0 0 3px #C4AB82 !important; }
+.tour-card { position:fixed; z-index:2700; left:260px; top:110px; width:min(380px, calc(100vw - 32px)); background:#ffffff; color:#04101f; border-radius:16px; padding:22px 22px 18px; box-shadow:0 20px 50px rgba(4,16,31,.35); }
+.tour-card h2 { margin:0 0 8px; font-size:20px; }
+.tour-card p { margin:0 0 12px; line-height:1.55; font-size:15px; }
+.tour-card .meta { color:rgba(4,16,31,.65); font-size:13px; }
+.tour-count { font-size:12px; color:rgba(4,16,31,.55); margin-bottom:6px; }
+.tour-actions { display:flex; justify-content:space-between; gap:10px; margin-top:6px; }
+.tour-card button { color:#04101f; border-color:rgba(4,16,31,.2); }
+.tour-card button.primary { background:#04101f; border-color:#04101f; color:#ffffff; }
+.tour-card button.accent { background:#a8884f; border-color:#a8884f; color:#ffffff; }
+.tour-bookmark { left:50%; top:50%; transform:translate(-50%,-50%); width:min(460px, calc(100vw - 32px)); }
+.tour-url { font-size:20px; font-weight:700; text-align:center; padding:14px; border:2px dashed rgba(4,16,31,.25); border-radius:12px; margin:0 0 12px; }
+@media (max-width:760px) { .tour-card:not(.tour-bookmark) { left:16px; top:auto; bottom:16px; } }
+

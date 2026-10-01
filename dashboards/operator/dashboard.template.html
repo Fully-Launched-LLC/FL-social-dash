@@ -980,17 +980,30 @@ async function openOnboarding(clientId) {
   ]);
   const ob = o || {};
   const s = onboardingSummary(o, c.clientSystem !== "concierge");
+  // What they uploaded (migration 010's 'onboarding' bucket), as links that
+  // work for a day.
+  const brandFiles = ((ob.brand || {}).uploads || []), footageFiles = ((ob.footage || {}).files || []);
+  const paths = brandFiles.concat(footageFiles).map(f => f.path).concat(ob.voice_memo_path ? [ob.voice_memo_path] : []);
+  const SIGNED = {};
+  if (paths.length) {
+    const { data: signed } = await sbClient.storage.from("onboarding").createSignedUrls(paths, 86400);
+    (signed || []).forEach(x => { if (x && x.signedUrl) SIGNED[x.path] = x.signedUrl; });
+  }
+  const fileLinks = list => list.map(f => SIGNED[f.path] ? `<a href="${escapeHtml(SIGNED[f.path])}" target="_blank" rel="noopener">${escapeHtml(f.name)}</a>` : escapeHtml(f.name)).join("<br>");
   const b = ob.brand || {}, a = ob.answers || {};
   const qText = id => { for (const sec of ONBOARDING_QUESTIONS) for (const it of sec.items) if (it.id === id) return it.q; return id; };
   const built = (docs || []).length;
   const box = openModal(`
     <h2>${escapeHtml(c.name)}: onboarding</h2>
     <div class="modal-meta">${escapeHtml(s.label)}${ob.invited_email ? " · invited " + escapeHtml(ob.invited_email) : ""}</div>
-    ${Object.keys(b).length ? modalField("Brand", [b.files === "create_for_me" ? "No brand files yet: they asked us to create them" : b.files === "uploaded" ? "Brand files: uploaded to their Important Documents folder" : "", b.fonts && "Fonts: " + b.fonts, (b.colors || []).length && "Colors: " + b.colors.join(", "), b.aesthetic && "Look and feel: " + b.aesthetic, b.links && "Looks they love: " + b.links].filter(Boolean).join("\n")) : ""}
+    ${Object.keys(b).length ? modalField("Brand", [b.files === "create_for_me" ? "No brand files yet: they asked us to create them" : b.files === "none" ? "They don't have any brand files" : b.files === "uploaded" && !brandFiles.length ? "Brand files: uploaded to their Important Documents folder" : "", b.fonts && "Fonts: " + b.fonts, (b.colors || []).length && "Colors: " + b.colors.join(", "), b.aesthetic && "Look and feel: " + b.aesthetic, b.links && "Looks they love: " + b.links].filter(Boolean).join("\n")) : ""}
+    ${brandFiles.length ? `<div class="modal-field"><b>Brand files (${brandFiles.length})</b><div>${fileLinks(brandFiles)}</div></div>` : ""}
+    ${ob.voice_memo_path ? `<div class="modal-field"><b>Voice memo</b>${SIGNED[ob.voice_memo_path] ? `<audio controls preload="none" src="${escapeHtml(SIGNED[ob.voice_memo_path])}" style="width:100%;margin:4px 0"></audio><a class="btn" href="${escapeHtml(SIGNED[ob.voice_memo_path])}" target="_blank" rel="noopener" download>Download the voice memo</a>` : `<div>Uploaded ${escapeHtml(niceDate(String(ob.voice_memo_uploaded_at || "").slice(0, 10)))}</div>`}</div>` : ""}
+    ${ob.footage_done_at || footageFiles.length || (ob.footage || {}).drive_link ? `<div class="modal-field"><b>Footage</b><div>${(ob.footage || {}).drive_link ? `Google Drive folder: <a href="${escapeHtml(ob.footage.drive_link)}" target="_blank" rel="noopener">${escapeHtml(ob.footage.drive_link)}</a><br>` : ""}${footageFiles.length ? `${footageFiles.length} file${footageFiles.length === 1 ? "" : "s"} uploaded:<br>${fileLinks(footageFiles)}` : (ob.footage || {}).none ? "They don't have any footage yet." : ""}</div></div>` : ""}
     ${Object.keys(a).length ? modalField("Their written notes", Object.entries(a).map(([k, v]) => qText(k) + "\n" + v).join("\n\n")) : ""}
     <div class="modal-field">
       <b>Voice memo transcript</b>
-      <div class="meta" style="margin-bottom:6px">${ob.voice_memo_sent_at ? "They say they've texted you their voice memo. " : ""}Paste the whole transcript here, then build their Customer Data and Your Voice documents.</div>
+      <div class="meta" style="margin-bottom:6px">${ob.voice_memo_path ? "Their voice memo is above: download it and get the transcript. " : ob.voice_memo_sent_at ? "They say they've texted you their voice memo. " : ""}Paste the whole transcript here, then build their Customer Data and Your Voice documents.</div>
       <textarea id="obTranscript" rows="8" style="width:100%" placeholder="Paste the transcript…">${escapeHtml(ob.transcript || "")}</textarea>
     </div>
     ${ob.docs_error ? `<div class="modal-field"><b>Last build failed</b><div style="color:var(--red)">${escapeHtml(ob.docs_error)}</div></div>` : ""}

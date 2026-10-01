@@ -456,22 +456,33 @@ page sends a client or editor who signs in there to their own dashboard.
 
 ## Client onboarding (`/welcome`)
 
-A new client's invite lands on `/welcome` (`dashboards/template/welcome.template.html`),
-one step at a time, each saved with `social_client_onboarding_save()` so
+A new client's invite (`api/_email.js`: a white email with one navy box —
+the logo, "Welcome to your social dashboard", one **Start here** button and
+"This link only works once"; nothing else to click) lands on `/welcome`
+(`dashboards/template/welcome.template.html`, onboarding v2, Tait
+2026-10-01). Each step is saved with `social_client_onboarding_save()` so
 they can stop and come back:
-password → how it works → **brand** (only if they film: upload brand files
-to their Important Documents folder, or "I don't have any brand files yet,
-create them for me"; plus accounts or videos whose look they love; saved as
-`brand.files` = `uploaded` / `create_for_me` and `brand.links`) → **the
-questions** (`ONBOARDING_QUESTIONS` in shell.js, a read-only list; the note
-at the top says to record the answers in a voice memo and send it to Tait
-at `TEXT_MEMO_TO`) → **voice memo** (recorded on their phone and texted to
-Tait; "I've texted it" records `voice_memo_sent_at`) → **footage** (their
-Previous Content Drive folder) → **portal tour** → their portal. There is no
-documents step (Tait's call, 2026-09-30): once he has made their documents,
-Clients → **Onboarding** → **Email them their documents** sends one branded
-email listing every document (`/api/send-documents`, same frame as the
-invite, `api/_email.js`).
+
+1. **Create your password** — one big page on its own, two boxes with a
+   show-password (eye) button.
+2. The steps, with tabs across the top. A step opens only once the one
+   before it is done: **Welcome** ("around 30 minutes, come back any
+   time", Start) → **Your brand** (drag-and-drop brand files, or "I don't
+   have any brand files") → **The questions** (`ONBOARDING_QUESTIONS` in
+   shell.js and a voice memo recorder on the same page: record in the
+   browser, or upload a recording) → **Your footage** (drag-and-drop files
+   or whole folders, and/or a Google Drive folder link).
+3. Their portal, `/clients/<slug>?tour=1`: a walkthrough of To Do,
+   Content Calendar, Documents and My footage folder, then "Bookmark this
+   page" (`startTour` in the client portal).
+
+Uploads (migration 010) go to the private `onboarding` storage bucket,
+`<client_id>/brand/`, `/voice-memo/`, `/footage/<batch>/<folder path>`. A
+client can only add to and read their own folder; operators read all.
+Files are sent as they are (full quality); anything over 6 MB goes as a
+resumable upload (tus, 6 MB pieces). Clients → **Onboarding** on the
+operator dashboard lists the brand files and footage as links, plays the
+voice memo with a download button, and shows the Drive link.
 
 Tait gets the transcript himself and pastes it in Clients → **Onboarding**;
 **Save and build documents** calls `/api/build-documents` (operators only,

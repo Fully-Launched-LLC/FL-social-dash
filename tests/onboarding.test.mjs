@@ -47,57 +47,85 @@ const cur = () => $("#stepBody section")?.dataset.current;
 const nextBtn = () => $("#stepBody [data-next]");
 const err = () => $("#stepBody [data-err]")?.textContent;
 chk("the invite claims the login for NewCo", (await db.query(`select client_id from social_client_users where id='${CL}'`)).rows[0]?.client_id === NC);
-chk("starts on Create your password", cur() === "password" && $("#stepBody h1").textContent === "Create your password");
-chk("steps for a client who films include Your brand", Array.from(w.d.querySelectorAll("#steps button")).map(b => b.textContent).join("|") ===
-  "Password|Welcome|Your brand|The questions|Voice memo|Your footage|Your portal");
+chk("starts on Create your password: its own page, no step tabs", cur() === "password" && $("#stepBody h1").textContent === "Create your password" && !w.d.querySelector("#steps button"));
+chk("both password boxes have a show-password button", w.d.querySelectorAll("#stepBody [data-eye]").length === 2);
+$('[data-eye="pw1"]').click();
+chk("show password reveals what they typed", $("#pw1").type === "text" && $('[data-eye="pw1"]').getAttribute("aria-label") === "Hide password");
+$('[data-eye="pw1"]').click();
+chk("…and hides it again", $("#pw1").type === "password");
 $("#pw1").value = "short"; $("#pw2").value = "short"; nextBtn().click(); await settle();
 chk("too-short password is caught", /8 characters/.test(err()) && cur() === "password");
 $("#pw1").value = "longenough1"; $("#pw2").value = "different1"; nextBtn().click(); await settle();
 chk("mismatched passwords are caught", /match/.test(err()));
 $("#pw2").value = "longenough1"; nextBtn().click(); await settle();
 chk("password saved with Supabase and recorded", w.ui.log.some(l => l.updateUser && l.updateUser.password === "longenough1") && !!(await row()).password_set_at && cur() === "welcome");
+const tabs = () => Array.from(w.d.querySelectorAll("#steps button"));
+chk("then the steps, with tabs: Welcome, Your brand, The questions, Your footage", tabs().map(b => b.textContent.replace("✓ ", "")).join("|") === "Welcome|Your brand|The questions|Your footage", tabs().map(b => b.textContent));
+chk("later steps are locked until the one before is done", tabs().slice(1).every(b => b.disabled && b.classList.contains("locked")));
+tabs()[2].click(); await settle();
+chk("clicking a locked step does nothing", cur() === "welcome");
+chk("welcome says about 30 minutes, come back any time, with Start", /around 30 minutes/.test($("#stepBody").textContent) && /come back any time/.test($("#stepBody").textContent) && nextBtn().textContent === "Start");
 nextBtn().click(); await settle();
-chk("then Your brand, with the Important Documents folder", cur() === "brand" && $('#stepBody a[href="https://drive/important"]'));
-chk("brand step has no fonts, colors or look-and-feel boxes", !$("#bFonts") && !$("[data-hex]") && !$("#bAesthetic") && !!$("#bLinks"));
-chk("brand step offers to create brand files", /I don't have any brand files yet, create them for me/.test($("#stepBody [data-create]").textContent));
-$("#bLinks").value = "https://instagram.com/somebrand";
-$("#stepBody [data-uploaded]").click(); await settle();
+chk("Start is recorded and opens Your brand", !!(await row()).started_at && cur() === "brand");
+chk("brand: 'Upload any brand documents that you have', a drop zone, no links box", /Upload any brand documents that you have/.test($("#stepBody").textContent) && !!$('#stepBody .dropzone[data-zone="brand"]') && !$("#bLinks"));
+chk("brand: continue is off until a file is uploaded", nextBtn().disabled && /I've uploaded my brand files, continue/.test(nextBtn().textContent));
+chk("brand: 'I don't have any brand files' is there", $("#stepBody [data-none]").textContent === "I don't have any brand files");
+w.w.eval(`handleFiles("brand", [{ file: new File(["logo-bytes"], "Our Logo.png", { type: "image/png" }), rel: "Our Logo.png" }, { file: new File(["guide"], "brand guide.pdf", { type: "application/pdf" }), rel: "brand guide.pdf" }], () => render())`); await settle();
+const ups = w.ui.log.filter(l => l.upload);
+chk("brand files upload to the onboarding bucket, in NewCo's brand folder", ups.length === 2 && ups.every(u => u.upload.bucket === "onboarding" && u.upload.path.startsWith(NC + "/brand/")) && ups.some(u => u.upload.path.endsWith("Our_Logo.png")), ups);
+chk("each upload is listed with a tick, and saved as it lands", $('[data-list="brand"]').textContent.includes("✓ Our Logo.png") && (await row()).brand.uploads.length === 2);
+chk("brand: continue turns on once something's uploaded", !nextBtn().disabled);
+nextBtn().click(); await settle();
 let r = await row();
-chk("brand saved (files uploaded + links)", r.brand.files === "uploaded" && r.brand.links === "https://instagram.com/somebrand" && cur() === "questions", r.brand);
-chk("the questions are all there", w.d.querySelectorAll("#stepBody .qitem").length === 19 && $("#stepBody").textContent.includes("What tips them over right before they find you"));
-chk("the questions are a readable list, no note boxes", !$("#stepBody textarea"));
-chk("the note at the top says record a voice memo and send it to Tait at the number", /Record your answers in a voice memo and send it to Tait at 980-312-1255/.test($("#stepBody").textContent));
+chk("brand done (uploaded, both files kept)", r.brand.files === "uploaded" && r.brand.done === true && r.brand.uploads.length === 2 && cur() === "questions", r.brand);
+chk("the questions are all there on one page", w.d.querySelectorAll("#stepBody .qitem").length === 19 && $("#stepBody").textContent.includes("What tips them over right before they find you"));
+chk("the voice memo is on the same page, no texting a number", !!$("#stepBody [data-memo]") && !$("#stepBody").textContent.includes("980-312-1255") && !w.d.querySelector('[data-step="memo"]'));
+chk("no recorder in this browser: upload a recording instead", !$("#stepBody [data-rec]") && !!$("#stepBody [data-memo-pick]"));
+chk("questions: continue is off until the voice memo is saved", nextBtn().disabled);
+w.ui.log.length = 0;
+w.w.eval(`saveMemoFile(new File(["audio-bytes"], "My memo.m4a", { type: "audio/mp4" }), () => render())`); await settle();
+r = await row();
+const memoUp = w.ui.log.find(l => l.upload);
+chk("the voice memo uploads to NewCo's voice-memo folder and is recorded", memoUp && memoUp.upload.path.startsWith(NC + "/voice-memo/") && memoUp.upload.path.endsWith(".m4a") && r.voice_memo_path === memoUp.upload.path && !!r.voice_memo_uploaded_at, memoUp);
+chk("saved shows on the page, and continue turns on", /Your voice memo is saved/.test($("#stepBody").textContent) && !nextBtn().disabled);
 nextBtn().click(); await settle();
-chk("then the voice memo step", cur() === "memo");
-chk("the voice memo step says to text it to Tait (no upload)", $("#stepBody").textContent.includes("Text the recording to Tait") && !$("#stepBody input[type=file]"));
-nextBtn().click(); await settle();
-chk("I've texted it is recorded", !!(await row()).voice_memo_sent_at);
-chk("then Your footage, with the Previous Content folder", cur() === "footage" && $('#stepBody a[href="https://drive/previous"]'));
-$("#stepBody [data-uploaded]").click(); await settle();
-chk("footage done, then straight to the portal tour (no documents step)", !!(await row()).footage_done_at && cur() === "tour");
-chk("no Your documents step anywhere", !Array.from(w.d.querySelectorAll("#steps button")).some(b => /documents/i.test(b.textContent)));
-// Later, Tait adds their documents by hand and the transcript (as he would on the operator dashboard).
-await db.exec(`insert into social_client_documents (client_id, title, url, position) values ('${NC}','NewCo: Customer Data (Google Doc)','https://docs.google.com/document/d/cd',0);
-  update social_client_onboarding set docs_status='ready', transcript='we never have time' where client_id='${NC}';
-  insert into social_client_generated_docs (client_id, kind, title, body_md) values
-  ('${NC}','customer_data','NewCo: Customer Data','# NewCo: Customer Data\n## 1. Pains, verbatim\n1. "we never have time"\n*Founder, on time.*'),
-  ('${NC}','your_voice','NewCo: Your Voice','# NewCo: Your Voice\n- **Pillar** [To confirm]')`);
+chk("then Your footage: files, folders, or a Google Drive link", cur() === "footage" && !!$('#stepBody .dropzone[data-zone="footage"] [data-pick-folder]') && !!$("#driveLink") && /Upload all of your existing footage/.test($("#stepBody").textContent));
+chk("footage: done is off until a file or a link", nextBtn().disabled);
+w.ui.log.length = 0;
+w.w.eval(`handleFiles("footage", [{ file: new File(["video-bytes"], "clip1.mov", { type: "video/quicktime" }), rel: "Shoot 1/clip1.mov" }], () => render())`); await settle();
+const fUp = w.ui.log.find(l => l.upload);
+chk("footage keeps its folder path, at full quality (sent as-is)", fUp && fUp.upload.path.startsWith(NC + "/footage/") && fUp.upload.path.endsWith("/Shoot_1/clip1.mov") && fUp.upload.size === 11 && fUp.upload.type === "video/quicktime", fUp);
+r = await row();
+chk("footage files are saved as they land, without finishing the step", r.footage.files.length === 1 && !r.footage_done_at);
+$("#driveLink").value = "https://drive.google.com/drive/folders/abc"; $("#driveLink").dispatchEvent(new w.w.Event("input"));
 w.ui.errors.length = 0;
 nextBtn().click(); await settle();
-chk("finishing marks onboarding done", !!(await row()).completed_at);
+r = await row();
+chk("finishing saves the footage and the Drive link, and marks onboarding done", !!r.footage_done_at && r.footage.drive_link === "https://drive.google.com/drive/folders/abc" && r.footage.files.length === 1 && !!r.completed_at, r.footage);
 chk("no page errors on /welcome (besides leaving the page)", w.ui.errors.every(e => /navigation/i.test(e)), w.ui.errors);
 
 // An invite link opened a second time (already used / expired).
 const exp = await openPage("welcome.html", null, "https://fl.test/welcome?client=newco#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired");
 chk("an expired or used link says so on the sign-in screen", /expired or was already used/.test(exp.d.getElementById("authError").textContent) && !exp.w.location.hash, exp.d.getElementById("authError").textContent);
 
-// Coming back later: straight to the step they left off (here: done → last step).
+// Coming back later: every step open, on the last one.
 w = await openPage("welcome.html", CL, "https://fl.test/welcome");
-chk("returning after finishing opens on the last step", w.d.querySelector("#stepBody section").dataset.current === "tour");
+chk("returning after finishing: all steps open, on the last step", w.d.querySelector("#stepBody section").dataset.current === "footage" && Array.from(w.d.querySelectorAll("#steps button")).every(b => !b.disabled));
 
-// A client who doesn't film: no brand step.
+// "I don't have any brand files" moves on too (a client who hasn't started).
+await db.exec(`update social_client_onboarding set started_at=now(), password_set_at=now() where client_id='${OTHER}'`);
 w = await openPage("welcome.html", CL2, "https://fl.test/welcome");
-chk("we-film client: no Your brand step", !Array.from(w.d.querySelectorAll("#steps button")).some(b => b.textContent.includes("brand")));
+chk("every client gets the brand step now", w.d.querySelector("#stepBody section").dataset.current === "brand");
+w.d.querySelector("#stepBody [data-none]").click(); await settle();
+const o2 = (await db.query(`select brand from social_client_onboarding where client_id='${OTHER}'`)).rows[0].brand;
+chk("'I don't have any brand files' is saved and goes to the questions", o2.files === "none" && o2.done === true && w.d.querySelector("#stepBody section").dataset.current === "questions", o2);
+
+// Later, Tait adds their documents by hand and the transcript (as he would on the operator dashboard).
+await db.exec(`insert into social_client_documents (client_id, title, url, position) values ('${NC}','NewCo: Customer Data (Google Doc)','https://docs.google.com/document/d/cd',0);
+  update social_client_onboarding set docs_status='ready', transcript='we never have time' where client_id='${NC}';
+  insert into social_client_generated_docs (client_id, kind, title, body_md) values
+  ('${NC}','customer_data','NewCo: Customer Data','# NewCo: Customer Data\n## 1. Pains, verbatim\n1. "we never have time"\n*Founder, on time.*'),
+  ('${NC}','your_voice','NewCo: Your Voice','# NewCo: Your Voice\n- **Pillar** [To confirm]')`);
 
 // ── Operator: progress, what they sent, preview ──
 const op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
@@ -105,7 +133,7 @@ const ncRow = Array.from(op.d.querySelectorAll("#allClientsList .row")).find(r =
 chk("Clients list shows onboarding progress", ncRow.textContent.includes("Onboarding done") && Array.from(ncRow.querySelectorAll("button")).some(b => b.textContent === "Resend invite"), ncRow.textContent);
 Array.from(ncRow.querySelectorAll("button")).find(b => b.textContent === "Onboarding").click(); await settle();
 const box = op.d.getElementById("videoModalBox").textContent;
-chk("Onboarding view: brand choice, transcript, send-documents button, preview", box.includes("Brand files: uploaded to their Important Documents folder") && box.includes("https://instagram.com/somebrand") && !!op.d.getElementById("obSendDocs")
+chk("Onboarding view: brand files, voice memo player, footage and Drive link, transcript, send-documents, preview", box.includes("Brand files (2)") && !!op.d.querySelector('#videoModalBox a[href^="https://signed/' + NC + '/brand/"]') && !!op.d.querySelector('#videoModalBox audio[src^="https://signed/' + NC + '/voice-memo/"]') && box.includes("Download the voice memo") && box.includes("https://drive.google.com/drive/folders/abc") && box.includes("1 file uploaded") && !!op.d.getElementById("obSendDocs")
   && op.d.getElementById("obTranscript").value === "we never have time" && !!op.d.querySelector('#videoModalBox a[href="/welcome?client=newco"]'), box.slice(0, 300));
 op.w.closeVideoModal();
 // Pasting a transcript and building: too short is caught, a real one goes to the document service.
@@ -149,6 +177,20 @@ const readBtn = Array.from(cl.d.querySelectorAll("#docsList button")).find(b => 
 chk("Documents lists the documents built from the voice memo", !!readBtn && cl.d.getElementById("docsList").textContent.includes("NewCo: Customer Data"));
 readBtn.click(); await settle();
 chk("…and opens them to read", cl.d.getElementById("videoModalBox").textContent.includes("[To confirm]"));
+
+// Straight from onboarding: the walkthrough, then "bookmark this page".
+const tp = await openPage("clients/portal.html", CL, "https://fl.test/clients/newco?tour=1");
+const tc = () => tp.d.getElementById("tourCard");
+chk("the portal opens with a walkthrough, starting at To Do", !!tc() && tc().textContent.includes("To Do") && tc().textContent.includes("1 of 4") && tp.d.querySelector('.nav-item[data-view="videos"]').classList.contains("tour-focus"), tc() && tc().textContent);
+chk("…and drops ?tour=1 from the address, so a reload doesn't repeat it", !tp.w.location.search.includes("tour"));
+const seen = [];
+for (let k = 0; k < 4; k++) { seen.push(tc().querySelector("h2").textContent); tc().querySelector("[data-tour-next]").click(); }
+chk("it walks To Do, Content Calendar, Documents, My footage folder", seen.join("|") === "To Do|Content Calendar|Documents|My footage folder", seen);
+chk("then: bookmark social.fullylaunched.com (this site) to come back and sign in", tc().textContent.includes("Bookmark this page") && tc().textContent.includes("fl.test") && /email and the password/.test(tc().textContent));
+tc().querySelector("[data-tour-done]").click();
+chk("Got it closes it", !tc() && !tp.d.getElementById("tourVeil") && !tp.d.querySelector(".tour-focus"));
+const noTour = await openPage("clients/portal.html", CL, "https://fl.test/clients/newco");
+chk("no walkthrough on a normal visit", !noTour.d.getElementById("tourCard"));
 
 // ── Forgot password → /welcome?mode=reset works for anyone ──
 const ed = await openPage("welcome.html", ED, "https://fl.test/welcome?mode=reset");
