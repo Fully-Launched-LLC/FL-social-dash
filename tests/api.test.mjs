@@ -77,7 +77,10 @@ calls = world({ ...base, generateLink: (b, json) => b.type === "invite" ? json({
 r = await call(invite, "opTok", { clientId: C1 });
 const mail = calls.find(c => c.url.startsWith("https://api.resend.com"));
 const m = mail && JSON.parse(mail.body);
-chk("invite: existing login → sign-in link instead", r.body.sent === true && r.body.returning === true);
+chk("invite: existing login but onboarding not finished → still the full welcome email (magic link, steps, Create my password)", r.body.sent === true && r.body.returning === false && m.subject === "Welcome to Fully Social, NewCo" && m.html.includes("What happens next") && m.html.includes("Create my password"), m && m.subject);
+{ const c2 = world({ ...base, onboarding: { client_id: C1, invite_count: 1, completed_at: "2026-10-01T00:00:00Z" }, generateLink: (b, json) => b.type === "invite" ? json({ msg: "already registered" }, 422) : json({ properties: { action_link: "https://sb.test/verify?type=magiclink&token=t9" } }) });
+  const r2 = await call(invite, "opTok", { clientId: C1 }); const m2 = JSON.parse(c2.find(c => c.url.startsWith("https://api.resend.com")).body);
+  chk("invite: existing login who finished onboarding → the short sign-in email", r2.body.returning === true && m2.subject === "Your Fully Launched sign-in link" && !m2.html.includes("What happens next"), m2.subject); }
 chk("invite: branded email sent from Fully Launched", m && m.to[0] === "pat@newco.test" && /Fully Launched/.test(m.from) && m.html.includes("token=t2") && m.html.includes("https://social.fullylaunched.com/assets/logo-white.png") && m.html.includes("#C4AB82") && m.html.includes("Hi Pat,"), m && m.subject);
 chk("invite: plain-text version too", m && m.text.includes("token=t2"));
 

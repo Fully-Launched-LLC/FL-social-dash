@@ -40,14 +40,19 @@ module.exports = handler(async (req, { clientId }) => {
   // instead of an error. A client's own login ignores it.
   const redirectTo = portal + "/welcome?client=" + encodeURIComponent(client.slug);
   // New login → invite; existing login → magic link to sign in.
-  let returning = false;
+  let hasLogin = false;
   let r = await generateLink("invite", email, redirectTo);
-  if (!r.ok) { returning = true; r = await generateLink("magiclink", email, redirectTo); }
+  if (!r.ok) { hasLogin = true; r = await generateLink("magiclink", email, redirectTo); }
   const link = r.data.action_link || (r.data.properties && r.data.properties.action_link);
   if (!r.ok || !link) throw new Error("Couldn't make the sign-in link: " + (r.data.msg || r.data.error_description || r.data.message || "unknown error"));
 
   // Record the invite on their onboarding.
-  const existing = await rest("social_client_onboarding?select=invite_count&client_id=eq." + client.id);
+  const existing = await rest("social_client_onboarding?select=invite_count,completed_at&client_id=eq." + client.id);
+  // The full welcome email (steps, "Create my password") goes to anyone who
+  // hasn't finished onboarding, even if their email already has a login
+  // (e.g. from an earlier invite). Only someone who has finished gets the
+  // short sign-in email.
+  const returning = hasLogin && !!(existing[0] && existing[0].completed_at);
   await rest("social_client_onboarding?on_conflict=client_id", {
     method: "POST", prefer: "resolution=merge-duplicates,return=minimal",
     body: { client_id: client.id, invited_email: email, invited_at: new Date().toISOString(), invite_count: ((existing[0] && existing[0].invite_count) || 0) + 1, updated_at: new Date().toISOString() },
