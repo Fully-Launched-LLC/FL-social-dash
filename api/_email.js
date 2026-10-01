@@ -32,7 +32,7 @@ function frame({ portal, title, rows }) {
 function inviteEmail({ contactName, clientName, link, portal, returning }) {
   const first = firstName(contactName);
   const hello = first ? `Hi ${esc(first)},` : "Hi,";
-  const subject = returning ? `Your Fully Launched sign-in link` : `Welcome to Fully Launched, ${clientName}`;
+  const subject = returning ? `Your Fully Launched sign-in link` : `Welcome to Fully Social, ${clientName}`;
   const intro = returning
     ? `Here's your link to sign in to ${esc(clientName)}'s Fully Launched portal.`
     : `We're excited to start working with ${esc(clientName)}. Your client portal is ready. Click below to create your password, and we'll walk you through a few quick steps so we can start making content that sounds like you.`;
