@@ -356,7 +356,7 @@ function openClientVideoModal(videoId) {
 // ---------- pages ----------
 function renderOperatorBanner() {
   document.getElementById("operatorBanner").innerHTML = IS_OPERATOR ? `
-    <div class="card op-banner" style="margin-bottom:14px"><b>You're viewing ${escapeHtml(CLIENT.name)}'s portal as the operator.</b>
+    <div class="card" style="margin-bottom:14px"><b>You're viewing ${escapeHtml(CLIENT.name)}'s portal as the operator.</b>
       <div class="meta">This is exactly what the client sees, and you can click their buttons for them. It's recorded as you, not the client.
       To edit a video, use the <a href="/operator/dashboard.html" style="color:inherit;text-decoration:underline">operator dashboard</a>.
       ${HIDDEN_CONCEPTS ? `<br>${HIDDEN_CONCEPTS} idea(s) with suggestions are back with you. Edit and send them again from the operator dashboard.` : ""}</div></div>` : "";
