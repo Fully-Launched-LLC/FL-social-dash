@@ -370,7 +370,14 @@ after `customer-data-doc`, it builds `sources/voice.md` and the first
 YouTube, Instagram and TikTok in Tait's Chrome (read only, never Poppy),
 finds outlier videos in the client's niche, groups them into formats, and
 adds them to `research/content-research.md` and its Google Doc. It's this
-repo's version of `research-sweep`. The other skills in the table are not in this
+repo's version of `research-sweep`. `outlier-research` lives at
+`.claude/skills/outlier-research/` (built 2026-10-01 from the Niche Outliers
+kit): on request, per client, it pulls the top 10 Instagram and TikTok
+videos by views in the client's niche through Apify (the `apify` server in
+`.mcp.json`; Tait signs in once with `/mcp`) and files them in
+`clients/<slug>/research/outliers.md` and its Google Doc, which lives in
+Drive's private **Operator Only (do not share)** folder and never goes on
+the client's Documents page. It learns per client from Tait's feedback. The other skills in the table are not in this
 repo — where they live is an open question. `calendar-planner` in
 particular was written to update the old per-client `config.json` files,
 which no longer exist; it needs repointing at Supabase or retiring.
