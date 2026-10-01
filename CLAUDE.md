@@ -434,7 +434,10 @@ fix belongs in the fully-launched-crm repo and is not done yet.
 **Client invites** (Clients → "Invite to portal" / "Resend invite", or
 automatically when a new client is created) go through `/api/invite`: a
 one-time Supabase link (invite for a new email, sign-in for an existing
-login) to `/welcome`, emailed from Fully Launched via Resend. Without
+login) to `/welcome`, emailed from Fully Launched via Resend. The email is
+the full "Welcome to Fully Social" one until they've finished onboarding,
+even if their email already has a login; only after that is it the short
+sign-in email. Without
 `RESEND_API_KEY` the dashboard shows the link to copy and send by hand.
 The first time a login with a *confirmed*
 email matching a client's `contact_email` opens a portal,
