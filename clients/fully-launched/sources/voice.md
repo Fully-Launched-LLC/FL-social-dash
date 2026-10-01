@@ -1,7 +1,8 @@
 # Fully Launched: Voice Profile
 
-**Last updated:** 2026-09-30
+**Last updated:** 2026-10-01
 **Whose voice:** Tait Allen. Built from his 8 LinkedIn posts (`2026-09-28-tait-linkedin-posts.md`) and his voice memo (`2026-09-25-tait-voice-memo.md`). Every phrase below is quoted exactly.
+**Elias's voice:** a short profile from his voice memo (`2026-10-01-elias-voice-memo.md`) is in its own section near the end.
 **Matteo's voice:** a short profile from his voice memo (`2026-09-30-matteo-voice-memo.md`) is in its own section near the end.
 **Luke's voice:** [pending: needs something Luke wrote or posted himself. His answers in `2026-09-25-luke-bothun-answers.md` describe the customer and don't show how he writes.]
 
@@ -108,6 +109,32 @@ From one voice memo (`2026-09-30-matteo-voice-memo.md`), answering the customer 
 **His unique perspective, for Tait to confirm in `positioning.md`:** built around your business. *"none of it worked because none of it was built around their business."* Luke says the same thing ("we build around how your business actually run").
 
 [pending: needs something Matteo wrote or posted himself, to see how he writes as opposed to how he talks.]
+
+## Elias's voice
+
+From one voice memo (`2026-10-01-elias-voice-memo.md`), answering the customer questions. Elias runs websites. Every phrase is quoted exactly. One recording is a first read.
+
+**How he sounds**
+- **Talks it through, with "um" and "you know".** Unscripted and warm. *"You know, we design the site, we build it, we make sure everything works properly, we connect everything."*
+- **Lists the options, then waves the rest off.** *"outdated or it doesn't look professional, or it's difficult to navigate, this, that, or the other."*
+- **Explains with a real comparison.** *"If you need a ton of products, you have 300 products, that's gonna be way more than the guy that just needs a landing page"*
+- **Tells the story he lived.** The honest roofing company with *"no Google reviews"* losing to competitors with *"the bigger online presence."*
+- **Reassures, then hands over the work.** *"Just focus on your side of the business"* and *"sit back and ... watch your business ... take off"*
+- **Proud of the team and the name.** *"it's the name of the company, and that's something, um, I know I am and the other guys are completely proud of."*
+
+**Words and phrases that are his** (each said once)
+- "a certificate of authenticity"
+- "professionally fully launched"
+- "this, that, or the other"
+- "sit back and ... watch your business ... take off"
+- "no line of trust"
+- "the bigger online presence"
+- "beat them in the online presence"
+- "the new wave of ... promoting"
+
+**His perspective, for Tait to confirm in `positioning.md`:** built around your business (with Luke and Matteo): *"every, every aspect is specifically tailored to, um, the business"*. And one of his own: a website is proof you're real: *"take professionalism of the website as like a certificate of authenticity almost."*
+
+[pending: needs something Elias wrote or posted himself.]
 
 ## Open questions for Tait
 

@@ -1,16 +1,16 @@
 # Fully Launched: Customer Data
 
 **Drive:** mirror of this file (see brain.md for the current link)
-**Last updated:** 2026-09-30
-**Built from:** Tait's voice memo, Tait's notes in chat, Luke Bothun's answers, and Tait's Reddit research memo (all 2026-09-25), and Matteo's voice memo (2026-09-30). The full recordings are at the bottom.
+**Last updated:** 2026-10-01
+**Built from:** Tait's voice memo, Tait's notes in chat, Luke Bothun's answers, and Tait's Reddit research memo (all 2026-09-25), Matteo's voice memo (2026-09-30), and Elias's voice memo (2026-10-01). The full recordings are at the bottom.
 
 ## How to read this
 
 - Every quote is copied **word for word** from the recordings. Nothing is invented and nothing is summarized.
 - Words in **[square brackets]** are only there to make a transcript readable (a missing word, or the phone mishearing a word, like "fair" for Faire). Everything outside the brackets is exactly what was said. **"..."** means words were left out of the middle.
 - Each quote has a note on where it came from:
-  - **Tait**, **Luke** or **Matteo**: the founders describing our customer, in their own words.
-  - **Luke, what customers say** or **Matteo, what customers say**: the complaints and questions they say we hear from customers all the time.
+  - **Tait**, **Luke**, **Matteo** or **Elias**: the founders describing our customer, in their own words.
+  - **Luke**, **Matteo** or **Elias, what customers say**: the complaints and questions they say we hear from customers all the time.
   - **Reddit**: a real post or question Tait read on Reddit, as he read it out.
 - **Good to know:** none of this is from a sales call with a customer yet. The Reddit quotes and "what customers say" are the closest we have to the buyer's own words. Recordings of real customer calls would make this even sharper.
 
@@ -61,172 +61,207 @@
     *Matteo, on who our best customer is.*
 19. "right before they find us, they've usually kind of hit a wall. Its sales are kind of flat."
     *Matteo, on where the customer is when they find us.*
+20. "they know they need a website, but they don't know who to hire, who they need, what it's gonna cost, or what it should cost"
+    *Elias, on why he started Fully Launched.*
 
 ### Manual work and the bad day
 
-20. "lost to manual data entry like invoices or purchase orders"
+21. "lost to manual data entry like invoices or purchase orders"
     *Luke, the main problem before they meet us.*
-21. "finish a full day running the business and ... sit down at 8 PM to type 30 invoice line items into their software"
+22. "finish a full day running the business and ... sit down at 8 PM to type 30 invoice line items into their software"
     *Luke, describing a bad day.*
-22. "troubleshoot [a Faire] order shipped at a loss"
+23. "troubleshoot [a Faire] order shipped at a loss"
     *Luke, a bad day.*
-23. "their business like needs them to be strategizing and they're doing clerical work instead"
+24. "their business like needs them to be strategizing and they're doing clerical work instead"
     *Luke, a bad day.*
-24. "they get burnt out doing all this clerical work that they don't need to"
+25. "they get burnt out doing all this clerical work that they don't need to"
     *Luke, on what happens when they do it all themselves.*
-25. "you have a bad day spending hours fixing listings, and you're answering the same customer questions and correcting inventory errors instead of growing the business."
+26. "you have a bad day spending hours fixing listings, and you're answering the same customer questions and correcting inventory errors instead of growing the business."
     *Matteo, a bad day.*
-26. "it's nine p.m., and they realize they did an entire day of busy work and nothing's moved."
+27. "it's nine p.m., and they realize they did an entire day of busy work and nothing's moved."
     *Matteo, on the most painful part: "the grind."*
 
 ### Listings that don't rank or sell
 
-27. "the listings are really just a mess, and they're taking too much time."
+28. "the listings are really just a mess, and they're taking too much time."
     *Matteo, right before they find us.*
-28. "listings that don't rank or convert. They're bad titles, their, their descriptions are weak, their photos are weak."
+29. "listings that don't rank or convert. They're bad titles, their, their descriptions are weak, their photos are weak."
     *Matteo, their main problems.*
-29. "They've got hundreds of products, no time."
+30. "They've got hundreds of products, no time."
     *Matteo.*
-30. "their inventory and their pricing that it just doesn't match across channels."
+31. "their inventory and their pricing that it just doesn't match across channels."
     *Matteo.*
+
+### A website that doesn't match the business
+
+32. "they don't have a website or media that reflects ... the quality of ... work that they're putting in."
+    *Elias, on their usual problem.*
+33. "their website's outdated or it doesn't look professional, or it's difficult to navigate"
+    *Elias, what they come to us with.*
+34. "They don't understand SEO"
+    *Elias.*
+35. "they usually know if their website isn't good, and most of the time they don't know how to fix it themselves."
+    *Elias.*
+36. "They might have an amazing business ... their website isn't really accurately reflecting."
+    *Elias.*
+37. "they'll have like no Google reviews."
+    *Elias, a customer story (a roofing company).*
+38. "the mainstream competitors that are all over social media that don't do the best of a job ... they're getting all the customers because they have the bigger online presence."
+    *Elias, the same story.*
 
 ### Selling online, software and margin
 
-31. "They have products that sell in person, but they don't have an online sales channel."
+39. "They have products that sell in person, but they don't have an online sales channel."
     *Luke.*
-32. "wants to start selling online but doesn't know how"
+40. "wants to start selling online but doesn't know how"
     *Tait, on the marketplace customer.*
-33. "They're paying for really high priced software like ServiceTitan or Shopify or [Faire] that they don't have an integrator"
+41. "They're paying for really high priced software like ServiceTitan or Shopify or [Faire] that they don't have an integrator"
     *Luke.*
-34. "You're spending 60 grand a year on software"
+42. "You're spending 60 grand a year on software"
     *Tait, on the AI systems customer.*
-35. "their photos listings their product copy their marketing isn't good enough for the places they're selling."
+43. "their photos listings their product copy their marketing isn't good enough for the places they're selling."
     *Luke.*
-36. "They don't know which marketplace is worth it."
+44. "They don't know which marketplace is worth it."
     *Luke.*
-37. "the services that they're using are quietly eating their margin away"
+45. "the services that they're using are quietly eating their margin away"
     *Luke, on shipping and service fees.*
-38. "they want to expand to a new channel, like Amazon or, or Shopify, and they know it's gonna be too big for them to handle alone."
+46. "they want to expand to a new channel, like Amazon or, or Shopify, and they know it's gonna be too big for them to handle alone."
     *Matteo.*
-39. "they're stuck in a single marketplace, and they're just really nervous about depending on that"
+47. "they're stuck in a single marketplace, and they're just really nervous about depending on that"
     *Matteo.*
-40. "they just don't really have a real website or, uh, one that kind of looks outdated and it just doesn't sell."
+48. "they just don't really have a real website or, uh, one that kind of looks outdated and it just doesn't sell."
     *Matteo, on the website side.*
-41. "paying for tools and, and apps that, that they don't really use."
+49. "paying for tools and, and apps that, that they don't really use."
     *Matteo.*
 
 ### What they've tried that didn't work
 
-42. "they've tried like hiring or different agencies and then that haven't really. Come through with real fixes"
+50. "they've tried like hiring or different agencies and then that haven't really. Come through with real fixes"
     *Luke.*
-43. "generic agencies that have long retainers ... and they don't actually ship anything"
+51. "generic agencies that have long retainers ... and they don't actually ship anything"
     *Luke, on what they've tried.*
-44. "they have bad photos weak [SEO] no sales and then they give up"
+52. "they have bad photos weak [SEO] no sales and then they give up"
     *Luke, on DIY marketplace listings.*
-45. "It's like an 80% fit but that it's missing the 20% that actually makes the workflow perfect."
+53. "It's like an 80% fit but that it's missing the 20% that actually makes the workflow perfect."
     *Luke, on off-the-shelf software.*
-46. "freelancers who did a handful of things and, and disappeared."
+54. "freelancers who did a handful of things and, and disappeared."
     *Matteo, on what they've tried.*
-47. "cheap agencies with templated work that just doesn't fit their niche."
+55. "cheap agencies with templated work that just doesn't fit their niche."
     *Matteo, on what they've tried.*
-48. "Doing it themselves with YouTube tutorials or, or buying apps that promised automation"
+56. "Doing it themselves with YouTube tutorials or, or buying apps that promised automation"
     *Matteo, on what they've tried.*
-49. "none of it worked because none of it was built around their business."
+57. "none of it worked because none of it was built around their business."
     *Matteo, on why none of it worked.*
-50. "it gave them one more tool to manage, which they don't need."
+58. "it gave them one more tool to manage, which they don't need."
     *Matteo.*
+59. "they've already tried doing it themselves using ... the automations like ... Wix ... Squarespace, WordPress, using a template."
+    *Elias, on what they've tried.*
+60. "that most of the time doesn't work 'cause they don't have the time, they don't have the expertise."
+    *Elias.*
 
 ### What they believe that isn't true
 
-51. "the problem is traffic. Usually, it's conversion."
+61. "the problem is traffic. Usually, it's conversion."
     *Matteo, on what customers believe that isn't true.*
-52. "The people are already showing up and leaving."
+62. "The people are already showing up and leaving."
     *Matteo, on the same point.*
-53. "fixing a bigger catalog i- is a months-long, like, expensive project."
+63. "fixing a bigger catalog i- is a months-long, like, expensive project."
     *Matteo, another belief that isn't true.*
+64. "they think they just need a website because every business is supposed to have one"
+    *Elias, a belief that isn't true.*
+65. "they might think their website doesn't really affect whether somebody becomes a customer"
+    *Elias, another belief that isn't true.*
 
 ### Fears, spoken and unspoken
 
-54. "they'll stay in the bottleneck forever"
+66. "they'll stay in the bottleneck forever"
     *Luke, their fear.*
-55. "the competitors who have figured out online sales or AI integration and automation they'll outgrow them"
+67. "the competitors who have figured out online sales or AI integration and automation they'll outgrow them"
     *Luke, their fear.*
-56. "they'll spend so much money on tech that doesn't work or that they can't maintain or understand once the vendor disappears"
+68. "they'll spend so much money on tech that doesn't work or that they can't maintain or understand once the vendor disappears"
     *Luke, their fear.*
-57. "they'll be left stranded by Agencies that help them out but then then don't exactly teach them what they're using"
+69. "they'll be left stranded by Agencies that help them out but then then don't exactly teach them what they're using"
     *Luke, their fear.*
-58. "they fear change"
+70. "they fear change"
     *Luke.*
-59. "not really understanding what they should do about AI and how they feel behind it"
+71. "not really understanding what they should do about AI and how they feel behind it"
     *Luke, something they're embarrassed about but won't say out loud.*
-60. "They don't know where to start."
+72. "They don't know where to start."
     *Luke, unspoken.*
-61. "They should've started selling in a new place years ago and maybe they're too late"
+73. "They should've started selling in a new place years ago and maybe they're too late"
     *Luke, unspoken.*
-62. "the real business still runs on spreadsheets and their own memory"
+74. "the real business still runs on spreadsheets and their own memory"
     *Luke, unspoken.*
-63. "they'll get passed, like a competitor with a worse product but better listings takes their sales."
+75. "they'll get passed, like a competitor with a worse product but better listings takes their sales."
     *Matteo, their fear.*
-64. "the marketplace changes its algorithm or fees, and their income drops overnight"
+76. "the marketplace changes its algorithm or fees, and their income drops overnight"
     *Matteo, their fear.*
-65. "they'll still be stuck doing the same manual work five years from now."
+77. "they'll still be stuck doing the same manual work five years from now."
     *Matteo, their fear.*
-66. "they've kind of heard of AI, and they know that it can help, but they don't know exactly where to start."
+78. "they've kind of heard of AI, and they know that it can help, but they don't know exactly where to start."
     *Matteo.*
-67. "they're embarrassed by their storefront. They know their photos and descriptions look amateur"
+79. "they're embarrassed by their storefront. They know their photos and descriptions look amateur"
     *Matteo, something they won't say out loud.*
-68. "frustrated that they don't understand the tech side"
+80. "frustrated that they don't understand the tech side"
     *Matteo, unspoken.*
-69. "they feel behind in AI while everyone around them seems to have it all figured out."
+81. "they feel behind in AI while everyone around them seems to have it all figured out."
     *Matteo, unspoken.*
+82. "fear of losing customers to competitors ... mostly because they're looking unprofessional."
+    *Elias, their fear.*
+83. "they don't want to spend money on a website that doesn't actually help them, so it's a risk on investment."
+    *Elias, their fear.*
+84. "they're actually embarrassed to send people to their website, and that could frustrate them."
+    *Elias, something they won't say out loud.*
 
 ### What customers say
 
-70. "AI help with this"
+85. "AI help with this"
     *Luke, what customers say: can AI help with this?*
-71. "I have to maintain it."
+86. "I have to maintain it."
     *Luke, what customers say.*
-72. "What if it breaks"
+87. "What if it breaks"
     *Luke, what customers say.*
-73. "I don't have time to learn another platform."
+88. "I don't have time to learn another platform."
     *Luke, what customers say.*
-74. "We're too busy. We don't have time"
+89. "We're too busy. We don't have time"
     *Luke, what customers say.*
-75. "AI is not private"
+90. "AI is not private"
     *Luke, what customers say.*
-76. "I know my listings need work, but I just don't have the time"
+91. "I know my listings need work, but I just don't have the time"
     *Matteo, what customers say.*
-77. "I've been meaning to get a website for years"
+92. "I've been meaning to get a website for years"
     *Matteo, what customers say.*
-78. "I tried hiring someone, and it didn't go anywhere."
+93. "I tried hiring someone, and it didn't go anywhere."
     *Matteo, what customers say: "We hear that one a lot."*
-79. "Is this AI stuff actually gonna help me, or is it just all hype?"
+94. "Is this AI stuff actually gonna help me, or is it just all hype?"
     *Matteo, what customers say.*
-80. "I don't wanna mess up what's already working."
+95. "I don't wanna mess up what's already working."
     *Matteo, what customers say.*
+96. "What's the cost? How long will it take? Can you do everything for me?"
+    *Elias, the questions he hears over and over.*
 
 ### From Reddit
 
-81. "what do I post?"
+97. "what do I post?"
     *Reddit, a question Tait saw often in social media threads.*
-82. "People are constantly trying to find the right AI system for the business."
+98. "People are constantly trying to find the right AI system for the business."
     *Reddit, Tait's observation.*
-83. "how do you come up with ideas in the first place? How do you know if an idea is actually good for posting?"
+99. "how do you come up with ideas in the first place? How do you know if an idea is actually good for posting?"
     *Reddit, from people asking how to go viral.*
-84. "how do you keep a content calendar consistent when you're the only one running it?"
-    *Reddit, social media thread.*
-85. "how do you decide what content to post next?"
-    *Reddit, social media thread.*
-86. "why the hell can't people find my [Etsy] shop?"
-    *Reddit, Etsy thread.*
-87. "new [Etsy] listings are getting zero views"
-    *Reddit, Etsy thread.*
-88. "I started an herbal tea company, but I can't even get my first sale."
-    *Reddit, e-commerce thread.*
-89. "costing more and more to acquire each customer"
-    *Reddit, a Shopify owner on profitability.*
-90. "how to create a business website from scratch in one weekend without losing your mind."
-    *Reddit, e-commerce thread.*
+100. "how do you keep a content calendar consistent when you're the only one running it?"
+     *Reddit, social media thread.*
+101. "how do you decide what content to post next?"
+     *Reddit, social media thread.*
+102. "why the hell can't people find my [Etsy] shop?"
+     *Reddit, Etsy thread.*
+103. "new [Etsy] listings are getting zero views"
+     *Reddit, Etsy thread.*
+104. "I started an herbal tea company, but I can't even get my first sale."
+     *Reddit, e-commerce thread.*
+105. "costing more and more to acquire each customer"
+     *Reddit, a Shopify owner on profitability.*
+106. "how to create a business website from scratch in one weekend without losing your mind."
+     *Reddit, e-commerce thread.*
 
 ---
 
@@ -309,13 +344,25 @@
     *Matteo, the best problem we solve.*
 33. "it doesn't have to be slow or expensive anymore."
     *Matteo, what he wishes every customer understood.*
+34. "Just focus on your side of the business and we're gonna handle all the back ends, all the front ends, everything like that."
+    *Elias, what we solve.*
+35. "sit back and ... watch your business ... take off"
+    *Elias.*
+36. "I don't know anything about a website, but I know Elias, I know Mateo, I know Tate, I know Luke. They're gonna take care of getting us ... fully launched."
+    *Elias, what he wants a business owner to be able to say.*
 
 ### A storefront and website they're proud of
 
-34. "own a real website that they're proud of."
+37. "own a real website that they're proud of."
     *Matteo, the dream outcome.*
-35. "your listings and your website are, are your salespeople. They work every hour of every day."
+38. "your listings and your website are, are your salespeople. They work every hour of every day."
     *Matteo, what he wishes every customer understood.*
+39. "a website that they're absolutely proud of, to, to actually appropriately market themselves."
+    *Elias, the dream outcome.*
+40. "bringing in more customers solely upon their professionalism."
+    *Elias, the dream outcome.*
+41. "take professionalism of the website as like a certificate of authenticity almost."
+    *Elias, on how most customers see a website.*
 
 ---
 
@@ -344,7 +391,7 @@ These are already how the buyer talks: questions real people post, or complaints
 ## 4. Source material
 
 The full, word-for-word recordings. Also saved in the repo:
-clients/fully-launched/sources/2026-09-25-tait-voice-memo.md, clients/fully-launched/sources/2026-09-25-luke-bothun-answers.md and clients/fully-launched/research/2026-09-25-reddit-tait-memo.md and clients/fully-launched/sources/2026-09-30-matteo-voice-memo.md.
+clients/fully-launched/sources/2026-09-25-tait-voice-memo.md, clients/fully-launched/sources/2026-09-25-luke-bothun-answers.md and clients/fully-launched/research/2026-09-25-reddit-tait-memo.md clients/fully-launched/sources/2026-09-30-matteo-voice-memo.md and clients/fully-launched/sources/2026-10-01-elias-voice-memo.md.
 
 ### A. Tait's voice memo
 
@@ -365,3 +412,7 @@ Here is a new recording where I'm gonna upload all of the research that I find f
 ### E. Matteo's voice memo
 
 Who's our best customer? I feel like a small product business, usually doing somewhere between a few thousand and a few hundred thousand a year that's outgrown its setup. I feel like if you just think of a niche supplier or a small brand with a solid product and, like, real demand, run by an owner who's still doing everything himself, um, right before they find us, they've usually kind of hit a wall. Its sales are kind of flat. The, the listings are really just a mess, and they're taking too much time. And they re- they want to expand to a new channel, like Amazon or, or Shopify, and they know it's gonna be too big for them to handle alone. Their main problems are usually just, like, listings that don't rank or convert. They're bad titles, their, their descriptions are weak, their photos are weak. They've got hundreds of products, no time. Um, sometimes they're stuck in a single marketplace, and they're just really nervous about depending on that, so they want to expand, and they don't really know how to do that. Sometimes they just don't really have a real website or, uh, one that kind of looks outdated and it just doesn't sell. Uh, I also think of just their inventory and their pricing that it just doesn't match across channels. That's just some of the simple stuff. Their social media might be inconsistent or non-existent. Um, and they might just be, like, paying for tools and, and apps that, that they don't really use. They also, they've kind of heard of AI, and they know that it can help, but they don't know exactly where to start. I feel like the most painful part for them is the grind, though. It's like you spend a-- you have a bad day spending hours fixing listings, and you're answering the same customer questions and correcting inventory errors instead of growing the business. Then they end up looking at the clock, and it's nine p.m., and they realize they did an entire day of busy work and nothing's moved. I feel like what they're afraid of is that they'll get passed, like a competitor with a worse product but better listings takes their sales. The, the marketplace changes its algorithm or fees, and their income drops overnight, and that they'll still be stuck doing the same manual work five years from now. What they don't say out loud is that they're embarrassed by their, their storefront. They know that their photos and descriptions look amateur. Um, they're also frustrated that they don't understand the tech side, and they, they feel behind in AI while figuring out... Restart five. What they won't say out loud, uh, they're embarrassed by their storefront. They know their photos and descriptions look amateur, and they're also just frustrated that they don't understand the tech side. They, they feel behind in AI while everyone around them seems to have it all figured out. The dream outcome is that, like, a year from now, their catalog is clean and optimized everywhere they sell. They, they own a real website that they're proud of. Sales come from more than one channel, and the repetitive work runs in systems instead of their evenings. They spend their time on products and customers and, and not spreadsheets. What they've tried is that freelancers who did a handful of things and, and disappeared. They, they've got cheap agencies with templated work that just doesn't fit their niche. Doing it themselves with YouTube tutorials or, or buying apps that promised automation, none of it worked because none of it was built around their business. It, it was either too generic or too slow, or, or it gave them one more tool to manage, which they don't need. What they believe that isn't true is that the problem is traffic. Usually, it's conversion. The people are already showing up and leaving. They also think fixing a bigger catalog i- is a months-long, like, expensive project. But, like, with the right automation, we can overhaul hundreds of listings in the time it used to take to do a few dozen. The things that I hear over and over, "I know my listings need work, but I just don't have the time," or, "I've been meaning to get a website for years," or, "I tried hiring someone, and it didn't go anywhere." We hear that one a lot. And, "Is this AI stuff actually gonna help me, or is it just all hype?" Um, the last one is that, "I, I just, I don't wanna mess up what's already working." And what we solve, like, the best problem we solve is that we take a messy, overwhelming e-commerce operation and turn it into a clean system quickly. Most agencies do the work by hand, but we build custom AI tools and automations around each client so we can move at a scale and speed that a normal team can't without sacrificing quality. And a story that sticks with me is Creative Cut Supplies. It's a plywood and MDF supplier that, that they serve laser cutting and CNC makers. So when David came to us, he had nearly four hundred Etsy listings across a huge catalog. You got birch, walnut, maple, cherry, MB, all of these things. They're all in different sizes, different thicknesses. Updating it by hand would have taken genuinely forever, but we built an automated workflow that rewrote every single title and description, cleaned up the inventory and pricing, upscaled their photos, and audited the whole thing, all three hundred and ninety-two listings. We did that while protecting the search terms that were already bringing in traffic. Now we're hoping to build a Shopify store so he's not independent, so he's not dependent on one marketplace. Cut that and just do... Back to now we're building. Now we're building his, now we're building his Shopify store so he's not dependent on one marketplace. [sniffles] My perspective with what the industry gets wrong, though, is that most agencies just sell hours and templates. They hand every client the same package and bill for manual work that software can do better. I think if you're not using AI to build around the client's specific business, you're, you're charging them for inefficiency. Uh, I just wish every customer understood that your listings and your website are, are your salespeople. They work every hour of every day. If they're weak, they're losing sales you'll never see. Fixing this is the highest leverage thing that you can do, and, and it doesn't have to be slow or expensive anymore. Why we started this is that I, I got into building AI tools and... Actually, restart that. I think why we started Fully Launched is that, like, I got into building AI tools and, and realized that I could do it in an afternoon what took business owners weeks. And at the same time, I kept seeing good small businesses with great products losing to bigger players just because their online presence was weak. That felt fixable. So Luke, Tate, Elias, and I, we j- we started Fully Launched to, to give the smallest sellers the kind of systems only big companies used to afford. And because I want to build something of my own instead of waiting for a career to hand me one. Actually, restart that. [lip smack] Why we started it. I think Luke and I had this idea for a marketplace where we would be able to be doing automation work for companies that didn't have the time. They didn't want the manual labor, and we wanted to get rid of that as a factor altogether. And we had the idea for Fully Launched. It was Luke's idea initially, and we just started growing this and growing it and growing it, branching out into social media, branching out into AI, branching out into web development. And now it's become this well-oiled machine that we can give, like, small businesses a chance to compete with the big names by getting their optimization on the same level as theirs. [sniffles] We also just have so many ideas and so many different avenues that we're going down at the same time with, with AI and social media that it's really just become this thing that is moving on its own.
+
+### F. Elias's voice memo
+
+My best, um, customer is a small to medium-sized, uh, business owner. They, um, already have a good, solid business, um, with a good product or service. Um, usually their, their problems is they don't have a website or media that reflects, um, the quality of, of, uh, work that they're putting in. Um, usually they come to us with the fact that their website's outdated or it doesn't look professional, or it's difficult to navigate, this, that, or the other. They don't understand SEO, um, and they want to be rightfully, um, contended against all their competitors. Um, [lip smack] they, they usually know if their website isn't good, and most of the time they don't know how to fix it themselves. They might have an amazing business, um, that their, their website isn't really accurately reflecting. Um, this causes fear of losing customers to competitors, um, mostly because they're looking unprofessional. Um, they don't want to spend money on a website that doesn't actually help them, so it's a risk on investment. Um, they could be, um... They could have a very successful business, um, and they're actually embarrassed to send people to their website, and that could frustrate them. Uh, their, their dream outcome as the customer would, uh, to have an, to have a website that they're absolutely proud of, to, to actually appropriately market themselves. Um, and that, that, that requires SEO, AEO, appropriate social media. Everybody's on Instagram, everybody's on TikTok. This is the new wave of, of promoting, um, and I think the dream outcome would be bringing in more customers solely upon their professionalism. Um, usually they've already tried doing it themselves using, uh, the automations like, uh, Wix, scarce- uh, Squarespace, WordPress, using a template. Um, but that most of the time doesn't work 'cause they don't have the time, they don't have the expertise. So instead, they're bringing that to a company that, um, does this full-time and does this, um, professionally. [lip smack] Um, they, they think they just need a website because every business is supposed to have one when it's, it's much more than that. Um, they might think their website doesn't really affect whether somebody becomes a customer, but, um, that's actually not true. [background rustling] Most customers, um, take professionalism of the website as like a certificate of authenticity almost. [sniffs] Um, it really means a lot to most people. [lip smack] Um, uh, often I get some questions. Some of the ones that I hear, um, over and over is, "What's the cost? How long will it take? Can you do everything for me?" And these questions are really hard to answer most of the time because it's not tailored. I don't-- I can't say, "Okay, our website costs... We have a base pay of a thousand dollars." It's not like that at all. If you need a ton of products, you have 300 products, that's gonna be way more than the guy that just needs a landing page to talk about his business. How long will it take? Same thing. How long will it take me to upload 300 products and code all that compared to a couple paragraphs of information? Um, so, so every, every aspect is specifically tailored to, um, the business, um, and, and that's where we come in. We're, we're solving, um, all these problems with, you know, getting you professionally set up and professionally fully launched. You know, we design the site, we build it, we make sure everything works properly, we connect everything. Um, we're, we're, we're getting you launched yourself. You don't... Just focus on your side of the business and we're gonna handle all the back ends, all the front ends, everything like that. You should sit back and, um, and, uh, [inhales] and watch your business, uh, take off 'cause that's, that's our job. That's what you're gonna be paying us for. Um, [lip smack] one customer, um, story that has stuck with me, um, is somebody who had a genuine good business, but their online presence didn't show it. This is, this happens all the time. It's all the time. Um, they, they'll have like no Google reviews. This was very, very early. Um, I had a roofing company that was very genuine, very honest. They wouldn't knock on any doors that didn't genuinely need their roof fixed, but, um, it, it was such a saturated business that people would slam the door in your face. You know, "I don't want a new roof," this, that. But no, you genuinely have a hole in your roof. "Okay, let me see your business." And then they have no Google reviews. They, they have no line of trust. But I knew them personally. I knew that they were trustworthy people. Um, and then you have the mainstream competitors that are all over social media that don't do the best of a job, that aren't the h- most honest people, and they're getting all the customers because they have the bigger online presence. That's the problem that we're trying to solve here. Um, [lip smack] I think that's what, that's what I wish every customer understood, was that to, to beat those competitors, you have to, you have to beat them in the online presence or at least be combatant at that. Um, and that's, that's why we started Fully Launched, because I saw how difficult that process can be for business owners. Um, [lip smack] they know, they know they need a website, but they don't know who to hire, who they need, what it's gonna cost, or what it should cost, um, and what questions they even should be asking. I wanted to create a company, um, with these guys where a business owner could basically say, "I don't know anything about a website, but I know Elias, I know Mateo, I know Tate, I know Luke. They're gonna take care of getting us, um, um, fully launched." And that's the point of the company. I mean, it- it's the name of the company, and that's something, um, I know I am and the other guys are completely proud of.
