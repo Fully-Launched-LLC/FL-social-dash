@@ -38,7 +38,7 @@ function inviteEmail({ contactName, clientName, link, portal, returning }) {
   if (!returning) {
     const subject = "Welcome to your social dashboard";
     const html = frame({ portal, title: subject, footer: false, rows: `
-        <tr><td style="padding:22px 32px 10px">${button(link, "Start here")}</td></tr>
+        <tr><td style="padding:24px 32px 10px"><a href="${esc(link)}" style="display:inline-block;background:#C4AB82;color:#04101f;font:700 18px Helvetica,Arial,sans-serif;text-decoration:none;padding:16px 40px;border-radius:12px">Start here</a></td></tr>
         <tr><td style="padding:6px 32px 30px;${SMALL}">This link only works once.</td></tr>` });
     const text = `Welcome to your social dashboard\n\nStart here: ${link}\n\nThis link only works once.`;
     return { subject, html, text };
