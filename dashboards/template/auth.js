@@ -159,5 +159,18 @@ function initAuthGate(opts) {
     if (event === "SIGNED_OUT") { location.reload(); return; }
     evaluate(session);
   });
+  // An invite or sign-in link from our own emails: /welcome?token_hash=…&type=…
+  // (api/invite.js). Sign in with it here, then take it out of the address.
+  const q = new URLSearchParams(location.search);
+  const tokenHash = q.get("token_hash"), otpType = q.get("type");
+  if (tokenHash && otpType) {
+    q.delete("token_hash"); q.delete("type");
+    history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash);
+    sbClient.auth.verifyOtp({ token_hash: tokenHash, type: otpType }).then(({ error }) => {
+      if (error) authSetMessage("That link has expired or was already used. If you've set a password, sign in below. If not, ask Fully Launched to send you a new invite.", false);
+      sbClient.auth.getSession().then(({ data }) => evaluate(data.session));
+    });
+    return;
+  }
   sbClient.auth.getSession().then(({ data }) => evaluate(data.session));
 }

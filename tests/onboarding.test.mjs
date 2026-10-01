@@ -104,6 +104,10 @@ r = await row();
 chk("finishing saves the footage and the Drive link, and marks onboarding done", !!r.footage_done_at && r.footage.drive_link === "https://drive.google.com/drive/folders/abc" && r.footage.files.length === 1 && !!r.completed_at, r.footage);
 chk("no page errors on /welcome (besides leaving the page)", w.ui.errors.every(e => /navigation/i.test(e)), w.ui.errors);
 
+// The invite link from our own email: /welcome?token_hash=…&type=invite signs in on the page.
+const tok = await openPage("welcome.html", CL, "https://fl.test/welcome?client=newco&token_hash=hash123&type=invite");
+const vo = tok.ui.log.find(l => l.verifyOtp);
+chk("an invite link with token_hash signs in on our page (verifyOtp) and drops it from the address", vo && vo.verifyOtp.token_hash === "hash123" && vo.verifyOtp.type === "invite" && !tok.w.location.search.includes("token_hash") && tok.w.location.search.includes("client=newco"), vo);
 // An invite link opened a second time (already used / expired).
 const exp = await openPage("welcome.html", null, "https://fl.test/welcome?client=newco#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired");
 chk("an expired or used link says so on the sign-in screen", /expired or was already used/.test(exp.d.getElementById("authError").textContent) && !exp.w.location.hash, exp.d.getElementById("authError").textContent);

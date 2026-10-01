@@ -43,7 +43,15 @@ module.exports = handler(async (req, { clientId }) => {
   let hasLogin = false;
   let r = await generateLink("invite", email, redirectTo);
   if (!r.ok) { hasLogin = true; r = await generateLink("magiclink", email, redirectTo); }
-  const link = r.data.action_link || (r.data.properties && r.data.properties.action_link);
+  // The button links to our own site (social.fullylaunched.com/welcome?
+  // token_hash=…), and the page signs them in itself (auth.js, verifyOtp).
+  // A link to a different domain than the sender looks like phishing to
+  // spam filters. Supabase's own link is the fallback.
+  const props = r.data.properties || {};
+  const hashed = r.data.hashed_token || props.hashed_token;
+  const link = hashed
+    ? redirectTo + "&token_hash=" + encodeURIComponent(hashed) + "&type=" + (hasLogin ? "email" : "invite")
+    : (r.data.action_link || props.action_link);
   if (!r.ok || !link) throw new Error("Couldn't make the sign-in link: " + (r.data.msg || r.data.error_description || r.data.message || "unknown error"));
 
   // Record the invite on their onboarding.

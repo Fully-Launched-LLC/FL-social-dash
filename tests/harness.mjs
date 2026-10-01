@@ -118,6 +118,7 @@ export function makeHarness(db) {
         signInWithOtp: async o => { log.push({ otp: o }); return { error: null }; }, signInWithPassword: async () => ({}),
         resetPasswordForEmail: async (email, o) => { log.push({ reset: email, opts: o }); return { error: null }; },
         updateUser: async o => { log.push({ updateUser: o }); return { data: {}, error: null }; },
+        verifyOtp: async o => { log.push({ verifyOtp: o }); return { data: {}, error: null }; },
       },
       // Storage: uploads are recorded, not stored.
       storage: { from: bucket => ({
