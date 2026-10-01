@@ -1,10 +1,10 @@
 # Fully Launched: Content Ideas
 
-**Last updated:** 2026-09-30
+**Last updated:** 2026-10-01
 **Drive:** https://docs.google.com/document/d/1Lax_VKFYEeJxhJhOvdRn_Y6ALFtkF4Jyd0AZYnFi9jE/edit (mirror of this file)
-**Built from:** Customer Data, Your Voice and Content Research (all 2026-09-25), and Tait's LinkedIn posts and notes (added 2026-09-28: B10, B11, O13 to O19), and Matteo's voice memo (added 2026-09-30: B12 to B14, A11 to A15, W5, M18 to M26).
+**Built from:** Customer Data, Your Voice and Content Research (all 2026-09-25), and Tait's LinkedIn posts and notes (added 2026-09-28: B10, B11, O13 to O19), and Matteo's voice memo (added 2026-09-30: B12 to B14, A11 to A15, W5, M18 to M26), and Elias's voice memo (added 2026-10-01: W6 to W13, B15).
 
-**The rule for this doc:** Claude organizes *your* ideas, from Tait's memos and posts, Luke's and Matteo's answers and the Reddit research, into clear, usable ideas. Nothing new is invented. Each idea shows where it came from.
+**The rule for this doc:** Claude organizes *your* ideas, from Tait's memos and posts, Luke's, Matteo's and Elias's answers and the Reddit research, into clear, usable ideas. Nothing new is invented. Each idea shows where it came from.
 
 **Each idea has:**
 - **Hook:** the opening line
@@ -212,6 +212,20 @@ Documenting the build of the business, on the calendar every week. **[Tait]** Th
 - **CTA:** Free store audit
 - **Source:** Matteo's voice memo
 - **Needs from you:** David's permission to name the business and show the store, and what's built so far
+
+**B15. Why we named it Fully Launched**
+- **Hook:** "We named the company after what we wanted every client to say."
+- **Format:** How I · **Perspective:** ① Make it simple
+- **Seed:** "I don't know anything about a website, but I know Elias, I know Mateo, I know Tate, I know Luke."
+- **The idea:** Elias's side of why we started: owners know they need a website but not who to hire or what to ask. Fully Launched is the four of us taking care of it.
+- **Talking points:**
+  - "they know they need a website, but they don't know who to hire, who they need, what it's gonna cost, or what it should cost"
+  - "and what questions they even should be asking."
+  - What he wanted: a business owner could say "I don't know anything about a website, but I know Elias, I know Mateo, I know Tate, I know Luke. They're gonna take care of getting us ... fully launched."
+  - "it's the name of the company, and that's something, um, I know I am and the other guys are completely proud of."
+- **Ask on camera:** "Why did you start Fully Launched, and why that name?"
+- **CTA:** Free guide: 3 steps to simplify your website
+- **Source:** Elias's voice memo
 
 ---
 
@@ -765,6 +779,121 @@ Documenting the build of the business, on the calendar every week. **[Tait]** Th
 - **Source:** Matteo's voice memo and Tait's voice memo
 - **Needs from you:** the 3 steps (the same gap as W3)
 
+**W6. Your website is a certificate of authenticity**
+- **Hook:** "Most people treat your website like a certificate of authenticity."
+- **Format:** How to · **Perspective:** ① Make it simple
+- **Seed:** "take professionalism of the website as like a certificate of authenticity almost."
+- **The idea:** Owners think their website doesn't decide whether someone becomes a customer. Elias says it does.
+- **Talking points:**
+  - The belief: "they might think their website doesn't really affect whether somebody becomes a customer"
+  - "Most customers, um, take professionalism of the website as like a certificate of authenticity almost."
+  - "it really means a lot to most people."
+  - The dream: "bringing in more customers solely upon their professionalism."
+- **Ask on camera:** "What does a customer decide about a business from its website?"
+- **CTA:** Free guide: 3 steps to simplify your website
+- **Source:** Elias's voice memo
+
+**W7. Embarrassed to send people to your website?**
+- **Hook:** "Great business. But you're embarrassed to send people to your website."
+- **Format:** How we · **Perspective:** ① Make it simple
+- **Seed:** "they're actually embarrassed to send people to their website, and that could frustrate them."
+- **The idea:** The successful owner whose website doesn't show it, and what it costs them.
+- **Talking points:**
+  - "They could have a very successful business"
+  - "and they're actually embarrassed to send people to their website, and that could frustrate them."
+  - Why it hurts: "fear of losing customers to competitors ... mostly because they're looking unprofessional."
+  - The dream: "a website that they're absolutely proud of"
+- **Ask on camera:** "Why would a successful business owner be embarrassed by their own website?"
+- **CTA:** Free guide: 3 steps to simplify your website
+- **Source:** Elias's voice memo
+
+**W8. The honest roofer who kept losing to worse companies**
+- **Hook:** "I worked with an honest roofing company that kept losing to worse competitors. Here's why."
+- **Format:** How I · **Perspective:** ⑤ Built around your business
+- **Seed:** "they're getting all the customers because they have the bigger online presence."
+- **The idea:** Elias's story: a genuine, honest roofer with no Google reviews losing to competitors who are all over social media.
+- **Talking points:**
+  - "I had a roofing company that was very genuine, very honest. They wouldn't knock on any doors that didn't genuinely need their roof fixed"
+  - "'Okay, let me see your business.' And then they have no Google reviews. They, they have no line of trust."
+  - "the mainstream competitors that are all over social media ... they're getting all the customers because they have the bigger online presence."
+  - Land it: "to beat those competitors, you have to, you have to beat them in the online presence"
+- **Ask on camera:** "Tell me about the roofing company that kept losing to worse competitors."
+- **CTA:** Free guide: 3 steps to simplify your website
+- **Source:** Elias's voice memo
+- **Needs from you:** keep the roofer unnamed, or get their OK to name them
+
+**W9. What a website costs, and why there's no one number**
+- **Hook:** "'What does a website cost?' Here's why I can't give you one number."
+- **Format:** How to · **Perspective:** ⑤ Built around your business
+- **Seed:** "If you need a ton of products, you have 300 products, that's gonna be way more than the guy that just needs a landing page"
+- **The idea:** The two questions Elias hears most, cost and time, and why both depend on the business.
+- **Talking points:**
+  - What he hears over and over: "What's the cost? How long will it take?"
+  - "I can't say, 'Okay, our website costs... We have a base pay of a thousand dollars.' It's not like that at all."
+  - "If you need a ton of products, you have 300 products, that's gonna be way more than the guy that just needs a landing page to talk about his business."
+  - Same for time: "How long will it take me to upload 300 products and code all that compared to a couple paragraphs of information?"
+- **Ask on camera:** "Why can't you give one price for a website?"
+- **CTA:** Free guide: 3 steps to simplify your website
+- **Source:** Elias's voice memo
+- **Needs from you:** a real price range, if you want to give one on camera
+
+**W10. "Can you do everything for me?" Yes.**
+- **Hook:** "'Can you do everything for me?' That's literally the job."
+- **Format:** Behind the scenes · **Perspective:** ① Make it simple
+- **Seed:** "we design the site, we build it, we make sure everything works properly, we connect everything."
+- **The idea:** What "done for you" means: design, build, test, connect. The owner runs the business.
+- **Talking points:**
+  - The question: "Can you do everything for me?"
+  - "we design the site, we build it, we make sure everything works properly, we connect everything."
+  - "Just focus on your side of the business and we're gonna handle all the back ends, all the front ends, everything like that."
+  - "sit back and ... watch your business ... take off 'cause that's, that's our job."
+- **Ask on camera:** "What does a business owner actually have to do when we build their website?"
+- **CTA:** Free guide: 3 steps to simplify your website
+- **Source:** Elias's voice memo
+
+**W11. Why your Wix site didn't work**
+- **Hook:** "You tried Wix, Squarespace or WordPress. It didn't work. Here's why."
+- **Format:** How to · **Perspective:** ① Make it simple
+- **Seed:** "that most of the time doesn't work 'cause they don't have the time, they don't have the expertise."
+- **The idea:** The do-it-yourself template route, and what's missing from it.
+- **Talking points:**
+  - What they tried: "doing it themselves using ... Wix ... Squarespace, WordPress, using a template."
+  - "that most of the time doesn't work 'cause they don't have the time, they don't have the expertise."
+  - "they usually know if their website isn't good, and most of the time they don't know how to fix it themselves."
+  - So they bring it "to a company that, um, does this full-time"
+- **Ask on camera:** "Why don't website templates work for most business owners?"
+- **CTA:** Free guide: 3 steps to simplify your website
+- **Source:** Elias's voice memo
+
+**W12. You don't just need a website**
+- **Hook:** "Every business is supposed to have a website. That's the problem."
+- **Format:** How to · **Perspective:** ② Service media
+- **Seed:** "they think they just need a website because every business is supposed to have one"
+- **The idea:** A website that markets you takes SEO, AEO and social media too.
+- **Talking points:**
+  - The belief: "they think they just need a website because every business is supposed to have one"
+  - Elias: "it's, it's much more than that."
+  - What it takes: "SEO, AEO, appropriate social media. Everybody's on Instagram, everybody's on TikTok."
+  - "This is the new wave of, of promoting"
+- **Ask on camera:** "What does a business need besides a website?"
+- **CTA:** Free guide: 3 steps to simplify your website
+- **Source:** Elias's voice memo
+- **Needs from you:** a one-line explanation of AEO for viewers who haven't heard of it
+
+**W13. To beat your competitors, beat them online**
+- **Hook:** "Your competitor is easier to find online than you are. That's why they're winning."
+- **Format:** How to · **Perspective:** ⑤ Built around your business
+- **Seed:** "to beat those competitors, you have to, you have to beat them in the online presence or at least be combatant at that."
+- **The idea:** What Elias wishes every customer understood.
+- **Talking points:**
+  - "I think that's what, that's what I wish every customer understood"
+  - "to beat those competitors, you have to, you have to beat them in the online presence or at least be combatant at that."
+  - The proof: the honest roofer who lost to "the bigger online presence" (W8).
+  - Where to start: a website that "actually appropriately market[s] themselves."
+- **Ask on camera:** "What's the one thing you wish every business owner understood about competing?"
+- **CTA:** Free guide: 3 steps to simplify your website
+- **Source:** Elias's voice memo
+
 ---
 
 ## Pillar: Marketplaces (e-commerce)
@@ -1097,11 +1226,11 @@ Documenting the build of the business, on the calendar every week. **[Tait]** Th
 
 ## Summary
 
-- **Building Fully Launched:** 14 ideas (B1–B14). **At least 4 go on the calendar every week.**
+- **Building Fully Launched:** 15 ideas (B1–B15). **At least 4 go on the calendar every week.**
 - **Authority Hacking:** 4 slots (AH1–AH4), one pillar a week in rotation. **1 goes on the calendar every week.** People still to pick.
 - **Organic content:** 19 (O1–O19)
 - **AI systems:** 15 (A1–A15)
-- **Websites:** 5 (W1–W5)
+- **Websites:** 13 (W1–W13)
 - **Marketplaces:** 26 (M1–M26)
 
 **Ready to film as-is:** every idea without a **Needs from you** line.

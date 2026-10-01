@@ -2,10 +2,10 @@
 
 **The 3-3-3 framework: pillars, formats, perspectives**
 
-**Last updated:** 2026-09-30
+**Last updated:** 2026-10-01
 **Drive:** https://docs.google.com/document/d/1CzaSXHTk_25Qb6GoueDd_wxzHpAV0efVmD6REdf9k_4/edit (mirror of this file, with `sources/voice.md` added at the end)
-**Sources:** Tait's voice memo and notes in chat, and Luke Bothun's answers (2026-09-25), and Matteo's voice memo (2026-09-30). See Customer Data for the full recordings.
-**Tags:** **[Tait]** / **[Luke]** / **[Matteo]** mean said by them. **[To confirm]** means Tait hasn't decided yet.
+**Sources:** Tait's voice memo and notes in chat, and Luke Bothun's answers (2026-09-25), Matteo's voice memo (2026-09-30), and Elias's voice memo (2026-10-01). See Customer Data for the full recordings.
+**Tags:** **[Tait]** / **[Luke]** / **[Matteo]** / **[Elias]** mean said by them. **[To confirm]** means Tait hasn't decided yet.
 
 ---
 
@@ -22,7 +22,10 @@ Every client gets a **3-3-3**: **3 pillars** (what we always talk about), **3 fo
 ### 1. Websites
 - **What we do:** redesign business websites to bring in new customers. **[Tait]**
 - **Our angle:** custom websites that actually drive results and don't just look cool. Anyone can design a website with AI now; our strategy is making it simple, a simple, easy-to-use website. **[Tait]**
-- **Why it matters:** *"your listings and your website are, are your salespeople. They work every hour of every day. If they're weak, they're losing sales you'll never see."* **[Matteo]**
+- **Who it's for, in Elias's words:** *"a small to medium-sized, uh, business owner. They, um, already have a good, solid business"* whose website is *"outdated or it doesn't look professional, or it's difficult to navigate"*. **[Elias]** (Elias runs websites.)
+- **How we do it:** *"we design the site, we build it, we make sure everything works properly, we connect everything."* *"every, every aspect is specifically tailored to, um, the business"* **[Elias]**
+- **Why it matters:** *"Most customers, um, take professionalism of the website as like a certificate of authenticity almost."* **[Elias]**
+- **Also:** *"your listings and your website are, are your salespeople. They work every hour of every day. If they're weak, they're losing sales you'll never see."* **[Matteo]**
 
 ### 2. Organic content (social media)
 - **What we do:** help businesses and founders bring in new clients and more cash flow through content on social media. **[Tait]**
@@ -73,10 +76,11 @@ Tait hasn't named the third perspective yet. **The strongest candidate is in Luk
 *Tait: keep this, change it, or replace it.*
 
 ### [To confirm] New candidate from Matteo: built around your business
-Luke and Matteo both said this, separately:
+Luke, Matteo and Elias all said this, separately:
 - *"none of it worked because none of it was built around their business. It, it was either too generic or too slow, or, or it gave them one more tool to manage"* **[Matteo]**, on the freelancers, cheap agencies, YouTube tutorials and apps customers tried first.
 - *"most agencies just sell hours and templates. They hand every client the same package and bill for manual work that software can do better. I think if you're not using AI to build around the client's specific business, you're, you're charging them for inefficiency."* **[Matteo]**
 - *"we build around how your business actually run"* **[Luke]**, on what we solve.
+- *"every, every aspect is specifically tailored to, um, the business, um, and, and that's where we come in."* **[Elias]**, on websites.
 
 *Tait: this could be the third perspective, or fold into ③ Start small.*
 
