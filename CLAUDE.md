@@ -577,8 +577,8 @@ fullylaunched.com is a rare accent, used only for what needs attention
 calendar) and the one main action on a page (`.accent`: "Add ideas with
 Claude"). `.primary` buttons are white. One navy for every surface; cards
 and fields are outlined. Status badges are white (dimmed once done);
-platforms are white, told apart by their line (Facebook solid, LinkedIn
-outline, Instagram dashed, TikTok dotted, YouTube double). One typeface,
+platforms are color-coded, filled pills (YouTube red, Instagram purple,
+Facebook blue, LinkedIn green, TikTok cyan; Tait's call, 2026-10-01). One typeface,
 Hanken Grotesk, with weight for headings. No emoji. Layout: a top bar
 (where you are, and the client switch on the right); filter tabs as one
 segmented bar with count bubbles (`chipLabel`); To Do's stages as tables

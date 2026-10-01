@@ -174,13 +174,13 @@ tr:hover td { color:var(--ink); }
 .cal-cell.today { border-color:var(--accent); }
 .cal-cell .daynum { font-size:0.78rem; color:var(--sub); margin-bottom:6px; }
 .cal-chip { font-size:0.7rem; padding:2px 6px; border-radius:5px; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
-/* Each platform in white only, told apart by its line: solid fill, outline,
-   dashed, dotted or double (--pc line, --pbg fill, --pfg text, --pstyle). */
-.p-facebook  { --pc:var(--white); --pbg:var(--white); --pfg:var(--navy); }
-.p-linkedin  { --pc:var(--white); --pbg:transparent; --pfg:var(--white); }
-.p-instagram { --pc:var(--white); --pbg:transparent; --pfg:var(--white); --pstyle:dashed; }
-.p-tiktok    { --pc:var(--white); --pbg:transparent; --pfg:var(--white); --pstyle:dotted; }
-.p-youtube   { --pc:var(--white); --pbg:transparent; --pfg:var(--white); --pstyle:double; }
+/* Each platform in its own color, filled: YouTube red, Instagram purple,
+   Facebook blue, LinkedIn green, TikTok cyan (--pc line, --pbg fill, --pfg text). */
+.p-facebook  { --pc:#1877f2; --pbg:#1877f2; --pfg:#ffffff; }
+.p-linkedin  { --pc:#22c55e; --pbg:#22c55e; --pfg:#04101f; }
+.p-instagram { --pc:#a855f7; --pbg:#a855f7; --pfg:#ffffff; }
+.p-tiktok    { --pc:#25f4ee; --pbg:#25f4ee; --pfg:#04101f; }
+.p-youtube   { --pc:#ff3b30; --pbg:#ff3b30; --pfg:#ffffff; }
 .cal-chip.cal-post { border:1px solid var(--border); color:var(--ink); }
 .cal-chip.cal-post b { background:var(--pbg); color:var(--pfg); border:2px var(--pstyle, solid) var(--pc); border-radius:4px; padding:0 3px; }
 .cal-chip.cal-deadline { border:1px dashed var(--border); color:var(--sub); }
