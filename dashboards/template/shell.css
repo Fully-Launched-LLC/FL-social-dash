@@ -19,6 +19,29 @@
   --status-in_review:var(--white); --status-client_review:var(--white);
   --status-ready_to_post:var(--white); --status-posted:var(--sub2);
 }
+/* The light work area (Tait, 2026-10-01: "too much navy"). The sidebar
+   stays navy; everything to its right, and every popup, is light grey with
+   white cards and navy text. Swapping --navy and --white flips every
+   "white on navy" piece (selected tabs, .primary buttons, badges) to "navy
+   on white" without touching each rule. Variables built from var(--white)
+   at :root are already resolved there, so they're set again here. The
+   gold is a shade darker so it still reads on white. */
+.main, .modal-backdrop {
+  --navy:#ffffff; --white:#04101f; --gold:#a8884f;
+  --bg:#f3f5f8; --card:#ffffff; --card2:#ffffff;
+  --border:rgba(4,16,31,.10); --line-2:rgba(4,16,31,.18); --line-strong:rgba(4,16,31,.38);
+  --ink:#04101f; --sub:rgba(4,16,31,.68); --sub2:rgba(4,16,31,.48);
+  --accent:#a8884f; --accent-ink:#ffffff;
+  --green:#a8884f; --red:#a8884f; --amber:#a8884f; --purple:#a8884f;
+  --status-concept_pending:#04101f; --status-to_film:#04101f; --status-filmed:#04101f;
+  --status-ready_to_edit:#04101f; --status-rejected:rgba(4,16,31,.48); --status-with_editor:#04101f;
+  --status-in_review:#04101f; --status-client_review:#04101f;
+  --status-ready_to_post:#04101f; --status-posted:rgba(4,16,31,.48);
+  color-scheme:light; color:var(--ink);
+}
+.main { background:var(--bg); }
+.main .card, .main .chip-row, .main .cal-cell, .modal-box { box-shadow:0 1px 2px rgba(4,16,31,.06); }
+.main input[type=date]::-webkit-calendar-picker-indicator { filter:none; }
 * { box-sizing:border-box; }
 html { color-scheme: dark; }
 html, body { height:100%; }
@@ -86,7 +109,7 @@ a { color:inherit; }
 .chip .c { font-size:11px; font-weight:700; padding:1px 7px; border-radius:999px; border:1px solid var(--line-2); color:var(--sub); font-variant-numeric:tabular-nums; }
 .chip.zero .c { color:var(--sub2); border-color:var(--border); }
 .chip.active { background:var(--white); color:var(--navy); font-weight:600; }
-.chip.active .c { border-color:rgba(4,16,31,.25); color:var(--navy); }
+.chip.active .c { border-color:var(--navy); color:var(--navy); opacity:.85; }
 .chip.urgent .c { background:var(--gold); border-color:var(--gold); color:var(--navy); }
 /* The client switch: a compact pill group. */
 .seg { display:inline-flex; gap:4px; padding:3px; border:1px solid var(--border); border-radius:999px; margin:0 0 0 auto; flex-wrap:wrap; }
@@ -214,7 +237,7 @@ button, .btn { font:inherit; font-size:13px; font-weight:600; padding:9px 16px; 
 button:hover, .btn:hover { border-color:var(--line-strong); }
 button.primary, .btn.primary { background:var(--white); border-color:var(--white); color:var(--navy); }
 button.primary:hover, .btn.primary:hover { background:transparent; color:var(--white); }
-button.accent, .btn.accent { background:var(--gold); border-color:var(--gold); color:var(--navy); font-weight:700; }
+button.accent, .btn.accent { background:var(--gold); border-color:var(--gold); color:var(--accent-ink); font-weight:700; }
 button.accent:hover, .btn.accent:hover { background:var(--white); border-color:var(--white); }
 button:disabled { opacity:.55; cursor:default; }
 button.reject { color:var(--sub); }

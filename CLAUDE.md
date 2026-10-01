@@ -574,7 +574,10 @@ suggests edit-by 7 days earlier.
 
 ### Look and feel
 
-Navy `#04101f` and white do the work; gold/tan `#C4AB82` from
+The sidebar is navy; everything to its right (and every popup) is a light
+grey work area with white cards and navy text (Tait, 2026-10-01: "too much
+navy"; the `.main, .modal-backdrop` block at the top of shell.css flips the
+colors there). Navy `#04101f` and white do the work; gold/tan `#C4AB82` from
 fullylaunched.com is a rare accent, used only for what needs attention
 (Time sensitive when it has something in it, overdue, today on the
 calendar) and the one main action on a page (`.accent`: "Add ideas with
