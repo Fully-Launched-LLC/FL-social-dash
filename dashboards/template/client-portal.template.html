@@ -51,6 +51,7 @@
     <div data-panel="film">
       <h2 class="panel-title">To film</h2>
       <p class="meta" style="margin:8px 0 12px">Every video that still needs filming. If you're filming it, use its script or outline, upload the footage to your folder, then tap <b>Video has been filmed</b>. If we're filming it, approve the idea or tap <b>Suggest changes</b>. Each card says who films it.</p>
+      <div class="chip-row" id="filmCats" style="display:none"></div>
       <div id="listToFilm"></div>
     </div>
 
@@ -103,6 +104,10 @@ let HIDDEN_CONCEPTS = 0;    // operator view only: ideas the client can't see (s
 let IS_OPERATOR = false;
 const calState = { offset: 0 };
 let activeTab = "all";
+// To film's category filter ("" = every category), kept per browser so a
+// filming day stays on its category after a refresh.
+let filmCategory = "";
+try { filmCategory = localStorage.getItem("fs-film-category") || ""; } catch (e) {}
 
 const filmedBy = v => filmedByOf(v, CLIENT.client_system);
 const clientFilms = () => CLIENT.client_system !== "concierge";   // the client's default
@@ -375,7 +380,7 @@ function renderVideos() {
     if (!vids.length) { el.innerHTML = `<div class="empty">${empty}</div>`; return; }
     vids.forEach(v => el.appendChild(videoCard(v)));
   };
-  fill("listToFilm", videosInTab("film").sort((a, b) => byFilmDate(a, b) || byPostDate(a, b)), "Nothing to film right now. Stay tuned for your finished edits.");
+  renderToFilm(byFilmDate, byPostDate, fill);
   fill("listFinal", videosInTab("final").sort(byPostDate), "No finished videos waiting. They'll show up here as soon as they're edited.");
   const urgent = videosInTab("urgent").sort((a, b) => clientTimeSensitive(a).date.localeCompare(clientTimeSensitive(b).date));
   fill("listUrgent", urgent, "Nothing urgent. You're all caught up.");
@@ -384,6 +389,39 @@ function renderVideos() {
     card.insertAdjacentHTML("afterbegin", `<div class="badge" style="margin-bottom:8px;border-color:var(--accent);color:var(--accent)">${escapeHtml(t.task)} · ${late ? "late, was due " : t.date === todayISO() ? "today, " : "by "}${escapeHtml(niceDate(t.date))}</div>`);
   });
   renderVideoTabs();
+}
+
+// To film, grouped by category so a whole category can be filmed in one
+// sitting (Tait, 2026-10-02: "tomorrow I want to film all of the AI
+// systems videos"). With categories, a filter row picks one; "All" shows
+// each under its own heading. Clients without categories see the plain list.
+function renderToFilm(byFilmDate, byPostDate, fill) {
+  const vids = videosInTab("film").sort((a, b) => byFilmDate(a, b) || byPostDate(a, b));
+  const cats = [...new Set(vids.map(videoCategory))].sort((a, b) => categoryRank(a).localeCompare(categoryRank(b)));
+  const row = document.getElementById("filmCats");
+  if (!cats.some(Boolean)) {
+    row.style.display = "none";
+    fill("listToFilm", vids, "Nothing to film right now. Stay tuned for your finished edits.");
+    return;
+  }
+  if (filmCategory && !cats.includes(filmCategory)) filmCategory = "";
+  const label = c => c || "No category";
+  row.style.display = "";
+  row.innerHTML = [`<div class="chip ${filmCategory ? "" : "active"}" data-cat="">${chipLabel("All categories", vids.length)}</div>`]
+    .concat(cats.map(c => `<div class="chip ${filmCategory === c && c ? "active" : ""}" data-cat="${escapeHtml(c)}" ${c ? "" : 'data-none="1"'}>${chipLabel(label(c), vids.filter(v => videoCategory(v) === c).length)}</div>`)).join("");
+  row.querySelectorAll(".chip").forEach(ch => ch.onclick = () => {
+    filmCategory = ch.dataset.none ? "" : ch.dataset.cat;
+    try { localStorage.setItem("fs-film-category", filmCategory); } catch (e) {}
+    renderVideos();
+  });
+  const el = document.getElementById("listToFilm");
+  el.innerHTML = "";
+  (filmCategory ? [filmCategory] : cats).forEach(c => {
+    const group = vids.filter(v => videoCategory(v) === c);
+    if (!group.length) return;
+    el.insertAdjacentHTML("beforeend", `<h3 class="film-cat-head" style="margin:22px 0 10px;font-size:1.05rem">${escapeHtml(label(c))} <span class="meta" style="font-weight:400">· ${group.length} to film</span></h3>`);
+    group.forEach(v => el.appendChild(videoCard(v)));
+  });
 }
 
 function renderVideoTabs() {

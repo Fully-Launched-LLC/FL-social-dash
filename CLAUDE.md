@@ -617,7 +617,11 @@ finished video) when it's late or due within 3 days, soonest first, kept out
 of All; **To film** — every video that still needs filming, whoever films
 it (Tait's call, 2026-10-01): client-filmed ones, and we-film ones (with
 Approve idea / Suggest changes while still an idea, then "We're filming it"
-with no buttons); Finished videos to approve), **Content Calendar**
+with no buttons), grouped by category (the "<Category> · <ID> · " start of
+a title, `videoCategory` in shell.js; Fully Launched: AI Systems, Social
+Media, Websites, E-commerce) with a filter row to film one category in a
+sitting (Tait, 2026-10-02), remembered per browser; a client without
+categories gets the plain list; Finished videos to approve), **Content Calendar**
 (each post date shows the video's full title and a colored pill per
 platform, with a "Posts on" key above; 🎥 film dates for client-filmed
 ideas; under the grid, "What posts each day": the month as a list with
