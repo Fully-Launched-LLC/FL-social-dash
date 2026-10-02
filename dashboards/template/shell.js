@@ -312,6 +312,22 @@ const VIDEO_ACTIONS = {
   mark_delivered:          { role: "editor", rpc: "social_editor_mark_delivered", from: ["with_editor"], to: "in_review", label: "Finished — send to operator" },
 };
 
+// A video's category (its industry), from the start of its title:
+// "AI Systems · A2 · The 8 PM invoice problem" → "AI Systems". Only a
+// title shaped "<Category> · <ID like A2> · <title>" has one, so other
+// titles with a "·" in them don't get a made-up category.
+const CATEGORY_ORDER = ["AI Systems", "Social Media", "Websites", "E-commerce"];
+function videoCategory(video) {
+  const m = (video.title || "").match(/^([^·]+?) · [A-Z]{1,3}\d+ · /);
+  return m ? m[1].trim() : "";
+}
+// Categories in a fixed order (Fully Launched's four first), then any
+// others A to Z; videos without one last.
+function categoryRank(cat) {
+  const i = CATEGORY_ORDER.indexOf(cat);
+  return i >= 0 ? String(i).padStart(3, "0") : cat ? "500" + cat.toLowerCase() : "999";
+}
+
 // Who films a video: its own filmed_by, else its client's default
 // (self-serve → the client, concierge → us).
 function filmedByOf(video, clientSystem) {
