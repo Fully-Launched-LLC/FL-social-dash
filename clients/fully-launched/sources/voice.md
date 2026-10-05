@@ -1,7 +1,8 @@
 # Fully Launched: Voice Profile
 
-**Last updated:** 2026-09-28
+**Last updated:** 2026-09-30
 **Whose voice:** Tait Allen. Built from his 8 LinkedIn posts (`2026-09-28-tait-linkedin-posts.md`) and his voice memo (`2026-09-25-tait-voice-memo.md`). Every phrase below is quoted exactly.
+**Matteo's voice:** a short profile from his voice memo (`2026-09-30-matteo-voice-memo.md`) is in its own section near the end.
 **Luke's voice:** [pending: needs something Luke wrote or posted himself. His answers in `2026-09-25-luke-bothun-answers.md` describe the customer and don't show how he writes.]
 
 Read this before writing anything for Fully Launched. If a line doesn't sound like Tait reading it out loud, rewrite it.
@@ -12,7 +13,7 @@ Read this before writing anything for Fully Launched. If a line doesn't sound li
 
 My name is Tait Allen. I run Fully Launched, a company that "helps people with digital media services" (social media, websites, e-commerce and AI systems), and I run the social media side. We help "businesses and founders bring in new clients and more cash flow through content on social media." When I write, I'm talking to "business owners who don't have the time to market themselves." ("Business owners" is who he addresses directly, in posts 7 and 8.)
 
-The team, in his words: "We are 4 young, scrappy guys".
+The team, in his words: "We are 4 young, scrappy guys". Matteo names the four: "Luke, [Tait], Elias, and I".
 
 ## How I sound
 
@@ -80,6 +81,33 @@ The non-obvious takes in his own material, matched to `positioning.md`:
 3. One clear idea, one clear next step?
 
 If any answer is no, rewrite before showing me.
+
+## Matteo's voice
+
+From one voice memo (`2026-09-30-matteo-voice-memo.md`), answering the customer questions. Every phrase is quoted exactly. One recording is not much, so treat this as a first read.
+
+**How he sounds**
+- **Talks it through out loud.** Opens a thought with "I feel like" (4 times) or "I think" (3 times), and softens with "like," and "just". *"I feel like the most painful part for them is the grind, though."*
+- **Lists the concrete things.** Titles, descriptions, photos, inventory, pricing, one after another. *"They're bad titles, their, their descriptions are weak, their photos are weak."*
+- **Tells the story with real detail.** The client, the product, the number. *"You got birch, walnut, maple, cherry"* and *"all three hundred and ninety-two listings."*
+- **Paints the scene.** *"they end up looking at the clock, and it's nine p.m., and they realize they did an entire day of busy work and nothing's moved."*
+- **Short line to land it.** *"That felt fixable."* · *"Usually, it's conversion."*
+- **Takes a stance on the industry.** *"most agencies just sell hours and templates."*
+
+**Words and phrases that are his** (each said once)
+- "the grind"
+- "busy work"
+- "a clean system quickly"
+- "hours and templates"
+- "your listings and your website are, are your salespeople"
+- "you're charging them for inefficiency"
+- "That felt fixable."
+- "well-oiled machine"
+- "the highest leverage thing that you can do" (his word. When writing for him, keep it only inside a direct quote. "leverage" is on the machine-tell list.)
+
+**His unique perspective, for Tait to confirm in `positioning.md`:** built around your business. *"none of it worked because none of it was built around their business."* Luke says the same thing ("we build around how your business actually run").
+
+[pending: needs something Matteo wrote or posted himself, to see how he writes as opposed to how he talks.]
 
 ## Open questions for Tait
 
