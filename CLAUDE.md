@@ -372,7 +372,12 @@ voice profile, story bank; replaces "Your Voice") → Tait reviews →
 Script sized by format / Ask on camera, checked by
 `scripts/check_ideas.py`) → Tait picks → calendar. Tait's private viral
 script library (`viral-script-library`) lives in Drive → Operator Only →
-Viral Script Library, cached in gitignored `library/`. The feedback loop
+Viral Script Library, cached in gitignored `library/`. Every script
+also follows Tait's retention rules, tension loops
+(`library/retention/tension-loops.md`, Drive copy "Retention: Tension
+Loops" in the same folder, 2026-10-05): a loop opened in the hook, a
+rehook every 10 to 15 seconds, every loop closed in the payoff, checked by
+`check_ideas.py`. The feedback loop
 (Apify reading post views) is not built yet, by Tait's choice.
 
 **This repo is public on GitHub.** Nothing operator-only goes in it:
