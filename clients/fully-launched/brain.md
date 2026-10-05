@@ -1,9 +1,9 @@
 # Fully Launched — Brain
 
-Last updated: 2026-09-30
+Last updated: 2026-10-01
 Interviewed by: Tait Allen (founder) and Luke Bothun (cofounder), talking about their own agency
 Sources: `sources/2026-09-25-tait-voice-memo.md` · `sources/2026-09-25-luke-bothun-answers.md` ·
-`research/2026-09-25-reddit-tait-memo.md` · `sources/2026-09-30-matteo-voice-memo.md` (Matteo, cofounder). Replaces the old fake "home-fitness coach" test
+`research/2026-09-25-reddit-tait-memo.md` · `sources/2026-09-30-matteo-voice-memo.md` (Matteo, cofounder) · `sources/2026-10-01-elias-voice-memo.md` (Elias, cofounder, websites). Replaces the old fake "home-fitness coach" test
 client; nothing from that carries over.
 
 Drive: Fully Social OS → Clients → Fully Launched
@@ -38,7 +38,7 @@ Full detail: `sources/customer-data.md` → "Our unique solution".
 See `sources/customer-data.md`.
 
 ## Founder facts
-- The team is four: Luke, Tait, Elias and Matteo [Matteo]. Elias's and Matteo's roles: pending.
+- The team is four: Luke, Tait, Elias and Matteo [Matteo]. Elias runs websites [Elias, 2026-10-01]. Matteo's role: pending.
 - Why we started, Matteo's version: "I could do it in an afternoon what took business owners
   weeks"; good small businesses "losing to bigger players just because their online presence
   was weak. That felt fixable." Fully Launched "was Luke's idea initially", then it branched
