@@ -27,8 +27,13 @@ leave it out or keep it with **Needs from you**.
 `brain.md` (Do / don't, cadence, categories), `sources/identity.md` (and
 its parts), `sources/customer-data.md`, `research/content-research.md`,
 `library/viral-scripts/frameworks.md` plus the analyses of the scripts it
-names (`library/viral-scripts/scripts/`), `concepts/content-ideas.md` (no
-repeats), `templates/vid-method.md` and `templates/story-over-value.md`.
+names (`library/viral-scripts/scripts/`), **`library/retention/tension-loops.md`
+(the whole file, every time: Tait's "cheat code to retention")**,
+`concepts/content-ideas.md` (no repeats), `templates/vid-method.md` and
+`templates/story-over-value.md`. If `library/retention/tension-loops.md`
+is missing on this Mac, rebuild it from the Google Doc in Drive → Operator
+Only → Viral Script Library ("Retention: Tension Loops"), or from the
+source page it names, before writing a single script.
 If the library is missing on this Mac, rebuild it first
 (`viral-script-library`). If Identity or Customer Data is missing, stop
 and run those skills.
@@ -76,10 +81,30 @@ Aim for a spread Tait can film in category batches:
    story itself as one line: `[S2: tell the story of <short title> in full,
    the way you would to a friend]`. We don't have the full story yet, so
    it's never written for them.
+   **Then build the retention in** (`library/retention/tension-loops.md`):
+   - The hook opens the **primary loop**: a specific question the viewer
+     needs answered, 15 words or less, not answered until the payoff.
+   - Right after it, a **tension line** holds the loop.
+   - A **rehook** roughly every 10 to 15 seconds of speech (about every 25
+     to 40 words; 2 or 3 in a short), each opening a new loop *before* the
+     last one closes, so the viewer is always waiting on 2 or 3 things.
+   - Sentences move on **but / so / because / until / turns out /
+     instead**, never "and then".
+   - The **payoff** closes every loop explicitly, ideally with a line that
+     points back at the hook ("Remember...? This is it.").
+   - On a story idea, put the rehooks around the story line (one before
+     it, one after) and give the person telling it the tension lines to
+     use live.
+   Fill every blank from their material: a rehook that promises something
+   the client's words can't pay off is a fake cliffhanger; pick another
+   line. Rewrite each line in their voice. Don't reuse the same exact line
+   twice in one batch.
 5. **Ask on camera:** one open question that gets exactly this video out
    of them. On a story idea it's the story bank's prompt. For people who'd
    rather answer than read.
-6. **CTA:** one ask, from `offer.md`'s "How people start".
+6. **CTA:** one ask, from `offer.md`'s "How people start". If `brain.md`
+   says the CTA goes in the caption (Fully Launched does), the script ends
+   on the payoff and the CTA line is for the caption only.
 
 Entry format in `concepts/content-ideas.md` (the tasteful-content format,
 plus Framework, Outline and Script):
@@ -96,6 +121,7 @@ plus Framework, Outline and Script):
   - <beat 2>
 - **Script (<format>, about <n> seconds):**
   <the script, one paragraph per beat>
+- **Loops:** opens "<the primary question>" · rehooks: "<line>", "<line>" · closes with "<payoff line>"
 - **Ask on camera:** "<question>"
 - **CTA:** <one ask>
 - **Source:** <file, who said it>; hook from <Customer Data / Research line>
@@ -112,6 +138,11 @@ plus Framework, Outline and Script):
    If it could, rewrite it with their specifics or drop it.
 4. **Clean:** the tasteful-content taste pass; no em dashes, no "It's not
    X, it's Y", no AI words; it sounds like them reading it out loud.
+5. **Holds:** the pre-post loop checklist in
+   `library/retention/tension-loops.md` passes: a felt question in the
+   first 3 seconds, a rehook every 10 to 15 seconds, a new loop opened
+   before the primary one closes, no "and then", every loop closed in the
+   payoff, and the viewer can say in one sentence what they got.
 
 Then run the checker and fix everything it lists:
 
@@ -149,8 +180,8 @@ python3 .claude/skills/content-engine/scripts/check_ideas.py clients/<slug> --id
 
 ## Done means
 
-- [ ] Every new idea has all three ingredients, passes the four gates and
-  the checker
+- [ ] Every new idea has all three ingredients, passes the five gates and
+  the checker (including its retention checks)
 - [ ] Script length matches its format; story ideas leave the story to the
   camera
 - [ ] `content-ideas.md` and the Google Doc match
