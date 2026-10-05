@@ -2,23 +2,23 @@
 
 **Last updated:** 2026-10-05
 **Sources:** Tait's voice memo and notes (2026-09-25, 2026-09-28), Luke Bothun's answers (2026-09-25), Matteo's voice memo (2026-09-30), Elias's voice memo (2026-10-01).
-**How to use it:** every story here was named in a recording, in a sentence or two. The full story gets told on camera, in answer to the prompt. Never fill a story in from these notes.
+**How to use it:** every story here was named in a recording, in a sentence or two. The full story gets told on camera, in answer to the prompt. Never fill a story in from these notes. Never name a client on camera: say what we did and the result (Tait, 2026-10-05).
 
 ---
 
-### S1. Creative Cut Supplies: 392 listings
-- **Prompt (ask this on camera):** "Matteo, when David came to you with nearly 400 Etsy listings, what did that catalog actually look like, and what did you build?"
-- **What they said on the memo:** "So when David came to us, he had nearly four hundred Etsy listings across a huge catalog... Updating it by hand would have taken genuinely forever, but we built an automated workflow that rewrote every single title and description" [Matteo]
+### S1. A supplier's 392 Etsy listings
+- **Prompt (ask this on camera):** "Matteo, when that plywood and MDF supplier came to you with nearly 400 Etsy listings, what did that catalog actually look like, and what did you build?"
+- **What they said on the memo:** "...he had nearly four hundred Etsy listings across a huge catalog... Updating it by hand would have taken genuinely forever, but we built an automated workflow that rewrote every single title and description" [Matteo]
 - **Why it lands:** listings that don't rank or sell, and "hundreds of products, no time" (Customer Data: Listings that don't rank or sell).
 - **Fits:** Marketplaces · How we
-- **Source:** `2026-09-30-matteo-voice-memo.md` (David's permission to be named: pending)
+- **Source:** `2026-09-30-matteo-voice-memo.md`
 
 ### S2. From in-person markets to Etsy, Walmart and Amazon
 - **Prompt (ask this on camera):** "Luke, tell the story of the customer who was selling in person and had almost nothing online. What did you launch, and what happened to his sales?"
 - **What they said on the memo:** "We just worked with a customer who has proven his business in a lot of in person markets, but has very little online presence and we launched his brand across Etsy, Walmart Amazon, and we have doubled his sales in just a few months" [Luke]
 - **Why it lands:** "They have products that sell in person, but they don't have an online sales channel" (Customer Data: Selling online, software and margin); the dream of selling on 2 to 4 channels.
 - **Fits:** Marketplaces · How we
-- **Source:** `2026-09-25-luke-bothun-answers.md` (the customer's name and permission: pending)
+- **Source:** `2026-09-25-luke-bothun-answers.md`
 
 ### S3. The honest roofer with no Google reviews
 - **Prompt (ask this on camera):** "Elias, tell the story of the roofing company you knew personally. What happened when they knocked on a door?"
@@ -67,4 +67,4 @@
 - **What they said on the memo:** "right now we're building a system for a business to help them automatically. upload stuff to a certain place. Cla[ude] analyzes it, so basically building out on [a Claude] skill." [Tait]
 - **Why it lands:** hours lost to manual data entry (Customer Data: Manual work and the bad day).
 - **Fits:** AI systems · Behind the scenes
-- **Source:** `2026-09-25-tait-voice-memo.md` (the client's permission to show it: pending)
+- **Source:** `2026-09-25-tait-voice-memo.md`

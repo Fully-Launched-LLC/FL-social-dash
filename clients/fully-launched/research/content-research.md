@@ -64,7 +64,7 @@ Everything below was pulled by scrapers on 2026-10-05, across Fully Launched's f
 
 ## Industry primer
 
-*Not built yet.* Fully Launched is our own agency, so it skipped the new-client intake (`research/industry-primer.md` doesn't exist). Its competitor list is what the "Competitor outliers" section below needs.
+*Not built yet.* Fully Launched is our own agency, so it skipped the new-client intake (`research/industry-primer.md` doesn't exist).
 
 ## What customers are asking
 
@@ -131,7 +131,7 @@ Everything below was pulled by scrapers on 2026-10-05, across Fully Launched's f
 
 ## Competitor outliers
 
-*Not run.* There's no competitor list for Fully Launched yet. **Needs from you:** 3 to 5 agencies or creators you see as competitors (any of the four pillars), with their Instagram, TikTok or Facebook handles.
+*Not needed yet* (Tait, 2026-10-05).
 
 ## Ideas from other industries
 
