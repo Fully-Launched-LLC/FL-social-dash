@@ -137,6 +137,7 @@ async function loadLiveData() {
       contactName: c.contact_name, contactPhone: c.contact_phone, contactEmail: c.contact_email,
       documents: docsByClient[c.id] || [],
       onboarding: obByClient[c.id] || null,
+      onboardingQuestions: c.onboarding_questions || null,
       driveFolders: { footageUploads: f.footage_uploads, finalEdits: f.final_edits, brandVoice: f.brand_voice,
         root: f.root, importantDocuments: f.important_documents, previousContent: f.previous_content },
     };
@@ -991,7 +992,9 @@ async function openOnboarding(clientId) {
   }
   const fileLinks = list => list.map(f => SIGNED[f.path] ? `<a href="${escapeHtml(SIGNED[f.path])}" target="_blank" rel="noopener">${escapeHtml(f.name)}</a>` : escapeHtml(f.name)).join("<br>");
   const b = ob.brand || {}, a = ob.answers || {};
-  const qText = id => { for (const sec of ONBOARDING_QUESTIONS) for (const it of sec.items) if (it.id === id) return it.q; return id; };
+  const myQs = questionsFor({ onboarding_questions: c.onboardingQuestions });
+  const ownQs = myQs !== ONBOARDING_QUESTIONS;
+  const qText = id => { for (const sec of myQs.concat(ONBOARDING_QUESTIONS)) for (const it of sec.items) if (it.id === id) return it.q; return id; };
   const built = (docs || []).length;
   const box = openModal(`
     <h2>${escapeHtml(c.name)}: onboarding</h2>
@@ -1001,6 +1004,12 @@ async function openOnboarding(clientId) {
     ${ob.voice_memo_path ? `<div class="modal-field"><b>Voice memo</b>${SIGNED[ob.voice_memo_path] ? `<audio controls preload="none" src="${escapeHtml(SIGNED[ob.voice_memo_path])}" style="width:100%;margin:4px 0"></audio><a class="btn" href="${escapeHtml(SIGNED[ob.voice_memo_path])}" target="_blank" rel="noopener" download>Download the voice memo</a>` : `<div>Uploaded ${escapeHtml(niceDate(String(ob.voice_memo_uploaded_at || "").slice(0, 10)))}</div>`}</div>` : ""}
     ${ob.footage_done_at || footageFiles.length || (ob.footage || {}).drive_link ? `<div class="modal-field"><b>Footage</b><div>${(ob.footage || {}).drive_link ? `Google Drive folder: <a href="${escapeHtml(ob.footage.drive_link)}" target="_blank" rel="noopener">${escapeHtml(ob.footage.drive_link)}</a><br>` : ""}${footageFiles.length ? `${footageFiles.length} file${footageFiles.length === 1 ? "" : "s"} uploaded:<br>${fileLinks(footageFiles)}` : (ob.footage || {}).none ? "They don't have any footage yet." : ""}</div></div>` : ""}
     ${Object.keys(a).length ? modalField("Their written notes", Object.entries(a).map(([k, v]) => qText(k) + "\n" + v).join("\n\n")) : ""}
+    <details class="modal-field" id="obQs">
+      <summary style="cursor:pointer"><b style="display:inline">Their voice memo questions</b> <span class="meta">· ${ownQs ? "their own list" : "the standard list"}, ${myQs.reduce((n, sec) => n + sec.items.length, 0)} questions</span></summary>
+      <div class="meta" style="margin:8px 0 6px;line-height:1.5">What they see on their Questions page. Paste the list Claude made for them (the <code>voice-memo-questions</code> skill), or edit it here: <b>## </b> starts a section, <b>Note:</b> under it adds a line, <b>- </b> starts a question, and <b>- [story] </b> marks a story prompt (they name the story on the memo and tell it on camera).</div>
+      <textarea id="obQText" rows="14" style="width:100%;font-size:0.85rem">${escapeHtml(questionsToText(myQs))}</textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button id="obQSave">Save their questions</button>${ownQs ? `<button id="obQReset">Go back to the standard questions</button>` : ""}<span class="meta" id="obQMsg" style="align-self:center"></span></div>
+    </details>
     <div class="modal-field">
       <b>Voice memo transcript</b>
       <div class="meta" style="margin-bottom:6px">${ob.voice_memo_path ? "Their voice memo is above: download it and get the transcript. " : ob.voice_memo_sent_at ? "They say they've texted you their voice memo. " : ""}Paste the whole transcript here, then build their Customer Data and Your Voice documents.</div>
@@ -1016,6 +1025,22 @@ async function openOnboarding(clientId) {
     </div>
     <div class="auth-error" id="obErr"></div>`);
   box.querySelector("#obSendDocs").onclick = () => sendDocumentsEmail(clientId, box);
+  const saveQs = async value => {
+    const msg = box.querySelector("#obQMsg");
+    const { error } = await sbClient.from("social_clients").update({ onboarding_questions: value }).eq("id", clientId);
+    if (error) { msg.textContent = "Didn't save: " + error.message; return; }
+    await loadLiveData();
+    await openOnboarding(clientId);
+    const again = document.querySelector("#obQs");
+    if (again) { again.open = true; again.querySelector("#obQMsg").textContent = "Saved. That's what they'll see."; }
+  };
+  box.querySelector("#obQSave").onclick = () => {
+    const qs = questionsFromText(box.querySelector("#obQText").value);
+    if (!qs.length) { box.querySelector("#obQMsg").textContent = "Add at least one question (a line starting with - )."; return; }
+    saveQs(qs);
+  };
+  const reset = box.querySelector("#obQReset");
+  if (reset) reset.onclick = () => saveQs(null);
   const btn = box.querySelector("#obBuild");
   btn.onclick = async () => {
     const err = box.querySelector("#obErr"); err.textContent = "";

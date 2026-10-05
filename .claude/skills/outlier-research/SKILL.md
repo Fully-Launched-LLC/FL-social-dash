@@ -29,11 +29,11 @@ This skill never writes a hook, script or idea.
 
 ## Files
 
-Per client, in `clients/<slug>/research/`:
+Per client, in `clients/<slug>/research/private/` (gitignored: on this Mac only, never in the repo, which is public):
 
 | File | What it holds |
 |---|---|
-| `outliers.md` | the repo copy of the private Google Doc: what's been learned, then every run, newest first. The `**Drive:**` line at the top holds the doc's link. |
+| `private/outliers.md` | the repo copy of the private Google Doc: what's been learned, then every run, newest first. The `**Drive:**` line at the top holds the doc's link. |
 
 The Google Doc lives in Drive → **Fully Social OS / Operator Only (do not
 share)** (folder `12Lk0_lLkVNOICJuJZMNMrYnkS7GskBcc`), never in the client's
@@ -70,14 +70,14 @@ If Tait didn't name a client, ask which one (list the folders in
 
 Read, from `clients/<slug>/`:
 
-- `research/outliers.md` → **What works** (their niche, creators to keep,
+- `research/private/outliers.md` → **What works** (their niche, creators to keep,
   not my lane, formats that keep winning). If the file doesn't exist,
   create it from the template below.
 - `brain.md` (the niche, the audience, Do / don't) and
   `sources/positioning.md` (pillars or categories).
 
 The niche: what Tait typed comes first. Otherwise use **My niche** in
-`outliers.md`. If that's empty, propose one from `brain.md` in one line
+`private/outliers.md`. If that's empty, propose one from `brain.md` in one line
 and ask Tait to confirm it; once he does, write it under **My niche**.
 
 A client with several categories (Fully Launched: AI Systems, Social
@@ -119,7 +119,7 @@ a guess.
 
 ### 6. Write it down
 
-Add the run to the top of **Runs** in `outliers.md`, in this shape:
+Add the run to the top of **Runs** in `private/outliers.md`, in this shape:
 
 ```
 ### 2026-10-01: Etsy sellers (E-commerce)
@@ -136,7 +136,7 @@ Add the run to the top of **Runs** in `outliers.md`, in this shape:
   hashtags. Replace any em dash with a comma.
 - No em dashes anywhere else either.
 
-Then mirror `outliers.md` to the Google Doc (`google-workspace` skill
+Then mirror `private/outliers.md` to the Google Doc (`google-workspace` skill
 rules: read before writing, guard with the revision):
 
 - **First run for this client:** create a Google Doc titled
@@ -145,7 +145,7 @@ rules: read before writing, guard with the revision):
   `get_file_permissions` shows only Tait as owner. If anyone else has
   access, stop and tell him; don't share or unshare anything yourself.
 - **Insert or update:** use the customer-data-doc scripts:
-  `gdoc_sync.py clients/<slug>/research/outliers.md <doc.json> --out DIR`
+  `gdoc_sync.py clients/<slug>/research/private/outliers.md <doc.json> --out DIR`
   (a new doc: `gdoc_build.py text` and insert at index 1), then re-read and
   `gdoc_build.py format ... --start "<the new run's heading>" --end "<the
   run after it>"` so only the new run is styled. `[Watch](url)` becomes a
@@ -162,7 +162,7 @@ After the link, one question:
 > Anything in there that isn't the right lane for <client>? Tell me and
 > I'll remember it for next time.
 
-Write what he says into **What works** in `outliers.md`, then sync the doc:
+Write what he says into **What works** in `private/outliers.md`, then sync the doc:
 
 - "@someone isn't right" / "that topic is off" → **Not my lane**
 - "more like number 3" / "@someone is spot on" → **Creators worth watching**
@@ -174,7 +174,7 @@ over b-roll) under **Formats that keep winning**, labelled "Seen in the
 <date> run". **Only write what Tait said or what the run showed.** If he
 says it's fine, write nothing and don't ask again.
 
-## Template for a new `outliers.md`
+## Template for a new `private/outliers.md`
 
 ```
 # <Client>: Outlier Research (operator only)

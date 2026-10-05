@@ -331,8 +331,8 @@ const STEPS = {
   questions: () => `
     <h1>The questions</h1>
     <p class="lead">Read the questions, then answer them in one voice memo at the bottom of this page. Talk the way you'd explain it to a friend.</p>
-    <div class="card">${ONBOARDING_QUESTIONS.map(s => `<div class="qsec"><h3>${escapeHtml(s.section)}</h3><ol class="doc-body" style="margin:0 0 6px">${s.items.map(it => `
-      <li class="qitem"><div class="q">${escapeHtml(it.q)}</div></li>`).join("")}</ol></div>`).join("")}</div>
+    <div class="card">${questionsFor(CLIENT).map(s => `<div class="qsec"><h3>${escapeHtml(s.section)}</h3>${s.note ? `<p class="meta qnote">${escapeHtml(s.note)}</p>` : ""}<ol class="doc-body" style="margin:0 0 6px">${s.items.map(it => `
+      <li class="qitem${it.story ? " story" : ""}"><div class="q">${it.story ? `<span class="badge qstory">Story</span> ` : ""}${escapeHtml(it.q)}</div></li>`).join("")}</ol></div>`).join("")}</div>
     <div class="card memo-card"><h2>Your voice memo</h2><div data-memo>${memoHtml()}</div></div>
     <div class="wnav"><span></span><button type="button" class="primary" data-next ${OB && OB.voice_memo_path && memo.state !== "uploading" ? "" : "disabled"}>Continue</button></div>
     ${errHtml}`,

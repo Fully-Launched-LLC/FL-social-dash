@@ -340,7 +340,9 @@ fully-social-os/
                                important Google Drive docs), 008 (client
                                onboarding: social_client_onboarding,
                                social_client_generated_docs, new folder links), 009
-                               (voice memo texted, not uploaded)
+                               (voice memo texted, not uploaded), 010
+                               (onboarding uploads), 011 (each client's
+                               own voice memo questions)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -354,7 +356,29 @@ fully-social-os/
                                the real Supabase URL/anon key, local dev only)
 ```
 
-**New-client order** (skill `client-onboarding`, `.claude/skills/client-onboarding/`):
+**The content system** (Tait, 2026-10-05; skill `content-system`, run from
+Claude Code): **"New client: name, website, industry, call transcript"**
+→ intake, `industry-primer`, `voice-memo-questions` (25 to 30 questions:
+their voice, their ideal customer in depth, their solutions, `[story]`
+prompts they only name on the memo and tell in full on camera, their offer;
+pasted on Clients → Onboarding → *Their voice memo questions*, stored in
+`social_clients.onboarding_questions`, migration 011) → invite. Then, with
+the hand-made transcript, **"Build content for <client>"** →
+`research-doc` (Apify: Instagram, TikTok, Facebook, YouTube across
+industries, Reddit; plus the 10 best frameworks from the library) →
+`customer-data-doc` (format unchanged) → `identity-doc` (offer, 3-3-3,
+voice profile, story bank; replaces "Your Voice") → Tait reviews →
+`content-engine` (tasteful-content plus frameworks: Hook / Outline /
+Script sized by format / Ask on camera, checked by
+`scripts/check_ideas.py`) → Tait picks → calendar. Tait's private viral
+script library (`viral-script-library`) lives in Drive → Operator Only →
+Viral Script Library, cached in gitignored `library/`. The feedback loop
+(Apify reading post views) is not built yet, by Tait's choice.
+
+**This repo is public on GitHub.** Nothing operator-only goes in it:
+`library/` and `clients/*/research/private/` are gitignored.
+
+Older order, kept for reference (skill `client-onboarding`, `.claude/skills/client-onboarding/`):
 save transcripts → `customer-data-doc` → the 3-3-3 (`positioning.md`) →
 `tasteful-content` → content research → Google Docs → the portal's
 Documents page. Fully Launched is the reference output.
@@ -479,8 +503,10 @@ they can stop and come back:
 2. The steps, with tabs across the top. A step opens only once the one
    before it is done: **Welcome** ("around 30 minutes, come back any
    time", Start) → **Your brand** (drag-and-drop brand files, or "I don't
-   have any brand files") → **The questions** (`ONBOARDING_QUESTIONS` in
-   shell.js and a voice memo recorder on the same page: record in the
+   have any brand files") → **The questions** (the client's own list,
+   `social_clients.onboarding_questions`, or the standard 30 in
+   `ONBOARDING_QUESTIONS` in shell.js; `[story]` prompts marked "Story";
+   `questionsFor()`; and a voice memo recorder on the same page: record in the
    browser, or upload a recording) → **Your footage** (drag-and-drop files
    or whole folders, and/or a Google Drive folder link).
 3. Their portal, `/clients/<slug>?tour=1`: a walkthrough of To Do,

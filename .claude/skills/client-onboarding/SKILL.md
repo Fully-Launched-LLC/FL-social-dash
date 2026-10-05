@@ -5,6 +5,14 @@ description: The full new-client setup, in order. Takes a client's transcripts (
 
 # client-onboarding
 
+> **Since 2026-10-05 the whole process runs from `content-system`** (one
+> command: "New client" / "Build content for"). That skill decides the
+> order. This one still holds the reference steps it uses: the Drive
+> folders, saving transcripts, the 3-3-3 shape (step 3), Google Docs
+> (step 6) and the portal's Documents list (step 7). "Your Voice" is now
+> the **Identity** document (`identity-doc`), same link for existing
+> clients.
+
 The order Fully Launched was built in, as one repeatable run. Reference
 output: everything in `clients/fully-launched/`. Match its files, headings
 and style exactly.
