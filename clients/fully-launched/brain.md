@@ -57,6 +57,8 @@ See `sources/positioning.md` (Your Voice): 4 pillars (websites, organic content,
 systems, marketplaces) + the "Building Fully Launched" series (4+ videos/week), 3 formats,
 3 perspectives (third to confirm).
 
+Documents approved 2026-10-05 (Tait: "Identity doc looks good").
+
 ## Do / don't
 - Don't: invent client facts, results or numbers beyond what's in the sources.
 - Don't: share prices in any content. [Tait, 2026-10-05]

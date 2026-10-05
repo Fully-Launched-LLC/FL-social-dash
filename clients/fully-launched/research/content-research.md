@@ -170,6 +170,15 @@ Everything below was pulled by scrapers on 2026-10-05, across Fully Launched's f
 - **Observed:** "45 spa kits. One hour of packing. $284.81 kept. The buyer paid $529 but that's not the number." (Etsy seller, 51K, text on b-roll).
 - **Our read:** the margin story Luke tells (fees and shipping eating the profit) told with one real order's numbers. Needs a real client's numbers and permission.
 
+## Authority Hacking: sources
+
+*Checked 2026-10-05. Every fact in the Authority Hacking scripts (Content Ideas AH1 to AH4) comes from these.*
+
+1. **Airbnb (AH1):** in 2009 New York bookings were low because listing photos were poor; the founders rented a camera and photographed listings themselves, and bookings on those listings doubled. [Alexander Jarvis](https://www.alexanderjarvis.com/airbnb-doing-things-that-dont-scale/) · [Wikipedia](https://en.wikipedia.org/wiki/Airbnb)
+2. **Gymshark, Ben Francis (AH2):** founded June 2012 in a garage, Francis 19 at the time; in August 2020 General Atlantic bought 21% in a deal valuing the company at £1.25 billion. [Wikipedia: Gymshark](https://en.wikipedia.org/wiki/Gymshark) · [Forbes](https://www.forbes.com/sites/giacomotognini/2023/04/05/from-bodybuilder-to-billionaire-how-gymshark-founder-ben-francis-built-a-sportswear-unicorn/)
+3. **Klarna (AH3):** in February 2024 its AI assistant handled 2.3 million conversations in its first month, "the equivalent work of 700 full-time agents"; in May 2025 Klarna began hiring human agents again after quality complaints on complex cases. [FinTech Weekly](https://www.fintechweekly.com/magazine/articles/klarna-hires-customer-service-after-ai-pivot) · [DEV Community](https://dev.to/vibeagentmaking/klarnas-ai-did-the-equivalent-work-of-700-agents-what-the-numbers-measured-and-what-they-missed-966)
+4. **Gary Vaynerchuk (AH4):** took over his father's liquor store, renamed it Wine Library, sold online, started the daily YouTube show Wine Library TV in 2006, and grew the business from about $3 million to $60 million a year. [Wikipedia](https://en.wikipedia.org/wiki/Gary_Vaynerchuk)
+
 ## The 10 frameworks for Fully Launched
 
 *Not chosen yet.* The viral script library (`library/viral-scripts/frameworks.md`) has no frameworks yet: it builds them from the scripts Tait adds. It needs at least 10 scripts before there are 10 to pick from. Tait adds them with **Add viral scripts**.

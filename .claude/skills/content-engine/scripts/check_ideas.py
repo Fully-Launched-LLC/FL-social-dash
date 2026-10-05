@@ -40,7 +40,7 @@ def field(body, name):
 
 
 def script_block(body):
-    m = re.search(r'\*\*Script[^*]*:\*\*\s*\n?((?:.|\n)*?)(?=\n- \*\*(?:Ask on camera|CTA|Source|Needs from you)|\Z)', body)
+    m = re.search(r'\*\*Script[^*]*:\*\*\s*\n?((?:.|\n)*?)(?=\n- \*\*(?:Loops|Ask on camera|CTA|Source|Needs from you)|\Z)', body)
     return m.group(1) if m else ''
 
 
