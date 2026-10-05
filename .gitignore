@@ -4,3 +4,8 @@ dashboards/dist/
 
 # env files
 .env*
+
+# Operator-only material. This repo is public on GitHub: anything Tait alone
+# should see stays on this Mac and in Drive's private "Operator Only" folder.
+library/
+clients/*/research/private/

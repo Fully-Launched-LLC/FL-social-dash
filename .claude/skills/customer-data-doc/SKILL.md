@@ -28,6 +28,16 @@ The transcripts are usually voice memos (the client founder, a cofounder,
 Tait's own research memo read out loud), not customer calls. Treat them the
 same way, and say in the doc which kind they are.
 
+## Fears and practical goals (2026-10-05)
+
+Tait wants fears and practical goals in this document too, **without
+changing its format**. They go inside the two lists, as their own `###`
+groups, quoted the same way: fears (spoken and unspoken) under **1. Pains,
+verbatim**, practical goals (the numbers, deadlines and results they're
+after) under **2. Dreams, verbatim**. The standard voice memo questions
+ask for both (`voice-memo-questions`). The 5 hook phrases can come from any
+of the four.
+
 ## Hard rules
 
 - **Never invent a quote.** Every quote must be in a transcript. No

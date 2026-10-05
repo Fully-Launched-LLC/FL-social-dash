@@ -375,6 +375,8 @@ button.big { padding:14px 40px; font-size:16px; }
 .qitem:last-child { border-bottom:0; }
 .qitem .q { font-size:14.5px; line-height:1.45; }
 .qitem textarea { margin-top:8px; }
+.qnote { margin:-2px 0 8px; line-height:1.45; }
+.qstory { font-size:10.5px; padding:1px 7px; vertical-align:1px; margin-right:2px; }
 .color-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 .color-row input[type=color] { width:44px; height:38px; padding:2px; border-radius:8px; border:1px solid var(--line-2); background:var(--navy); }
 

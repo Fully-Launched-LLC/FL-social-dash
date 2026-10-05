@@ -540,33 +540,89 @@ function openVideoModal(client, video, opts) {
 // Luke's own recordings answered them (clients/*/sources/*luke*), plus the
 // perspective questions behind the 3-3-3. Shown on /welcome and in the
 // operator's onboarding view.
+// The standard voice memo questions (Tait, 2026-10-05): they draw out the
+// client's voice (how they talk), their ideal customer in depth (pains,
+// fears, dreams, practical goals, objections), their unique solutions,
+// their stories, and their offer. A client with their own list (the
+// `voice-memo-questions` skill, saved in social_clients.onboarding_questions,
+// migration 011) sees that instead: see questionsFor().
+// "story": a story prompt. The client only names the story on the memo;
+// they tell it in full on camera when it's asked from behind the camera.
 const ONBOARDING_QUESTIONS = [
-  { section: "Your business", items: [
-    { id: "what", q: "What does your business do, in plain words? Who is it for?" },
-    { id: "why", q: "Why did you start it? What did you keep seeing that made you do it?" },
-    { id: "story", q: "Tell us about a customer you're proud of. What happened, start to finish?" },
+  { section: "You and your business", note: "Answer the way you'd talk to a friend. How you talk is part of what we're listening for, so don't read anything out.", items: [
+    { id: "what", q: "What does your business do, in plain words? Explain it the way you would to a friend at dinner." },
+    { id: "why", q: "Why did you start it? What were you doing before, and what made you go for it?" },
+    { id: "intro", q: "When someone asks \"so what do you do?\", what do you usually say?" },
+    { id: "phrases", q: "What words or phrases do you catch yourself saying all the time, with customers or your team?" },
+    { id: "cringe", q: "What kind of marketing makes you cringe? What would you never say?" },
   ] },
-  { section: "Your best customer", items: [
-    { id: "best", q: "Who is your best customer? Describe them. If there's more than one kind, describe each." },
-    { id: "tipped", q: "What tips them over right before they find you? What just happened?" },
-    { id: "problems", q: "What are the main problems they come to you with?" },
-    { id: "badday", q: "What's the most painful part of their day? What does a bad day look like for them?" },
-    { id: "afraid", q: "What are they afraid of?" },
+  { section: "Your ideal customer", note: "Picture one real customer while you answer.", items: [
+    { id: "best", q: "Who is your best customer? Describe one real person: their age, their job or business, where they live, what their life looks like." },
+    { id: "kinds", q: "If you have more than one kind of customer, which kind do you want more of, and why?" },
+    { id: "tipped", q: "What just happened in their life or business right before they found you?" },
+    { id: "problems", q: "What problems do they come to you with? Use their words if you remember them." },
+    { id: "badday", q: "What does a bad day look like for them, because of this problem?" },
+    { id: "afraid", q: "What are they afraid of? What's the worst case they worry about?" },
     { id: "unsaid", q: "What are they frustrated or embarrassed about, but won't say out loud?" },
-    { id: "dream", q: "A year from now, what does their dream outcome look like?" },
-    { id: "tried", q: "What have they already tried that didn't work?" },
+    { id: "dream", q: "A year after working with you, what does their life look like? What's the dream?" },
+    { id: "goals", q: "What practical goals do they have? The numbers, deadlines or results they're after." },
+    { id: "tried", q: "What have they already tried that didn't work, and why didn't it?" },
     { id: "beliefs", q: "What do they believe about this that isn't true?" },
-    { id: "hear", q: "What questions and complaints do you hear all the time?" },
-    { id: "solve", q: "In plain words, what do you solve better than anyone?" },
+    { id: "hear", q: "What questions and doubts do you hear over and over before someone buys?" },
   ] },
-  { section: "Your perspective", items: [
-    { id: "wrong", q: "What does your industry get wrong?" },
-    { id: "wish", q: "What do you wish every customer understood?" },
+  { section: "Your way of solving it", items: [
+    { id: "solve", q: "In plain words, what do you do better than anyone? Why can't someone else just copy it?" },
+    { id: "process", q: "Walk us through what you do for a new customer, step by step, the way it really happens." },
+    { id: "wrong", q: "What does your industry get wrong? What do you do differently?" },
     { id: "believe", q: "What do you believe that most people in your space don't? Give two or three." },
-    { id: "topics", q: "What could you talk about for hours? What do people always ask you about?" },
-    { id: "share", q: "How do you like to share: telling stories, teaching how-to's, showing behind the scenes, or answering questions?" },
+  ] },
+  { section: "Your stories", note: "Just name each story in a sentence or two. Don't tell it in full: we'll ask you on camera and you'll tell the whole story then.", items: [
+    { id: "proud", story: true, q: "A customer you're proud of: what was going on when they came to you, and what changed?" },
+    { id: "wentwrong", story: true, q: "A time something went wrong, with a customer or in your business, and what you learned." },
+    { id: "moment", story: true, q: "The moment you knew you had to start this business." },
+    { id: "almost", story: true, q: "A customer who almost didn't buy, or almost walked away. What happened?" },
+    { id: "life", story: true, q: "Something from your life outside work that shaped how you do business." },
+    { id: "funny", story: true, q: "A funny or surprising moment on the job." },
+  ] },
+  { section: "What you sell", items: [
+    { id: "offer", q: "What do you sell? Each offer, what it includes, and roughly what it costs." },
+    { id: "results", q: "What results have customers gotten? Real numbers if you have them." },
+    { id: "start", q: "How do people usually start working with you? What's the first step you'd want someone watching your videos to take?" },
   ] },
 ];
+
+// The questions a client sees: their own list if they have one, else the
+// standard one.
+function questionsFor(client) {
+  const qs = client && client.onboarding_questions;
+  return Array.isArray(qs) && qs.some(s => s && Array.isArray(s.items) && s.items.length) ? qs : ONBOARDING_QUESTIONS;
+}
+// The plain-text form Tait edits on the Onboarding panel:
+//   ## Section heading
+//   Note: an optional line under the heading
+//   - A question
+//   - [story] A story prompt
+function questionsToText(qs) {
+  return qs.map(s => [`## ${s.section}`].concat(s.note ? [`Note: ${s.note}`] : [], s.items.map(it => `- ${it.story ? "[story] " : ""}${it.q}`)).join("\n")).join("\n\n");
+}
+function questionsFromText(text) {
+  const out = [];
+  let n = 0;
+  String(text || "").split("\n").forEach(raw => {
+    const line = raw.trim();
+    if (!line) return;
+    let m;
+    if ((m = line.match(/^#+\s*(.+)$/))) { out.push({ section: m[1].trim(), items: [] }); return; }
+    if (!out.length) out.push({ section: "Questions", items: [] });
+    const sec = out[out.length - 1];
+    if ((m = line.match(/^note:\s*(.+)$/i)) && !sec.items.length) { sec.note = m[1].trim(); return; }
+    const q = line.replace(/^(?:[-*•]|\d+[.)])\s*/, "");
+    const story = /^\[story\]\s*/i.test(q);
+    const text = q.replace(/^\[story\]\s*/i, "").trim();
+    if (text) sec.items.push(Object.assign({ id: "q" + (++n), q: text }, story ? { story: true } : {}));
+  });
+  return out.filter(s => s.items.length);
+}
 
 // Where a client is in onboarding, for the operator's Clients list.
 function onboardingSummary(o, clientFilms) {
