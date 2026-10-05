@@ -1,6 +1,6 @@
 ---
 name: research-doc
-description: Build or refresh a client's Research document - the industry primer, the questions customers ask (Reddit), outlier videos in the niche and from competitors (Instagram, TikTok, Facebook via Apify), ideas from other industries (YouTube outliers via Apify), the viral formats that are working, and the 10 frameworks from Tait's viral script library that fit this client best. Writes research/content-research.md and mirrors it into the client's Content Research Google Doc. Use as step 6 of the content system, or when Tait asks for research, outliers, customer questions or frameworks for a client.
+description: Build or refresh a client's Research document - the industry primer, the questions customers ask (Reddit), outlier videos in the niche and from competitors (Instagram, TikTok, Facebook via Apify), the trending formats on Instagram (talking head, green screen, text on b-roll...), ideas from other industries (YouTube outliers via Apify), the viral formats that are working, and the 10 frameworks from Tait's viral script library that fit this client best. Writes research/content-research.md and mirrors it into the client's Content Research Google Doc. Use as step 6 of the content system, or when Tait asks for research, outliers, customer questions or frameworks for a client.
 ---
 
 # research-doc
@@ -41,6 +41,33 @@ hooks ("why can't anyone find my Etsy shop?").
 skill's steps 3 to 5 for the client's niche (or each category, for a
 client with several): top 10 by views. The full list goes in the private
 outlier doc as usual; the Research doc gets the top 5 per platform.
+
+**2b. Trending formats on Instagram (in the niche).** Which *formats* are
+winning right now, not just which videos. From the Instagram reels pull in
+job 2 (widen it to about 50 reels from the last 60 days for this job), for
+each reel:
+
+- download its cover image (`displayUrl` in the scraper's output; the link
+  expires, so fetch it right away) with `curl -s -o <scratchpad>/ig/<n>.jpg`
+  and look at it with the Read tool;
+- read its length (`videoDuration`), caption and audio (`musicInfo`: an
+  original voice or a trending sound);
+- label its format from what you can see, one of: **talking head** (one
+  person speaking to camera), **green screen** (person over a screenshot,
+  article, post or image), **text on b-roll** (big on-screen text over
+  footage, usually with music), **voiceover b-roll**, **two-person or
+  podcast clip**, **interview or street interview**, **screen recording or
+  tutorial**, **POV or skit**, **before and after**, **slideshow or photo
+  dump**, **other** (describe it). Add the on-screen text style if there
+  is one (a big caption at the top, word-by-word captions).
+
+Then rank the formats: how many of the top reels use each, their median
+views, and whether they're rising (more of them in the last 30 days than
+the 30 before). The labels come from one cover frame and the caption, so
+call it that ("from the cover frame") and never claim more; Tait checks
+the top examples by watching them. This goes in the Research doc as
+**Trending formats on Instagram**, and in the private outlier doc next to
+each reel.
 
 **3. Competitor outliers (Instagram, TikTok, Facebook).** For each
 competitor in the primer with social accounts: their recent posts via the
@@ -87,6 +114,11 @@ this order, each starting with *Pulled YYYY-MM-DD*:
 ## What customers are asking
 ### <Theme>
 1. "<question in their words>" · r/<sub> · 412 upvotes · [link](https://...)
+
+## Trending formats on Instagram
+*Pulled YYYY-MM-DD from <n> reels, last 60 days · format read from each reel's cover frame and caption*
+1. **Green screen** · 14 of the top 50 · median 210K views · rising · best: [Watch](https://...), [Watch](https://...)
+   What it looks like here: <one line, observed>
 
 ## Outliers in the niche
 1. **2.4M views** · TikTok · @creator · <caption trimmed> · [Watch](https://...)

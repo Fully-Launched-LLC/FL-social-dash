@@ -98,6 +98,14 @@ Apify tools first; never guess fields. About 30 results, **reels only**
 photos. Keep: video view count, owner username, caption, post URL, post
 date.
 
+**Format of each reel.** Download its cover image (`displayUrl`) to the
+scratchpad with `curl` right away (the link expires) and look at it with
+the Read tool; with its length and caption, label the format (talking
+head, green screen, text on b-roll, voiceover b-roll, two-person clip,
+interview, screen recording, POV or skit, before and after, slideshow,
+other). It's from one frame, so write "(from the cover)". Show it on each
+row: `1. **2.4M views** · Instagram · Green screen (from the cover) · @creator · [Watch](...)`.
+
 ### 4. TikTok
 
 Apify actor `clockworks/tiktok-scraper`. Read its input schema first.
