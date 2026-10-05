@@ -27,17 +27,22 @@ def u(s):
 def inline(s):
     s = s.replace('`', '')  # code marks around file names mean nothing in a Doc
     out, rng = '', []
-    for m in re.finditer(r'\*\*(.+?)\*\*|\*(.+?)\*|([^*]+)', s):
-        if m.group(1) is not None:
-            inner, inner_rng = inline(m.group(1))  # italics nested inside bold
+    for m in re.finditer(r'\[([^\]]+)\]\((https?://[^)\s]+)\)|\*\*(.+?)\*\*|\*(.+?)\*|([^*\[]+|\[)', s):
+        if m.group(1) is not None:  # [text](url): a clickable link
+            rng.append((u(out), u(out) + u(m.group(1)), 'link:' + m.group(2)))
+            out += m.group(1)
+            continue
+        g = m.groups()[2:]
+        if g[0] is not None:
+            inner, inner_rng = inline(g[0])  # italics nested inside bold
             rng.append((u(out), u(out) + u(inner), 'bold'))
             rng += [(a + u(out), b + u(out), k) for a, b, k in inner_rng]
             out += inner
-        elif m.group(2) is not None:
-            rng.append((u(out), u(out) + u(m.group(2)), 'italic'))
-            out += m.group(2)
+        elif g[1] is not None:
+            rng.append((u(out), u(out) + u(g[1]), 'italic'))
+            out += g[1]
         else:
-            out += m.group(3)
+            out += g[2]
     return out, rng
 
 
@@ -163,9 +168,10 @@ def cmd_format(args):
             groups.setdefault(g, [kind, s, e])[2] = e
         shift = u(t) - u(text)  # 1 if the doc already lost a nesting tab
         for a, b, k in r:
+            style, field = ({'link': {'url': k[5:]}}, 'link') if k.startswith('link:') else ({k: True}, k)
             reqs.append({'updateTextStyle': {
                 'range': {'startIndex': s + a - shift, 'endIndex': s + b - shift},
-                'textStyle': {k: True}, 'fields': k}})
+                'textStyle': style, 'fields': field}})
     # last list first: bulleting strips nesting tabs, which shifts later text
     for g, (kind, s, e) in sorted(groups.items(), reverse=True):
         reqs.append({'createParagraphBullets': {
