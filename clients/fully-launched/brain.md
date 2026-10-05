@@ -10,7 +10,7 @@ Drive: Fully Social OS → Clients → Fully Launched
 (https://drive.google.com/drive/folders/1X6CJurBCvH7N3fRQJ69uPuC0g4IlOD8z). The four working
 docs are on the client portal's Documents page:
 - Customer Data — `sources/customer-data.md` (https://docs.google.com/document/d/19WUOPXJw7gBIa41UPfHgvGnCRiEZFB5t0QFLUUNL1mA/edit)
-- Your Voice (3-3-3) — `sources/positioning.md` (https://docs.google.com/document/d/1CzaSXHTk_25Qb6GoueDd_wxzHpAV0efVmD6REdf9k_4/edit)
+- Identity (offer, 3-3-3, voice profile, story bank; replaced Your Voice 2026-10-05): `sources/identity.md`, built from `offer.md`, `positioning.md`, `voice.md`, `story-bank.md` (https://docs.google.com/document/d/1CzaSXHTk_25Qb6GoueDd_wxzHpAV0efVmD6REdf9k_4/edit)
 - Content Ideas — `concepts/content-ideas.md` (https://docs.google.com/document/d/1Lax_VKFYEeJxhJhOvdRn_Y6ALFtkF4Jyd0AZYnFi9jE/edit)
 - Content Research — `research/content-research.md` (https://docs.google.com/document/d/1Tc5WbaM0jK7rdc2x4WqxongfJ_D0VT_f1Kw-M1UqwAw/edit)
 
