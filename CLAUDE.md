@@ -344,11 +344,16 @@ fully-social-os/
                                (onboarding uploads), 011 (each client's
                                own voice memo questions), 012
                                (team-only documents: hidden from the
-                               client, read by editors)
+                               client, read by editors), 013 (editor
+                               onboarding: invited_at, setup_at,
+                               social_editor_setup_done)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
                                invite.js (branded invite email),
+                               invite-editor.js (editor invite: adds the
+                               social_editors row, "Welcome to the Fully
+                               Launched editor dashboard" email),
                                send-documents.js (branded "here are your
                                important documents" email),
                                build-documents.js (documents from a pasted
@@ -691,13 +696,15 @@ operator); editing happens only on the operator dashboard.
 
 ### Editor dashboard — `/editor/dashboard.html`
 
-**To Edit** (videos currently with them: edit-by date, revisions if it came
-back, editing instructions, the client's brand guidelines Google Doc —
+**To Edit** (a **Time sensitive** card first: edits due within 3 days or
+late, and anything sent back with revisions; then videos currently with
+them: edit-by date, revisions if it came back, editing instructions, the client's brand guidelines Google Doc —
 `social_drive_folder_links.brand_voice`, set on the Clients page — and the
 raw footage and finished video folder links, and the client's documents,
 Team only ones like Content Research included (migration 012); nothing
 else) and
-**Calendar** (edit-by dates). An operator sees every editor's queue with a
+**Calendar** (edit-by dates) and **Documents** (each of their clients'
+brand guidelines and documents, Content Research included). An operator sees every editor's queue with a
 filter, and can click Finished for them.
 
 ## Adding a client
@@ -713,8 +720,23 @@ emails the invite as soon as the client is created.
 
 ## Adding an editor
 
-`editor_id` must point at a `social_editors` row, which must point at a
-Supabase Auth user — so a video can't go to an editor until one exists.
+Operator dashboard → **Editors** → **+ Invite editor** (name, email;
+Tait, 2026-10-06). `/api/invite-editor` makes their login (or uses an
+existing one), adds the `social_editors` row, and emails "Welcome to the
+Fully Launched editor dashboard" / "We are excited to have you on the
+team." / **Click to set up your dashboard**. The button opens
+`/editor/dashboard.html?setup=1` on our own site, which signs them in,
+asks them to create a password (until `social_editors.setup_at` is set,
+migration 013), then runs the walkthrough: To Edit → Time sensitive →
+the Edit by date → Calendar → Documents → bookmark this page (`runTour`
+in shell.js, shared with the client portal; the operator previews it
+with `?tour=1`). Editors shows each editor's status (Invited / Set up)
+and **Resend invite**. A client's login can't be made an editor: one
+login opens one dashboard (for a test, `name+editor@gmail.com` reaches
+the same Gmail inbox).
+
+By hand, the older way: `editor_id` must point at a `social_editors` row,
+which must point at a Supabase Auth user.
 
 - **You editing yourself (works today, no new login):** in the SQL editor,
   `insert into social_editors (id, name, email) select id, name, email from

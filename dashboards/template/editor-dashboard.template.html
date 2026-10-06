@@ -19,6 +19,7 @@
   <div class="sync-badge" id="operatorBadge" style="display:none">Viewing as operator</div>
   <div class="nav-item active" data-view="queue">To Edit</div>
   <div class="nav-item" data-view="calendar">Calendar</div>
+  <div class="nav-item" data-view="documents">Documents</div>
 </nav>
 
 <main class="main">
@@ -29,8 +30,17 @@
   <section class="view active" id="view-queue">
     <div class="page-head"><h1>To Edit</h1><p>For each video: download the raw footage, edit it using the instructions, upload it to the finished video folder named after the video, then tap <b>Finished — send to operator</b>. If one comes back, what to change is in its <b>Revisions needed</b> box.</p></div>
     <div class="chip-row" id="editorChips"></div>
+    <div class="card" id="urgentCard"><h2>Time sensitive <span>Edits due in the next 3 days or already late, and anything sent back with revisions. Start here.</span></h2><div id="urgentList"></div></div>
     <div id="queueList"></div>
   </section>
+
+  <section class="view" id="view-documents">
+    <div class="page-head"><h1>Documents</h1><p>Each client's important documents: who their customer is, how they sound, their ideas and our research. Read them before you edit, so every video feels like the client.</p></div>
+    <div id="docsByClient"></div>
+  </section>
+
+  <!-- First visit from the invite email: create a password, then the walkthrough. -->
+  <section class="view" id="view-setup"></section>
 
   <section class="view" id="view-calendar">
     <div class="page-head"><h1>Calendar</h1><p>When each of your videos needs to be edited by.</p></div>
@@ -54,6 +64,8 @@
 let ROLE = "editor";
 let VIDEOS = [];             // [{ client, video }] — only videos with the editor
 let EDITOR_BY_ID = {};
+let CLIENTS = {};            // id → { name, driveFolders, documents }
+let ME = null;               // the signed-in editor's social_editors row (or the operator's)
 // ?editor=<id> (the operator dashboard's "Open editor portal") opens on
 // that editor's work.
 let editorFilter = new URLSearchParams(location.search).get("editor") || "all";
@@ -79,6 +91,7 @@ async function loadData() {
   // The client's documents, Team only ones (Content Research) included
   // (migration 012).
   (docsRes.data || []).forEach(d => { if (clients[d.client_id]) clients[d.client_id].documents.push(d); });
+  CLIENTS = clients;
   EDITOR_BY_ID = {};
   (editorsRes.data || []).forEach(e => { EDITOR_BY_ID[e.id] = e; });
   VIDEOS = (videosRes.data || []).map(r => {
@@ -176,7 +189,7 @@ function renderQueue() {
       <div class="row" style="border:none;padding:0 0 10px">
         <div class="left"><b class="video-card" style="display:inline-block" data-open>${escapeHtml(video.title || "(untitled)")}</b>
         <div class="meta">${escapeHtml(client.name)}${ROLE === "operator" && video.assignedEditor ? " · " + escapeHtml(video.assignedEditor) : ""}</div></div>
-        ${video.dueToEdit ? `<span class="badge" style="border-color:${overdue ? "var(--red)" : "var(--border)"};color:${overdue ? "var(--red)" : "var(--sub)"}">${overdue ? "Overdue — " : "Edit by "}${escapeHtml(video.dueToEdit)}</span>` : ""}
+        ${video.dueToEdit ? `<span class="badge edit-by" style="border-color:${overdue ? "var(--red)" : "var(--border)"};color:${overdue ? "var(--red)" : "var(--sub)"}">${overdue ? "Overdue, was due " : "Edit by "}${escapeHtml(niceDate(video.dueToEdit))}</span>` : ""}
       </div>
       ${editorCardBody(client, video)}
     `;
@@ -225,7 +238,92 @@ function renderCalendar() {
     calState, renderCalendar);
 }
 
-function renderAll() { renderEditorChips(); renderQueue(); renderCalendar(); }
+// Time sensitive: edits due within EDIT_SOON_DAYS or late, and
+// anything sent back with revisions, soonest first.
+const EDIT_SOON_DAYS = 3;
+function renderUrgent() {
+  const soon = addDaysISO(todayISO(), EDIT_SOON_DAYS);
+  const items = queue().filter(x => hasRevisions(x.video) || (x.video.dueToEdit && x.video.dueToEdit <= soon))
+    .sort((a, b) => (a.video.dueToEdit || "9999").localeCompare(b.video.dueToEdit || "9999"));
+  document.getElementById("urgentList").innerHTML = items.map(({ client, video }) => {
+    const late = video.dueToEdit && video.dueToEdit < todayISO();
+    const when = !video.dueToEdit ? "" : late ? "Late, was due " + niceDate(video.dueToEdit) : video.dueToEdit === todayISO() ? "Due today" : "Due " + niceDate(video.dueToEdit);
+    return `<div class="row video-card" onclick="openEditorVideoModal('${video.id}')"><div class="left"><b>${escapeHtml(video.title || "(untitled)")}</b><div class="meta">${escapeHtml(client.name)}${hasRevisions(video) ? " · Revisions needed" : ""}</div></div>
+      ${when ? `<span class="badge" style="border-color:var(--accent);color:var(--accent)">${escapeHtml(when)}</span>` : ""}</div>`;
+  }).join("") || '<div class="empty">Nothing due in the next 3 days. You\'re all caught up.</div>';
+}
+
+// Documents: every client they edit for, with that client's documents
+// (Content Research included; migration 012) and brand guidelines.
+function renderDocuments() {
+  const list = Object.values(CLIENTS).filter(c => c.documents.length || c.driveFolders.brandVoice).sort((a, b) => a.name.localeCompare(b.name));
+  document.getElementById("docsByClient").innerHTML = list.map(c => `<div class="card"><h2>${escapeHtml(c.name)}</h2>
+    ${c.driveFolders.brandVoice ? `<div class="row"><div class="left"><b>Brand guidelines</b></div><a class="btn primary" href="${escapeHtml(c.driveFolders.brandVoice)}" target="_blank" rel="noopener">Open</a></div>` : ""}
+    ${c.documents.map(d => `<div class="row"><div class="left"><b>${escapeHtml(d.title)}</b></div><a class="btn primary" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">Open</a></div>`).join("")}</div>`).join("")
+    || '<div class="card"><div class="empty">Each client\'s documents show up here as soon as you have a video of theirs to edit.</div></div>';
+}
+
+function renderAll() { renderEditorChips(); renderUrgent(); renderQueue(); renderCalendar(); renderDocuments(); }
+
+// ---------- first visit: password, then the walkthrough ----------
+// An editor who hasn't created a password yet (setup_at, migration 013;
+// or anyone opening the invite link, ?setup=1) gets "Create your
+// password" first. Then, and on ?tour=1 (the operator can preview it),
+// the walkthrough: Time sensitive, when an edit is due, the calendar,
+// the documents, then "bookmark this page" (Tait, 2026-10-06).
+const EDITOR_TOUR = [
+  { go: () => tourView("queue"), el: () => document.querySelector('.nav-item[data-view="queue"]'),
+    title: "To Edit", html: () => "Every video you're editing is here, with its raw footage, the editing instructions and where to upload the finished video." },
+  { go: () => tourView("queue"), el: () => document.getElementById("urgentCard"),
+    title: "Time sensitive", html: () => "Anything due in the next 3 days, already late, or sent back with revisions shows up here first. Check it whenever you sign in." },
+  { go: () => tourView("queue"), el: () => document.querySelector("#queueList .edit-by"),
+    title: "When an edit is due", html: () => "Each video shows its <b>Edit by</b> date in the top right corner. It turns gold if it's late." },
+  { go: () => tourView("calendar"), el: () => document.querySelector('.nav-item[data-view="calendar"]'),
+    title: "Calendar", html: () => "Every edit-by date on a calendar, so you can plan your week. Click a video to open it." },
+  { go: () => tourView("documents"), el: () => document.querySelector('.nav-item[data-view="documents"]'),
+    title: "Important documents", html: () => "Each client's documents, in one place: brand guidelines, <b>Customer Data</b> (who their customer is), their voice, their content ideas and our <b>Content Research</b>. They're also linked on every video. Read them before you edit, so each video feels like the client." },
+];
+function tourView(view) { const n = document.querySelector(`.nav-item[data-view="${view}"]`); if (n && !n.classList.contains("active")) n.click(); }
+function startEditorTour() {
+  const q = new URLSearchParams(location.search); q.delete("tour"); q.delete("setup");
+  history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash);
+  runTour(EDITOR_TOUR, { onEnd: () => tourView("queue") });
+}
+function showPasswordSetup() {
+  document.querySelectorAll(".sidebar .nav-item").forEach(n => n.style.visibility = "hidden");
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  const view = document.getElementById("view-setup");
+  view.classList.add("active");
+  view.innerHTML = `<section class="wstep pw-page"><div class="card pw-card">
+      <h1>Create your password</h1>
+      <p class="lead">Welcome to the team${ME && ME.name ? ", " + escapeHtml(String(ME.name).split(/\s+/)[0]) : ""}. Choose a password so you can sign in any time with your email.</p>
+      ${pwField("pw1", "Password (at least 8 characters)")}
+      ${pwField("pw2", "Type it again")}
+      <button type="button" class="accent pw-go" id="pwGo">Create my password</button>
+      <div class="auth-error" id="pwErr"></div>
+    </div></section>`;
+  view.querySelectorAll("[data-eye]").forEach(b => b.onclick = () => {
+    const input = view.querySelector("#" + b.dataset.eye), show = input.type === "password";
+    input.type = show ? "text" : "password";
+    b.innerHTML = show ? EYE_OFF : EYE;
+    b.setAttribute("aria-label", show ? "Hide password" : "Show password"); b.title = b.getAttribute("aria-label");
+  });
+  const btn = view.querySelector("#pwGo"), err = view.querySelector("#pwErr");
+  btn.onclick = async () => {
+    err.textContent = "";
+    const a = view.querySelector("#pw1").value, b = view.querySelector("#pw2").value;
+    if (a.length < 8) return (err.textContent = "Use at least 8 characters.");
+    if (a !== b) return (err.textContent = "Those two don't match.");
+    btn.disabled = true;
+    const { error } = await sbClient.auth.updateUser({ password: a });
+    if (error) { btn.disabled = false; return (err.textContent = error.message); }
+    await sbClient.rpc("social_editor_setup_done");
+    document.querySelectorAll(".sidebar .nav-item").forEach(n => n.style.visibility = "");
+    view.classList.remove("active"); view.innerHTML = "";
+    tourView("queue"); document.getElementById("view-queue").classList.add("active");
+    startEditorTour();
+  };
+}
 
 // An operator login (Tait) or an active editor login gets in. A
 // deactivated editor is turned away here, and RLS returns nothing for
@@ -250,8 +348,15 @@ initAuthGate({
           <div class="meta">You see every editor's videos (pick one below) and can click <b>Finished — send to operator</b> for them. It's recorded as you, not the editor.
           Review finished edits in the <a href="/operator/dashboard.html" style="color:inherit;text-decoration:underline">operator dashboard</a>.</div></div>`;
     }
+    ME = access.roleRow;
     initRouter("queue");
     await loadData();
+    const q = new URLSearchParams(location.search);
+    // Until they've made one (setup_at); before migration 013 there's no
+    // setup_at, so only the invite link (?setup=1) asks.
+    const needsPassword = ROLE === "editor" && ("setup_at" in ME ? !ME.setup_at : q.get("setup") === "1");
+    if (needsPassword) showPasswordSetup();
+    else if (q.get("tour") === "1" || (ROLE === "editor" && q.get("setup") === "1")) startEditorTour();
   },
 });
 </script>

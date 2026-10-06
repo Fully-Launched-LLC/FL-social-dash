@@ -29,6 +29,9 @@
     },
     "api/invite.js": {
       "maxDuration": 30
+    },
+    "api/invite-editor.js": {
+      "maxDuration": 30
     }
   }
 }
