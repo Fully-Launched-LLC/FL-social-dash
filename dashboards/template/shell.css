@@ -382,6 +382,8 @@ input[type=date]::-webkit-calendar-picker-indicator { filter:invert(1); cursor:p
 .pw-wrap input { padding:14px 52px 14px 14px; font-size:16px; }
 .pw-eye { position:absolute; right:6px; top:50%; transform:translateY(-50%); border:0; background:transparent; padding:8px; color:var(--sub); display:grid; place-items:center; }
 .pw-eye:hover { color:var(--ink); }
+/* Editor setup: only the password page until it's made. */
+body.setup-mode .sidebar .nav-item, body.setup-mode #operatorBanner, body.setup-mode #loadError { display:none; }
 .pw-go { width:100%; margin-top:24px; padding:14px 18px; font-size:15px; }
 .welcome-card { text-align:center; padding:44px 32px; }
 .welcome-card .lead { font-size:17px; margin:10px 0 26px; }

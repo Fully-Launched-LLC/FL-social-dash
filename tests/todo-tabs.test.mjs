@@ -13,6 +13,7 @@ await db.exec(`
   insert into auth.users (id) values ('${OP}'),('${ED}');
   insert into social_operators values ('${OP}','Tait','tait@x');
   insert into social_editors (id,name,email) values ('${ED}','Morgan','m@x');
+  update social_editors set setup_at = now(); -- they made their password (migration 013)
   insert into social_clients (id,name,slug,client_system) values ('${A}','Alpha','alpha','self-serve'),('${B}','Beta','beta','concierge');
   insert into social_videos (client_id,title,status,concept_approved_at,editor_id,caption) values
     ('${A}','A sent back','concept_pending',null,null,null),

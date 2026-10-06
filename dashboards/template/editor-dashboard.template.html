@@ -290,7 +290,7 @@ function startEditorTour() {
   runTour(EDITOR_TOUR, { onEnd: () => tourView("queue") });
 }
 function showPasswordSetup() {
-  document.querySelectorAll(".sidebar .nav-item").forEach(n => n.style.visibility = "hidden");
+  document.body.classList.add("setup-mode");
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   const view = document.getElementById("view-setup");
   view.classList.add("active");
@@ -317,10 +317,13 @@ function showPasswordSetup() {
     btn.disabled = true;
     const { error } = await sbClient.auth.updateUser({ password: a });
     if (error) { btn.disabled = false; return (err.textContent = error.message); }
-    await sbClient.rpc("social_editor_setup_done");
-    document.querySelectorAll(".sidebar .nav-item").forEach(n => n.style.visibility = "");
+    const done = await sbClient.rpc("social_editor_setup_done");
+    if (done.error) { btn.disabled = false; return (err.textContent = "Your password is saved, but we couldn't finish setting you up: " + done.error.message); }
+    ME.setup_at = new Date().toISOString();
+    document.body.classList.remove("setup-mode");
     view.classList.remove("active"); view.innerHTML = "";
-    tourView("queue"); document.getElementById("view-queue").classList.add("active");
+    initRouter("queue");
+    await loadData();
     startEditorTour();
   };
 }
@@ -349,14 +352,18 @@ initAuthGate({
           Review finished edits in the <a href="/operator/dashboard.html" style="color:inherit;text-decoration:underline">operator dashboard</a>.</div></div>`;
     }
     ME = access.roleRow;
+    const q = new URLSearchParams(location.search);
+    // An invited editor who hasn't made one yet (invited_at, no setup_at);
+    // editors added by hand before invites existed already have a
+    // password. Before migration 013 there's neither, so only the invite
+    // link (?setup=1) asks. Nothing else loads or shows until the password
+    // is made (Tait, 2026-10-06: "it shouldn't let me in to the dashboard
+    // until i set a password").
+    const needsPassword = ROLE === "editor" && ("setup_at" in ME ? !!ME.invited_at && !ME.setup_at : q.get("setup") === "1");
+    if (needsPassword) return showPasswordSetup();
     initRouter("queue");
     await loadData();
-    const q = new URLSearchParams(location.search);
-    // Until they've made one (setup_at); before migration 013 there's no
-    // setup_at, so only the invite link (?setup=1) asks.
-    const needsPassword = ROLE === "editor" && ("setup_at" in ME ? !ME.setup_at : q.get("setup") === "1");
-    if (needsPassword) showPasswordSetup();
-    else if (q.get("tour") === "1" || (ROLE === "editor" && q.get("setup") === "1")) startEditorTour();
+    if (q.get("tour") === "1" || (ROLE === "editor" && q.get("setup") === "1")) startEditorTour();
   },
 });
 </script>

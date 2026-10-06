@@ -15,6 +15,7 @@ await db.exec(`
   insert into auth.users (id) values ('${OP}'),('${ED}'),('${CL}');
   insert into social_operators values ('${OP}','Tait','tait@x');
   insert into social_editors (id,name,email) values ('${ED}','Morgan','m@x');
+  update social_editors set setup_at = now(); -- they made their password (migration 013)
   insert into social_clients (id,name,slug,client_system) values ('${GG}','Grad Gig','test-grad-gig','self-serve');
   insert into social_client_users (id,client_id,email) values ('${CL}','${GG}','gg@x');
   insert into social_drive_folder_links (client_id, footage_uploads, final_edits) values ('${GG}','${CLIENT_FOLDER}','https://drive/final');
