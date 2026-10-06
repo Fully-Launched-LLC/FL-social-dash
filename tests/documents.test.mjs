@@ -68,6 +68,7 @@ chk("the client never sees a Team only document", links().join() === "Customer D
 const ED = "00000000-0000-0000-0000-00000000000e";
 await db.exec(`insert into auth.users (id) values ('${ED}');
   insert into social_editors (id,name,email) values ('${ED}','Ed','ed@x');
+  update social_editors set setup_at = now(); -- they made their password (migration 013)
   insert into social_videos (client_id,title,status,editor_id) values ('${FL}','Edit me','with_editor','${ED}');`);
 const ed = await openPage("editor/dashboard.html", ED, "https://fl.test/editor/dashboard.html");
 const edLinks = Array.from(ed.d.querySelectorAll("#queueList a.btn")).map(a => a.textContent);

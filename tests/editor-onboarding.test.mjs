@@ -43,6 +43,10 @@ chk("Resend invite sends just the editor's id", JSON.parse(op.ui.log.filter(l =>
 const ed = await openPage("editor/dashboard.html", ED, "https://fl.test/editor/dashboard.html?setup=1");
 const setup = ed.d.getElementById("view-setup");
 chk("first visit: Create your password, nothing else", setup.classList.contains("active") && setup.textContent.includes("Create your password") && setup.textContent.includes("Welcome to the team, Sam") && !ed.d.getElementById("view-queue").classList.contains("active"));
+chk("…the dashboard isn't loaded or reachable until then", !ed.ui.log.some(l => l.table === "social_videos") && !ed.d.getElementById("queueList").children.length && ed.d.body.classList.contains("setup-mode"), ed.ui.log.filter(l => l.table).map(l => l.table));
+// Coming back without the invite link, still no password: the same page.
+const back = await openPage("editor/dashboard.html", ED, "https://fl.test/editor/dashboard.html");
+chk("…and every visit asks again until it's made", back.d.getElementById("view-setup").classList.contains("active") && !back.d.querySelector("#view-queue.active"));
 ed.d.getElementById("pw1").value = "short"; ed.d.getElementById("pwGo").click(); await settle();
 chk("a short password is caught", ed.d.getElementById("pwErr").textContent.includes("8 characters"));
 ed.d.getElementById("pw1").value = "goodpassword"; ed.d.getElementById("pw2").value = "goodpassword";
@@ -70,10 +74,14 @@ chk("Documents: the client's brand guidelines and documents, Content Research in
 // Coming back later: no password page, no walkthrough.
 const again = await openPage("editor/dashboard.html", ED, "https://fl.test/editor/dashboard.html");
 chk("once set up, the page just opens", !again.d.getElementById("view-setup").classList.contains("active") && !again.d.getElementById("tourCard"));
+// An editor added by hand before invites existed (never invited) isn't asked.
+await db.exec(`update social_editors set setup_at = null, invited_at = null where id = '${ED}'`);
+const old = await openPage("editor/dashboard.html", ED, "https://fl.test/editor/dashboard.html");
+chk("an editor added by hand (never invited) just gets their page", !old.d.getElementById("view-setup").classList.contains("active") && old.d.querySelectorAll("#queueList .card").length === 2);
 // The operator can preview the walkthrough, and never gets the password page.
 const prev = await openPage("editor/dashboard.html", OP, "https://fl.test/editor/dashboard.html?tour=1");
 chk("operator: ?tour=1 previews the walkthrough, no password page", !!prev.d.getElementById("tourCard") && !prev.d.getElementById("view-setup").classList.contains("active"));
 
-chk("no page errors", !op.ui.errors.length && !ed.ui.errors.length && !again.ui.errors.length && !prev.ui.errors.length, [op.ui.errors, ed.ui.errors]);
+chk("no page errors", !op.ui.errors.length && !ed.ui.errors.length && !back.ui.errors.length && !again.ui.errors.length && !prev.ui.errors.length, [op.ui.errors, ed.ui.errors]);
 console.log(`${counts.pass} passed, ${counts.fail} failed`);
 process.exit(counts.fail ? 1 : 0);

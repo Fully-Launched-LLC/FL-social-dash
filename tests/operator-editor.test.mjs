@@ -15,6 +15,7 @@ await db.exec(`
   insert into auth.users values ('${OP}'),('${ED}');
   insert into social_operators values ('${OP}','Tait','tait@x');
   insert into social_editors (id,name,email) values ('${OP}','Tait','tait@x'),('${ED}','Morgan','m@x');
+  update social_editors set setup_at = now(); -- they made their password (migration 013)
   insert into social_clients (id,name,slug,client_system) values ('${FL}','Fully Launched','test-fully-launched','self-serve');
   insert into social_videos (client_id,title,status,editor_id) values
     ('${FL}','Tait edits this','with_editor','${OP}'),
