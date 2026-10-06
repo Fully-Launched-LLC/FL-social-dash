@@ -25,30 +25,67 @@ function addDaysISO(iso, days) {
   return localISODate(new Date(y, m - 1, d + days));
 }
 
-// Month grid shared by every page's calendar. byDay: { "YYYY-MM-DD": [item] },
-// chipHtml(item) renders one entry. state.offset is months from the current
-// one; the ‹ › buttons change it and call rerender().
+// Month or week grid shared by every page's calendar, in the style of a
+// planner app: each entry is a solid color block. byDay: { "YYYY-MM-DD":
+// [item] }, chipHtml(item) renders one entry. state.view is "month" (the
+// default) or "week"; state.offset is months from the current one and
+// state.weekOffset weeks from this one. The ‹ › buttons, Today and the
+// Month/Week switch change them and call rerender(). A busy day in the
+// month shows its first few entries and "+N more", which opens its week.
+const CAL_MONTH_MAX = 4;
 function renderMonthCalendar(container, byDay, chipHtml, state, rerender) {
-  const now = new Date();
+  const now = new Date(), today = todayISO(), week = state.view === "week";
+  const thisSunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+  const weekStart = new Date(thisSunday.getFullYear(), thisSunday.getMonth(), thisSunday.getDate() + 7 * (state.weekOffset || 0));
+  // In week view, offset follows the week's month (the client's day-by-day
+  // list under the calendar reads it).
+  if (week) state.offset = (weekStart.getFullYear() - now.getFullYear()) * 12 + weekStart.getMonth() - now.getMonth();
   const first = new Date(now.getFullYear(), now.getMonth() + (state.offset || 0), 1);
-  const daysInMonth = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+  const days = week
+    ? Array.from({ length: 7 }, (_, i) => new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + i))
+    : Array.from({ length: new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate() }, (_, i) => new Date(first.getFullYear(), first.getMonth(), i + 1));
+  const atToday = week ? !state.weekOffset : !state.offset;
   const title = first.toLocaleString(undefined, { month: "long", year: "numeric" });
-  let html = `<div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;margin-bottom:6px">
-      <button data-cal="-1">‹</button><b style="min-width:150px;text-align:center">${escapeHtml(title)}</b><button data-cal="1">›</button>
-      ${state.offset ? `<button data-cal="0">Today</button>` : ""}
+  const sub = week ? days[0].toLocaleDateString(undefined, { month: "short", day: "numeric" }) + " – " + days[6].toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "";
+  let html = `<div class="cal-head">
+      <div class="cal-title">${escapeHtml(title)}${sub ? `<span>${escapeHtml(sub)}</span>` : ""}</div>
+      <div class="cal-nav"><button data-cal="-1" aria-label="Previous">‹</button>${atToday ? "" : `<button data-cal="0">Today</button>`}<button data-cal="1" aria-label="Next">›</button></div>
+      <div class="cal-seg"><button data-calview="month" class="${week ? "" : "on"}">Month</button><button data-calview="week" class="${week ? "on" : ""}">Week</button></div>
     </div>`;
-  html += ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => `<div class="cal-dow">${d}</div>`).join("");
-  for (let i = 0; i < first.getDay(); i++) html += `<div></div>`;
-  const today = todayISO();
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = localISODate(new Date(first.getFullYear(), first.getMonth(), day));
-    const items = byDay[dateStr] || [];
-    html += `<div class="cal-cell ${dateStr === today ? "today" : ""}"><div class="daynum">${day}</div>${items.map(chipHtml).join("")}</div>`;
+  if (week) {
+    html += days.map(d => {
+      const iso = localISODate(d), items = byDay[iso] || [];
+      return `<div class="cal-wcol"><div class="cal-dayhead ${iso === today ? "today" : ""}">${d.toLocaleDateString(undefined, { weekday: "short" })} <b>${d.getDate()}</b></div>
+        <div class="cal-wbody">${items.map(chipHtml).join("") || '<div class="cal-none">Nothing</div>'}</div></div>`;
+    }).join("");
+  } else {
+    html += ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => `<div class="cal-dow">${d}</div>`).join("");
+    for (let i = 0; i < first.getDay(); i++) html += `<div></div>`;
+    days.forEach(d => {
+      const iso = localISODate(d), items = byDay[iso] || [];
+      const more = items.length > CAL_MONTH_MAX ? items.length - (CAL_MONTH_MAX - 1) : 0;
+      const shown = more ? items.slice(0, CAL_MONTH_MAX - 1) : items;
+      html += `<div class="cal-cell ${iso === today ? "today" : ""}"><div class="daynum">${d.getDate()}</div>${shown.map(chipHtml).join("")}${more ? `<button class="cal-more" data-calweek="${iso}">+${more} more</button>` : ""}</div>`;
+    });
   }
   container.innerHTML = html;
+  container.classList.toggle("week", week);
+  // Weeks from this one to the week holding iso.
+  const weeksTo = iso => { const d = new Date(iso + "T00:00:00"); return Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay()) - thisSunday) / 604800000); };
   container.querySelectorAll("[data-cal]").forEach(b => b.onclick = () => {
-    const step = Number(b.dataset.cal);
-    state.offset = step === 0 ? 0 : (state.offset || 0) + step;
+    const step = Number(b.dataset.cal), key = week ? "weekOffset" : "offset";
+    state[key] = step === 0 ? 0 : (state[key] || 0) + step;
+    rerender();
+  });
+  container.querySelectorAll("[data-calview]").forEach(b => b.onclick = () => {
+    if (b.dataset.calview === state.view || (b.dataset.calview === "month" && !week)) return;
+    // Month → week opens on this week if it's this month, else the month's first week.
+    if (b.dataset.calview === "week") state.weekOffset = state.offset ? weeksTo(localISODate(first)) : 0;
+    state.view = b.dataset.calview;
+    rerender();
+  });
+  container.querySelectorAll("[data-calweek]").forEach(b => b.onclick = () => {
+    state.view = "week"; state.weekOffset = weeksTo(b.dataset.calweek);
     rerender();
   });
 }
@@ -127,17 +164,19 @@ function calendarEntries(x) {
   return out;
 }
 
-// One calendar entry as a chip. Posts wear their platform's style; deadlines
-// are dashed and say what's due. Overdue deadlines turn gold; posted posts fade.
+// One calendar entry as a color block: blue to post, red to approve, purple
+// for the edit, green to film (the .k-<kind> classes in shell.css). A post
+// lists every platform it goes out on. Overdue deadlines get a gold ring and
+// say so; posted posts turn grey with a tick.
 function calEntryChip(e, { showClient, onclick }) {
-  const v = e.x.video, P = PLATFORMS[e.platform];
+  const v = e.x.video, plats = e.platforms || (e.platform ? [e.platform] : []);
   const overdue = !e.done && e.date < todayISO();
-  const tag = e.kind === "post" ? (P ? P.tag : (e.platform || "?").slice(0, 2).toUpperCase()) : CAL_KINDS[e.kind].label;
-  const name = (showClient ? e.x.client.name + ": " : "") + (v.title || "(untitled)");
-  const tip = `${CAL_KINDS[e.kind].label}${P ? " on " + P.name : ""}: ${v.title || "(untitled)"} (${STATUS_LABEL[v.status] || v.status})${overdue ? ". Overdue" : ""}`;
-  const cls = ["cal-chip", "video-card", e.kind === "post" ? "cal-post" : "cal-deadline", overdue ? "cal-overdue" : "", e.done ? "cal-done" : ""].join(" ");
-  const plat = e.kind === "post" && e.platform ? " p-" + escapeHtml(e.platform) : "";
-  return `<div class="${cls}${plat}" title="${escapeHtml(tip)}" onclick="${onclick}('${v.id}')">${e.done ? "✓ " : ""}<b>${escapeHtml(tag)}</b> ${escapeHtml(name)}</div>`;
+  const where = plats.map(p => (PLATFORMS[p] || { name: p }).name).join(", ");
+  const tip = `${CAL_KINDS[e.kind].label}${where ? " on " + where : ""}: ${v.title || "(untitled)"} (${STATUS_LABEL[v.status] || v.status})${overdue ? ". Overdue" : ""}`;
+  const sub = [overdue ? "Overdue" : "", CAL_KINDS[e.kind].label, showClient ? e.x.client.name : ""].filter(Boolean).join(" · ");
+  const cls = ["cal-block", "video-card", "k-" + e.kind, overdue ? "cal-overdue" : "", e.done ? "cal-done" : ""].join(" ");
+  return `<div class="${cls}" title="${escapeHtml(tip)}" onclick="${onclick}('${v.id}')">
+    <div class="t">${e.done ? "✓ " : ""}${escapeHtml(v.title || "(untitled)")}</div><div class="s">${escapeHtml(sub)}</div>${e.kind === "post" ? platformPills(plats) : ""}</div>`;
 }
 
 // Filter chips above the calendar: which platforms and which kinds to show.
@@ -147,7 +186,7 @@ function calFilterHtml(state) {
     .concat(Object.entries(PLATFORMS).map(([k, P]) =>
       `<button class="chip cal-plat p-${k} ${state.platforms.has(k) ? "active" : ""}" data-calplat="${k}">${P.name}</button>`));
   const kinds = Object.entries(CAL_KINDS).map(([k, K]) =>
-    `<button class="chip ${state.kinds.has(k) ? "active" : ""}" data-calkind="${k}">${K.label}</button>`);
+    `<button class="chip ${state.kinds.has(k) ? "active" : ""}" data-calkind="${k}"><span class="kdot k-${k}"></span>${K.label}</button>`);
   return `<div class="chip-row" style="margin-bottom:8px">${plat.join("")}</div><div class="chip-row" style="margin-bottom:14px">${kinds.join("")}</div>`;
 }
 function wireCalFilters(container, state, rerender) {
@@ -163,8 +202,8 @@ function wireCalFilters(container, state, rerender) {
     rerender();
   });
 }
-// Entries grouped by day after the filters, posts first (in platform order),
-// then approve, edit, film.
+// Entries grouped by day after the filters, posts first (one per video, its
+// platforms in order), then approve, edit, film.
 function calendarByDay(videos, state) {
   const order = Object.keys(PLATFORMS), kindOrder = Object.keys(CAL_KINDS), byDay = {};
   videos.flatMap(calendarEntries)
@@ -177,7 +216,13 @@ function calendarByDay(videos, state) {
     .sort((a, b) => kindOrder.indexOf(a.kind) - kindOrder.indexOf(b.kind) ||
       (a.x.video.title || "").localeCompare(b.x.video.title || "", undefined, { numeric: true }) ||
       order.indexOf(a.platform) - order.indexOf(b.platform))
-    .forEach(e => (byDay[e.date] = byDay[e.date] || []).push(e));
+    .forEach(e => {
+      const day = byDay[e.date] = byDay[e.date] || [];
+      // One post block per video per day, listing its platforms.
+      const same = e.kind === "post" && day.find(o => o.kind === "post" && o.x === e.x);
+      if (same) same.platforms.push(e.platform);
+      else day.push(e.kind === "post" ? { ...e, platforms: e.platform ? [e.platform] : [] } : e);
+    });
   return byDay;
 }
 

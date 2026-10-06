@@ -214,7 +214,7 @@ function renderCalendar() {
   const byDay = {};
   queue().forEach(x => { if (x.video.dueToEdit) (byDay[x.video.dueToEdit] = byDay[x.video.dueToEdit] || []).push(x); });
   renderMonthCalendar(document.getElementById("calGrid"), byDay, x =>
-    `<div class="cal-chip video-card" style="border:2px solid var(--status-${x.video.status}); color:var(--ink)" onclick="openEditorVideoModal('${x.video.id}')">${hasRevisions(x.video) ? "Revisions: " : ""}${escapeHtml(x.client.name)}: ${escapeHtml(x.video.title || "(untitled)")}</div>`,
+    `<div class="cal-block k-${hasRevisions(x.video) ? "approve" : "edit"} video-card" onclick="openEditorVideoModal('${x.video.id}')"><div class="t">${escapeHtml(x.video.title || "(untitled)")}</div><div class="s">${hasRevisions(x.video) ? "Revisions · " : "Edit due · "}${escapeHtml(x.client.name)}</div></div>`,
     calState, renderCalendar);
 }
 
