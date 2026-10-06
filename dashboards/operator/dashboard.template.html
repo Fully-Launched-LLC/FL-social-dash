@@ -20,6 +20,7 @@
   <div class="nav-item active" data-view="todo" data-label="To Do">To Do<span class="n" id="navTodoN" hidden></span></div>
   <div class="nav-item" data-view="calendar" data-label="Content Calendar">Content Calendar</div>
   <div class="nav-item" data-view="clients" data-label="Clients">Clients<span class="n" id="navClientsN" hidden></span></div>
+  <div class="nav-item" data-view="editors" data-label="Editors">Editors</div>
   <a class="nav-item" href="/editor/dashboard.html" target="_blank" rel="noopener" style="text-decoration:none">Editor portal ↗</a>
 </nav>
 
@@ -61,6 +62,21 @@
     </div>
     <div id="calFilters"></div>
     <div class="card"><div class="cal-grid" id="calGrid"></div></div>
+  </section>
+
+  <section class="view" id="view-editors">
+    <div class="page-head">
+      <div><h1>Editors</h1><p>Invite an editor and they get "Welcome to the Fully Launched editor dashboard": they create a password, then get a walkthrough of their page.</p></div>
+      <div class="page-actions"><button class="accent" id="inviteEditorBtn">+ Invite editor</button></div>
+    </div>
+    <div class="card" id="editorInvitePanel" style="display:none">
+      <h2>Invite an editor</h2>
+      <label class="meta" for="edName">Name</label><input type="text" id="edName" style="width:100%;margin:4px 0 10px">
+      <label class="meta" for="edEmail">Email</label><input type="email" id="edEmail" style="width:100%;margin:4px 0 10px">
+      <div style="display:flex;gap:8px"><button class="primary" id="edSend">Send invite</button><button id="edCancel">Cancel</button></div>
+      <div class="auth-error" id="edErr"></div>
+    </div>
+    <div class="card"><div id="editorsList"></div></div>
   </section>
 
   <section class="view" id="view-clients">
@@ -352,7 +368,7 @@ function smallBtn(label, onclick, cls) {
   return `<button class="${cls || ""}" style="font-size:0.78rem;padding:5px 10px" onclick="${onclick}">${escapeHtml(label)}</button>`;
 }
 function editorSelect(selected) {
-  if (!EDITORS.length) return `<span class="meta">No editors set up yet — see "Adding an editor" in CLAUDE.md</span>`;
+  if (!EDITORS.length) return `<span class="meta">No editors set up yet. Invite one on the Editors page.</span>`;
   const opts = EDITORS.filter(e => e.active || e.id === selected)
     .map(e => `<option value="${e.id}" ${e.id === selected ? "selected" : ""}>${escapeHtml(e.name)}</option>`).join("");
   return `<select style="font-size:0.82rem;padding:5px 6px"><option value="">Pick editor…</option>${opts}</select>`;
@@ -951,6 +967,55 @@ async function sendInvite(clientId) {
   }
 }
 
+// ---------- Editors ----------
+// Each editor, whether they've set up their login (setup_at, migration
+// 013), and Invite / Resend invite through /api/invite-editor.
+function renderEditors() {
+  const when = iso => iso ? niceDate(iso.slice(0, 10)) : "";
+  document.getElementById("editorsList").innerHTML = EDITORS.map(e => {
+    const status = !e.active ? "Deactivated" : e.setup_at ? "Set up " + when(e.setup_at) : e.invited_at ? "Invited " + when(e.invited_at) + ", not set up yet" : "Added by hand";
+    return `<div class="row"><div class="left"><b>${escapeHtml(e.name)}</b><div class="meta">${escapeHtml(e.email)} · ${escapeHtml(status)}</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${e.active ? `<button data-resend="${e.id}">Resend invite</button>` : ""}<a class="btn" href="/editor/dashboard.html?editor=${encodeURIComponent(e.id)}" target="_blank" rel="noopener">Their page ↗</a></div></div>`;
+  }).join("") || '<div class="empty">No editors yet. Click + Invite editor.</div>';
+  document.querySelectorAll("#editorsList [data-resend]").forEach(b => b.onclick = () => inviteEditor({ editorId: b.dataset.resend }, b));
+}
+async function inviteEditor(body, btn) {
+  if (btn) btn.disabled = true;
+  let out;
+  try {
+    const { data } = await sbClient.auth.getSession();
+    const res = await fetch("/api/invite-editor", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + ((data && data.session && data.session.access_token) || "") }, body: JSON.stringify(body) });
+    out = await res.json().catch(() => ({ error: "No response from the invite service." }));
+    if (!res.ok && !out.error) out.error = "The invite service answered " + res.status + ".";
+  } catch (e) { out = { error: "Couldn't reach the invite service: " + (e.message || e) }; }
+  if (btn) btn.disabled = false;
+  if (out.error) return out;
+  await loadLiveData();
+  if (out.sent) {
+    openModal(`<h2>Invite sent</h2><p style="line-height:1.55">The editor invite is on its way to <b>${escapeHtml(out.email)}</b>. The button takes them to their page: create a password, then a walkthrough.</p>
+      ${out.warning ? `<p class="meta" style="line-height:1.55">${escapeHtml(out.warning)}</p>` : ""}
+      <div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Got it</button></div>`);
+  } else {
+    const box = openModal(`<h2>Send this link yourself</h2><p class="meta" style="line-height:1.55">${escapeHtml(out.reason || "The email didn't send.")}</p>
+      <textarea readonly rows="4" style="width:100%" id="invLink">${escapeHtml(out.link || "")}</textarea>
+      <div class="modal-actions"><button class="primary" id="invCopy">Copy link</button><button onclick="closeVideoModal()">Done</button></div>`);
+    box.querySelector("#invCopy").onclick = async e => { try { await navigator.clipboard.writeText(out.link); e.target.textContent = "Copied"; } catch (x) { box.querySelector("#invLink").select(); } };
+  }
+  return out;
+}
+document.getElementById("inviteEditorBtn").onclick = () => { document.getElementById("editorInvitePanel").style.display = ""; document.getElementById("edName").focus(); };
+document.getElementById("edCancel").onclick = () => { document.getElementById("editorInvitePanel").style.display = "none"; };
+document.getElementById("edSend").onclick = async e => {
+  const err = document.getElementById("edErr"), name = document.getElementById("edName").value.trim(), email = document.getElementById("edEmail").value.trim();
+  err.textContent = "";
+  if (!name) return (err.textContent = "Add their name.");
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return (err.textContent = "That email doesn't look right.");
+  const out = await inviteEditor({ name, email }, e.target);
+  if (out.error) return (err.textContent = out.error);
+  document.getElementById("editorInvitePanel").style.display = "none";
+  document.getElementById("edName").value = document.getElementById("edEmail").value = "";
+};
+
 // Once their important documents are made: one branded email listing them
 // all (api/send-documents.js).
 async function sendDocumentsEmail(clientId, box) {
@@ -1073,7 +1138,7 @@ document.getElementById("view-todo").addEventListener("click", e => {
 function renderAll() {
   const cn = document.getElementById("navClientsN"); cn.hidden = !CLIENTS.length; cn.textContent = CLIENTS.length;
   renderGlobalClientFilter();
-  renderTodo(); renderCalendar(); renderAllClients();
+  renderTodo(); renderCalendar(); renderAllClients(); renderEditors();
 }
 
 // Only a social_operators login gets past the gate — never an editor or

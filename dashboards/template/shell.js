@@ -707,3 +707,89 @@ function mdToHtml(md) {
   close();
   return out.join("");
 }
+
+// ---------- Password fields (welcome page, editor setup) ----------
+const EYE = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const EYE_OFF = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+const pwField = (id, label) => `<label for="${id}">${label}</label>
+  <div class="pw-wrap"><input type="password" id="${id}" autocomplete="new-password"><button type="button" class="pw-eye" data-eye="${id}" aria-label="Show password" title="Show password">${EYE}</button></div>`;
+
+// ---------- Walkthroughs (client portal after onboarding, editor setup) ----------
+// steps: [{ go(), el(), title, html() }]. Each step opens its page (go),
+// dims everything but el() and rings it in gold, with the card beside it
+// and an arrow pointing at it; then "Bookmark this page". Steps whose
+// target isn't there are left out. onEnd runs when it closes.
+function runTour(TOUR, { onEnd } = {}) {
+  const blocker = document.createElement("div"); blocker.className = "tour-veil"; blocker.id = "tourVeil";
+  const dims = [0, 1, 2, 3].map(() => { const d = document.createElement("div"); d.className = "tour-dim"; return d; });
+  const spot = document.createElement("div"); spot.className = "tour-spot"; spot.id = "tourSpot";
+  const card = document.createElement("div"); card.className = "tour-card"; card.id = "tourCard";
+  document.body.append(blocker, ...dims, spot, card);
+  const px = v => Math.max(v, 0) + "px";
+  let i = 0, target = null;
+  // There, and not inside something hidden (each step has already opened
+  // its page and tab, so a hidden parent means it doesn't apply).
+  const visible = el => { for (let n = el; n && n !== document.body; n = n.parentElement) if (n.style && n.style.display === "none") return false; return !!el; };
+  // Ring the target, dim everything around it (four panels: a giant
+  // box-shadow didn't paint reliably in Chrome), and put the card beside it
+  // (right, else below, else above) with the arrow pointing at it. A big
+  // target (a whole video card) gets the card in the bottom-right corner
+  // instead, over its empty side. Phones: the card sits at the bottom.
+  const place = () => {
+    if (!target) return;
+    const r = target.getBoundingClientRect(), pad = 6, vw = innerWidth, vh = innerHeight;
+    const top = Math.round(Math.max(r.top - pad, 4)), bottom = Math.round(Math.min(r.bottom + pad, vh - 4)), left = Math.round(r.left - pad), right = Math.round(r.right + pad);
+    Object.assign(spot.style, { left: left + "px", top: top + "px", width: px(right - left), height: px(bottom - top) });
+    [{ left: "0", top: "0", width: "100%", height: px(top) }, { left: "0", top: bottom + "px", width: "100%", height: px(vh - bottom) },
+     { left: "0", top: top + "px", width: px(left), height: px(bottom - top) }, { left: right + "px", top: top + "px", width: px(vw - right), height: px(bottom - top) }]
+      .forEach((st, k) => Object.assign(dims[k].style, st));
+    card.style.left = card.style.top = card.style.bottom = card.style.right = "";
+    card.removeAttribute("data-arrow");
+    if (vw < 760) return;
+    if (r.height > vh * 0.45) { Object.assign(card.style, { left: "auto", top: "auto", right: "24px", bottom: "24px" }); return; }
+    const w = card.offsetWidth, h = card.offsetHeight, gap = 18;
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(v, hi));
+    let x, y, arrow;
+    if (r.right + pad + gap + w < vw - 16) { x = r.right + pad + gap; y = clamp((top + bottom) / 2 - h / 2, 16, vh - h - 16); arrow = "left"; card.style.setProperty("--ay", clamp((top + bottom) / 2 - y, 22, h - 22) + "px"); }
+    else if (bottom + gap + h < vh - 16) { y = bottom + gap; x = clamp(r.left, 16, vw - w - 16); arrow = "top"; card.style.setProperty("--ax", clamp(r.left + r.width / 2 - x, 22, w - 22) + "px"); }
+    else { y = Math.max(top - gap - h, 16); x = clamp(r.left, 16, vw - w - 16); arrow = "bottom"; card.style.setProperty("--ax", clamp(r.left + r.width / 2 - x, 22, w - 22) + "px"); }
+    card.style.left = x + "px"; card.style.top = y + "px"; card.dataset.arrow = arrow;
+  };
+  const end = () => { target = null; removeEventListener("resize", place); removeEventListener("scroll", place, true); [blocker, ...dims, spot, card].forEach(n => n.remove()); if (onEnd) onEnd(); };
+  const bookmark = () => {
+    target = null; spot.style.display = "none"; card.removeAttribute("data-arrow");
+    dims.forEach((d, k) => Object.assign(d.style, k ? { width: "0", height: "0" } : { left: "0", top: "0", width: "100%", height: "100%" }));
+    card.style.left = card.style.top = card.style.bottom = card.style.right = "";
+    const host = location.host;
+    card.className = "tour-card tour-bookmark";
+    card.innerHTML = `<h2>Bookmark this page</h2>
+      <p>Save <b>${escapeHtml(host)}</b> as a bookmark so you can come back any time. Sign in with your email and the password you just made.</p>
+      <div class="tour-url">${escapeHtml(host)}</div>
+      <p class="meta">On a computer, press ${/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘ + D" : "Ctrl + D"}. On a phone, use your browser's share or menu button, then "Add bookmark" or "Add to Home Screen".</p>
+      <div class="tour-actions"><span></span><button type="button" class="accent" data-tour-done>Got it</button></div>`;
+    card.querySelector("[data-tour-done]").onclick = end;
+  };
+  // Steps whose target isn't there (no Time sensitive tab, nothing to
+  // film, a we-film client with no Upload footage button) are left out.
+  const steps = TOUR.filter(t => { t.go(); return visible(t.el()); });
+  const show = () => {
+    if (i >= steps.length) return bookmark();
+    const t = steps[i];
+    t.go(); target = t.el();
+    // A big target scrolls to its top, so its title and hook show.
+    const big = target.getBoundingClientRect().height > innerHeight * 0.45;
+    if (target.scrollIntoView) target.scrollIntoView({ block: big ? "start" : "center" });
+    if (big) scrollBy(0, -16);
+    spot.style.display = "";
+    card.innerHTML = `<div class="tour-count">Step ${i + 1} of ${steps.length}</div><h2>${escapeHtml(t.title)}</h2><div class="tour-text">${t.html()}</div>
+      <div class="tour-actions"><button type="button" class="reject" data-tour-skip>Skip tour</button><span style="display:flex;gap:8px">${i ? '<button type="button" data-tour-back>Back</button>' : ""}<button type="button" class="primary" data-tour-next>${i === steps.length - 1 ? "Finish" : "Next"}</button></span></div>`;
+    card.querySelector("[data-tour-next]").onclick = () => { i++; show(); };
+    const back = card.querySelector("[data-tour-back]");
+    if (back) back.onclick = () => { i--; show(); };
+    card.querySelector("[data-tour-skip]").onclick = bookmark;
+    place();
+  };
+  addEventListener("resize", place); addEventListener("scroll", place, true);
+  show();
+}
+

@@ -10,18 +10,8 @@
 // If email sending isn't set up yet (no RESEND_API_KEY), it still returns
 // the link so the operator can copy it and send it themselves.
 
-const { env, need, rest, callerFrom, handler, portalUrl } = require("./_lib");
+const { env, need, rest, callerFrom, handler, portalUrl, signInLink } = require("./_lib");
 const { inviteEmail, sendEmail } = require("./_email");
-
-async function generateLink(type, email, redirectTo) {
-  const res = await fetch(env("SUPABASE_URL") + "/auth/v1/admin/generate_link", {
-    method: "POST",
-    headers: { apikey: env("SUPABASE_SERVICE_ROLE_KEY"), Authorization: "Bearer " + env("SUPABASE_SERVICE_ROLE_KEY"), "Content-Type": "application/json" },
-    body: JSON.stringify({ type, email, redirect_to: redirectTo }),
-  });
-  const data = await res.json().catch(() => ({}));
-  return { ok: res.ok, data };
-}
 
 module.exports = handler(async (req, { clientId }) => {
   need("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY");
@@ -39,20 +29,8 @@ module.exports = handler(async (req, { clientId }) => {
   // operator testing their own invite): it opens that client's preview
   // instead of an error. A client's own login ignores it.
   const redirectTo = portal + "/welcome?client=" + encodeURIComponent(client.slug);
-  // New login → invite; existing login → magic link to sign in.
-  let hasLogin = false;
-  let r = await generateLink("invite", email, redirectTo);
-  if (!r.ok) { hasLogin = true; r = await generateLink("magiclink", email, redirectTo); }
-  // The button links to our own site (social.fullylaunched.com/welcome?
-  // token_hash=…), and the page signs them in itself (auth.js, verifyOtp).
-  // A link to a different domain than the sender looks like phishing to
-  // spam filters. Supabase's own link is the fallback.
-  const props = r.data.properties || {};
-  const hashed = r.data.hashed_token || props.hashed_token;
-  const link = hashed
-    ? redirectTo + "&token_hash=" + encodeURIComponent(hashed) + "&type=" + (hasLogin ? "email" : "invite")
-    : (r.data.action_link || props.action_link);
-  if (!r.ok || !link) throw new Error("Couldn't make the sign-in link: " + (r.data.msg || r.data.error_description || r.data.message || "unknown error"));
+  // New login → invite; existing login → a sign-in link (signInLink in _lib).
+  const { link, hasLogin } = await signInLink(email, redirectTo);
 
   // Record the invite on their onboarding.
   const existing = await rest("social_client_onboarding?select=invite_count,completed_at&client_id=eq." + client.id);

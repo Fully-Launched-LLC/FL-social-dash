@@ -56,6 +56,21 @@ function inviteEmail({ contactName, clientName, link, portal, returning }) {
   return { subject, html, text };
 }
 
+// The editor invite (Tait, 2026-10-06): "Welcome to the Fully Launched
+// editor dashboard", "We are excited to have you on the team.", and one
+// "Click to set up your dashboard" button.
+function editorInviteEmail({ name, link, portal }) {
+  const first = firstName(name);
+  const hi = first ? `Hi ${first},` : "Hi there,";
+  const subject = "Welcome to the Fully Launched editor dashboard";
+  const html = frame({ portal, title: subject, footer: false, rows: `
+        <tr><td style="padding:10px 32px 4px;${BODY};font-size:16px">${esc(hi)}<br><br>We are excited to have you on the team.</td></tr>
+        <tr><td style="padding:14px 32px 6px;${SMALL}">Click below to create your password and see around your dashboard. This link only works once.</td></tr>
+        <tr><td style="padding:12px 32px 32px"><a href="${esc(link)}" style="display:inline-block;background:#C4AB82;color:#04101f;font:700 18px Helvetica,Arial,sans-serif;text-decoration:none;padding:16px 32px;border-radius:12px">Click to set up your dashboard</a></td></tr>` });
+  const text = `${subject}\n\n${hi}\n\nWe are excited to have you on the team.\n\nClick below to create your password and see around your dashboard. This link only works once.\n\nClick to set up your dashboard: ${link}`;
+  return { subject, html, text };
+}
+
 // "Here are your important documents": each document Tait added (Google
 // Docs, with links) and any built in the portal, plus a button to the
 // portal's Documents page.
@@ -100,4 +115,4 @@ async function sendEmail({ to, subject, html, text }) {
   return mail.ok ? { ok: true, ...(warning ? { warning } : {}) } : { ok: false, message: m.message || String(mail.status) };
 }
 
-module.exports = { inviteEmail, documentsEmail, sendEmail, DEFAULT_FROM };
+module.exports = { inviteEmail, editorInviteEmail, documentsEmail, sendEmail, DEFAULT_FROM };

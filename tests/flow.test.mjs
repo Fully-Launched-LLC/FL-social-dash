@@ -214,7 +214,7 @@ async function editorFinish(list) {
 let ed = track(await ED());
 const e0 = edCard(ed, title(0));
 chk("editor card: edit-by, instructions, brand guidelines, raw footage, finished folder",
-  e0.textContent.includes(plus(TODAY, 7)) && e0.textContent.includes("Cut it like this: 1") && !!e0.querySelector('a[href="https://docs/fl-brand"]')
+  e0.textContent.includes(ed.w.niceDate(plus(TODAY, 7))) && e0.textContent.includes("Cut it like this: 1") && !!e0.querySelector('a[href="https://docs/fl-brand"]')
   && !!e0.querySelector('a[href="https://drive/fl-footage"]') && !!e0.querySelector('a[href="https://drive/fl-final"]'));
 // Backing out: "Not yet" leaves it with the editor.
 await click(btn(e0, "Finished"), "finish (not yet)");

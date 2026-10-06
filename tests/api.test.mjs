@@ -26,6 +26,7 @@ function world(o) {
     if (u.includes("/rest/v1/social_clients")) return json((o.clients || []).filter(c => u.includes(c.id)));
     if (u.includes("/rest/v1/social_client_onboarding") && method === "GET") return json(o.onboarding ? [o.onboarding] : []);
     if (u.includes("/rest/v1/social_client_documents") && method === "GET") return json(o.docLinks || []);
+    if (u.includes("/rest/v1/social_editors") && method === "GET") return json((o.editors || []).filter(e => u.includes(e.id) || u.includes(encodeURIComponent(e.email))));
     if (u.includes("/rest/v1/social_client_generated_docs") && method === "GET" && o.builtDocs) return json(o.builtDocs);
     if (u.includes("/rest/v1/")) return json(null, 201);
     if (u.includes("/auth/v1/admin/generate_link")) return o.generateLink(JSON.parse(init.body), json);
@@ -47,6 +48,7 @@ async function call(mod, token, body) {
 const invite = require("../api/invite.js");
 const build = require("../api/build-documents.js");
 const sendDocs = require("../api/send-documents.js");
+const inviteEditor = require("../api/invite-editor.js");
 const C1 = "11111111-1111-1111-1111-111111111111", C2 = "22222222-2222-2222-2222-222222222222";
 const base = {
   users: { opTok: { id: "op1", email: "tait@x" }, clTok: { id: "cl1", email: "pat@x" }, edTok: { id: "ed1", email: "ed@x" } },
@@ -163,5 +165,30 @@ const dm = calls.find(c => c.url.startsWith("https://api.resend.com")); const d 
 chk("documents email: sent to the invited email, both documents counted", r.status === 200 && r.body.sent === true && r.body.count === 2 && d.to[0] === "pat@newco.test", r.body);
 chk("documents email: branded like the invite, with every document linked and the portal button", d && d.subject === "Here are your important documents, NewCo" && d.html.includes("https://social.fullylaunched.com/assets/logo-white.png") && d.html.includes("#C4AB82") && d.html.includes("Hi Pat,") && d.html.includes("https://docs.google.com/document/d/cd") && d.html.includes("https://docs.google.com/document/d/yv") && d.html.includes("https://social.fullylaunched.com/clients/newco#documents"), d && d.subject);
 chk("documents email: plain-text version lists them too", d && d.text.includes("NewCo: Your Voice: https://docs.google.com/document/d/yv"));
+// ── invite-editor ──
+setEnv({ RESEND_API_KEY: "re_1" });
+calls = world({ ...base, generateLink: (b, json) => json({ id: "ed9", email: b.email, hashed_token: "h9" }) });
+r = await call(inviteEditor, "clTok", { name: "Sam", email: "sam@x.test" });
+chk("invite-editor: a client can't invite editors → 403", r.status === 403);
+r = await call(inviteEditor, "opTok", { name: "", email: "sam@x.test" });
+chk("invite-editor: needs a name", r.status === 400 && /name/.test(r.body.error));
+r = await call(inviteEditor, "opTok", { name: "Sam Rivera", email: "Sam@X.test" });
+{ const gl = JSON.parse(calls.find(c => c.url.includes("generate_link")).body);
+  chk("invite-editor: link to the editor page's setup, email lowercased", gl.type === "invite" && gl.email === "sam@x.test" && gl.redirect_to === "https://social.fullylaunched.com/editor/dashboard.html?setup=1", gl);
+  const up = calls.find(c => c.url.includes("social_editors?on_conflict=id"));
+  const row = up && JSON.parse(up.body);
+  chk("invite-editor: adds the editor row for the new login, active, invite counted", row && row.id === "ed9" && row.name === "Sam Rivera" && row.email === "sam@x.test" && row.active === true && row.invite_count === 1 && !!row.invited_at, row);
+  const m = JSON.parse(calls.find(c => c.url.startsWith("https://api.resend.com")).body);
+  chk("invite-editor: 'Welcome to the Fully Launched editor dashboard', 'We are excited to have you on the team.', one 'Click to set up your dashboard' button on our own site",
+    r.body.sent === true && m.to[0] === "sam@x.test" && m.subject === "Welcome to the Fully Launched editor dashboard" && m.html.includes("Hi Sam,") && m.html.includes("We are excited to have you on the team.") && m.html.includes(">Click to set up your dashboard<")
+    && m.html.includes('href="https://social.fullylaunched.com/editor/dashboard.html?setup=1&amp;token_hash=h9&amp;type=invite"') && (m.html.match(/href=/g) || []).length === 1 && m.text.includes("Click to set up your dashboard: https://social.fullylaunched.com/editor/dashboard.html?setup=1&token_hash=h9&type=invite"), m.subject); }
+calls = world({ ...base, editors: [{ id: "ed9", name: "Sam Rivera", email: "sam@x.test", invite_count: 1 }], generateLink: (b, json) => b.type === "invite" ? json({ msg: "already registered" }, 422) : json({ id: "ed9", properties: { hashed_token: "h10" } }) });
+r = await call(inviteEditor, "opTok", { editorId: "ed9" });
+{ const row = JSON.parse(calls.find(c => c.url.includes("social_editors?on_conflict=id")).body); const m = JSON.parse(calls.find(c => c.url.startsWith("https://api.resend.com")).body);
+  chk("invite-editor: Resend uses their row, counts again, sign-in link for an existing login", r.body.sent === true && row.invite_count === 2 && m.html.includes("token_hash=h10&amp;type=email"), [row, r.body]); }
+calls = world({ ...base, generateLink: (b, json) => b.type === "invite" ? json({ msg: "already registered" }, 422) : json({ id: "cl1", properties: { hashed_token: "h11" } }) });
+r = await call(inviteEditor, "opTok", { name: "Pat", email: "pat@newco.test" });
+chk("invite-editor: a client's login can't become an editor (and nothing is saved or sent)", r.status === 400 && /client/.test(r.body.error) && !calls.some(c => c.url.includes("social_editors?on_conflict")) && !calls.some(c => c.url.startsWith("https://api.resend.com")), r.body);
+
 console.log(`${counts.pass} passed, ${counts.fail} failed`);
 process.exit(counts.fail ? 1 : 0);

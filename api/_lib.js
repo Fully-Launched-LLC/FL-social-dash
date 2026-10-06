@@ -87,4 +87,33 @@ function portalUrl(req) {
   return (req.headers["x-forwarded-proto"] || "https") + "://" + host;
 }
 
-module.exports = { env, need, rest, callerFrom, send, handler, portalUrl };
+// A one-time link that signs someone in on our own site. A new email gets
+// an "invite" link (it creates their login); an email that already has a
+// login gets a sign-in link. The link goes to redirectTo with
+// token_hash=…&type=…, and the page signs them in itself (auth.js,
+// verifyOtp): a link to a different domain than the sender looks like
+// phishing to spam filters. Supabase's own link is the fallback.
+async function generateLink(type, email, redirectTo) {
+  const res = await fetch(env("SUPABASE_URL") + "/auth/v1/admin/generate_link", {
+    method: "POST",
+    headers: { apikey: env("SUPABASE_SERVICE_ROLE_KEY"), Authorization: "Bearer " + env("SUPABASE_SERVICE_ROLE_KEY"), "Content-Type": "application/json" },
+    body: JSON.stringify({ type, email, redirect_to: redirectTo }),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, data };
+}
+async function signInLink(email, redirectTo) {
+  let hasLogin = false;
+  let r = await generateLink("invite", email, redirectTo);
+  if (!r.ok) { hasLogin = true; r = await generateLink("magiclink", email, redirectTo); }
+  const props = r.data.properties || {};
+  const hashed = r.data.hashed_token || props.hashed_token;
+  const link = hashed
+    ? redirectTo + (redirectTo.includes("?") ? "&" : "?") + "token_hash=" + encodeURIComponent(hashed) + "&type=" + (hasLogin ? "email" : "invite")
+    : (r.data.action_link || props.action_link);
+  if (!r.ok || !link) throw new Error("Couldn't make the sign-in link: " + (r.data.msg || r.data.error_description || r.data.message || "unknown error"));
+  const user = r.data.user || r.data;
+  return { link, hasLogin, userId: user && user.id };
+}
+
+module.exports = { env, need, rest, callerFrom, send, handler, portalUrl, signInLink };
