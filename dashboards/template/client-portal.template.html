@@ -68,7 +68,7 @@
   </section>
 
   <section class="view" id="view-calendar">
-    <div class="page-head"><h1>Content Calendar</h1><p>Every video on the day it posts, and where it posts<span id="calFilmNote"> (items marked “Film” show when to film it)</span>. Click one to open it.</p></div>
+    <div class="page-head"><h1>Content Calendar</h1><p>Every video on the day it posts, and where it posts<span id="calFilmNote"> (green blocks show when to film it)</span>. Click one to open it.</p></div>
     <div class="chip-row" id="calLegend" style="margin-bottom:10px"></div>
     <div class="card"><div class="cal-grid" id="calGrid"></div></div>
     <div class="card"><h2 id="agendaTitle">What posts each day</h2><div id="calAgenda"></div></div>
@@ -452,9 +452,9 @@ function renderCalendar() {
   document.getElementById("calLegend").innerHTML = used.length ? `<span class="meta" style="margin-right:4px">Posts on:</span>` + platformPills(used, true) : "";
   // Each day: the video's title, then the platforms it goes out on.
   renderMonthCalendar(document.getElementById("calGrid"), byDay, ({ v, kind }) => kind
-    ? `<div class="cal-item film video-card" title="Film by: ${escapeHtml(v.title || "")}" onclick="openClientVideoModal('${v.id}')"><div class="t">Film: ${escapeHtml(v.title || "(untitled)")}</div></div>`
-    : `<div class="cal-item video-card ${v.status === "posted" ? "done" : ""}" title="${escapeHtml((v.title || "") + " · " + (v.platform || []).map(p => (PLATFORMS[normPlatform(p)] || { name: p }).name).join(", "))}" onclick="openClientVideoModal('${v.id}')">
-        <div class="t">${v.status === "posted" ? "✓ " : ""}${escapeHtml(v.title || "(untitled)")}</div>${platformPills(v.platform)}</div>`,
+    ? `<div class="cal-block cal-item k-film video-card" title="Film by: ${escapeHtml(v.title || "")}" onclick="openClientVideoModal('${v.id}')"><div class="t">${escapeHtml(v.title || "(untitled)")}</div><div class="s">Film by</div></div>`
+    : `<div class="cal-block cal-item k-post video-card ${v.status === "posted" ? "cal-done" : ""}" title="${escapeHtml((v.title || "") + " · " + (v.platform || []).map(p => (PLATFORMS[normPlatform(p)] || { name: p }).name).join(", "))}" onclick="openClientVideoModal('${v.id}')">
+        <div class="t">${v.status === "posted" ? "✓ " : ""}${escapeHtml(v.title || "(untitled)")}</div><div class="s">${v.status === "posted" ? "Posted" : "Posts"}</div>${platformPills(v.platform)}</div>`,
     calState, renderCalendar);
   renderAgenda();
 }
