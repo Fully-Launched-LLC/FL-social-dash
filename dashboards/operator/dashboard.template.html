@@ -818,7 +818,7 @@ function openClientPanel(clientId) {
     ${lbl("Raw footage folder (Google Drive link)")}<input type="text" id="cpFootage" value="${escapeHtml(f.footageUploads || "")}" style="width:100%;margin-bottom:10px">
     ${lbl("Finished video folder (Google Drive link)")}<input type="text" id="cpFinal" value="${escapeHtml(f.finalEdits || "")}" style="width:100%;margin-bottom:10px">
     ${lbl("Brand guidelines (Google Doc link — the editor sees it on every video)")}<input type="text" id="cpBrand" value="${escapeHtml(f.brandVoice || "")}" style="width:100%;margin-bottom:10px">
-    <h3 style="font-size:0.85rem;margin:16px 0 4px;color:var(--sub)">Documents <span style="font-weight:400">— the client sees these on their portal's Documents page</span></h3>
+    <h3 style="font-size:0.85rem;margin:16px 0 4px;color:var(--sub)">Documents <span style="font-weight:400">— the client sees these on their portal's Documents page, except Team only ones (you and the editors only, like Content Research)</span></h3>
     <div id="cpDocs"></div>
     <button type="button" id="cpAddDoc" style="font-size:0.78rem;padding:5px 12px;margin:4px 0 14px">+ Add document</button>
     ${!clientId && INVITES_ENABLED ? `<label style="display:flex;gap:8px;align-items:center;margin:4px 0 12px;font-size:0.9rem"><input type="checkbox" id="cpInviteNow" checked style="width:auto"> Send their portal invite now</label>` : ""}
@@ -835,6 +835,7 @@ function openClientPanel(clientId) {
     docsEl.insertAdjacentHTML("beforeend", `<div class="doc-row" style="display:flex;gap:6px;margin-bottom:6px">
       <input type="text" data-doc="title" placeholder="Name, e.g. Brand Voice" value="${escapeHtml(d.title || "")}" style="flex:1 1 40%">
       <input type="text" data-doc="url" placeholder="Google Drive link" value="${escapeHtml(d.url || "")}" style="flex:1 1 60%">
+      <label title="Team only: you and the editors see it, the client doesn't" style="display:flex;align-items:center;gap:5px;font-size:0.8rem;white-space:nowrap;color:var(--sub)"><input type="checkbox" data-doc="team" ${d.team_only ? "checked" : ""} style="width:auto"> Team only</label>
       <button type="button" aria-label="Remove" style="padding:6px 11px" onclick="this.parentElement.remove()">✕</button></div>`);
   };
   (c.documents || []).forEach(addDocRow);
@@ -859,7 +860,8 @@ function openClientPanel(clientId) {
     if (!clientId && !contact.contact_email) { errEl.textContent = "Add their contact email: that's where their portal invite goes."; return; }
     if (contact.contact_email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contact.contact_email)) { errEl.textContent = "That contact email doesn't look right."; return; }
     const docs = Array.from(docsEl.querySelectorAll(".doc-row")).map(r => ({
-      title: r.querySelector('[data-doc="title"]').value.trim(), url: r.querySelector('[data-doc="url"]').value.trim() }))
+      title: r.querySelector('[data-doc="title"]').value.trim(), url: r.querySelector('[data-doc="url"]').value.trim(),
+      team_only: r.querySelector('[data-doc="team"]').checked }))
       .filter(d => d.title || d.url);
     const badDoc = docs.find(d => !d.title || !/^https?:\/\//i.test(d.url));
     if (badDoc) { errEl.textContent = `Each document needs a name and a link starting with https:// (check "${badDoc.title || badDoc.url}").`; return; }
@@ -894,9 +896,11 @@ function openClientPanel(clientId) {
     if (folderRes.error) { e.target.disabled = false; errEl.textContent = folderRes.error.message; return; }
     // Documents: replace this client's list with what's in the form.
     const delRes = await sbClient.from("social_client_documents").delete().eq("client_id", id);
-    const insRes = !delRes.error && docs.length
-      ? await sbClient.from("social_client_documents").insert(docs.map((d, i) => ({ client_id: id, title: d.title, url: d.url, position: i })))
-      : { error: null };
+    const docRows = docs.map((d, i) => ({ client_id: id, title: d.title, url: d.url, team_only: d.team_only, position: i }));
+    let insRes = !delRes.error && docs.length ? await sbClient.from("social_client_documents").insert(docRows) : { error: null };
+    // Before migration 012 there's no team_only column: save without it.
+    if (insRes.error && /team_only/.test(insRes.error.message))
+      insRes = await sbClient.from("social_client_documents").insert(docRows.map(({ team_only, ...d }) => d));
     e.target.disabled = false;
     if (delRes.error || insRes.error) { errEl.textContent = "Couldn't save the documents: " + (delRes.error || insRes.error).message; return; }
     const inviteNow = !clientId && document.getElementById("cpInviteNow") && document.getElementById("cpInviteNow").checked;

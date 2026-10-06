@@ -61,20 +61,24 @@ const calState = { offset: 0 };
 
 async function loadData() {
   let vq = sbClient.from("social_videos").select("*").eq("status", "with_editor").order("due_to_edit", { nullsFirst: false });
-  const [videosRes, clientsRes, foldersRes, editorsRes] = await Promise.all([
+  const [videosRes, clientsRes, foldersRes, editorsRes, docsRes] = await Promise.all([
     vq,
     sbClient.from("social_clients").select("id,name,slug"),
     sbClient.from("social_drive_folder_links").select("*"),
     sbClient.from("social_editors").select("id,name,active"),
+    sbClient.from("social_client_documents").select("client_id,title,url").order("position"),
   ]);
-  const errors = [videosRes, clientsRes, foldersRes, editorsRes].filter(r => r.error).map(r => r.error.message);
+  const errors = [videosRes, clientsRes, foldersRes, editorsRes, docsRes].filter(r => r.error).map(r => r.error.message);
   document.getElementById("loadError").innerHTML = errors.length
     ? `<div class="card"><b style="color:var(--red)">Couldn't load everything:</b> <span class="meta">${errors.map(escapeHtml).join("<br>")}</span></div>` : "";
 
   const folders = {};
   (foldersRes.data || []).forEach(f => { folders[f.client_id] = { footageUploads: f.footage_uploads, finalEdits: f.final_edits, brandVoice: f.brand_voice }; });
   const clients = {};
-  (clientsRes.data || []).forEach(c => { clients[c.id] = { id: c.id, name: c.name, displayName: c.name, driveFolders: folders[c.id] || {} }; });
+  (clientsRes.data || []).forEach(c => { clients[c.id] = { id: c.id, name: c.name, displayName: c.name, driveFolders: folders[c.id] || {}, documents: [] }; });
+  // The client's documents, Team only ones (Content Research) included
+  // (migration 012).
+  (docsRes.data || []).forEach(d => { if (clients[d.client_id]) clients[d.client_id].documents.push(d); });
   EDITOR_BY_ID = {};
   (editorsRes.data || []).forEach(e => { EDITOR_BY_ID[e.id] = e; });
   VIDEOS = (videosRes.data || []).map(r => {
@@ -183,8 +187,9 @@ function renderQueue() {
 }
 
 // What the editor sees on a video: revisions (if it came back), the
-// instructions, the client's brand guidelines, and where to download and
-// upload. The edit-by date is in the card's header.
+// instructions, the client's brand guidelines, where to download and
+// upload, and the client's documents (Content Research included). The
+// edit-by date is in the card's header.
 function editorCardBody(client, video) {
   const f = client.driveFolders || {}, raw = rawFootageLink(video, f);
   return `
@@ -197,7 +202,9 @@ function editorCardBody(client, video) {
       ${f.brandVoice ? `<a class="btn" href="${escapeHtml(f.brandVoice)}" target="_blank" rel="noopener">Brand guidelines</a>` : ""}
       ${raw ? `<a class="btn" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">${raw.label}</a>` : ""}
       ${f.finalEdits ? `<a class="btn" href="${escapeHtml(f.finalEdits)}" target="_blank" rel="noopener">Finished video folder</a>` : ""}
-    </div>`;
+    </div>
+    ${(client.documents || []).length ? `<div class="meta" style="margin:14px 0 6px">${escapeHtml(client.name)}'s documents</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${client.documents.map(d => `<a class="btn" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.title)}</a>`).join("")}</div>` : ""}`;
 }
 
 // Same content as the card, for the calendar and a clicked title.

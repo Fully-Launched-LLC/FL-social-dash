@@ -50,7 +50,7 @@
 
     <div data-panel="film">
       <h2 class="panel-title">To film</h2>
-      <p class="meta" style="margin:8px 0 12px">Every video that still needs filming. If you're filming it, use its script or outline, upload the footage to your folder, then tap <b>Video has been filmed</b>. If we're filming it, approve the idea or tap <b>Suggest changes</b>. Each card says who films it.</p>
+      <p class="meta" style="margin:8px 0 12px">Every video that still needs filming. If you're filming it, use its script, its outline or just answer its question, tap <b>Upload footage</b> on its card to add the clips, then tap <b>Video has been filmed</b>. If we're filming it, approve the idea or tap <b>Suggest changes</b>. Each card says who films it.</p>
       <div class="chip-row" id="filmCats" style="display:none"></div>
       <div id="listToFilm"></div>
     </div>
@@ -562,24 +562,92 @@ async function startApp(user, access) {
 }
 
 // ---------- the walkthrough ----------
-// Straight after onboarding (/clients/<slug>?tour=1): a few cards that point
-// at each part of the portal, then "bookmark this page" (Tait, 2026-10-01).
+// Straight after onboarding (/clients/<slug>?tour=1). Each step opens the
+// right page (and To Do tab), dims everything else, and rings one thing in
+// gold, with the card beside it and an arrow pointing at it. It walks To Do
+// → Time sensitive → To film → a video card (hook, outline, script) → its
+// Upload footage button → "film it your way" → Content Calendar →
+// Documents (what each one is), then "bookmark this page" (Tait,
+// 2026-10-06). The footage folder is left out on purpose: each video's
+// clips go in through its own card.
+const tourGo = view => { const n = document.querySelector(`.nav-item[data-view="${view}"]`); if (n && !n.classList.contains("active")) n.click(); };
+const tourTab = key => { if (activeTab !== key) { activeTab = key; renderVideoTabs(); } };
+// The first To film card the client films themselves (it has an Upload
+// footage button), else the first one. The upload and "film it your way"
+// steps only show on one they film.
+const tourUpload = c => c && [...c.querySelectorAll("a.btn")].find(a => a.textContent === "Upload footage");
+const tourCard = () => { const cards = [...document.querySelectorAll("#listToFilm > .card")]; return cards.find(tourUpload) || cards[0]; };
+// What each document is, by its name (Tait's words).
+function docSummaries() {
+  const about = [
+    [/customer/i, "a summary of your target customer: who they are, what they struggle with and what they want."],
+    [/identity|voice/i, "who you are and what you do: your story, your offer and how you talk."],
+    [/idea/i, "your ideas, organized into videos."],
+  ];
+  const names = DOCUMENTS.map(d => d.title).concat(GEN_DOCS.map(d => d.title));
+  const rows = names.map(n => { const m = about.find(([re]) => re.test(n)); return m ? `<li><b>${escapeHtml(n.replace(/\s*\(.*\)\s*$/, ""))}</b>: ${m[1]}</li>` : ""; }).join("");
+  return rows ? `<ul class="tour-list">${rows}</ul>` : "";
+}
 const TOUR = [
-  { sel: '.nav-item[data-view="videos"]', title: "To Do", text: "Everything that needs you lives here: the videos to film, ideas to approve, and finished videos to approve before they post. Time sensitive shows what's due soon." },
-  { sel: '.nav-item[data-view="calendar"]', title: "Content Calendar", text: "What posts each day, and where." },
-  { sel: '.nav-item[data-view="documents"]', title: "Documents", text: "Your important documents. We'll email you when your Customer Data and Your Voice documents are ready, and they'll be here too." },
-  { sel: "#footageNav", title: "My footage folder", text: "Where your raw clips go when you film." },
+  { go: () => { tourGo("videos"); tourTab("all"); }, el: () => document.querySelector('.nav-item[data-view="videos"]'),
+    title: "To Do", html: () => "This is where everything you need to do is found: videos to film, ideas to approve, and finished videos to approve before they post." },
+  { go: () => tourGo("videos"), el: () => document.querySelector('#videoTabs .chip[data-tab="urgent"]'),
+    title: "Time sensitive", html: () => "Anything due in the next 3 days, or already late, shows up here. Check it first whenever you sign in." },
+  { go: () => { tourGo("videos"); tourTab("film"); }, el: () => document.querySelector('#videoTabs .chip[data-tab="film"]'),
+    title: "To film", html: () => "Every video that still needs filming, grouped by topic. Pick a topic at the top to film a few in one sitting." },
+  { go: () => { tourGo("videos"); tourTab("film"); }, el: () => tourCard(),
+    title: "Each card is one video", html: () => "Click a video's title to open it. Inside you'll find:<ul class=\"tour-list\"><li><b>Hook</b>: the first line, the one that makes people stop scrolling.</li><li><b>Outline</b>: the main points, in order.</li><li><b>Script</b>: the whole thing, word for word.</li></ul>" },
+  { go: () => { tourGo("videos"); tourTab("film"); }, el: () => tourUpload(tourCard()),
+    title: "Upload footage on each card", html: () => "Every video has its own <b>Upload footage</b> button. Put that video's clips there, in its own card, so our editor gets the right clips for the right video. Then tap <b>Video has been filmed</b>." },
+  { go: () => { tourGo("videos"); tourTab("film"); }, el: () => tourUpload(tourCard()) && tourCard(),
+    title: "Film it your way", html: () => "You choose how to capture it. Read the <b>script</b>, talk through the <b>outline</b> in your own words, or just answer the <b>question</b> under How to film it. Whatever works best for you." },
+  { go: () => tourGo("calendar"), el: () => document.querySelector('.nav-item[data-view="calendar"]'),
+    title: "Content Calendar", html: () => "Prefer to see it on a calendar? Every video is on the day it posts, and the green blocks show when to film it. Click any one to open it." },
+  { go: () => tourGo("documents"), el: () => document.querySelector('.nav-item[data-view="documents"]'),
+    title: "Documents", html: () => "Your most important documents, in one place." + docSummaries() },
 ];
 function startTour() {
   history.replaceState(null, "", location.pathname + location.hash);
-  const steps = TOUR.filter(t => { const el = document.querySelector(t.sel); return el && getComputedStyle(el).display !== "none"; });
-  const veil = document.createElement("div"); veil.className = "tour-veil"; veil.id = "tourVeil";
+  const blocker = document.createElement("div"); blocker.className = "tour-veil"; blocker.id = "tourVeil";
+  const dims = [0, 1, 2, 3].map(() => { const d = document.createElement("div"); d.className = "tour-dim"; return d; });
+  const spot = document.createElement("div"); spot.className = "tour-spot"; spot.id = "tourSpot";
   const card = document.createElement("div"); card.className = "tour-card"; card.id = "tourCard";
-  document.body.append(veil, card);
-  let i = 0, focused = null;
-  const end = () => { if (focused) focused.classList.remove("tour-focus"); veil.remove(); card.remove(); };
+  document.body.append(blocker, ...dims, spot, card);
+  const px = v => Math.max(v, 0) + "px";
+  let i = 0, target = null;
+  // There, and not inside something hidden (each step has already opened
+  // its page and tab, so a hidden parent means it doesn't apply).
+  const visible = el => { for (let n = el; n && n !== document.body; n = n.parentElement) if (n.style && n.style.display === "none") return false; return !!el; };
+  // Ring the target, dim everything around it (four panels: a giant
+  // box-shadow didn't paint reliably in Chrome), and put the card beside it
+  // (right, else below, else above) with the arrow pointing at it. A big
+  // target (a whole video card) gets the card in the bottom-right corner
+  // instead, over its empty side. Phones: the card sits at the bottom.
+  const place = () => {
+    if (!target) return;
+    const r = target.getBoundingClientRect(), pad = 6, vw = innerWidth, vh = innerHeight;
+    const top = Math.round(Math.max(r.top - pad, 4)), bottom = Math.round(Math.min(r.bottom + pad, vh - 4)), left = Math.round(r.left - pad), right = Math.round(r.right + pad);
+    Object.assign(spot.style, { left: left + "px", top: top + "px", width: px(right - left), height: px(bottom - top) });
+    [{ left: "0", top: "0", width: "100%", height: px(top) }, { left: "0", top: bottom + "px", width: "100%", height: px(vh - bottom) },
+     { left: "0", top: top + "px", width: px(left), height: px(bottom - top) }, { left: right + "px", top: top + "px", width: px(vw - right), height: px(bottom - top) }]
+      .forEach((st, k) => Object.assign(dims[k].style, st));
+    card.style.left = card.style.top = card.style.bottom = card.style.right = "";
+    card.removeAttribute("data-arrow");
+    if (vw < 760) return;
+    if (r.height > vh * 0.45) { Object.assign(card.style, { left: "auto", top: "auto", right: "24px", bottom: "24px" }); return; }
+    const w = card.offsetWidth, h = card.offsetHeight, gap = 18;
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(v, hi));
+    let x, y, arrow;
+    if (r.right + pad + gap + w < vw - 16) { x = r.right + pad + gap; y = clamp((top + bottom) / 2 - h / 2, 16, vh - h - 16); arrow = "left"; card.style.setProperty("--ay", clamp((top + bottom) / 2 - y, 22, h - 22) + "px"); }
+    else if (bottom + gap + h < vh - 16) { y = bottom + gap; x = clamp(r.left, 16, vw - w - 16); arrow = "top"; card.style.setProperty("--ax", clamp(r.left + r.width / 2 - x, 22, w - 22) + "px"); }
+    else { y = Math.max(top - gap - h, 16); x = clamp(r.left, 16, vw - w - 16); arrow = "bottom"; card.style.setProperty("--ax", clamp(r.left + r.width / 2 - x, 22, w - 22) + "px"); }
+    card.style.left = x + "px"; card.style.top = y + "px"; card.dataset.arrow = arrow;
+  };
+  const end = () => { target = null; removeEventListener("resize", place); removeEventListener("scroll", place, true); [blocker, ...dims, spot, card].forEach(n => n.remove()); tourGo("videos"); tourTab("all"); };
   const bookmark = () => {
-    if (focused) focused.classList.remove("tour-focus"); focused = null;
+    target = null; spot.style.display = "none"; card.removeAttribute("data-arrow");
+    dims.forEach((d, k) => Object.assign(d.style, k ? { width: "0", height: "0" } : { left: "0", top: "0", width: "100%", height: "100%" }));
+    card.style.left = card.style.top = card.style.bottom = card.style.right = "";
     const host = location.host;
     card.className = "tour-card tour-bookmark";
     card.innerHTML = `<h2>Bookmark this page</h2>
@@ -589,17 +657,27 @@ function startTour() {
       <div class="tour-actions"><span></span><button type="button" class="accent" data-tour-done>Got it</button></div>`;
     card.querySelector("[data-tour-done]").onclick = end;
   };
+  // Steps whose target isn't there (no Time sensitive tab, nothing to
+  // film, a we-film client with no Upload footage button) are left out.
+  const steps = TOUR.filter(t => { t.go(); return visible(t.el()); });
   const show = () => {
     if (i >= steps.length) return bookmark();
-    if (focused) focused.classList.remove("tour-focus");
     const t = steps[i];
-    focused = document.querySelector(t.sel); focused.classList.add("tour-focus");
-    if (focused.scrollIntoView) focused.scrollIntoView({ block: "nearest" });
-    card.innerHTML = `<div class="tour-count">${i + 1} of ${steps.length}</div><h2>${escapeHtml(t.title)}</h2><p>${escapeHtml(t.text)}</p>
-      <div class="tour-actions"><button type="button" class="reject" data-tour-skip>Skip</button><button type="button" class="primary" data-tour-next>${i === steps.length - 1 ? "Finish" : "Next"}</button></div>`;
+    t.go(); target = t.el();
+    // A big target scrolls to its top, so its title and hook show.
+    const big = target.getBoundingClientRect().height > innerHeight * 0.45;
+    if (target.scrollIntoView) target.scrollIntoView({ block: big ? "start" : "center" });
+    if (big) scrollBy(0, -16);
+    spot.style.display = "";
+    card.innerHTML = `<div class="tour-count">Step ${i + 1} of ${steps.length}</div><h2>${escapeHtml(t.title)}</h2><div class="tour-text">${t.html()}</div>
+      <div class="tour-actions"><button type="button" class="reject" data-tour-skip>Skip tour</button><span style="display:flex;gap:8px">${i ? '<button type="button" data-tour-back>Back</button>' : ""}<button type="button" class="primary" data-tour-next>${i === steps.length - 1 ? "Finish" : "Next"}</button></span></div>`;
     card.querySelector("[data-tour-next]").onclick = () => { i++; show(); };
+    const back = card.querySelector("[data-tour-back]");
+    if (back) back.onclick = () => { i--; show(); };
     card.querySelector("[data-tour-skip]").onclick = bookmark;
+    place();
   };
+  addEventListener("resize", place); addEventListener("scroll", place, true);
   show();
 }
 

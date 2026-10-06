@@ -1,7 +1,7 @@
 // POST /api/send-documents { clientId }  (operators only)
 //
 // Once Tait has made a client's important documents (the Google Docs he
-// adds on Clients → Edit → Documents, and any built from their voice memo),
+// adds on Clients → Edit → Documents, leaving out Team only ones, and any built from their voice memo),
 // he clicks "Email them their documents" on their Onboarding panel. This
 // sends one branded email listing every document, with a button to their
 // portal's Documents page. It goes to the email they were invited at (or
@@ -19,7 +19,7 @@ module.exports = handler(async (req, { clientId }) => {
   const [clients, onboarding, docs, built] = await Promise.all([
     rest("social_clients?select=id,name,slug,contact_name,contact_email&id=eq." + id),
     rest("social_client_onboarding?select=invited_email&client_id=eq." + id),
-    rest("social_client_documents?select=title,url&order=position&client_id=eq." + id),
+    rest("social_client_documents?select=title,url&order=position&team_only=eq.false&client_id=eq." + id),
     rest("social_client_generated_docs?select=title&order=kind&client_id=eq." + id),
   ]);
   const client = clients[0];

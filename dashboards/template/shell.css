@@ -413,19 +413,33 @@ button.big { padding:14px 40px; font-size:16px; }
 .color-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 .color-row input[type=color] { width:44px; height:38px; padding:2px; border-radius:8px; border:1px solid var(--line-2); background:var(--navy); }
 
-/* The portal walkthrough after onboarding (startTour in the client portal). */
-.tour-veil { position:fixed; inset:0; background:rgba(4,16,31,.6); z-index:2500; }
-.tour-focus { position:relative; z-index:2600; box-shadow:0 0 0 3px #C4AB82 !important; }
+/* The portal walkthrough after onboarding (startTour in the client portal).
+   .tour-veil catches clicks; four .tour-dim panels darken everything
+   around the one thing being shown, and .tour-spot rings it in gold, so it
+   works on the sidebar and the page alike. The card sits beside it with an
+   arrow (data-arrow = which side of the card points at it). */
+.tour-veil { position:fixed; inset:0; z-index:2500; }
+.tour-dim { position:fixed; z-index:2550; pointer-events:none; background:rgba(4,16,31,.75); }
+.tour-spot { position:fixed; z-index:2600; pointer-events:none; border-radius:12px;
+  box-shadow:0 0 0 4px #C4AB82; animation:tour-pulse 1.6s ease-in-out infinite; }
+@keyframes tour-pulse { 50% { box-shadow:0 0 0 8px rgba(196,171,130,.75); } }
+@media (prefers-reduced-motion: reduce) { .tour-spot { animation:none; } }
 .tour-card { position:fixed; z-index:2700; left:260px; top:110px; width:min(380px, calc(100vw - 32px)); background:#ffffff; color:#04101f; border-radius:16px; padding:22px 22px 18px; box-shadow:0 20px 50px rgba(4,16,31,.35); }
+.tour-card[data-arrow]::before { content:""; position:absolute; width:16px; height:16px; background:#ffffff; transform:rotate(45deg); }
+.tour-card[data-arrow="left"]::before { left:-8px; top:calc(var(--ay) - 8px); }
+.tour-card[data-arrow="top"]::before { top:-8px; left:calc(var(--ax) - 8px); }
+.tour-card[data-arrow="bottom"]::before { bottom:-8px; left:calc(var(--ax) - 8px); }
 .tour-card h2 { margin:0 0 8px; font-size:20px; }
-.tour-card p { margin:0 0 12px; line-height:1.55; font-size:15px; }
+.tour-card p, .tour-text { margin:0 0 12px; line-height:1.55; font-size:15px; }
+.tour-list { margin:10px 0 0; padding-left:18px; }
+.tour-list li { margin-bottom:6px; }
 .tour-card .meta { color:rgba(4,16,31,.65); font-size:13px; }
 .tour-count { font-size:12px; color:rgba(4,16,31,.55); margin-bottom:6px; }
 .tour-actions { display:flex; justify-content:space-between; gap:10px; margin-top:6px; }
 .tour-card button { color:#04101f; border-color:rgba(4,16,31,.2); }
 .tour-card button.primary { background:#04101f; border-color:#04101f; color:#ffffff; }
 .tour-card button.accent { background:#a8884f; border-color:#a8884f; color:#ffffff; }
-.tour-bookmark { left:50%; top:50%; transform:translate(-50%,-50%); width:min(460px, calc(100vw - 32px)); }
+.tour-bookmark { left:50% !important; top:50% !important; transform:translate(-50%,-50%); width:min(460px, calc(100vw - 32px)); }
 .tour-url { font-size:20px; font-weight:700; text-align:center; padding:14px; border:2px dashed rgba(4,16,31,.25); border-radius:12px; margin:0 0 12px; }
-@media (max-width:760px) { .tour-card:not(.tour-bookmark) { left:16px; top:auto; bottom:16px; } }
+@media (max-width:760px) { .tour-card:not(.tour-bookmark) { left:16px !important; right:auto !important; top:auto !important; bottom:16px !important; } }
 
