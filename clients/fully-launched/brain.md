@@ -10,7 +10,7 @@ Drive: Fully Social OS → Clients → Fully Launched
 (https://drive.google.com/drive/folders/1X6CJurBCvH7N3fRQJ69uPuC0g4IlOD8z). The four working
 docs are on the client portal's Documents page:
 - Customer Data — `sources/customer-data.md` (https://docs.google.com/document/d/19WUOPXJw7gBIa41UPfHgvGnCRiEZFB5t0QFLUUNL1mA/edit)
-- Your Voice (3-3-3) — `sources/positioning.md` (https://docs.google.com/document/d/1CzaSXHTk_25Qb6GoueDd_wxzHpAV0efVmD6REdf9k_4/edit)
+- Identity (offer, 3-3-3, voice profile, story bank; replaced Your Voice 2026-10-05): `sources/identity.md`, built from `offer.md`, `positioning.md`, `voice.md`, `story-bank.md` (https://docs.google.com/document/d/1CzaSXHTk_25Qb6GoueDd_wxzHpAV0efVmD6REdf9k_4/edit)
 - Content Ideas — `concepts/content-ideas.md` (https://docs.google.com/document/d/1Lax_VKFYEeJxhJhOvdRn_Y6ALFtkF4Jyd0AZYnFi9jE/edit)
 - Content Research — `research/content-research.md` (https://docs.google.com/document/d/1Tc5WbaM0jK7rdc2x4WqxongfJ_D0VT_f1Kw-M1UqwAw/edit)
 
@@ -21,11 +21,11 @@ docs are on the client portal's Documents page:
 - Posts on LinkedIn, Instagram, Facebook [Tait].
 - Proof: a customer proven in in-person markets, launched on Etsy, Walmart, Amazon —
   sales doubled in a few months [Luke].
-- Proof: Creative Cut Supplies (owner David), a plywood and MDF supplier for laser cutting and
+- Proof: a plywood and MDF supplier (never named in content) for laser cutting and
   CNC makers. Nearly 400 Etsy listings; an automated workflow rewrote every title and
   description, cleaned up inventory and pricing, upscaled photos and audited all 392 listings,
   protecting the search terms already bringing traffic. Now building his Shopify store so he's
-  not dependent on one marketplace [Matteo]. Client permission to name him on camera: pending.
+  not dependent on one marketplace [Matteo].
 
 ## Unique solution
 We take one painful manual process or sales channel and ship a working solution in weeks,
@@ -57,13 +57,19 @@ See `sources/positioning.md` (Your Voice): 4 pillars (websites, organic content,
 systems, marketplaces) + the "Building Fully Launched" series (4+ videos/week), 3 formats,
 3 perspectives (third to confirm).
 
+Documents approved 2026-10-05 (Tait: "Identity doc looks good").
+
 ## Do / don't
 - Don't: invent client facts, results or numbers beyond what's in the sources.
-- Everything else pending.
+- Don't: share prices in any content. [Tait, 2026-10-05]
+- Don't: name clients (people or businesses) in any content. Share what we did and the result. [Tait, 2026-10-05]
+- Don't: write call-to-action words into scripts. Tait puts the CTA in the caption. [Tait, 2026-10-05]
+- "What if it breaks?" Our team will fix it easily. [Tait, 2026-10-05]
+- Competitor research isn't needed yet. [Tait, 2026-10-05]
 
 ## Open questions
 - Third unique perspective — Luke's "start small, ship the one thing" is the candidate.
 - Fourth perspective candidate from Tait's posts: less input, better ideas.
 - Fifth candidate from Matteo (and Luke): built around your business.
-- Answers the Content Ideas doc marks "Needs from you" (privacy, maintenance, Etsy ads,
-  the 3 website steps, results examples, client permission for the case study, etc.).
+- Answers the Content Ideas doc marks "Needs from you" (privacy, Etsy ads, the 3 website
+  steps, results examples). Maintenance is answered; client names and prices are out (Do / don't).

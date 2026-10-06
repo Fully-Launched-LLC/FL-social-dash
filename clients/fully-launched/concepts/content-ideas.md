@@ -1,1237 +1,1028 @@
 # Fully Launched: Content Ideas
 
-**Last updated:** 2026-10-01
+**Last updated:** 2026-10-05
 **Drive:** https://docs.google.com/document/d/1Lax_VKFYEeJxhJhOvdRn_Y6ALFtkF4Jyd0AZYnFi9jE/edit (mirror of this file)
-**Built from:** Customer Data, Your Voice and Content Research (all 2026-09-25), and Tait's LinkedIn posts and notes (added 2026-09-28: B10, B11, O13 to O19), and Matteo's voice memo (added 2026-09-30: B12 to B14, A11 to A15, W5, M18 to M26), and Elias's voice memo (added 2026-10-01: W6 to W13, B15).
+**Built from:** Identity (approved by Tait 2026-10-05), Customer Data, Content Research (2026-10-05), Tait's notes (2026-10-05), and the tension-loop retention rules. This replaces the earlier bank (none of it was filmed); the strongest earlier ideas are reused here with new scripts.
 
-**The rule for this doc:** Claude organizes *your* ideas, from Tait's memos and posts, Luke's, Matteo's and Elias's answers and the Reddit research, into clear, usable ideas. Nothing new is invented. Each idea shows where it came from.
+**The month (posts 2026-10-19 to 2026-11-15):** every week, 5 category videos (Monday to Friday, AI Systems, Social Media, Websites and E-commerce taking turns), 4 Building Fully Launched videos (Tuesday, Thursday, Saturday, Sunday), 1 Authority Hacking video (Wednesday), and 1 YouTube video in the month. Film by 14 days before posting, edit by 7 days before.
 
-**Each idea has:**
-- **Hook:** the opening line
-- **Pillar · Format · Perspective**, from Your Voice
-- **Seed:** the exact line from your own material the idea grew from (on ideas added from 2026-09-28)
-- **The idea:** what the video covers
-- **Talking points:** what to say on camera, from your own words
-- **Ask on camera:** one question the videographer asks to get you talking
-- **CTA:** one call to action from the free-tools list
-- **Source:** where it came from
-- **Needs from you:** only where an idea needs a detail we don't have yet
+**Rules for every script (Tait, 2026-10-05):** no prices, no client names (say what we did and the result), the CTA goes in the caption, not the script. Every script runs on tension loops: a question opened in the hook, a rehook every 10 to 15 seconds, every loop closed at the end.
 
-**Perspectives:** ① Make it simple · ② Service media · ③ Start small *(to confirm)* · ④ Less input, better ideas *(new from your posts, to confirm)* · ⑤ Built around your business *(new from Matteo and Luke, to confirm)*
+**Each idea has:** Hook · Category · Format · Perspective · Framework · Seed (the exact line it comes from) · The idea · Outline · Script · Loops · Ask on camera · CTA (for the caption) · Source.
+
+**Perspectives:** ① Make it simple · ② Service media · ③ Start small · ⑤ Built around your business
 
 ---
 
-## Building Fully Launched: at least 4 videos a week
+## Building Fully Launched: 4 a week
 
-Documenting the build of the business, on the calendar every week. **[Tait]** These are the builds we know are happening now. New ones get added as the business grows.
-
-**B1. The voice memo that becomes all our content**
-- **Hook:** "Here's the voice memo that becomes all our content."
-- **Format:** Behind the scenes · **Perspective:** ① Make it simple
-- **The idea:** Tait records the monthly voice memo: his unique ideas and solutions, exactly what clients will do. Show it turning into a month of content ideas.
-- **Talking points:**
-  - What it is: "a voice memo that captures their unique ideas, unique solutions to things."
-  - Show Tait recording his own: "the exact thing I'm doing now is what I'm going to have clients do."
-  - What happens next: "create constant ideas with it, connect it with research."
+**D1. The voice memo that becomes all our content**
+- **Hook:** "This voice memo is about to become a month of our content."
+- **Category · Format · Perspective:** Building Fully Launched · Behind the scenes · ① Make it simple
+- **Framework:** promise opener + the formula (hook, backstory, rehook, payoff)
+- **Seed:** "basically's the exact thing I'm doing now is what I'm going to have clients do."
+- **The idea:** Tait records his own monthly voice memo, the same thing clients do, and shows where it goes next.
+- **Outline:**
+  - Hit record on the voice memo
+  - Why it's the same thing clients do
+  - What happens to it after
+  - The month of ideas it turns into
+- **Script (Behind the scenes, about 30 seconds):**
+  This voice memo is about to become a month of our content.
+  It's the exact thing every one of our clients does. One recording. Their ideas, their solutions, their stories.
+  You'll see why in a second.
+  We take it, connect it with research on what's working, and turn it into ideas and a filming schedule.
+  And that's when it hit me... we should be doing this for ourselves first.
+  So here's mine. Hit record.
+- **Loops:** opens "how does one voice memo become a month of content" · rehooks: "You'll see why in a second", "And that's when it hit me" · closes with "So here's mine. Hit record"
 - **Ask on camera:** "What goes into the voice memo that turns into a month of content?"
 - **CTA:** Free guide: how to build a social media system
 - **Source:** Tait's voice memo
 
-**B2. Building our own 2-hours-per-month content system**
-- **Hook:** "We're building a content system that takes 2 hours per month, starting with our own."
-- **Format:** How we · **Perspective:** ① Make it simple
-- **The idea:** One hour of voice memo, research, ideas, a filming schedule, one to two hours of filming, then we post. Show each step on our own brand.
-- **Talking points:**
-  - About an hour "talking through content, creating a voice memo."
-  - Then "another hour to two hours filming."
-  - We build the schedule: "what they need to film, when they need to film it by."
-  - Then we post. "a whole content system in two hours a month."
-- **Ask on camera:** "How does a whole content system fit into 2 hours per month?"
-- **CTA:** Free social media audit
-- **Source:** Tait's voice memo
-
-**B3. Building an AI system for a client**
-- **Hook:** "We're building an AI system that files and analyzes a client's uploads automatically."
-- **Format:** Behind the scenes · **Perspective:** ③ Start small
-- **The idea:** A system for a business that automatically uploads files to one place, where Claude analyzes them, built as a Claude skill.
-- **Talking points:**
-  - The build: a system that lets the business "upload stuff to a certain place" and Claude analyzes it.
-  - Built as a Claude skill.
-  - What the owner sees: "one clean upload page and a confirm button."
-  - What the client is OK showing on camera (needs from you).
-- **Ask on camera:** "What are we building for this client, and what does it take off their plate?"
-- **CTA:** Questionnaire: how we can simplify your business with an AI system
-- **Source:** Tait's voice memo
-- **Needs from you:** what the client can share on camera
-
-**B4. Building our client dashboard with Claude**
-- **Hook:** "We built our whole client content dashboard with Claude."
-- **Format:** How we · **Perspective:** ① Make it simple
-- **The idea:** The portal clients use to film, approve and track videos: built, tested and branded with Claude.
-- **Talking points:**
-  - What it does: clients see what to film, approve ideas and approve finished videos in one place.
-  - Built with Claude.
-  - Why it matters: the whole system stays simple for the client.
+**D2. We built our whole client dashboard with Claude**
+- **Hook:** "Our clients film, approve and post from one page. We built it with Claude."
+- **Category · Format · Perspective:** Building Fully Launched · How we · ① Make it simple
+- **Framework:** proof opener + process tease
+- **Seed:** "So your website's going to be simplified, your social media system's going to be simplified, so it's not confusing."
+- **The idea:** A tour of the client portal: what to film, approving ideas, approving finished videos, all in one place.
+- **Outline:**
+  - The portal on screen
+  - What a client sees first
+  - Approving an idea, then a finished video
+  - Why one page
+- **Script (Behind the scenes, about 35 seconds):**
+  Our clients film, approve and post from one page. We built it with Claude.
+  Here's what they see first: what to film, and when to film it by.
+  But here's the part most people skip...
+  The finished video comes back to the same page. They watch it, read the caption, approve it.
+  No email threads. No folders to dig through.
+  Why build our own? Because everything we do is supposed to be simplified, so it's not confusing.
+  This is what that looks like.
+- **Loops:** opens "how does one page run a whole content system" · rehooks: "But here's the part most people skip", "Why build our own?" · closes with "This is what that looks like"
 - **Ask on camera:** "Why did we build our own client dashboard?"
 - **CTA:** Free social media audit
-- **Source:** this project
+- **Source:** Tait's voice memo; this project
 
-**B5. Researching content ideas on Reddit**
-- **Hook:** "I spent an hour on Reddit finding out what business owners actually ask."
-- **Format:** Behind the scenes · **Perspective:** ② Service media
-- **The idea:** Tait walks through the social media, Etsy and Shopify threads, and how each question becomes a video.
-- **Talking points:**
-  - The question everywhere: "what do I post?"
-  - On Etsy: "why the hell can't people find my [Etsy] shop?"
-  - On Shopify: "costing more and more to acquire each customer."
-  - Each question becomes a video.
-- **Ask on camera:** "What did you learn from an hour of reading what business owners ask on Reddit?"
+**D3. We studied 200 videos to see what's working right now**
+- **Hook:** "We pulled almost 200 videos from our niche. One format kept showing up."
+- **Category · Format · Perspective:** Building Fully Launched · Behind the scenes · ② Service media
+- **Framework:** curiosity opener + cliffhanger, paid off at the end
+- **Seed:** "Pulled 2026-10-05 from 93 reels posted in the last 60 days"
+- **The idea:** The research we ran for our own content: 93 Instagram reels and 100 TikToks, and what the top ones have in common.
+- **Outline:**
+  - The pull: 93 reels, 100 TikToks
+  - Most of the top 50 were off topic
+  - The format that showed up most
+  - What we're doing with it
+- **Script (Behind the scenes, about 40 seconds):**
+  We pulled almost 200 videos from our niche. One format kept showing up.
+  93 Instagram reels. 100 TikToks. Small business, Etsy, websites, AI.
+  Here's the weird part... almost half of the top 50 had nothing to do with business.
+  So we cut those and looked at what was left.
+  I'll show you the format in a second, but first, the one that surprised me: finished websites, shown on a laptop, no talking.
+  The one that showed up most? One person talking to camera, with the headline at the top.
+  So that's what you're watching right now.
+- **Loops:** opens "which format kept showing up" · rehooks: "Here's the weird part", "I'll show you the format in a second" · closes with "So that's what you're watching right now"
+- **Ask on camera:** "What did we find when we pulled 200 videos from our niche?"
+- **CTA:** Free social media audit
+- **Source:** Content Research, 2026-10-05
+
+**D4. Why we started Fully Launched**
+- **Hook:** "We kept seeing great local businesses stuck. Here's why."
+- **Category · Format · Perspective:** Building Fully Launched · How we · ③ Start small
+- **Framework:** confession opener + realization beat
+- **Seed:** "we just kept seeing great local businesses stuck because the owner was doing everything"
+- **The idea:** Luke on why we started: great local businesses stuck because the owner did everything, and online shops failing on weak listings.
+- **Outline:**
+  - The businesses we kept seeing
+  - The pattern: the owner doing everything
+  - Online shops with weak photos and listings
+  - Why that became Fully Launched
+- **Script (Talking head, about 40 seconds):**
+  We kept seeing great local businesses stuck. Here's why.
+  Great product. Great reputation. But the owner was doing everything.
+  The admin. The listings. The website. At night.
+  And online? Shops failing because the listings weren't optimized and the photos weren't good.
+  That's when it hit me... none of these were bad businesses.
+  They just needed a helping hand.
+  So we started Fully Launched. Four guys, fast fun projects, one business at a time.
+- **Loops:** opens "why do great businesses get stuck" · rehooks: "And online?", "That's when it hit me" · closes with "So we started Fully Launched"
+- **Ask on camera:** "Why did you start Fully Launched?"
+- **CTA:** Free store audit
+- **Source:** Luke's answers
+
+**D5. We're building an AI system that reads a business's uploads**
+- **Hook:** "We're building an AI system for a business. Watch what it does with one upload."
+- **Category · Format · Perspective:** Building Fully Launched · Behind the scenes · ③ Start small
+- **Framework:** cliffhanger + process tease
+- **Seed:** "right now we're building a system for a business to help them automatically. upload stuff to a certain place."
+- **The idea:** The system in progress: the business uploads to one place, Claude analyzes it, built as a Claude skill. No client name, just the build.
+- **Outline:**
+  - The upload page on screen
+  - What happens after one upload
+  - Built as a Claude skill
+  - What it takes off the owner's plate
+- **Script (Behind the scenes, about 35 seconds):**
+  We're building an AI system for a business. Watch what it does with one upload.
+  They drop a file in one place. That's their whole job.
+  Watch what I do right here...
+  Claude picks it up and analyzes it. The work they used to do by hand, done.
+  We built it as a Claude skill, around how this business actually runs.
+  So what's left for the owner? One clean upload page and a confirm button.
+- **Loops:** opens "what does it do with one upload" · rehooks: "Watch what I do right here", "So what's left for the owner?" · closes with "One clean upload page and a confirm button"
+- **Ask on camera:** "What are we building, and what does it take off their plate?"
+- **CTA:** Questionnaire: how we can simplify your business with an AI system
+- **Source:** Tait's voice memo; Luke's answers
+- **Needs from you:** what of the build can be shown on screen without the client's name
+
+**D6. An hour on Reddit reading what business owners ask**
+- **Hook:** "I spent an hour reading what business owners ask on Reddit. One question was everywhere."
+- **Category · Format · Perspective:** Building Fully Launched · Behind the scenes · ② Service media
+- **Framework:** curiosity opener + guided question
+- **Seed:** "something that I see often is people asking, like, what do I post?"
+- **The idea:** Tait's Reddit research session, and how each question becomes a video.
+- **Outline:**
+  - Scrolling the threads on screen
+  - The question that's everywhere
+  - Etsy: why can't people find my shop
+  - Every question becomes a video
+- **Script (Behind the scenes, about 35 seconds):**
+  I spent an hour reading what business owners ask on Reddit. One question was everywhere.
+  Can you guess it?
+  On Etsy, it was "why can't people find my shop?" On Shopify, it was customers costing more and more.
+  But the one everywhere? "What do I post?"
+  So here's what we do with that: every question becomes a video.
+  You're watching one right now.
+- **Loops:** opens "which question was everywhere" · rehooks: "Can you guess it?", "But the one everywhere?" · closes with "You're watching one right now"
+- **Ask on camera:** "What did you learn from an hour of reading what business owners ask?"
 - **CTA:** Free guide: how to build a social media system
 - **Source:** Tait's Reddit memo
 
-**B6. Building our free tools**
-- **Hook:** "We're building free audits for business owners. Here's what's in them."
-- **Format:** Behind the scenes · **Perspective:** ② Service media
-- **The idea:** The store audit, social media audit and guides, and why each free tool ends with "here's who we are, here's what we do."
-- **Talking points:**
-  - The tools: "free store audits, free social media audit," a guide to build a social media system, and 3 steps to simplify a website.
-  - Each one ends with "hey, here's who we are, here's what we do."
-  - "that's how we bring people into the email list."
+**D7. Building our free tools**
+- **Hook:** "We're building free audits for business owners. Here's what's inside."
+- **Category · Format · Perspective:** Building Fully Launched · Behind the scenes · ② Service media
+- **Framework:** promise opener + delay line
+- **Seed:** "So we want to give people free guides, like free store audits, free social media audit"
+- **The idea:** The store audit, the social media audit and the guides, being built.
+- **Outline:**
+  - The tools on screen
+  - What each one checks
+  - Why give them away
+- **Script (Behind the scenes, about 30 seconds):**
+  We're building free audits for business owners. Here's what's inside.
+  A store audit. A social media audit. A guide to building a social media system. Three steps to simplify your website.
+  Why give them away? Hold that thought.
+  Here's the part most people skip... each one tells you exactly what to fix next. Most people never get that for free.
+  So that's the point: you walk away knowing your next step.
+- **Loops:** opens "what's inside" · rehooks: "Why give them away? Hold that thought", "Here's the part most people skip" · closes with "you walk away knowing your next step"
 - **Ask on camera:** "What's in our free audits, and why give them away?"
 - **CTA:** whichever tool the video shows
 - **Source:** Tait's voice memo
 
-**B7. Writing our 9-email welcome sequence**
-- **Hook:** "Writing the 9 emails every new subscriber gets."
-- **Format:** Behind the scenes · **Perspective:** ② Service media
-- **Talking points:**
-  - The plan: "a nine email welcome."
-  - Everyone who takes a free tool gets it.
-  - What's in the emails and when it launches (needs from you).
-- **Ask on camera:** "What should someone feel after reading our 9 welcome emails?"
-- **CTA:** Join the email list (any free tool)
-- **Source:** Tait's voice memo
-- **Needs from you:** timing, since it's "coming soon"
-
-**B8. Launching a client across Etsy, Walmart and Amazon**
-- **Hook:** "This business only sold in person. Here's how we launched it online."
-- **Format:** How we · **Perspective:** ③ Start small
-- **The idea:** The launch that doubled his sales in a few months.
-- **Talking points:**
-  - Before: "proven his business in a lot of in person markets, but has very little online presence."
-  - What we did: "launched his brand across Etsy, Walmart Amazon."
-  - The result: "we have doubled his sales in just a few months."
-  - "it's been a super inspiring awesome story."
-- **Ask on camera:** "Tell me about the business we launched on Etsy, Walmart and Amazon."
-- **CTA:** Free store audit
-- **Source:** Luke's answers
-- **Needs from you:** client permission, and anything that can be shown
-
-**B9. Why we started Fully Launched**
-- **Hook:** "We kept seeing great local businesses stuck because the owner was doing everything."
-- **Format:** How we · **Perspective:** ③ Start small
-- **The idea:** Why Luke, Tait and the team started it: stuck local businesses, unoptimized Etsy and Faire listings, and wanting to do fast, fun projects as a team.
-- **Talking points:**
-  - "great local businesses stuck because the owner was doing everything."
-  - "online businesses fail because they're Etsy and fair listings were weren't optimized with good photos."
-  - "we just wanted to provide a helping hand to businesses."
-  - "we wanted to work as a team with great guys to do fast fun projects."
-- **Ask on camera:** "Why did you start Fully Launched?"
-- **CTA:** Free store audit or social media audit
-- **Source:** Luke's answers
-
-**B10. The edit off with my 15-year-old brother**
-- **Hook:** "My 15 year old brother and I are having an edit off."
-- **Format:** Behind the scenes · **Perspective:** none of the three fits (a personality post)
-- **Seed:** "we both filmed this moped together and then gave it our own unique twist."
-- **The idea:** Film one thing together, each edit it your own way, and show both. "his is pretty sweet."
-- **Talking points:**
-  - "we both filmed this moped together and then gave it our own unique twist."
-  - Show both edits side by side.
-  - Tait's verdict on his brother's: "his is pretty sweet."
-  - Ask viewers to pick a winner.
-- **Ask on camera:** "What did you and your brother each do differently with the same footage?"
-- **CTA:** Free social media audit
-- **Source:** Tait's LinkedIn post 1
-- **Needs from you:** is the Instagram reel you sent this edit? If so, a new round (a new thing to film) for the video
-
-**B11. Never grab the tail of a wiener dog**
-- **Hook:** "Never grab the tail of a wiener dog."
-- **Format:** How I · **Perspective:** none of the three fits (introduces the team)
-- **Seed:** "We are 4 young, scrappy guys helping businesses face their wiener dogs head on."
-- **The idea:** The lesson you learned at 5, from a wiener dog named Stroker ("I totally should have seen it coming"). Then two more lessons: "go directly to them" and "knock it out first thing in the morning." Then who we are, and "social media, websites, marketplaces…reach out to us."
-- **Talking points:**
-  - "Never grab the tail of a wiener dog. It'll turn around and bite you in the face."
-  - "The dog's name was Stroker, too...I totally should have seen it coming."
-  - Two more lessons: "go directly to them," and "knock it out first thing in the morning."
-  - "We are 4 young, scrappy guys helping businesses face their wiener dogs head on."
-- **Ask on camera:** "What's the lesson a wiener dog taught you when you were 5?"
-- **CTA:** Free social media audit
-- **Source:** Tait's LinkedIn post 5
-
-**B12. I could do in an afternoon what took business owners weeks**
-- **Hook:** "I got into building AI tools and realized I could do in an afternoon what took business owners weeks."
-- **Format:** How I · **Perspective:** ⑤ Built around your business
+**D8. An afternoon versus weeks**
+- **Hook:** "I could do in an afternoon what took business owners weeks."
+- **Category · Format · Perspective:** Building Fully Launched · How I · ⑤ Built around your business
+- **Framework:** proof opener + realization beat
 - **Seed:** "I got into building AI tools and, and realized that I could do it in an afternoon what took business owners weeks."
-- **The idea:** Matteo's side of why we started, on camera. Good small businesses losing to bigger players because their online presence was weak. "That felt fixable." Pairs with B9 (Luke's version).
-- **Talking points:**
-  - Where it started: "I got into building AI tools and, and realized that I could do it in an afternoon what took business owners weeks."
-  - What he kept seeing: "good small businesses with great products losing to bigger players just because their online presence was weak."
+- **The idea:** Matteo's side of why we started.
+- **Outline:**
+  - Getting into building AI tools
+  - The afternoon versus weeks moment
+  - Good businesses losing to bigger players
   - "That felt fixable."
-  - Where it lands: "give the smallest sellers the kind of systems only big companies used to afford."
+- **Script (Talking head, about 40 seconds):**
+  I could do in an afternoon what took business owners weeks.
+  I got into building AI tools for fun. Then I noticed something.
+  Here's the part nobody talks about...
+  Good small businesses with great products were losing to bigger players. Their products were better. Their online presence was weak.
+  That felt fixable.
+  So that's what we do now: give the smallest sellers the kind of systems only big companies used to afford.
+- **Loops:** opens "how can an afternoon replace weeks" · rehooks: "Then I noticed something", "Here's the part nobody talks about" · closes with "That felt fixable"
 - **Ask on camera:** "What made you realize small businesses needed this?"
 - **CTA:** Free store audit
 - **Source:** Matteo's voice memo
 
-**B13. It started as Luke's idea**
-- **Hook:** "Fully Launched started as one idea. Then it kept growing."
-- **Format:** Behind the scenes · **Perspective:** ③ Start small
-- **Seed:** "It was Luke's idea initially, and we just started growing this and growing it and growing it"
-- **The idea:** How a marketplace for automation work became four services, told by the four of us: Luke, Tait, Elias and Matteo.
-- **Talking points:**
-  - The first idea: "a marketplace where we would be able to be doing automation work for companies that didn't have the time."
-  - "It was Luke's idea initially"
-  - Then "branching out into social media, branching out into AI, branching out into web development."
-  - Where it is now: "so many ideas and so many different avenues that we're going down at the same time"
-- **Ask on camera:** "How did Fully Launched go from one idea to four services?"
-- **CTA:** Free social media audit
-- **Source:** Matteo's voice memo
-- **Needs from you:** whether all four of us film it, and a line on what Elias and Matteo each do
-
-**B14. Building Creative Cut Supplies' Shopify store**
-- **Hook:** "We're building a Shopify store so this business isn't dependent on one marketplace."
-- **Format:** Behind the scenes · **Perspective:** ⑤ Built around your business
+**D9. Building a Shopify store so a seller isn't stuck on one marketplace**
+- **Hook:** "His Etsy shop already works. So why are we building him a Shopify store?"
+- **Category · Format · Perspective:** Building Fully Launched · Behind the scenes · ⑤ Built around your business
+- **Framework:** question opener + stakes
 - **Seed:** "now we're building his Shopify store so he's not dependent on one marketplace."
-- **The idea:** The next step after the 392 listings (M18). Document the store as it gets built, one video per milestone.
-- **Talking points:**
-  - Where David started: "nearly four hundred Etsy listings across a huge catalog."
-  - The fear this answers: "the marketplace changes its algorithm or fees, and their income drops overnight"
-  - What we're building this week, on screen.
-  - The goal: "Sales come from more than one channel"
-- **Ask on camera:** "Why build him a Shopify store when his Etsy shop already works?"
+- **The idea:** The store build after the 392-listing overhaul, one milestone at a time. No client name.
+- **Outline:**
+  - The store on screen, in progress
+  - Why a working Etsy shop isn't enough
+  - What one marketplace change could do
+  - This week's milestone
+- **Script (Behind the scenes, about 35 seconds):**
+  His Etsy shop already works. So why are we building him a Shopify store?
+  Nearly four hundred listings. Selling every day.
+  But there was one problem...
+  If the marketplace changes its algorithm or its fees, income can drop overnight.
+  So we're building him a store he owns. Sales from more than one channel.
+  Here's where it's at this week.
+- **Loops:** opens "why build a store if Etsy works" · rehooks: "But there was one problem" · closes with "So we're building him a store he owns"
+- **Ask on camera:** "Why build a Shopify store when his Etsy shop already works?"
 - **CTA:** Free store audit
 - **Source:** Matteo's voice memo
-- **Needs from you:** David's permission to name the business and show the store, and what's built so far
+- **Needs from you:** what's built so far, to show on screen
 
-**B15. Why we named it Fully Launched**
+**D10. Why we named it Fully Launched**
 - **Hook:** "We named the company after what we wanted every client to say."
-- **Format:** How I · **Perspective:** ① Make it simple
+- **Category · Format · Perspective:** Building Fully Launched · How I · ① Make it simple
+- **Framework:** curiosity opener + payoff that circles back
 - **Seed:** "I don't know anything about a website, but I know Elias, I know Mateo, I know Tate, I know Luke."
-- **The idea:** Elias's side of why we started: owners know they need a website but not who to hire or what to ask. Fully Launched is the four of us taking care of it.
-- **Talking points:**
-  - "they know they need a website, but they don't know who to hire, who they need, what it's gonna cost, or what it should cost"
-  - "and what questions they even should be asking."
-  - What he wanted: a business owner could say "I don't know anything about a website, but I know Elias, I know Mateo, I know Tate, I know Luke. They're gonna take care of getting us ... fully launched."
-  - "it's the name of the company, and that's something, um, I know I am and the other guys are completely proud of."
+- **The idea:** Elias on why we started, and where the name comes from.
+- **Outline:**
+  - What owners don't know when they hire for a website
+  - The questions they don't know to ask
+  - What Elias wanted them to be able to say
+  - The name
+- **Script (Talking head, about 40 seconds):**
+  We named the company after what we wanted every client to say.
+  Here's the weird part... most owners know they need a website. But they don't know who to hire, what it should cost, or what questions to even ask.
+  I'll get to the name in a second.
+  I wanted a business owner to be able to say, "I don't know anything about a website, but I know Elias, I know Matteo, I know Tait, I know Luke."
+  "They're gonna take care of getting us fully launched."
+  That's the name.
+- **Loops:** opens "what did we want clients to say" · rehooks: "Here's the weird part", "I'll get to the name in a second" · closes with "That's the name"
 - **Ask on camera:** "Why did you start Fully Launched, and why that name?"
 - **CTA:** Free guide: 3 steps to simplify your website
 - **Source:** Elias's voice memo
 
----
+**D11. It started as one idea**
+- **Hook:** "Fully Launched started as one idea. Then it kept growing."
+- **Category · Format · Perspective:** Building Fully Launched · Behind the scenes · ③ Start small
+- **Framework:** story starters (but / so / until)
+- **Seed:** "It was Luke's idea initially, and we just started growing this and growing it and growing it"
+- **The idea:** How a marketplace for automation work turned into four services.
+- **Outline:**
+  - The first idea: automation work for busy companies
+  - Luke's idea
+  - Social media, AI, web development
+  - Where it is now
+- **Script (Behind the scenes, about 35 seconds):**
+  Fully Launched started as one idea. Then it kept growing.
+  The idea was automation work for companies that didn't have the time. It was Luke's idea.
+  But that didn't stay one thing for long... so what happened next?
+  Social media. AI. Web development.
+  So now it's four guys, four services, and more ideas than we have hours.
+  Turns out, starting small was the whole trick.
+- **Loops:** opens "how did one idea turn into this" · rehooks: "But that didn't stay one thing for long", "so what happened next?" · closes with "Turns out, starting small was the whole trick"
+- **Ask on camera:** "How did Fully Launched go from one idea to four services?"
+- **CTA:** Free social media audit
+- **Source:** Matteo's voice memo
 
-## Authority Hacking: 1 video a week
+**D12. Writing our 9-email welcome sequence**
+- **Hook:** "Writing the 9 emails every new subscriber gets."
+- **Category · Format · Perspective:** Building Fully Launched · Behind the scenes · ② Service media
+- **Framework:** process tease
+- **Seed:** "In the email list. We'll have a nine email welcome"
+- **The idea:** Tait writing the welcome sequence that follows every free tool.
+- **Outline:**
+  - The draft on screen
+  - Who gets it
+  - What the first email does
+- **Script (Behind the scenes, about 25 seconds):**
+  Writing the 9 emails every new subscriber gets.
+  Anyone who grabs one of our free tools lands here.
+  This one step is where most people quit...
+  They get the email, and nothing else ever comes.
+  So we're writing nine.
+- **Loops:** opens "what's in the 9 emails" · rehooks: "This one step is where most people quit" · closes with "So we're writing nine"
+- **Ask on camera:** "What should someone feel after reading our 9 welcome emails?"
+- **CTA:** Join the email list (any free tool)
+- **Source:** Tait's voice memo
+- **Needs from you:** where the sequence is at, to show on screen
 
-**What it is [Tait]:** highlight a person who is extremely successful in one of our categories (websites, e-commerce, AI or social media). **Hook with how successful they are, then explain *why* they're so successful.**
+**D13. We found the cheat code to retention**
+- **Hook:** "We found the cheat code to retention. Every script we write uses it now."
+- **Category · Format · Perspective:** Building Fully Launched · Behind the scenes · ② Service media
+- **Framework:** the tension-loop script (it uses itself)
+- **Seed:** "It has a lot of great hooks that will help rehook people and keep people engaged. it is the cheat code to retention."
+- **The idea:** Adding the rehook rules to our script system, shown on our own scripts.
+- **Outline:**
+  - A script on screen
+  - The question opened in the first line
+  - A rehook every 10 to 15 seconds
+  - Every question answered at the end
+- **Script (Behind the scenes, about 35 seconds):**
+  We found the cheat code to retention. Every script we write uses it now.
+  But before I tell you what it is, notice what's happening right now.
+  You're still here. Can you guess why? Because I opened a question.
+  Every script opens one in the first line. A new one every 10 to 15 seconds. And every one gets answered by the end.
+  That's the cheat code: you never give them a reason to leave.
+- **Loops:** opens "what's the cheat code" · rehooks: "But before I tell you what it is, notice what's happening right now", "Can you guess why?" · closes with "That's the cheat code: you never give them a reason to leave"
+- **Ask on camera:** "What changed in how we write every script?"
+- **CTA:** Free social media audit
+- **Source:** Tait's notes, 2026-10-05
 
-**Rotation:** one pillar per week, repeating every 4 weeks: **Websites → Marketplaces (e-commerce) → AI systems → Organic content (social media).**
+**D14. Never grab the tail of a wiener dog**
+- **Hook:** "Never grab the tail of a wiener dog."
+- **Category · Format · Perspective:** Building Fully Launched · How I · introduces the team
+- **Framework:** story starters + payoff
+- **Seed:** "We are 4 young, scrappy guys helping businesses face their wiener dogs head on."
+- **The idea:** Tait's lesson at 5, two more lessons, then who we are.
+- **Outline:**
+  - The wiener dog named Stroker
+  - Lesson: go directly to them
+  - Lesson: knock it out first thing in the morning
+  - Who we are
+- **Script (Story, about 40 seconds):**
+  Never grab the tail of a wiener dog.
+  It'll turn around and bite you in the face. I learned this when I was 5.
+  The dog's name was Stroker, too... I totally should have seen it coming.
+  But that's not the only lesson.
+  If you need to have a conversation with someone, go directly to them.
+  If you've got a problem to deal with, knock it out first thing in the morning.
+  So who are we? 4 young, scrappy guys helping businesses face their wiener dogs head on.
+- **Loops:** opens "why not the tail?" · rehooks: "But that's not the only lesson", "So who are we?" · closes with "helping businesses face their wiener dogs head on"
+- **Ask on camera:** "What's the lesson a wiener dog taught you when you were 5?"
+- **CTA:** Free social media audit
+- **Source:** Tait's LinkedIn post 5
 
-**How each one is built:**
-- **Hook:** their result, stated plainly. The formula: *"[Person] [did something extremely successful]. Here's why it worked."*
-- **The idea:** 2–3 reasons *why* they're so successful, each tied back to how we work: one of our perspectives (① Make it simple · ② Service media · ③ Start small).
-- **Action step (② Service media):** end with the one thing the viewer can take from them and do this week.
-- **CTA:** the free tool that matches the pillar.
-- **Facts rule:** every claim about the person (numbers, results, dates) must be checked against a real source and linked in Content Research before filming. We never guess.
-
-**Needs from you:** who to feature. Pick them yourself, or ask Claude to research candidates for each pillar, with sources.
-
-**AH1. Websites**
-- **Person:** *(needs from you)*
-- **Hook:** "[Person] [result]. Here's why."
-- **Perspective:** ① Make it simple
-- **Talking points:**
-  - Their result, stated plainly (needs from you).
-  - 2 or 3 reasons it worked, each tied to making it simple.
-  - One thing the viewer can do this week.
-- **Ask on camera:** "What's one thing this person does with their website that a small business could copy this week?"
-- **CTA:** Free guide: 3 steps to simplify your website
-
-**AH2. Marketplaces (e-commerce)**
-- **Person:** *(needs from you)*
-- **Hook:** "[Person] [result]. Here's why."
-- **Perspective:** ③ Start small
-- **Talking points:**
-  - Their result, stated plainly (needs from you).
-  - 2 or 3 reasons it worked, each tied to starting small.
-  - One thing the viewer can do this week.
-- **Ask on camera:** "What's one thing this seller does that a small shop could copy this week?"
+**D15. This business only sold in person. Then we launched it online.**
+- **Hook:** "This business only sold in person. A few months online doubled its sales."
+- **Category · Format · Perspective:** Building Fully Launched · How we · ③ Start small
+- **Framework:** proof opener + reversal
+- **Seed:** "we launched his brand across Etsy, Walmart Amazon, and we have doubled his sales in just a few months"
+- **The idea:** The launch across Etsy, Walmart and Amazon. No client name, just what we did and the result.
+- **Outline:**
+  - Before: proven in person, almost nothing online
+  - What we launched
+  - The result
+- **Script (Talking head, about 35 seconds):**
+  This business only sold in person. A few months online doubled its sales.
+  The product was proven. In-person markets, real customers.
+  But online? Almost nothing.
+  So we launched the brand on Etsy, Walmart and Amazon.
+  What happened next? Sales doubled in just a few months.
+  Same product. More places to buy it.
+- **Loops:** opens "how did online double the sales" · rehooks: "But online?", "What happened next?" · closes with "Same product. More places to buy it"
+- **Ask on camera:** "Tell me about the business we launched on Etsy, Walmart and Amazon."
 - **CTA:** Free store audit
+- **Source:** Luke's answers
 
-**AH3. AI systems**
-- **Person:** *(needs from you)*
-- **Hook:** "[Person] [result]. Here's why."
-- **Perspective:** ③ Start small
-- **Talking points:**
-  - Their result, stated plainly (needs from you).
-  - 2 or 3 reasons it worked, each tied to starting small.
-  - One thing the viewer can do this week.
-- **Ask on camera:** "What's one thing this person does with AI that a small business could copy this week?"
-- **CTA:** Questionnaire: simplify your business with an AI system
-
-**AH4. Organic content (social media)**
-- **Person:** *(needs from you)*
-- **Hook:** "[Person] [result]. Here's why."
-- **Perspective:** ② Service media
-- **Talking points:**
-  - Their result, stated plainly (needs from you).
-  - 2 or 3 reasons it worked, each tied to service media.
-  - One thing the viewer can do this week.
-- **Ask on camera:** "What's one thing this creator does that a business owner could copy this week?"
+**D16. The edit off with my 15-year-old brother**
+- **Hook:** "My 15 year old brother and I are having an edit off."
+- **Category · Format · Perspective:** Building Fully Launched · Behind the scenes · personality
+- **Framework:** guided question + payoff
+- **Seed:** "we both filmed this moped together and then gave it our own unique twist."
+- **The idea:** Same footage, two edits, viewers pick the winner.
+- **Outline:**
+  - What we filmed together
+  - His edit
+  - My edit
+  - You pick
+- **Script (Behind the scenes, about 25 seconds):**
+  My 15 year old brother and I are having an edit off.
+  Same footage. We both filmed it together. Then we each gave it our own twist.
+  Here's his. Honestly? His is pretty sweet.
+  Here's mine.
+  So who won?
+- **Loops:** opens "who wins the edit off" · rehooks: "Honestly?" · closes with "So who won?"
+- **Ask on camera:** "What did you and your brother each do differently with the same footage?"
 - **CTA:** Free social media audit
+- **Source:** Tait's LinkedIn post 1
+- **Needs from you:** a new round to film (new shared footage, two edits)
 
 ---
 
-## Pillar: Organic content (social media)
+## Authority Hacking: 1 a week
 
-**O1. "What do I post?" The simple answer**
-- **Hook:** "'What do I post?' Here's the simple answer."
-- **Format:** How to · **Perspective:** ① Make it simple
-- **The idea:** Find good ideas your customer wants to see, serve them with content around that idea, rinse and repeat, find new ideas. That's all it is.
-- **Talking points:**
-  - Start with the question people ask most: "what do I post?"
-  - Tait's answer: "find good ideas. Your customer wants to see, Serve that customer by creating content around that idea, rinse and repeat, and find new ideas."
-  - "That's ultimately all it is."
-- **Ask on camera:** "When a business owner asks 'what do I post?', what's your simple answer?"
-- **CTA:** Free guide: how to build a social media system
-- **Source:** Reddit + Tait's take
+Someone extremely successful in one of our four categories: hook with how successful they are, then why. Every fact is sourced in Content Research → "Authority Hacking: sources".
 
-**O2. Social media should be service media**
-- **Hook:** "Social media should be service media."
-- **Format:** How to · **Perspective:** ② Service media
-- **The idea:** Serve your customer with your content and give them an action step after they watch, not just information.
-- **Talking points:**
-  - "it should be service media, where you're seeking to serve your customer with your content."
-  - "help them know what to do next."
-  - "help them have an action step after they watch your content."
-- **Ask on camera:** "What does 'service media' mean to you?"
+**AH1. Airbnb's founders took the photos themselves**
+- **Hook:** "Airbnb's bookings in New York doubled. The founders just picked up a camera."
+- **Category · Format · Perspective:** Authority Hacking (Websites) · Talking head · ① Make it simple
+- **Framework:** proof opener + "why did this work" rehook
+- **Seed:** "Highlight a person who is extremely successful in websites, e-commerce, AI or social media."
+- **The idea:** In 2009 Airbnb's New York bookings were low because the listing photos were bad. The founders photographed listings themselves; bookings doubled. Ties to how your business looks online.
+- **Outline:**
+  - Airbnb in 2009: low bookings in New York
+  - The cause: bad photos
+  - What the founders did
+  - Bookings doubled
+  - Your version: look at your own photos
+- **Script (Talking head, about 45 seconds):**
+  Airbnb's bookings in New York doubled. The founders just picked up a camera.
+  It's 2009. Airbnb is struggling in New York.
+  Why? You'll see in a second.
+  The listings were fine. The photos were bad. Dark, blurry, phone pictures.
+  So the founders rented a camera and went door to door, photographing listings themselves.
+  What happened next? Bookings on those listings doubled.
+  Here's where most people get it wrong... they think customers judge the product. They judge the photo first.
+  So look at the photos on your website tonight. Would you book it?
+- **Loops:** opens "how did a camera double bookings" · rehooks: "Why? You'll see in a second", "What happened next?", "Here's where most people get it wrong" · closes with "Would you book it?"
+- **Ask on camera:** "What's one thing a small business could copy from Airbnb this week?"
+- **CTA:** Free guide: 3 steps to simplify your website
+- **Source:** positioning.md (Authority Hacking); facts in Content Research → Authority Hacking: sources
+
+**AH2. Gymshark started in a garage**
+- **Hook:** "Gymshark started in a garage. It's now worth over a billion pounds."
+- **Category · Format · Perspective:** Authority Hacking (E-commerce) · Talking head · ③ Start small
+- **Framework:** proof opener + stakes + realization
+- **Seed:** "Hook with how successful they are, then explain why."
+- **The idea:** Ben Francis started Gymshark in 2012 in a garage, selling online, and in 2020 it was valued at £1.25 billion. Why: built for one specific customer, and online first.
+- **Outline:**
+  - 2012: a 19-year-old, a garage, a screen printer
+  - 2020: valued at £1.25 billion
+  - Why: one specific customer, the gym crowd
+  - Why: online first
+  - Your version: who exactly is your product for?
+- **Script (Talking head, about 45 seconds):**
+  Gymshark started in a garage. It's now worth over a billion pounds.
+  2012. Ben Francis is 19, printing gym clothes in a garage.
+  2020? The company's valued at 1.25 billion pounds.
+  So what did he do differently? Two things.
+  One: he built for one specific customer. People who live in the gym. Not everyone.
+  Two: he sold online from day one.
+  That's when it hit me... most small brands try to sell to everyone, in one place.
+  So who exactly is your product for, and where are they buying?
+- **Loops:** opens "how does a garage become a billion" · rehooks: "So what did he do differently? Two things", "That's when it hit me" · closes with "who exactly is your product for, and where are they buying?"
+- **Ask on camera:** "What's one thing a small shop could copy from Gymshark this week?"
+- **CTA:** Free store audit
+- **Source:** positioning.md (Authority Hacking); facts in Content Research → Authority Hacking: sources
+
+**AH3. Klarna's AI did the work of 700 people. Then they hired humans back.**
+- **Hook:** "Klarna's AI did the work of 700 people. Then they hired humans back."
+- **Category · Format · Perspective:** Authority Hacking (AI systems) · Talking head · ③ Start small
+- **Framework:** contrast and reversal
+- **Seed:** "Rotates through the four pillars."
+- **The idea:** In its first month (2024) Klarna's AI assistant handled 2.3 million conversations, the work of 700 full-time agents. In 2025 Klarna brought humans back for the complex cases. The lesson: AI takes one specific job, with a person checking.
+- **Outline:**
+  - The first month: 2.3 million conversations
+  - The work of 700 agents
+  - The reversal: humans back for complex cases
+  - Why: AI does one job well, a person checks
+  - Your version: one task, one review step
+- **Script (Talking head, about 45 seconds):**
+  Klarna's AI did the work of 700 people. Then they hired humans back.
+  First month: 2.3 million customer conversations. Faster answers.
+  Sounds great, right? It wasn't.
+  The hard cases got generic answers. Customers noticed. So Klarna brought people back for those.
+  Here's the part nobody talks about...
+  The AI was great at the simple, repetitive work. It needed a person for the rest.
+  So start with one task. Let it run itself, with one quick review step.
+- **Loops:** opens "why hire humans back?" · rehooks: "Sounds great, right? It wasn't", "Here's the part nobody talks about" · closes with "with one quick review step"
+- **Ask on camera:** "What's one thing a small business should copy from Klarna, and one thing it shouldn't?"
+- **CTA:** Questionnaire: how we can simplify your business with an AI system
+- **Source:** positioning.md (Authority Hacking); Luke's answers ("repetitive work runs itself with just one quick review step"); facts in Content Research → Authority Hacking: sources
+
+**AH4. Gary Vaynerchuk grew a wine store 20 times over**
+- **Hook:** "Gary Vaynerchuk grew his family's wine store from 3 to 60 million a year."
+- **Category · Format · Perspective:** Authority Hacking (Social media) · Talking head · ② Service media
+- **Framework:** proof opener + guided question
+- **Seed:** "Highlight a person who is extremely successful in websites, e-commerce, AI or social media."
+- **The idea:** Gary took over his father's liquor store, renamed it Wine Library, sold online early, and in 2006 started a daily YouTube wine show. Sales went from about $3 million to $60 million a year. Why: he helped people pick wine, every day.
+- **Outline:**
+  - The store he took over
+  - 2006: a daily YouTube show about wine
+  - 3 million to 60 million a year
+  - Why: he answered what people wanted to know, daily
+  - Your version: what does your customer ask you every week?
+- **Script (Talking head, about 45 seconds):**
+  Gary Vaynerchuk grew his family's wine store from 3 to 60 million a year.
+  He took over his dad's liquor store in New Jersey.
+  So what changed? A camera.
+  In 2006 he started a daily YouTube show. Just him, reviewing wine. Every day.
+  Here's the weird part... he wasn't selling. He was helping people pick a bottle.
+  That's service media. Help first, and the customers come.
+  So what does your customer ask you every week? That's your next video.
+- **Loops:** opens "how does a wine store grow 20 times?" · rehooks: "So what changed? A camera", "Here's the weird part" · closes with "That's your next video"
+- **Ask on camera:** "What's one thing a business owner could copy from Gary this week?"
 - **CTA:** Free social media audit
-- **Source:** Tait's voice memo
-
-**O3. All your content in 2 hours per month**
-- **Hook:** "What if all your content took 2 hours per month?"
-- **Format:** How we · **Perspective:** ① Make it simple
-- **The idea:** The system: one voice memo, ideas plus research, a filming schedule, film in 1–2 hours, we post daily.
-- **Talking points:**
-  - One voice memo, about an hour.
-  - We turn it into ideas and research, and "create a whole schedule for what they need to film."
-  - One to two hours of filming, and we post.
-- **Ask on camera:** "How does a business owner get all their content done in 2 hours per month?"
-- **CTA:** Free guide: how to build a social media system
-- **Source:** Tait's voice memo
-
-**O4. You don't have time to build a business *and* be a content creator**
-- **Hook:** "You're building a business and trying to be a content creator. You don't have time for both."
-- **Format:** How we · **Perspective:** ① Make it simple
-- **The idea:** The balance problem, and how a system removes it.
-- **Talking points:**
-  - Tait: "the balance of building their own business and making content. they dont have time to do both."
-  - They're "spending all their time working on their business and don't have time to film content."
-  - The fix: a system that takes 2 hours per month.
-- **Ask on camera:** "Why is it so hard to build a business and make content at the same time?"
-- **CTA:** Free social media audit
-- **Source:** Tait's notes in chat
-
-**O5. Use AI to get your ideas out, not to mass-produce posts**
-- **Hook:** "Stop using AI to mass-produce content. Use it to get the ideas out of your head."
-- **Format:** How to · **Perspective:** ① Make it simple
-- **The idea:** Mass production isn't anywhere near as helpful as a system that extracts your own unique ideas, organizes them and pushes them out to solve your customers' needs.
-- **Talking points:**
-  - What people ask: how to use AI to "create constant at a mass productive level."
-  - Tait: "it's not going to be anywhere near as helpful as figuring out a system to extract your own unique ideas from your head using AI."
-  - Then "get those organized and pushed out to solve your customers' needs as content."
-- **Ask on camera:** "How should a business owner actually use AI for their content?"
-- **CTA:** Free guide: how to build a social media system
-- **Source:** Reddit + Tait's take
-
-**O6. How to come up with content ideas in the first place**
-- **Hook:** "Everyone says hooks and storytelling matter. But how do you come up with the idea in the first place?"
-- **Format:** How to · **Perspective:** ② Service media
-- **The idea:** Serve your audience and find your unique perspective.
-- **Talking points:**
-  - The question: "how do you come up with ideas in the first place?"
-  - Tait's answer: "really just serving your audience, finding your unique perspective to an audience."
-- **Ask on camera:** "Where do good content ideas actually come from?"
-- **CTA:** Free guide: how to build a social media system
-- **Source:** Reddit + Tait's take
-
-**O7. How to know if an idea is good enough to post**
-- **Hook:** "How do you know if an idea is actually good enough to post?"
-- **Format:** How to · **Perspective:** ② Service media
-- **Talking points:**
-  - The question people ask: "How do you know if an idea is actually good for posting?"
-  - Tait's test for a good idea (needs from you).
-- **Ask on camera:** "How do you know an idea is good enough to post?"
-- **CTA:** Free social media audit
-- **Source:** Reddit
-- **Needs from you:** your test for a good idea
-
-**O8. What content has actually brought us results**
-- **Hook:** "What type of content has actually brought in customers?"
-- **Format:** How we · **Perspective:** ② Service media
-- **Talking points:**
-  - The question: "what type of content has actually brought you results?"
-  - Real examples and numbers (needs from you).
-- **Ask on camera:** "What type of content has actually brought you customers?"
-- **CTA:** Free social media audit
-- **Source:** Reddit + Tait ("a great piece of content I can make")
-- **Needs from you:** your real examples and results
-
-**O9. Staying consistent when you're the only one running your content**
-- **Hook:** "How to keep a content calendar consistent when you're the only one running it."
-- **Format:** How to · **Perspective:** ① Make it simple
-- **Talking points:**
-  - "usually the problem is consistency."
-  - The question: "how do you keep a content calendar consistent when you're the only one running it?"
-  - The answer: a schedule of "what they need to film, when they need to film it by."
-- **Ask on camera:** "How do you stay consistent when you're the only one running your content?"
-- **CTA:** Free guide: how to build a social media system
-- **Source:** Reddit + Tait's take
-
-**O10. How to grow in the era of AI content**
-- **Hook:** "Everyone's using AI to post. Here's how you still grow."
-- **Format:** How I · **Perspective:** ② Service media
-- **Talking points:**
-  - The question: "how do you grow in the era of AI assisted content creation"
-  - Tait's answer on how he still does it (needs from you).
-- **Ask on camera:** "How do you still grow when everyone's using AI to post?"
-- **CTA:** Free social media audit
-- **Source:** Reddit + Tait's take
-- **Needs from you:** your answer on how you still do it
-
-**O11. CapCut vs Instagram's Edits app for quick clips**
-- **Hook:** "Is CapCut still the easiest editor? Try Instagram's Edits app."
-- **Format:** How to · **Perspective:** ① Make it simple
-- **The idea:** Edits as a great way for busy business owners to make quick edits and get content out.
-- **Talking points:**
-  - The question: "is CapCut still the easiest video editor for Quick Clips?"
-  - Tait: "the Instagram edits app is actually a great way to make quick edits."
-  - Show a quick edit, start to finish.
-- **Ask on camera:** "Why use Instagram's Edits app for quick clips?"
-- **CTA:** Free social media audit
-- **Source:** Reddit + Tait's take
-
-**O12. How to decide what to post next**
-- **Hook:** "How do you decide what to post next?"
-- **Format:** How to · **Perspective:** ② Service media
-- **Talking points:**
-  - The question: "how do you decide what content to post next?"
-  - "find good ideas" your customer wants to see, serve them, "rinse and repeat."
-- **Ask on camera:** "How do you decide what to post next?"
-- **CTA:** Free guide: how to build a social media system
-- **Source:** Reddit + Tait's take
-
-**O13. Staring at your phone with no idea what to post**
-- **Hook:** "Do you ever just stare at your phone trying to think of an idea for a LinkedIn post?"
-- **Format:** How I · **Perspective:** ④ Less input, better ideas
-- **Seed:** "I’ve learned that I need to escape the rational mind."
-- **The idea:** "the more you think, the less ideas you have." Do something that blocks your conscious mind: a drive, a workout, a hobby. Then write the ideas down, because "They come and go fast!"
-- **Talking points:**
-  - "And the more you think, the less ideas you have."
-  - "I've learned that I need to escape the rational mind."
-  - "Do an activity that blocks your conscious mind": "Go on a drive," "Workout," "Do a hobby."
-  - "make sure you write down your ideas. They come and go fast!"
-- **Ask on camera:** "Where are you when your best content ideas show up?"
-- **CTA:** Free guide: how to build a social media system
-- **Source:** Tait's LinkedIn post 2
-
-**O14. Your content gets more creative the less you're on social media**
-- **Hook:** "“Social media is a great place for ideas and inspiration.” If you want to look like everyone else."
-- **Format:** How I · **Perspective:** ④ Less input, better ideas
-- **Seed:** "my most creative ideas come when I’m on social media the least."
-- **The idea:** "Silencing the noise allows my brain to connect new ideas that have never been connected before." Kind of counterintuitive.
-- **Talking points:**
-  - The line people repeat: "Social media is a great place for ideas and inspiration."
-  - Tait: "If you want to look like everyone else."
-  - "my most creative ideas come when I'm on social media the least."
-  - "Silencing the noise allows my brain to connect new ideas that have never been connected before."
-- **Ask on camera:** "Why do you think being on social media less makes your content more creative?"
-- **CTA:** Free guide: how to build a social media system
-- **Source:** Tait's LinkedIn post 6
-
-**O15. The #1 way business owners fail to bring in customers with content**
-- **Hook:** "The #1 way business owners fail to bring in customers with content…"
-- **Format:** How to · **Perspective:** ② Service media
-- **Seed:** "You are posting content that brings in the same people as you."
-- **The idea:** The marketing company posting how it built a marketing company attracts other marketers, not businesses that need marketing. "Post content that solves problems." Viewers should have clear action steps after watching.
-- **Talking points:**
-  - "You are posting content that brings in the same people as you."
-  - The example: a marketing company posting how to build a marketing company won't "attract businesses who need marketing services."
-  - "The goal is to help people."
-  - "Post content that solves problems." Viewers "should have clear action steps."
-- **Ask on camera:** "What's the biggest mistake business owners make with their content?"
-- **CTA:** Free social media audit
-- **Source:** Tait's LinkedIn post 7
-
-**O16. There's no value in gatekeeping great advice**
-- **Hook:** "Business owners, there is no value in gatekeeping great advice."
-- **Format:** How to · **Perspective:** ② Service media
-- **Seed:** "You pay to be closer to the action…closer to the experts."
-- **The idea:** The soccer game, from $0 at a friend's house to $560 in the club on the field. Give the advice away; people pay to get closer to the experts.
-- **Talking points:**
-  - "there is no value in gatekeeping great advice."
-  - The soccer game: "$0 at a friends house," up to "$560 in the club on the field."
-  - "You pay to be closer to the action...closer to the experts."
-- **Ask on camera:** "Why should a business owner give away their best advice for free?"
-- **CTA:** Free guide: how to build a social media system
-- **Source:** Tait's LinkedIn post 8
-
-**O17. We traded the em dash for the ellipsis**
-- **Hook:** "Because of AI, the em dash is no longer in use. But all we did is trade it out for the ellipsis!"
-- **Format:** How I · **Perspective:** none of the three fits (a funny observation)
-- **Seed:** "the perfect way to ruin trust is leading your audience to think you use AI for all of your content"
-- **The idea:** The funny part (everyone on LinkedIn now uses ellipses, and "I’m using AI for the cover photo"), then the real point: content that looks AI-made costs you trust. Pairs with O5.
-- **Talking points:**
-  - "Because of AI, the em dash is no longer in use."
-  - "But all we did is trade it out for the ellipsis!"
-  - The real point: "the perfect way to ruin trust is leading your audience to think you use AI for all of your content."
-  - Laugh at yourself: "as I'm using AI for the cover photo."
-- **Ask on camera:** "What happened when everyone stopped using the em dash?"
-- **CTA:** Free social media audit
-- **Source:** Tait's LinkedIn post 4
-
-**O18. 2 hours per month on content, and no AI slop**
-- **Hook:** "2 hours per month. That’s the amount of time you will spend on content once our system is installed."
-- **Format:** How we · **Perspective:** ① Make it simple
-- **Seed:** "No we don’t create AI slop."
-- **The idea:** The system "extracts what your target audience wants," then uses "your unique way of solving a problem" to make content ideas. We edit everything and post for you. "All you need to worry about is how to deal with the amount of leads coming in."
-- **Talking points:**
-  - 2 hours per month on content.
-  - "No we don't create AI slop."
-  - "We have a system that extracts what your target audience wants," then uses "your unique way of solving a problem."
-  - "We edit everything and post for you."
-- **Ask on camera:** "What does a business owner actually have to do once our system is set up?"
-- **CTA:** Free social media audit
-- **Source:** Tait's LinkedIn post 3
-- **Needs from you:** a real lead number, if you have one, to back up the last line
-
-**O19. Document it or give value? Do both**
-- **Hook:** "Should your business document what it's doing, or give value? Do both."
-- **Format:** How we · **Perspective:** ② Service media
-- **Seed:** "the answer is that you do both."
-- **The idea:** The question business owners always ask, and one we've wrestled with ourselves. Our answer, and how we do both on our own accounts.
-- **Talking points:**
-  - The question: "people always ask the question do i document it or provide value as a business on social media."
-  - Be honest: "that is something our agency has struggled with."
-  - How we do both: at least 4 videos a week documenting the build of the business, plus how-to videos that give the viewer an action step.
-  - Land it: "the answer is that you do both."
-- **Ask on camera:** "Should a business document what it's doing or give value on social media?"
-- **CTA:** Free guide: how to build a social media system
-- **Source:** Tait's notes in chat (2026-09-28)
+- **Source:** positioning.md (Authority Hacking); Tait's voice memo (service media); facts in Content Research → Authority Hacking: sources
 
 ---
 
-## Pillar: AI systems
+## AI Systems
 
-**A1. $60,000 a year on software vs a $15,000 build**
-- **Hook:** "You're paying $60,000 a year for software we could build you for $15,000, in a week."
-- **Format:** How we · **Perspective:** ③ Start small
-- **The idea:** Build it once, in a week, and own it permanently.
-- **Talking points:**
-  - "You're spending 60 grand a year on software that we can build you for $15,000. in a week."
-  - "And you can have permanently."
-  - "helping people save a bunch of money and time with AI systems."
-- **Ask on camera:** "Why build software instead of paying for it every year?"
-- **CTA:** Questionnaire: simplify your business with an AI system
-- **Source:** Tait's voice memo
-
-**A2. The 8 PM invoice problem**
-- **Hook:** "It's 8 PM. You just finished running your business. Now you're typing 30 invoice line items."
-- **Format:** Behind the scenes · **Perspective:** ③ Start small
-- **The idea:** Manual data entry (invoices, purchase orders, inventory) is the one task to automate first.
-- **Talking points:**
-  - The bad day: "finish a full day running the business and ... sit down at 8 PM to type 30 invoice line items."
-  - Where the hours go: "manual data entry like invoices or purchase orders."
-  - The fix: automate that one task first.
-- **Ask on camera:** "What does the 8 PM invoice problem look like for a business owner?"
-- **CTA:** Questionnaire: simplify your business with an AI system
+**A1. The 8 PM invoice problem**
+- **Hook:** "It's 8 PM. You just finished running your business. Now the invoices start."
+- **Category · Format · Perspective:** AI Systems · Talking head · ③ Start small
+- **Framework:** pain opener + the formula
+- **Seed:** "they'll finish a full day running the business and I have to sit down at 8 PM to type 30 invoice line items into their software"
+- **The idea:** The bad day Luke describes, and what it looks like when that one task runs itself.
+- **Outline:**
+  - 8 PM, 30 invoice line items by hand
+  - What that time costs
+  - One upload page, one confirm button
+  - The evening back
+- **Script (Talking head, about 40 seconds):**
+  It's 8 PM. You just finished running your business. Now the invoices start.
+  Thirty line items. Typed by hand. Into software you already pay for.
+  Hold that thought, because there's a bigger cost hiding in there.
+  Every hour you spend typing is an hour your business needed you strategizing.
+  Here's the part nobody talks about... that work can run itself.
+  One upload page. One confirm button. You check it, you're done.
+  That's the 8 PM problem. And it's fixable.
+- **Loops:** opens "how do you get your evenings back" · rehooks: "Hold that thought", "Here's the part nobody talks about" · closes with "That's the 8 PM problem. And it's fixable"
+- **Ask on camera:** "What does an owner's 8 PM look like, and what changes when it runs itself?"
+- **CTA:** Questionnaire: how we can simplify your business with an AI system
 - **Source:** Luke's answers
 
-**A3. AI doesn't mean a chatbot**
-- **Hook:** "AI doesn't mean a chatbot."
-- **Format:** How to · **Perspective:** ③ Start small
-- **The idea:** It usually means removing one specific manual task and improving your systems, not a chatbot that agrees with everything you say.
-- **Talking points:**
-  - The false belief: "AI means a Chatbot."
-  - What it usually means: "removing one specific manual task."
-  - It's "improving your business strategy and systems."
-- **Ask on camera:** "When a business owner hears 'AI', what should they actually picture?"
-- **CTA:** Questionnaire: simplify your business with an AI system
+**A2. AI doesn't mean a chatbot**
+- **Hook:** "When you hear AI for your business, you're probably picturing the wrong thing."
+- **Category · Format · Perspective:** AI Systems · Myth · ① Make it simple
+- **Framework:** contrarian opener + delay line
+- **Seed:** "AI means a Chatbot when usually it means removing one specific manual task"
+- **The idea:** AI for a small business usually means removing one specific manual task.
+- **Outline:**
+  - What people picture: a chatbot
+  - What it usually is: one task gone
+  - An example from our builds
+- **Script (Myth, about 30 seconds):**
+  When you hear AI for your business, you're probably picturing the wrong thing.
+  A chatbot. Telling you you're right all the time.
+  But before I tell you what it really is, think of the most boring task you do every week.
+  That's it. That's the AI.
+  Usually it means removing one specific manual task. The one you hate.
+- **Loops:** opens "what is it really?" · rehooks: "But before I tell you what it really is" · closes with "Usually it means removing one specific manual task"
+- **Ask on camera:** "What do people picture when they hear AI, and what does it usually mean for a small business?"
+- **CTA:** Questionnaire: how we can simplify your business with an AI system
 - **Source:** Luke's answers
 
-**A4. Custom software doesn't cost six figures**
-- **Hook:** "Custom software doesn't cost six figures."
-- **Format:** How to · **Perspective:** ③ Start small
-- **The idea:** A focused, small-scope tool can cost just a few thousand.
-- **Talking points:**
-  - The belief: "custom software costs six figures."
-  - Luke: "a focused tool that is a small scope and very specific can cost just a few thousand."
-- **Ask on camera:** "How much does custom software really cost?"
-- **CTA:** Questionnaire: simplify your business with an AI system
-- **Source:** Luke's answers
+**A3. "What if it breaks?"**
+- **Hook:** "\"What if it breaks?\" It's the first thing owners ask about AI."
+- **Category · Format · Perspective:** AI Systems · Talking head · ① Make it simple
+- **Framework:** guided question + payoff
+- **Seed:** "that answer is that our team will fix it easily."
+- **The idea:** The objection Luke hears all the time, and Tait's answer.
+- **Outline:**
+  - The question we hear all the time
+  - Why owners worry: being left stranded
+  - Our answer
+- **Script (Talking head, about 30 seconds):**
+  "What if it breaks?" It's the first thing owners ask about AI.
+  And I get it. You've paid for tech before. Then the vendor disappeared.
+  So what happens if ours breaks?
+  Our team will fix it easily.
+  That's the whole answer. You keep running your business.
+- **Loops:** opens "what happens if it breaks?" · rehooks: "So what happens if ours breaks?" · closes with "Our team will fix it easily"
+- **Ask on camera:** "What do you tell an owner who asks what happens if it breaks?"
+- **CTA:** Questionnaire: how we can simplify your business with an AI system
+- **Source:** Tait's notes, 2026-10-05; Luke's answers
+
+**A4. An entire day of busy work, and nothing moved**
+- **Hook:** "It's 9 PM and you did a whole day of work. Nothing moved."
+- **Category · Format · Perspective:** AI Systems · Talking head · ⑤ Built around your business
+- **Framework:** pain opener + realization beat
+- **Seed:** "they end up looking at the clock, and it's nine p.m., and they realize they did an entire day of busy work and nothing's moved."
+- **The idea:** Matteo's description of the grind: fixing listings, answering the same questions, correcting inventory.
+- **Outline:**
+  - The day: listings, the same questions, inventory errors
+  - 9 PM, nothing moved
+  - Which of those can run in a system
+- **Script (Talking head, about 40 seconds):**
+  It's 9 PM and you did a whole day of work. Nothing moved.
+  You fixed listings. You answered the same customer questions. You corrected inventory errors.
+  You know that feeling when you're busy all day and the business is exactly where it was?
+  That's when it hit me... none of those tasks need you.
+  They need a system, built around how your business runs.
+  So tomorrow at 9 PM, you're not working.
+- **Loops:** opens "why did nothing move?" · rehooks: "You know that feeling when", "That's when it hit me" · closes with "So tomorrow at 9 PM, you're not working"
+- **Ask on camera:** "What does a day of busy work look like for these owners?"
+- **CTA:** Questionnaire: how we can simplify your business with an AI system
+- **Source:** Matteo's voice memo
 
 **A5. You don't need to be technical**
-- **Hook:** "You don't need to be technical. It's one upload page and a confirm button."
-- **Format:** Behind the scenes · **Perspective:** ① Make it simple
-- **The idea:** Show what an AI integration actually looks like to the owner.
-- **Talking points:**
-  - The belief: "I need to be technical in order to use this."
-  - The reality: "one clean upload page and a confirm button that's really all it is."
-  - "It's not complicated. It simplifies so much of your current systems."
-- **Ask on camera:** "What does an AI integration actually look like to the owner using it?"
-- **CTA:** Questionnaire: simplify your business with an AI system
+- **Hook:** "You think you need to be technical to use AI. You need one button."
+- **Category · Format · Perspective:** AI Systems · Myth · ① Make it simple
+- **Framework:** contrarian opener + tension line
+- **Seed:** "they have AI integration with one clean upload page and a confirm button that's really all it is. It's not complicated."
+- **The idea:** The false belief that AI needs a technical owner.
+- **Outline:**
+  - The belief: you need to be technical
+  - What the owner actually sees
+  - Why it's simple
+- **Script (Myth, about 30 seconds):**
+  You think you need to be technical to use AI. You need one button.
+  Wait for it.
+  When we build an AI system, the owner sees one clean upload page and a confirm button.
+  That's really all it is.
+  It simplifies so much of what you're doing now. It's not complicated.
+- **Loops:** opens "what's the one button?" · rehooks: "Wait for it." · closes with "It's not complicated"
+- **Ask on camera:** "What does an owner actually have to do once the AI system is built?"
+- **CTA:** Questionnaire: how we can simplify your business with an AI system
 - **Source:** Luke's answers
-
-**A6. "What if it breaks? Do I have to maintain it?"**
-- **Hook:** "'What if it breaks?' The question every owner asks about AI."
-- **Format:** How we · **Perspective:** ③ Start small
-- **The idea:** Answer the objections we hear all the time: maintenance, breakage, "is it worth the fees", "I don't have time to learn another platform."
-- **Talking points:**
-  - What owners say: "I have to maintain it." "What if it breaks." "I don't have time to learn another platform."
-  - How we handle maintenance and support (needs from you).
-- **Ask on camera:** "What do you tell an owner who asks 'what if it breaks?'"
-- **CTA:** Questionnaire: simplify your business with an AI system
-- **Source:** Luke's answers
-- **Needs from you:** how we handle maintenance and support
-
-**A7. "Is AI private?"**
-- **Hook:** "'Is AI even private?' Let's talk about it."
-- **Format:** How to · **Perspective:** ① Make it simple
-- **Talking points:**
-  - What owners say: "AI is not private."
-  - Our actual answer on privacy (needs from you).
-- **Ask on camera:** "Is AI private?"
-- **CTA:** Questionnaire: simplify your business with an AI system
-- **Source:** Luke's answers (a common complaint)
-- **Needs from you:** our actual answer on privacy
-
-**A8. Off-the-shelf software is an 80% fit**
-- **Hook:** "Off-the-shelf software gets you 80% there. It's the last 20% that matters."
-- **Format:** How we · **Perspective:** ③ Start small
-- **Talking points:**
-  - "It's like an 80% fit but that it's missing the 20% that actually makes the workflow perfect."
-  - We "build around how your business actually run it's not a template."
-- **Ask on camera:** "Why isn't off-the-shelf software enough?"
-- **CTA:** Questionnaire: simplify your business with an AI system
-- **Source:** Luke's answers
-
-**A9. Your business still runs on spreadsheets and your memory**
-- **Hook:** "Your business still runs on spreadsheets and your memory."
-- **Format:** How to · **Perspective:** ① Make it simple
-- **The idea:** Speaks to the unspoken embarrassment, and shows where to start.
-- **Talking points:**
-  - What owners won't say: "the real business still runs on spreadsheets and their own memory."
-  - "They don't know where to start."
-  - Start with "one process automated."
-- **Ask on camera:** "What's the first step for a business still running on spreadsheets?"
-- **CTA:** Questionnaire: simplify your business with an AI system
-- **Source:** Luke's answers
-
-**A10. Get 10 hours a week back**
-- **Hook:** "What would you do with 10 extra hours a week?"
-- **Format:** How we · **Perspective:** ③ Start small
-- **The idea:** Repetitive work runs itself with one quick review step.
-- **Talking points:**
-  - The dream: "repetitive work runs itself with just one quick review step."
-  - "they get 10 hours a week back that they can spend on sales their product or their family or doing something fun."
-- **Ask on camera:** "What would a business owner do with 10 extra hours a week?"
-- **CTA:** Questionnaire: simplify your business with an AI system
-- **Source:** Luke's answers
-
-**A11. An entire day of busy work, and nothing moved**
-- **Hook:** "It's 9 PM. You spent the whole day on busy work, and nothing moved."
-- **Format:** Behind the scenes · **Perspective:** ③ Start small
-- **Seed:** "it's nine p.m., and they realize they did an entire day of busy work and nothing's moved."
-- **The idea:** The online seller's version of A2. Fixing listings, answering the same questions, correcting inventory, all day. Matteo calls it "the grind."
-- **Talking points:**
-  - The bad day: "spending hours fixing listings, and you're answering the same customer questions and correcting inventory errors instead of growing the business."
-  - "it's nine p.m., and they realize they did an entire day of busy work and nothing's moved."
-  - The fear: "they'll still be stuck doing the same manual work five years from now."
-  - The dream: "the repetitive work runs in systems instead of their evenings."
-- **Ask on camera:** "What does a bad day look like for an online seller?"
-- **CTA:** Questionnaire: simplify your business with an AI system
-- **Source:** Matteo's voice memo
-
-**A12. "Is this AI stuff actually gonna help me, or is it just all hype?"**
-- **Hook:** "Is this AI stuff actually gonna help me, or is it just all hype?"
-- **Format:** How we · **Perspective:** ③ Start small
-- **Seed:** "Is this AI stuff actually gonna help me, or is it just all hype?"
-- **The idea:** The question Matteo hears over and over, and the feeling under it. Answer it with one real job we did.
-- **Talking points:**
-  - The question, word for word.
-  - What they won't say: "they feel behind in AI while everyone around them seems to have it all figured out."
-  - Luke hears it too: "not really understanding what they should do about AI and how they feel behind it"
-  - One real answer: the 392-listing workflow (M18). "we can overhaul hundreds of listings in the time it used to take to do a few dozen."
-- **Ask on camera:** "When a customer asks if AI is just hype, what do you tell them?"
-- **CTA:** Questionnaire: simplify your business with an AI system
-- **Source:** Matteo's voice memo and Luke's answers
-
-**A13. The app that promised automation**
-- **Hook:** "You bought the app that promised automation. Now you have one more tool to manage."
-- **Format:** How to · **Perspective:** ⑤ Built around your business
-- **Seed:** "it gave them one more tool to manage, which they don't need."
-- **The idea:** The tools and apps owners pay for and don't use, and why none of them fixed the problem. Pairs with A8.
-- **Talking points:**
-  - What they tried: "Doing it themselves with YouTube tutorials or, or buying apps that promised automation"
-  - "paying for tools and, and apps that, that they don't really use."
-  - Why it didn't work: "none of it was built around their business. It, it was either too generic or too slow"
-  - Luke's version: "It's like an 80% fit but that it's missing the 20% that actually makes the workflow perfect."
-- **Ask on camera:** "Why don't the automation apps work for small businesses?"
-- **CTA:** Questionnaire: simplify your business with an AI system
-- **Source:** Matteo's voice memo and Luke's answers
-
-**A14. Most agencies sell hours and templates**
-- **Hook:** "Most agencies just sell hours and templates."
-- **Format:** How we · **Perspective:** ⑤ Built around your business
-- **Seed:** "most agencies just sell hours and templates."
-- **The idea:** What Matteo thinks the industry gets wrong, and how we work instead.
-- **Talking points:**
-  - "They hand every client the same package and bill for manual work that software can do better."
-  - "if you're not using AI to build around the client's specific business, you're, you're charging them for inefficiency."
-  - How we do it: "we build custom AI tools and automations around each client so we can move at a scale and speed that a normal team can't without sacrificing quality."
-  - Proof: the 392 listings (M18).
-- **Ask on camera:** "What do most agencies get wrong?"
-- **CTA:** Questionnaire: simplify your business with an AI system
-- **Source:** Matteo's voice memo
-
-**A15. "I tried hiring someone, and it didn't go anywhere."**
-- **Hook:** "I tried hiring someone, and it didn't go anywhere."
-- **Format:** How we · **Perspective:** ③ Start small
-- **Seed:** "I tried hiring someone, and it didn't go anywhere."
-- **The idea:** The line Matteo says "We hear that one a lot." Who they hired before, and what we do differently.
-- **Talking points:**
-  - Who they hired: "freelancers who did a handful of things and, and disappeared" and "cheap agencies with templated work that just doesn't fit their niche."
-  - Luke hears it too: "generic agencies that have long retainers ... and they don't actually ship anything"
-  - What we do: "ship a working solution in weeks not months" (Luke)
-  - And start with one thing: "one process automated or one channel done right" (Luke)
-- **Ask on camera:** "What do customers tell you happened with the last person they hired?"
-- **CTA:** Questionnaire: simplify your business with an AI system
-- **Source:** Matteo's voice memo and Luke's answers
 
 ---
 
-## Pillar: Websites
+## Social Media
 
-**W1. Websites that drive results, not just look cool**
-- **Hook:** "Your website looks cool. Does it bring in customers?"
-- **Format:** How we · **Perspective:** ① Make it simple
-- **Talking points:**
-  - Our goal: "custom websites that actually drive results and don't just look cool."
-  - "a simple, easy to use website."
-  - "Everything's going to be simplified."
-- **Ask on camera:** "What makes a website actually bring in customers?"
-- **CTA:** Free guide: 3 steps to simplify your website
+**S1. "What do I post?" The simple answer**
+- **Hook:** "The question I see more than any other: what do I post?"
+- **Category · Format · Perspective:** Social Media · Talking head · ① Make it simple
+- **Framework:** question opener + payoff
+- **Seed:** "It ultimately, it goes down to the basics of just doing the work. Like, find good ideas."
+- **The idea:** Tait's simple answer from his Reddit research.
+- **Outline:**
+  - The question everywhere
+  - Find ideas your customer wants
+  - Serve them with content
+  - Repeat
+- **Script (Talking head, about 35 seconds):**
+  The question I see more than any other: what do I post?
+  The answer's stupidly simple, but the setup matters.
+  Find good ideas your customer wants to see.
+  Serve that customer by creating content around that idea.
+  Then rinse and repeat.
+  You see the problem, right? Most people skip step one.
+  That's all it is.
+- **Loops:** opens "what do I post?" · rehooks: "The answer's stupidly simple, but the setup matters", "You see the problem, right?" · closes with "That's all it is"
+- **Ask on camera:** "When someone asks what to post, what do you tell them?"
+- **CTA:** Free guide: how to build a social media system
+- **Source:** Tait's Reddit memo
+
+**S2. A whole content system in 2 hours a month**
+- **Hook:** "Two hours a month. That's all the time you'll spend on content."
+- **Category · Format · Perspective:** Social Media · How we · ① Make it simple
+- **Framework:** promise opener + process tease
+- **Seed:** "So it'll allow them to have a whole content system in two hours a month."
+- **The idea:** How the system works: one hour of voice memo, one to two hours of filming, we do the rest.
+- **Outline:**
+  - The number: 2 hours a month
+  - Hour one: a voice memo
+  - Then: filming
+  - We do the rest
+- **Script (How-to, about 40 seconds):**
+  Two hours a month. That's all the time you'll spend on content.
+  Sounds impossible, right? Here's how.
+  Hour one: you record a voice memo. Your ideas. Your solutions to your customers' problems.
+  Then you film, an hour or two.
+  But here's the part most people skip...
+  We build the schedule. What to film, and when to film it by. Then we post it.
+  Two hours. A whole content system.
+- **Loops:** opens "how is 2 hours possible?" · rehooks: "Sounds impossible, right?", "But here's the part most people skip" · closes with "Two hours. A whole content system"
+- **Ask on camera:** "How does a whole content system fit into 2 hours a month?"
+- **CTA:** Free social media audit
 - **Source:** Tait's voice memo
 
-**W2. Anyone can design a website with AI. Strategy is what's rare**
-- **Hook:** "Anyone can design a website with AI now. That's not the hard part."
-- **Format:** How to · **Perspective:** ① Make it simple
-- **The idea:** The strategy of making it simple.
-- **Talking points:**
-  - "Everyone could design a website with AI nowadays."
-  - "we're doing the strategy of actually making it simple."
-- **Ask on camera:** "If anyone can design a website with AI, what's the hard part?"
-- **CTA:** Free guide: 3 steps to simplify your website
-- **Source:** Tait's voice memo
+**S3. Social media should be service media**
+- **Hook:** "Stop posting on social media. Start posting service media."
+- **Category · Format · Perspective:** Social Media · Talking head · ② Service media
+- **Framework:** contrarian opener + payoff
+- **Seed:** "My unique perspective is that when you're posting on social media, it should be service media"
+- **The idea:** Every post should help the viewer know what to do next.
+- **Outline:**
+  - The shift: service media
+  - Serve your customer with every post
+  - Give them an action step
+- **Script (Talking head, about 35 seconds):**
+  Stop posting on social media. Start posting service media.
+  What's the difference? Hold that thought.
+  Most posts give people information. They watch, they nod, they scroll.
+  Service media helps them know what to do next.
+  So every video ends with an action step.
+  Try it on your next post. What should they do after watching?
+- **Loops:** opens "what's service media?" · rehooks: "What's the difference? Hold that thought" · closes with "What should they do after watching?"
+- **Ask on camera:** "What's the difference between social media and service media?"
+- **CTA:** Free social media audit
+- **Source:** Tait's voice memo; LinkedIn post 7
 
-**W3. 3 steps to simplify your website**
-- **Hook:** "3 steps to simplify your website."
-- **Format:** How to · **Perspective:** ① Make it simple
-- **Talking points:**
-  - The 3 steps (needs from you).
-  - End on the free guide.
-- **Ask on camera:** "What are the 3 steps to simplify a website?"
-- **CTA:** the full free guide
-- **Source:** Tait's voice memo
-- **Needs from you:** the 3 steps
+**S4. Document it or give value? Do both.**
+- **Hook:** "Should your business document what it's doing, or give value? We argued about this."
+- **Category · Format · Perspective:** Social Media · Talking head · ② Service media
+- **Framework:** confession opener + payoff
+- **Seed:** "people always ask the question do i document it or provide value as a business on social media."
+- **The idea:** Our own agency struggled with it. The answer: both.
+- **Outline:**
+  - The question people ask
+  - We struggled with it too
+  - The answer
+- **Script (Talking head, about 30 seconds):**
+  Should your business document what it's doing, or give value? We argued about this.
+  Honestly, our agency struggled with it.
+  So what did we land on?
+  You do both.
+  Documenting builds trust. Value gives them a reason to come back.
+  That's why you're seeing both from us every week.
+- **Loops:** opens "document or give value?" · rehooks: "So what did we land on?" · closes with "That's why you're seeing both from us every week"
+- **Ask on camera:** "Document it or give value: which should a business do?"
+- **CTA:** Free guide: how to build a social media system
+- **Source:** Tait's notes, 2026-09-28
 
-**W4. Build a business website in one weekend without losing your mind**
-- **Hook:** "How to build a business website in one weekend without losing your mind."
-- **Format:** How to · **Perspective:** ① Make it simple
-- **Talking points:**
-  - The question: "how to create a business website from scratch in one weekend without losing your mind."
-  - The process (needs from you).
-- **Ask on camera:** "How would you build a business website in one weekend?"
-- **CTA:** Free guide: 3 steps to simplify your website
-- **Source:** Reddit
-- **Needs from you:** your process
+**S5. Your best ideas come when you're off your phone**
+- **Hook:** "Do you ever just stare at your phone trying to think of an idea?"
+- **Category · Format · Perspective:** Social Media · Talking head · ① Make it simple
+- **Framework:** question opener + realization beat
+- **Seed:** "I've learned that my most creative ideas come when I'm on social media the least."
+- **The idea:** Tait's counterintuitive take: escape the rational mind to get better ideas.
+- **Outline:**
+  - Staring at your phone, no ideas
+  - The more you think, the fewer ideas
+  - Do something that blocks your conscious mind
+  - Write them down fast
+- **Script (Talking head, about 40 seconds):**
+  Do you ever just stare at your phone trying to think of an idea?
+  And the more you think, the less ideas you have.
+  I experience this all the time. Until I figured something out.
+  My most creative ideas come when I'm on social media the least.
+  So go on a drive. Work out. Do a hobby.
+  Kind of counterintuitive... but your mind wanders and connects ideas that have never been connected before.
+  The key? Write them down. They come and go fast.
+- **Loops:** opens "where do the ideas come from?" · rehooks: "Until I figured something out", "Kind of counterintuitive" · closes with "Write them down. They come and go fast"
+- **Ask on camera:** "Where do your best content ideas actually come from?"
+- **CTA:** Free guide: how to build a social media system
+- **Source:** Tait's LinkedIn posts 2 and 6
 
-**W5. "I've been meaning to get a website for years"**
-- **Hook:** "I've been meaning to get a website for years."
-- **Format:** How to · **Perspective:** ① Make it simple
-- **Seed:** "I've been meaning to get a website for years"
-- **The idea:** The owner with no real website, or one that looks outdated and doesn't sell. Why it keeps getting put off, and why it matters.
-- **Talking points:**
-  - What we hear: "I've been meaning to get a website for years"
-  - Where they are: "they just don't really have a real website or, uh, one that kind of looks outdated and it just doesn't sell."
-  - Why it matters: "your listings and your website are, are your salespeople. They work every hour of every day."
-  - What they want: "a real website that they're proud of." Tait: "a simple, easy to use website"
-- **Ask on camera:** "Why do business owners put off getting a website for years?"
-- **CTA:** Free guide: 3 steps to simplify your website
-- **Source:** Matteo's voice memo and Tait's voice memo
-- **Needs from you:** the 3 steps (the same gap as W3)
+---
 
-**W6. Your website is a certificate of authenticity**
-- **Hook:** "Most people treat your website like a certificate of authenticity."
-- **Format:** How to · **Perspective:** ① Make it simple
-- **Seed:** "take professionalism of the website as like a certificate of authenticity almost."
-- **The idea:** Owners think their website doesn't decide whether someone becomes a customer. Elias says it does.
-- **Talking points:**
-  - The belief: "they might think their website doesn't really affect whether somebody becomes a customer"
-  - "Most customers, um, take professionalism of the website as like a certificate of authenticity almost."
-  - "it really means a lot to most people."
-  - The dream: "bringing in more customers solely upon their professionalism."
-- **Ask on camera:** "What does a customer decide about a business from its website?"
-- **CTA:** Free guide: 3 steps to simplify your website
-- **Source:** Elias's voice memo
+## Websites
 
-**W7. Embarrassed to send people to your website?**
+**W1. Embarrassed to send people to your website?**
 - **Hook:** "Great business. But you're embarrassed to send people to your website."
-- **Format:** How we · **Perspective:** ① Make it simple
+- **Category · Format · Perspective:** Websites · Talking head · ① Make it simple
+- **Framework:** pain opener + realization beat
 - **Seed:** "they're actually embarrassed to send people to their website, and that could frustrate them."
-- **The idea:** The successful owner whose website doesn't show it, and what it costs them.
-- **Talking points:**
-  - "They could have a very successful business"
-  - "and they're actually embarrassed to send people to their website, and that could frustrate them."
-  - Why it hurts: "fear of losing customers to competitors ... mostly because they're looking unprofessional."
-  - The dream: "a website that they're absolutely proud of"
-- **Ask on camera:** "Why would a successful business owner be embarrassed by their own website?"
+- **The idea:** Elias's customer: a successful business with a website that doesn't show it.
+- **Outline:**
+  - The successful business, the embarrassing site
+  - What it costs: looking unprofessional
+  - What fixing it looks like
+- **Script (Talking head, about 35 seconds):**
+  Great business. But you're embarrassed to send people to your website.
+  You know that feeling when someone asks for your link and you hesitate?
+  Here's where most people get it wrong... they think nobody looks.
+  Customers look. They decide if you're professional before they ever call.
+  So the fix is simple: a website you're proud to send.
+- **Loops:** opens "what's the fix?" · rehooks: "You know that feeling when", "Here's where most people get it wrong" · closes with "a website you're proud to send"
+- **Ask on camera:** "What do you say to an owner who's embarrassed to send people to their website?"
 - **CTA:** Free guide: 3 steps to simplify your website
 - **Source:** Elias's voice memo
 
-**W8. The honest roofer who kept losing to worse companies**
-- **Hook:** "I worked with an honest roofing company that kept losing to worse competitors. Here's why."
-- **Format:** How I · **Perspective:** ⑤ Built around your business
-- **Seed:** "they're getting all the customers because they have the bigger online presence."
-- **The idea:** Elias's story: a genuine, honest roofer with no Google reviews losing to competitors who are all over social media.
-- **Talking points:**
-  - "I had a roofing company that was very genuine, very honest. They wouldn't knock on any doors that didn't genuinely need their roof fixed"
-  - "'Okay, let me see your business.' And then they have no Google reviews. They, they have no line of trust."
-  - "the mainstream competitors that are all over social media ... they're getting all the customers because they have the bigger online presence."
-  - Land it: "to beat those competitors, you have to, you have to beat them in the online presence"
-- **Ask on camera:** "Tell me about the roofing company that kept losing to worse competitors."
-- **CTA:** Free guide: 3 steps to simplify your website
-- **Source:** Elias's voice memo
-- **Needs from you:** keep the roofer unnamed, or get their OK to name them
-
-**W9. What a website costs, and why there's no one number**
-- **Hook:** "'What does a website cost?' Here's why I can't give you one number."
-- **Format:** How to · **Perspective:** ⑤ Built around your business
-- **Seed:** "If you need a ton of products, you have 300 products, that's gonna be way more than the guy that just needs a landing page"
-- **The idea:** The two questions Elias hears most, cost and time, and why both depend on the business.
-- **Talking points:**
-  - What he hears over and over: "What's the cost? How long will it take?"
-  - "I can't say, 'Okay, our website costs... We have a base pay of a thousand dollars.' It's not like that at all."
-  - "If you need a ton of products, you have 300 products, that's gonna be way more than the guy that just needs a landing page to talk about his business."
-  - Same for time: "How long will it take me to upload 300 products and code all that compared to a couple paragraphs of information?"
-- **Ask on camera:** "Why can't you give one price for a website?"
-- **CTA:** Free guide: 3 steps to simplify your website
-- **Source:** Elias's voice memo
-- **Needs from you:** a real price range, if you want to give one on camera
-
-**W10. "Can you do everything for me?" Yes.**
-- **Hook:** "'Can you do everything for me?' That's literally the job."
-- **Format:** Behind the scenes · **Perspective:** ① Make it simple
-- **Seed:** "we design the site, we build it, we make sure everything works properly, we connect everything."
-- **The idea:** What "done for you" means: design, build, test, connect. The owner runs the business.
-- **Talking points:**
-  - The question: "Can you do everything for me?"
-  - "we design the site, we build it, we make sure everything works properly, we connect everything."
-  - "Just focus on your side of the business and we're gonna handle all the back ends, all the front ends, everything like that."
-  - "sit back and ... watch your business ... take off 'cause that's, that's our job."
-- **Ask on camera:** "What does a business owner actually have to do when we build their website?"
+**W2. Your website is a certificate of authenticity**
+- **Hook:** "Your customers treat your website like a certificate of authenticity."
+- **Category · Format · Perspective:** Websites · Talking head · ① Make it simple
+- **Framework:** contrarian opener + payoff
+- **Seed:** "Most customers, um, take professionalism of the website as"
+- **The idea:** Elias: the website decides whether people trust you.
+- **Outline:**
+  - The belief: the website doesn't affect who becomes a customer
+  - What customers actually do
+  - The certificate of authenticity
+- **Script (Talking head, about 35 seconds):**
+  Your customers treat your website like a certificate of authenticity.
+  Most owners think their website doesn't really affect whether someone becomes a customer.
+  You'd think that would be true...
+  But people check your website to decide if you're real. If you're professional. If they can trust you.
+  So what does yours say?
+- **Loops:** opens "why a certificate?" · rehooks: "You'd think that would be true" · closes with "So what does yours say?"
+- **Ask on camera:** "Why do customers judge a business by its website?"
 - **CTA:** Free guide: 3 steps to simplify your website
 - **Source:** Elias's voice memo
 
-**W11. Why your Wix site didn't work**
-- **Hook:** "You tried Wix, Squarespace or WordPress. It didn't work. Here's why."
-- **Format:** How to · **Perspective:** ① Make it simple
-- **Seed:** "that most of the time doesn't work 'cause they don't have the time, they don't have the expertise."
-- **The idea:** The do-it-yourself template route, and what's missing from it.
-- **Talking points:**
-  - What they tried: "doing it themselves using ... Wix ... Squarespace, WordPress, using a template."
-  - "that most of the time doesn't work 'cause they don't have the time, they don't have the expertise."
-  - "they usually know if their website isn't good, and most of the time they don't know how to fix it themselves."
-  - So they bring it "to a company that, um, does this full-time"
-- **Ask on camera:** "Why don't website templates work for most business owners?"
+**W3. The honest roofer who kept losing**
+- **Hook:** "The most honest roofer I knew kept losing jobs. Here's why."
+- **Category · Format · Perspective:** Websites · Story · ⑤ Built around your business
+- **Framework:** story starters + payoff
+- **Seed:** "I had a roofing company that was very genuine, very honest."
+- **The idea:** Elias's story: a trustworthy roofer with no Google reviews, losing to bigger competitors with a bigger online presence.
+- **Outline:**
+  - The honest roofer
+  - Doors slammed, no reviews, no trust
+  - Competitors with a bigger presence won
+  - The lesson
+- **Script (Story, about 60 seconds):**
+  The most honest roofer I knew kept losing jobs. Here's why.
+  [S3: tell the story of the honest roofer in full, the way you would to a friend]
+  But there was one problem...
+  No Google reviews. No line of trust.
+  So who got the jobs? The mainstream competitors all over social media. Not the best work. Just the bigger online presence.
+  That's the problem we're solving. To beat them, you have to beat them online.
+- **Loops:** opens "why did he keep losing?" · rehooks: "But there was one problem", "So who got the jobs?" · closes with "you have to beat them online"
+- **Ask on camera:** "Tell the story of the roofing company you knew personally."
+- **CTA:** Free guide: 3 steps to simplify your website
+- **Source:** Elias's voice memo; story bank S3
+
+**W4. Why your Wix site didn't work**
+- **Hook:** "You built your website on Wix. Here's why it isn't bringing in customers."
+- **Category · Format · Perspective:** Websites · Talking head · ⑤ Built around your business
+- **Framework:** pain opener + tension line
+- **Seed:** "usually they've already tried doing it themselves using, uh, the automations like, uh, Wix"
+- **The idea:** Templates don't fail because owners are bad at them. They fail because owners don't have the time or the expertise.
+- **Outline:**
+  - Trying it yourself: Wix, Squarespace, WordPress, a template
+  - Why it usually doesn't work
+  - What's different when it's built for you
+- **Script (Talking head, about 35 seconds):**
+  You built your website on Wix. Here's why it isn't bringing in customers.
+  Wix. Squarespace. WordPress. A template.
+  I'll explain why this matters in a minute.
+  Most of the time it doesn't work. You don't have the time. You don't have the expertise.
+  You see the problem, right?
+  So the site sits there, looking like everyone else's template.
+  That's why it isn't working. It was never built around your business.
+- **Loops:** opens "why isn't it bringing in customers?" · rehooks: "I'll explain why this matters in a minute", "You see the problem, right?" · closes with "It was never built around your business"
+- **Ask on camera:** "Why do DIY websites usually not work for these owners?"
 - **CTA:** Free guide: 3 steps to simplify your website
 - **Source:** Elias's voice memo
 
-**W12. You don't just need a website**
-- **Hook:** "Every business is supposed to have a website. That's the problem."
-- **Format:** How to · **Perspective:** ② Service media
-- **Seed:** "they think they just need a website because every business is supposed to have one"
-- **The idea:** A website that markets you takes SEO, AEO and social media too.
-- **Talking points:**
-  - The belief: "they think they just need a website because every business is supposed to have one"
-  - Elias: "it's, it's much more than that."
-  - What it takes: "SEO, AEO, appropriate social media. Everybody's on Instagram, everybody's on TikTok."
-  - "This is the new wave of, of promoting"
-- **Ask on camera:** "What does a business need besides a website?"
+**W5. Websites that drive results, not just look cool**
+- **Hook:** "Anyone can design a website with AI now. So why do most still not work?"
+- **Category · Format · Perspective:** Websites · Talking head · ① Make it simple
+- **Framework:** question opener + payoff
+- **Seed:** "Everyone could design a website with AI nowadays, but we're doing the strategy of actually making it simple."
+- **The idea:** Tait's angle: simple websites that drive results.
+- **Outline:**
+  - Anyone can design a site with AI
+  - What's still missing
+  - Simple, easy to use
+- **Script (Talking head, about 30 seconds):**
+  Anyone can design a website with AI now. So why do most still not work?
+  The answer's stupidly simple, but the setup matters.
+  Looking cool is the easy part.
+  A simple, easy to use website brings in customers. One a customer understands in seconds.
+  That's the strategy: make it simple.
+- **Loops:** opens "why do most still not work?" · rehooks: "The answer's stupidly simple, but the setup matters" · closes with "make it simple"
+- **Ask on camera:** "If anyone can make a website with AI, what's still hard?"
 - **CTA:** Free guide: 3 steps to simplify your website
-- **Source:** Elias's voice memo
-- **Needs from you:** a one-line explanation of AEO for viewers who haven't heard of it
-
-**W13. To beat your competitors, beat them online**
-- **Hook:** "Your competitor is easier to find online than you are. That's why they're winning."
-- **Format:** How to · **Perspective:** ⑤ Built around your business
-- **Seed:** "to beat those competitors, you have to, you have to beat them in the online presence or at least be combatant at that."
-- **The idea:** What Elias wishes every customer understood.
-- **Talking points:**
-  - "I think that's what, that's what I wish every customer understood"
-  - "to beat those competitors, you have to, you have to beat them in the online presence or at least be combatant at that."
-  - The proof: the honest roofer who lost to "the bigger online presence" (W8).
-  - Where to start: a website that "actually appropriately market[s] themselves."
-- **Ask on camera:** "What's the one thing you wish every business owner understood about competing?"
-- **CTA:** Free guide: 3 steps to simplify your website
-- **Source:** Elias's voice memo
-
----
-
-## Pillar: Marketplaces (e-commerce)
-
-**M1. From in-person only to doubled sales online**
-- **Hook:** "This business only sold in person. We launched it on Etsy, Walmart and Amazon, and doubled sales in a few months."
-- **Format:** How we · **Perspective:** ③ Start small
-- **Talking points:**
-  - "proven his business in a lot of in person markets, but has very little online presence."
-  - "launched his brand across Etsy, Walmart Amazon."
-  - "we have doubled his sales in just a few months."
-- **Ask on camera:** "What changed when this business went online?"
-- **CTA:** Free store audit
-- **Source:** Luke's answers
-- **Needs from you:** client permission, and anything that can be shown
-
-**M2. More marketplaces won't fix a bad listing**
-- **Hook:** "Selling on five platforms won't help if your listing is bad."
-- **Format:** How to · **Perspective:** ③ Start small
-- **The idea:** Get the product and copy right so it sells on each platform first.
-- **Talking points:**
-  - The belief: "more marketplace equals more sales."
-  - Luke: "if you have bad listing or they're not optimized selling them on five platforms will sell nothing more."
-  - "get your product and copy down so that it sells on all the platforms individually."
-- **Ask on camera:** "Why won't selling on more marketplaces fix a bad listing?"
-- **CTA:** Free store audit
-- **Source:** Luke's answers
-
-**M3. Your shipping settings might be losing money on every order**
-- **Hook:** "Your shipping settings might be losing money on every order."
-- **Format:** How to · **Perspective:** ② Service media
-- **The idea:** Fees for shipping and services quietly eat your margin, and nobody checks. Includes the Faire order that shipped at a loss.
-- **Talking points:**
-  - "Nobody checks whether the shipping settings lose money on every order."
-  - Fees "are quietly eating their margin away."
-  - The bad day: a [Faire] order "shipped at a loss."
-- **Ask on camera:** "How can a store lose money on every order without knowing it?"
-- **CTA:** Free store audit
-- **Source:** Luke's answers
-
-**M4. Which marketplace is actually worth it?**
-- **Hook:** "Etsy, Amazon, Walmart, TikTok Shop: which one is actually worth it?"
-- **Format:** How to · **Perspective:** ③ Start small
-- **Talking points:**
-  - "They don't know which marketplace is worth it."
-  - The dream: selling "on 2 to 4 channels without managing each one separately."
-  - How we decide (needs from you).
-- **Ask on camera:** "How do you decide which marketplace a business should sell on?"
-- **CTA:** Free store audit
-- **Source:** Luke's answers
-- **Needs from you:** how we decide
-
-**M5. Free Etsy shop critique**
-- **Hook:** "Send us your Etsy shop. We'll critique it for free."
-- **Format:** Behind the scenes · **Perspective:** ② Service media
-- **The idea:** Review a real shop on camera and show what could be better.
-- **Talking points:**
-  - What people ask for on Reddit: a shop critique.
-  - Tait: "we'd love to help you look over your at the shop and help you know what could do better."
-  - Review one real shop on camera.
-- **Ask on camera:** "What's the first thing you look at in an Etsy shop?"
-- **CTA:** Free Etsy shop critique
-- **Source:** Reddit + Tait's take
-
-**M6. Why can't anyone find my Etsy shop?**
-- **Hook:** "Why can't anyone find my Etsy shop?"
-- **Format:** How to · **Perspective:** ② Service media
-- **The idea:** Ties to weak SEO and bad photos.
-- **Talking points:**
-  - The question: "why the hell can't people find my [Etsy] shop?"
-  - What Luke sees: "bad photos weak [SEO] no sales and then they give up."
-- **Ask on camera:** "Why can't people find most Etsy shops?"
-- **CTA:** Free Etsy shop critique
-- **Source:** Reddit, plus Luke on DIY listings
-
-**M7. New Etsy listings getting zero views**
-- **Hook:** "New Etsy listings getting zero views?"
-- **Format:** How to · **Perspective:** ② Service media
-- **Talking points:**
-  - The complaint: "new [Etsy] listings are getting zero views."
-  - What Luke sees in DIY listings: "bad photos weak [SEO]."
-  - Our fix (needs from you).
-- **Ask on camera:** "Why do new Etsy listings get zero views?"
-- **CTA:** Free Etsy shop critique
-- **Source:** Reddit
-
-**M8. Should you turn on Etsy ads?**
-- **Hook:** "Should you turn on Etsy ads?"
-- **Format:** How to · **Perspective:** ③ Start small
-- **Talking points:**
-  - The question comes up all the time on Etsy threads.
-  - Our answer (needs from you).
-- **Ask on camera:** "Should a new seller turn on Etsy ads?"
-- **CTA:** Free Etsy shop critique
-- **Source:** Reddit
-- **Needs from you:** our answer
-
-**M9. You can't appeal to everyone. Pick a niche**
-- **Hook:** "You can't appeal to everyone."
-- **Format:** How to · **Perspective:** ① Make it simple
-- **The idea:** A seller's first months: what moved the needle was focusing on the wedding niche.
-- **Talking points:**
-  - A seller's first months: what worked was focusing "on the wedding niche."
-  - "finding a clear niche is a great way to actually start making sales because you can't appeal to everyone."
-- **Ask on camera:** "Why does picking a niche help a shop sell?"
-- **CTA:** Free store audit
-- **Source:** Reddit + Tait's take
-
-**M10. From Etsy to your own Shopify store**
-- **Hook:** "When is it time to move from Etsy to your own store?"
-- **Format:** How we · **Perspective:** ③ Start small
-- **Talking points:**
-  - Who it's for: "the person on Etsy who wants to expand and create their own custom shop on Shopify."
-  - When to move (needs from you).
-- **Ask on camera:** "When is it time to move from Etsy to your own store?"
-- **CTA:** Free store audit
 - **Source:** Tait's voice memo
 
-**M11. Customer costs going up, order size not moving**
-- **Hook:** "It costs more to get every customer, and they're not spending more."
-- **Format:** How to · **Perspective:** ② Service media
-- **Talking points:**
-  - The problem: "costing more and more to acquire each customer."
-  - Our answer (needs from you).
-- **Ask on camera:** "What do you do when every customer costs more to get?"
-- **CTA:** Free store audit
-- **Source:** Reddit
-- **Needs from you:** our answer
+---
 
-**M12. Can't get your first sale**
-- **Hook:** "Started an online store and can't get your first sale?"
-- **Format:** How to · **Perspective:** ③ Start small
-- **The idea:** From the herbal-tea-company post.
-- **Talking points:**
-  - The post: "I started an herbal tea company, but I can't even get my first sale."
-  - Our answer (needs from you).
-- **Ask on camera:** "What do you tell someone who can't get their first sale?"
-- **CTA:** Free store audit
-- **Source:** Reddit
-- **Needs from you:** our answer
+## E-commerce
 
-**M13. Should you offer discounts on your store?**
-- **Hook:** "Should you offer discounts on your online store?"
-- **Format:** How to · **Perspective:** ② Service media
-- **Talking points:**
-  - The question: "should you offer discounts on your e-commerce store?"
-  - Our answer (needs from you).
-- **Ask on camera:** "Should an online store offer discounts?"
+**E1. More marketplaces won't fix a bad listing**
+- **Hook:** "You want to sell on five platforms. Here's why it won't help yet."
+- **Category · Format · Perspective:** E-commerce · Myth · ③ Start small
+- **Framework:** contrarian opener + payoff
+- **Seed:** "if you have bad listing or they're not optimized selling them on five platforms will sell nothing more"
+- **The idea:** Luke: fix the listing first, then expand.
+- **Outline:**
+  - The belief: more marketplaces, more sales
+  - Why a bad listing sells nowhere
+  - Fix the product page and copy first
+- **Script (Myth, about 30 seconds):**
+  You want to sell on five platforms. Here's why it won't help yet.
+  More marketplaces sounds like more sales.
+  But here's the part most people skip...
+  A bad listing on five platforms will sell nothing more.
+  So get your product and your copy right first. Then it sells everywhere.
+- **Loops:** opens "why won't it help?" · rehooks: "But here's the part most people skip" · closes with "Then it sells everywhere"
+- **Ask on camera:** "Why doesn't adding more marketplaces fix low sales?"
 - **CTA:** Free store audit
-- **Source:** Reddit
-- **Needs from you:** our answer
+- **Source:** Luke's answers
 
-**M14. What I wish I'd figured out before starting an e-commerce store**
-- **Hook:** "What I wish I'd figured out before starting an e-commerce store."
-- **Format:** How I · **Perspective:** ② Service media
-- **Talking points:**
-  - The question: "what do you wish you had figured out before starting your e-commerce store?"
-  - Your lessons (needs from you).
-- **Ask on camera:** "What do you wish you'd figured out before starting an e-commerce store?"
+**E2. Your shipping settings might be losing money on every order**
+- **Hook:** "You might be losing money on every order and not know it."
+- **Category · Format · Perspective:** E-commerce · Talking head · ③ Start small
+- **Framework:** stakes + guided question
+- **Seed:** "Nobody checks whether the shipping settings lose money on every order"
+- **The idea:** Luke: fees and shipping quietly eat the margin. Check one setting.
+- **Outline:**
+  - Orders coming in, money not
+  - Fees and shipping eating the margin
+  - Nobody checks the shipping settings
+  - Check yours this week
+- **Script (Talking head, about 35 seconds):**
+  You might be losing money on every order and not know it.
+  Sales are coming in. So why isn't the money?
+  Here's the weird part... the leak is usually hiding in your settings.
+  Fees and shipping quietly eat your margin. And nobody checks whether the shipping settings lose money on every order.
+  So check yours this week. One setting.
+- **Loops:** opens "where's the money going?" · rehooks: "So why isn't the money?", "Here's the weird part" · closes with "So check yours this week"
+- **Ask on camera:** "How do shipping settings quietly eat a seller's margin?"
 - **CTA:** Free store audit
-- **Source:** Reddit
-- **Needs from you:** your lessons
+- **Source:** Luke's answers
 
-**M15. Getting customer reviews**
-- **Hook:** "How to get your first customer reviews."
-- **Format:** How to · **Perspective:** ② Service media
-- **Talking points:**
-  - People keep asking about customer reviews.
-  - Our answer (needs from you).
-- **Ask on camera:** "How does a new store get its first customer reviews?"
+**E3. 392 listings, rewritten with one workflow**
+- **Hook:** "Nearly 400 Etsy listings. Updating them by hand would have taken forever."
+- **Category · Format · Perspective:** E-commerce · How we · ⑤ Built around your business
+- **Framework:** proof opener + process tease
+- **Seed:** "we built an automated workflow that rewrote every single title and description, cleaned up the inventory and pricing, upscaled their photos, and audited the whole thing"
+- **The idea:** What we did for a plywood and MDF supplier: one workflow across 392 listings, without losing the search terms bringing traffic. No client name.
+- **Outline:**
+  - The catalog: woods, sizes, thicknesses
+  - Why by hand was impossible
+  - The workflow
+  - Protecting the search terms that already worked
+- **Script (How-to, about 45 seconds):**
+  Nearly 400 Etsy listings. Updating them by hand would have taken forever.
+  A plywood and MDF supplier. Birch, walnut, maple, cherry. Every size and thickness.
+  So we built one workflow instead.
+  It rewrote every title and description. Cleaned up inventory. Upscaled the photos. Audited all 392.
+  But there's a tiny mistake most people make here, and it's important...
+  They lose the search terms already bringing in traffic. We protected those.
+  So the shop got better without losing what already worked.
+- **Loops:** opens "how do you fix 400 listings?" · rehooks: "So we built one workflow instead", "But there's a tiny mistake most people make here" · closes with "without losing what already worked"
+- **Ask on camera:** "What did the workflow do to nearly 400 listings?"
 - **CTA:** Free store audit
-- **Source:** Reddit
-- **Needs from you:** our answer
+- **Source:** Matteo's voice memo; story bank S1
 
-**M16. Is embedded checkout worth switching to?**
-- **Hook:** "Is embedded checkout worth switching to?"
-- **Format:** How to · **Perspective:** ① Make it simple
-- **Talking points:**
-  - The question comes up on Shopify threads.
-  - Our answer (needs from you).
-- **Ask on camera:** "Is embedded checkout worth switching to?"
-- **CTA:** Free store audit
-- **Source:** Reddit
-- **Needs from you:** our answer
-
-**M17. Using AI (Claude) to build and run an online store faster**
-- **Hook:** "The AI tools we actually use to build online stores faster."
-- **Format:** Behind the scenes · **Perspective:** ① Make it simple
-- **The idea:** Claude in the back end.
-- **Talking points:**
-  - Tait: we use Claude "in the back" to get people on Shopify, Etsy and Amazon.
-  - Show one real task Claude speeds up.
-- **Ask on camera:** "How do we use Claude to build online stores faster?"
-- **CTA:** Free store audit
-- **Source:** Reddit + Tait's voice memo
-
-**M18. 392 Etsy listings, rewritten with one workflow**
-- **Hook:** "He had nearly 400 Etsy listings. We rewrote every single one."
-- **Format:** How we · **Perspective:** ⑤ Built around your business
-- **Seed:** "we built an automated workflow that rewrote every single title and description, cleaned up the inventory and pricing, upscaled their photos, and audited the whole thing, all three hundred and ninety-two listings."
-- **The idea:** The Creative Cut Supplies story. A catalog too big to fix by hand, and the workflow we built around it.
-- **Talking points:**
-  - The client: "a plywood and MDF supplier that, that they serve laser cutting and CNC makers."
-  - The problem: "You got birch, walnut, maple, cherry ... They're all in different sizes, different thicknesses. Updating it by hand would have taken genuinely forever"
-  - What we built: titles, descriptions, inventory and pricing, photos, "all three hundred and ninety-two listings."
-  - The careful part: "protecting the search terms that were already bringing in traffic."
-- **Ask on camera:** "What would it have taken to fix 392 listings by hand?"
-- **CTA:** Free store audit
-- **Source:** Matteo's voice memo
-- **Needs from you:** David's permission to name the business and show listings, and any before and after numbers (views, sales) if we have them
-
-**M19. Your listings are your salespeople**
-- **Hook:** "Your listings and your website are your salespeople. They work every hour of every day."
-- **Format:** How to · **Perspective:** ② Service media
-- **Seed:** "your listings and your website are, are your salespeople. They work every hour of every day."
-- **The idea:** What Matteo wishes every customer understood. Weak listings lose sales you never see.
-- **Talking points:**
-  - "your listings and your website are, are your salespeople. They work every hour of every day."
-  - "If they're weak, they're losing sales you'll never see."
-  - "Fixing this is the highest leverage thing that you can do"
-  - "it doesn't have to be slow or expensive anymore."
-- **Ask on camera:** "What do you wish every customer understood about their listings?"
+**E4. People are already showing up. And leaving.**
+- **Hook:** "You think you need more traffic. Your visitors are already there."
+- **Category · Format · Perspective:** E-commerce · Myth · ① Make it simple
+- **Framework:** contrarian opener + realization
+- **Seed:** "What they believe that isn't true is that the problem is traffic. Usually, it's conversion."
+- **The idea:** Matteo: the problem is usually conversion, and listings are your salespeople.
+- **Outline:**
+  - The belief: I need traffic
+  - People are already showing up and leaving
+  - Your listings are your salespeople
+- **Script (Myth, about 35 seconds):**
+  You think you need more traffic. Your visitors are already there.
+  Usually, it's conversion.
+  The people are already showing up. And leaving.
+  So why are they leaving?
+  Your listings and your website are your salespeople. They work every hour of every day.
+  If they're weak, they're losing sales you'll never see.
+- **Loops:** opens "where are the sales going?" · rehooks: "So why are they leaving?" · closes with "they're losing sales you'll never see"
+- **Ask on camera:** "Why is traffic usually not the problem?"
 - **CTA:** Free store audit
 - **Source:** Matteo's voice memo
 
-**M20. People are already showing up. And leaving.**
-- **Hook:** "The people are already showing up and leaving."
-- **Format:** How to · **Perspective:** ① Make it simple
-- **Seed:** "The people are already showing up and leaving."
-- **The idea:** What sellers believe that isn't true: that they need more traffic. Usually it's conversion.
-- **Talking points:**
-  - The belief: "What they believe that isn't true is that the problem is traffic."
-  - "Usually, it's conversion." "The people are already showing up and leaving."
-  - What makes them leave: "bad titles, their, their descriptions are weak, their photos are weak."
-  - How a seller can check this in their own shop (needs from you).
-- **Ask on camera:** "Why do sellers think they have a traffic problem?"
-- **CTA:** Free Etsy shop critique
-- **Source:** Matteo's voice memo
-- **Needs from you:** how a seller can tell which problem they have (which numbers to look at)
-
-**M21. A competitor with a worse product is taking your sales**
-- **Hook:** "A competitor with a worse product but better listings is taking your sales."
-- **Format:** How to · **Perspective:** ② Service media
-- **Seed:** "a competitor with a worse product but better listings takes their sales."
-- **The idea:** The fear Matteo hears. The better product loses to the better listing.
-- **Talking points:**
-  - The fear: "they'll get passed, like a competitor with a worse product but better listings takes their sales."
-  - Why: "listings that don't rank or convert."
-  - The three parts: titles, descriptions, photos.
-  - Land it with M19: your listings are your salespeople.
-- **Ask on camera:** "What happens when the better product has the worse listing?"
-- **CTA:** Free Etsy shop critique
-- **Source:** Matteo's voice memo
-- **Needs from you:** what makes a good title, description and photo (a real before and after, with permission)
-
-**M22. If your marketplace changed its fees tomorrow**
-- **Hook:** "If your marketplace changed its algorithm or fees tomorrow, what happens to your income?"
-- **Format:** How we · **Perspective:** ③ Start small
-- **Seed:** "the marketplace changes its algorithm or fees, and their income drops overnight"
-- **The idea:** Being stuck in one marketplace, and adding one more channel done right. Pairs with M10 and B14.
-- **Talking points:**
-  - "sometimes they're stuck in a single marketplace, and they're just really nervous about depending on that"
-  - The risk: "the marketplace changes its algorithm or fees, and their income drops overnight"
-  - Start with one: "one process automated or one channel done right" (Luke)
-  - Example: "now we're building his Shopify store so he's not dependent on one marketplace."
-- **Ask on camera:** "What happens to a seller who only sells in one place?"
+**E5. If your marketplace changed its fees tomorrow**
+- **Hook:** "If Etsy changed its fees tomorrow, what happens to your income?"
+- **Category · Format · Perspective:** E-commerce · Talking head · ⑤ Built around your business
+- **Framework:** stakes + payoff
+- **Seed:** "The, the marketplace changes its algorithm or fees, and their income drops overnight"
+- **The idea:** Matteo: the fear of depending on one marketplace, and the answer: more than one channel.
+- **Outline:**
+  - One marketplace, one change
+  - Income drops overnight
+  - Sales from more than one channel
+- **Script (Talking head, about 35 seconds):**
+  If Etsy changed its fees tomorrow, what happens to your income?
+  For most sellers? It drops overnight.
+  One wrong move and it was over. And it wasn't even your move.
+  So here's what we build: sales from more than one channel. A marketplace, and a store you own.
+  That way one change never decides your month.
+- **Loops:** opens "what happens to your income?" · rehooks: "For most sellers?", "One wrong move and it was over" · closes with "one change never decides your month"
+- **Ask on camera:** "What happens to a seller who depends on one marketplace?"
 - **CTA:** Free store audit
-- **Source:** Matteo's voice memo and Luke's answers
-
-**M23. Your inventory and prices don't match across channels**
-- **Hook:** "Your inventory and your prices don't match from one channel to the next."
-- **Format:** How to · **Perspective:** ① Make it simple
-- **Seed:** "their inventory and their pricing that it just doesn't match across channels."
-- **The idea:** "That's just some of the simple stuff," and what it costs every day.
-- **Talking points:**
-  - "their inventory and their pricing that it just doesn't match across channels."
-  - The bad day: "correcting inventory errors instead of growing the business."
-  - The dream: "their product can sell on 2 to 4 channels without managing each one separately" (Luke)
-  - How we fix it (needs from you).
-- **Ask on camera:** "What goes wrong when your inventory doesn't match across channels?"
-- **CTA:** Free store audit
-- **Source:** Matteo's voice memo and Luke's answers
-- **Needs from you:** how we keep inventory and pricing in sync for a client
-
-**M24. Fixing hundreds of listings doesn't take months anymore**
-- **Hook:** "You think fixing your whole catalog is a months-long, expensive project."
-- **Format:** How we · **Perspective:** ⑤ Built around your business
-- **Seed:** "we can overhaul hundreds of listings in the time it used to take to do a few dozen."
-- **The idea:** The second belief that isn't true, and the proof.
-- **Talking points:**
-  - The belief: "They also think fixing a bigger catalog i- is a months-long, like, expensive project."
-  - "with the right automation, we can overhaul hundreds of listings in the time it used to take to do a few dozen."
-  - Proof: 392 listings for Creative Cut Supplies (M18).
-  - "it doesn't have to be slow or expensive anymore."
-- **Ask on camera:** "How long does it take to fix a few hundred listings now?"
-- **CTA:** Free store audit
-- **Source:** Matteo's voice memo
-- **Needs from you:** how long the Creative Cut job actually took
-
-**M25. Update your listings without breaking what already works**
-- **Hook:** "I don't wanna mess up what's already working."
-- **Format:** How we · **Perspective:** ③ Start small
-- **Seed:** "I don't wanna mess up what's already working."
-- **The idea:** The worry Matteo hears, and how we changed 392 listings while keeping the search terms that already brought traffic.
-- **Talking points:**
-  - The worry: "I don't wanna mess up what's already working."
-  - The same fear Luke hears about AI: "What if it breaks"
-  - For Creative Cut: "protecting the search terms that were already bringing in traffic."
-  - How we found and kept those search terms (needs from you).
-- **Ask on camera:** "How do you change hundreds of listings without losing the traffic you already have?"
-- **CTA:** Free Etsy shop critique
-- **Source:** Matteo's voice memo and Luke's answers
-- **Needs from you:** the steps we used to protect the search terms
-
-**M26. Embarrassed by your storefront**
-- **Hook:** "You know your photos and descriptions look amateur. You're not the only one."
-- **Format:** How we · **Perspective:** ② Service media
-- **Seed:** "they're embarrassed by their storefront. They know their photos and descriptions look amateur"
-- **The idea:** What sellers feel and won't say out loud, and what fixing it looked like for one shop.
-- **Talking points:**
-  - What they won't say: "they're embarrassed by their storefront."
-  - "They know their photos and descriptions look amateur"
-  - What we did for Creative Cut: "upscaled their photos" and rewrote "every single title and description."
-  - The dream: "their catalog is clean and optimized everywhere they sell."
-- **Ask on camera:** "What do sellers feel about their shop that they won't say out loud?"
-- **CTA:** Free Etsy shop critique
 - **Source:** Matteo's voice memo
 
 ---
 
-## Summary
+## YouTube: 1 a month
 
-- **Building Fully Launched:** 15 ideas (B1–B15). **At least 4 go on the calendar every week.**
-- **Authority Hacking:** 4 slots (AH1–AH4), one pillar a week in rotation. **1 goes on the calendar every week.** People still to pick.
-- **Organic content:** 19 (O1–O19)
-- **AI systems:** 15 (A1–A15)
-- **Websites:** 13 (W1–W13)
-- **Marketplaces:** 26 (M1–M26)
-
-**Ready to film as-is:** every idea without a **Needs from you** line.
-**Next step:** pick dates and add them with **📋 Add ideas with Claude** on the dashboard.
+**Y1. How we turn one voice memo into a month of content**
+- **Hook:** "One voice memo. A month of content. Here's the whole system, start to finish."
+- **Category · Format · Perspective:** YouTube · YouTube long form · ① Make it simple
+- **Framework:** promise opener + long-form transition rehooks
+- **Seed:** "So it'll allow them to have a whole content system in two hours a month."
+- **The idea:** The full walkthrough of the content system on our own brand: the voice memo, the research, the documents, the ideas, the scripts with tension loops, filming, editing, posting.
+- **Outline:**
+  - Cold open: the voice memo, and the month it turns into
+  - The promise: 2 hours a month
+  - Section 1: the voice memo (what goes in)
+  - Section 2: research (what's working, what people ask)
+  - Section 3: the documents (customer data, identity)
+  - Section 4: scripts that hold attention (tension loops)
+  - Section 5: filming, editing, posting
+  - Recap
+- **Script (YouTube long form, about 4 to 5 minutes):**
+  One voice memo. A month of content. Here's the whole system, start to finish.
+  Most business owners know they should be posting. The problem is time. You're spending all your time on the business, and there's nothing left for content.
+  So here's the promise: by the end of this video, you'll know how a whole content system fits into two hours a month. And you'll see it running on our own brand.
+  There's a full framework for this, but I'm only covering the key parts here.
+  Section one. The voice memo.
+  It starts with one recording. About an hour of you talking. Your ideas. Your unique solutions to your customers' problems. Your stories.
+  You'll see why in a second.
+  This is the exact thing I did for Fully Launched. I hit record and dropped everything about the business: what we do, who we help, what our customers struggle with.
+  That's when it hit me... I was doing exactly what our clients will do.
+  Why a voice memo? Hold that thought, it comes back in section four.
+  But that only works if you also do this...
+  Section two. Research.
+  Your voice memo is the substance. Research is the packaging.
+  We look at two things. What your customers are asking, in their own words. And what formats are working right now in your niche.
+  This is where most people messed up.
+  They copy what's working, word for word. We only borrow the shape.
+  For our own content, we pulled almost 200 videos. 93 Instagram reels. 100 TikToks.
+  But there was one problem...
+  Here's the weird part... almost half of the top 50 had nothing to do with business.
+  So we cut those. And one format kept showing up: one person, talking to camera, with the headline at the top.
+  The research never tells us what to say. It tells us how to package what you already said.
+  And this is where it gets interesting...
+  Section three. The documents.
+  Everything from the voice memo gets organized. Nothing gets invented.
+  Okay wait, hold on... why does that matter so much?
+  Because the second you invent something, it stops sounding like you.
+  Customer data: your customers' pains, dreams and fears, in the words you used about them.
+  Identity: who you are, what you sell, how you sound, and every story you mentioned.
+  Then you read it. If it doesn't sound like you, we fix it before a single idea gets written.
+  The most important part is coming up.
+  Now, a few lines ago I mentioned the voice memo comes back. Here's why.
+  Section four. Scripts that hold attention.
+  Every idea uses three things: your own story or solution, a real customer pain, and a proven format.
+  And every script runs on tension loops.
+  You know that feeling when you can't scroll away because you need to know how it ends? That's a tension loop. An open question.
+  The first line opens one. Every 10 to 15 seconds, a new one opens before the last one closes. And by the end, every one gets answered.
+  You've been watching one this whole video.
+  Guess what happened after that?
+  Our own scripts got shorter, and every line started pulling the next one.
+  That's step one. Step two is where people actually fall off.
+  Section five. Filming, editing, posting.
+  You get a calendar. What to film, and when to film it by.
+  Which brings up the question everyone asks me...
+  "What if I hate reading scripts?"
+  You film for an hour or two. If you'd rather talk than read, every video has one question we ask you from behind the camera.
+  We edit. You approve the finished video. We post.
+  So let's add it up. An hour on the voice memo. An hour or two filming.
+  Two hours a month. A whole content system.
+  So here's the answer to the question I opened with: one voice memo becomes a month of content because everything after it is a system.
+- **Loops:** opens "how does one voice memo become a month?" · rehooks: "There's a full framework for this, but I'm only covering the key parts here", "Why a voice memo? Hold that thought, it comes back in section four", "But that only works if you also do this", "Here's the weird part", "And this is where it gets interesting", "Now, a few lines ago I mentioned the voice memo comes back. Here's why", "You know that feeling when you can't scroll away", "That's step one. Step two is where people actually fall off", "You'll see why in a second", "This is where most people messed up", "Okay wait, hold on", "The most important part is coming up", "Guess what happened after that?", "Which brings up the question everyone asks me", "That's when it hit me", "But there was one problem" · closes with "So here's the answer to the question I opened with"
+- **Ask on camera:** "Walk me through how one voice memo becomes a month of content."
+- **CTA:** Free guide: how to build a social media system
+- **Source:** Tait's voice memo; Content Research 2026-10-05; Tait's notes 2026-10-05

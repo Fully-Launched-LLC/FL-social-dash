@@ -2,7 +2,7 @@
 
 **The 3-3-3 framework: pillars, formats, perspectives**
 
-**Last updated:** 2026-10-01
+**Last updated:** 2026-10-05
 **Drive:** https://docs.google.com/document/d/1CzaSXHTk_25Qb6GoueDd_wxzHpAV0efVmD6REdf9k_4/edit (mirror of this file, with `sources/voice.md` added at the end)
 **Sources:** Tait's voice memo and notes in chat, and Luke Bothun's answers (2026-09-25), Matteo's voice memo (2026-09-30), and Elias's voice memo (2026-10-01). See Customer Data for the full recordings.
 **Tags:** **[Tait]** / **[Luke]** / **[Matteo]** / **[Elias]** mean said by them. **[To confirm]** means Tait hasn't decided yet.
@@ -34,7 +34,7 @@ Every client gets a **3-3-3**: **3 pillars** (what we always talk about), **3 fo
 
 ### 3. AI systems
 - **What we do:** build custom Claude solutions to business owners' problems. **[Tait]**
-- **Our angle:** *"You're spending $60,000 a year on software that we can build you for $15,000, in a week, and you can have permanently."* **[Tait]** We take one painful manual process and ship a working solution in weeks, not months. **[Luke]**
+- **Our angle:** *"We're basically helping people save a bunch of money and time with AI systems."* **[Tait]** We take one painful manual process and ship a working solution in weeks, not months. **[Luke]**
 
 ### 4. Marketplaces (e-commerce)
 - **What we do:** get people launched and selling on Shopify, Etsy, Amazon and TikTok Shop, and connect custom websites to Shopify. **[Tait]**
@@ -42,7 +42,7 @@ Every client gets a **3-3-3**: **3 pillars** (what we always talk about), **3 fo
 - **Who it's for, in Matteo's words:** *"a small product business, usually doing somewhere between a few thousand and a few hundred thousand a year that's outgrown its setup."* A niche supplier or small brand with a solid product and real demand, run by an owner who's still doing everything himself. **[Matteo]**
 - **Our angle:** listings that actually sell and stay profitable. More marketplaces don't mean more sales if the listing is bad. **[Luke]**
 - **How we do it:** *"we take a messy, overwhelming e-commerce operation and turn it into a clean system quickly. Most agencies do the work by hand, but we build custom AI tools and automations around each client so we can move at a scale and speed that a normal team can't without sacrificing quality."* **[Matteo]**
-- **Proof:** Creative Cut Supplies, a plywood and MDF supplier for laser cutting and CNC makers. An automated workflow rewrote every title and description, cleaned up inventory and pricing, upscaled the photos and audited all 392 Etsy listings, while protecting the search terms already bringing in traffic. Now we're building his Shopify store so he's not dependent on one marketplace. **[Matteo]**
+- **Proof:** a plywood and MDF supplier for laser cutting and CNC makers. An automated workflow rewrote every title and description, cleaned up inventory and pricing, upscaled the photos and audited all 392 Etsy listings, while protecting the search terms already bringing in traffic. Now we're building his Shopify store so he's not dependent on one marketplace. **[Matteo]**
 
 ### Recurring series (runs across every pillar): Building Fully Launched
 - **At least 4 videos a week** documenting the build of the business. It goes on the content calendar. **[Tait]**

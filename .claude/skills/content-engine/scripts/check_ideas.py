@@ -11,6 +11,10 @@ For each idea in concepts/content-ideas.md (or only --ids):
   - Script: no 6-word run copied from any library script's Full script
     (structure is borrowed, words never are)
   - no em dashes anywhere in the idea
+  - retention (library/retention/tension-loops.md), on ideas with a Seed
+    and a Script: hook of 15 words or less; no "and then" in the script; a
+    Loops line; at least one rehook per ~40 spoken words; every rehook and
+    the payoff line named in Loops is actually in the script
 Exit code 1 if anything fails.
 """
 import argparse
@@ -36,12 +40,37 @@ def field(body, name):
 
 
 def script_block(body):
-    m = re.search(r'\*\*Script[^*]*:\*\*\s*\n?((?:.|\n)*?)(?=\n- \*\*(?:Ask on camera|CTA|Source|Needs from you)|\Z)', body)
+    m = re.search(r'\*\*Script[^*]*:\*\*\s*\n?((?:.|\n)*?)(?=\n- \*\*(?:Loops|Ask on camera|CTA|Source|Needs from you)|\Z)', body)
     return m.group(1) if m else ''
 
 
 def grams(words, n=6):
     return {' '.join(words[i:i + n]) for i in range(len(words) - n + 1)}
+
+
+def retention(body, sc):
+    out = []
+    hook = field(body, 'Hook').strip().strip('"“”')
+    if len(hook.split()) > 15:
+        out.append(f'hook is {len(hook.split())} words (15 or less opens the loop in time)')
+    if re.search(r'\band then\b', sc, re.I):
+        out.append('script says "and then" (use but / so / until / turns out)')
+    loops = field(body, 'Loops')
+    if not loops:
+        out.append('no Loops line (primary question, rehooks, payoff)')
+        return out
+    words = len(re.sub(r'\[[^\]]*\]', ' ', sc).split())
+    reh = re.split(r'(?i)closes with', loops)[0]
+    reh = reh.split('rehooks:', 1)[1] if 'rehooks:' in reh else ''
+    rehooks = [q for q in re.findall(r'"([^"]+)"', reh)]
+    need = max(1, round(words / 40))
+    if len(rehooks) < need:
+        out.append(f'{len(rehooks)} rehook(s) for {words} words (want at least {need}: one every 10 to 15 seconds)')
+    payoff = re.findall(r'(?i)closes with\s*"([^"]+)"', loops)
+    for q in rehooks + payoff:
+        if norm(q) not in norm(sc):
+            out.append(f'Loops names a line the script doesn\'t have: "{q[:50]}"')
+    return out
 
 
 def main():
@@ -81,6 +110,8 @@ def main():
         hit = grams(norm(sc).split()) & lib if sc and lib else set()
         if hit:
             probs.append(f'script copies a library script: "{sorted(hit)[0]}"')
+        if seed and sc:
+            probs += retention(body, sc)
         if probs:
             bad += 1
             print(f'{iid}. {title}\n  - ' + '\n  - '.join(probs))
