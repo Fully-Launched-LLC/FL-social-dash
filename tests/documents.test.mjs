@@ -51,6 +51,29 @@ chk("removed and renamed", docs.map(d => d.title).join() === "Customer Data (202
 cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
 chk("client sees the update", links().join() === "Customer Data (2026)→https://docs.google.com/customers", links());
 
+// Team only (migration 012): Content Research is for Tait and the editors.
+op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
+await openEdit();
+op.d.getElementById("cpAddDoc").click(); await settle();
+setRow(rows()[1], "Content Research", "https://docs.google.com/research");
+rows()[1].querySelector('[data-doc="team"]').checked = true;
+op.d.getElementById("cpSave").click(); await settle();
+docs = (await db.query("select title, team_only from social_client_documents order by position")).rows;
+chk("Team only is saved per document", docs.map(d => d.title + ":" + d.team_only).join() === "Customer Data (2026):false,Content Research:true", docs);
+op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
+await openEdit();
+chk("…and loads back into the form", rows()[1].querySelector('[data-doc="team"]').checked && !rows()[0].querySelector('[data-doc="team"]').checked);
+cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
+chk("the client never sees a Team only document", links().join() === "Customer Data (2026)→https://docs.google.com/customers", links());
+const ED = "00000000-0000-0000-0000-00000000000e";
+await db.exec(`insert into auth.users (id) values ('${ED}');
+  insert into social_editors (id,name,email) values ('${ED}','Ed','ed@x');
+  insert into social_videos (client_id,title,status,editor_id) values ('${FL}','Edit me','with_editor','${ED}');`);
+const ed = await openPage("editor/dashboard.html", ED, "https://fl.test/editor/dashboard.html");
+const edLinks = Array.from(ed.d.querySelectorAll("#queueList a.btn")).map(a => a.textContent);
+chk("the editor sees the client's documents on the video, Content Research included", edLinks.includes("Customer Data (2026)") && edLinks.includes("Content Research"), edLinks);
+await db.exec("delete from social_videos");
+
 // Empty state.
 await db.exec("delete from social_client_documents");
 cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");

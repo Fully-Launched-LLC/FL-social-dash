@@ -8,7 +8,7 @@ import { readFileSync } from "fs";
 
 import { fileURLToPath } from "url";
 export const REPO = fileURLToPath(new URL("../", import.meta.url));
-const MIGRATIONS = ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "008_client_onboarding.sql", "009_voice_memo_by_text.sql", "010_onboarding_uploads.sql", "011_client_questions.sql"];
+const MIGRATIONS = ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "008_client_onboarding.sql", "009_voice_memo_by_text.sql", "010_onboarding_uploads.sql", "011_client_questions.sql", "012_team_only_documents.sql"];
 
 export async function freshDb() {
   const passthrough = v => v;

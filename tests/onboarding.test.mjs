@@ -184,16 +184,30 @@ readBtn.click(); await settle();
 chk("…and opens them to read", cl.d.getElementById("videoModalBox").textContent.includes("[To confirm]"));
 
 // Straight from onboarding: the walkthrough, then "bookmark this page".
+// One video they film themselves, with its own footage folder.
+await db.exec(`insert into social_videos (client_id,title,hook,outline,body,filming_instructions,status,filmed_by,concept_approved_at,post_date,due_to_film,platform,editor_brief) values
+  ('${NC}','Why we started','We almost quit.','- the start\n- the turn','The whole script.','Talking head. Question to ask: "Why did you start?"','to_film','client',now(),'2026-12-20','2026-12-06','{instagram}','{"rawFootageUrl":"https://drive.google.com/drive/folders/why"}');`);
 const tp = await openPage("clients/portal.html", CL, "https://fl.test/clients/newco?tour=1");
 const tc = () => tp.d.getElementById("tourCard");
-chk("the portal opens with a walkthrough, starting at To Do", !!tc() && tc().textContent.includes("To Do") && tc().textContent.includes("1 of 4") && tp.d.querySelector('.nav-item[data-view="videos"]').classList.contains("tour-focus"), tc() && tc().textContent);
+const ringed = () => { const s = tp.d.getElementById("tourSpot"); return s && s.style.display !== "none"; };
+chk("the portal opens with a walkthrough, starting at To Do", !!tc() && tc().querySelector("h2").textContent === "To Do" && tc().textContent.includes("Step 1 of 8") && /everything you need to do/.test(tc().textContent) && ringed(), tc() && tc().textContent);
 chk("…and drops ?tour=1 from the address, so a reload doesn't repeat it", !tp.w.location.search.includes("tour"));
-const seen = [];
-for (let k = 0; k < 4; k++) { seen.push(tc().querySelector("h2").textContent); tc().querySelector("[data-tour-next]").click(); }
-chk("it walks To Do, Content Calendar, Documents, My footage folder", seen.join("|") === "To Do|Content Calendar|Documents|My footage folder", seen);
+const seen = [], text = {}, onPage = {};
+for (let k = 0; k < 8; k++) {
+  const h = tc().querySelector("h2").textContent;
+  seen.push(h); text[h] = tc().textContent;
+  onPage[h] = tp.d.querySelector(".view.active").id + (h === "To film" ? ":" + tp.d.querySelector("#videoTabs .chip.active").dataset.tab : "");
+  tc().querySelector("[data-tour-next]").click();
+}
+chk("it walks To Do, Time sensitive, To film, a card, Upload footage, film it your way, Content Calendar, Documents (no footage folder)",
+  seen.join("|") === "To Do|Time sensitive|To film|Each card is one video|Upload footage on each card|Film it your way|Content Calendar|Documents", seen);
+chk("…opening each page and tab as it goes", onPage["To film"] === "view-videos:film" && onPage["Content Calendar"] === "view-calendar" && onPage["Documents"] === "view-documents", onPage);
+chk("…explains the hook, outline and script, uploading on each card, and filming it their way",
+  /Hook.*Outline.*Script/s.test(text["Each card is one video"]) && /its own card/.test(text["Upload footage on each card"]) && /script.*outline.*question/is.test(text["Film it your way"]));
+chk("…and says what each document is", /Customer Data.*target customer/s.test(text["Documents"]) && /Your Voice.*who you are and what you do/s.test(text["Documents"]), text["Documents"]);
 chk("then: bookmark social.fullylaunched.com (this site) to come back and sign in", tc().textContent.includes("Bookmark this page") && tc().textContent.includes("fl.test") && /email and the password/.test(tc().textContent));
 tc().querySelector("[data-tour-done]").click();
-chk("Got it closes it", !tc() && !tp.d.getElementById("tourVeil") && !tp.d.querySelector(".tour-focus"));
+chk("Got it closes it, back on To Do", !tc() && !tp.d.getElementById("tourVeil") && !tp.d.getElementById("tourSpot") && tp.d.querySelector(".view.active").id === "view-videos");
 const noTour = await openPage("clients/portal.html", CL, "https://fl.test/clients/newco");
 chk("no walkthrough on a normal visit", !noTour.d.getElementById("tourCard"));
 

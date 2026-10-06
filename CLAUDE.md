@@ -342,7 +342,9 @@ fully-social-os/
                                social_client_generated_docs, new folder links), 009
                                (voice memo texted, not uploaded), 010
                                (onboarding uploads), 011 (each client's
-                               own voice memo questions)
+                               own voice memo questions), 012
+                               (team-only documents: hidden from the
+                               client, read by editors)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -509,9 +511,16 @@ they can stop and come back:
    `questionsFor()`; and a voice memo recorder on the same page: record in the
    browser, or upload a recording) → **Your footage** (drag-and-drop files
    or whole folders, and/or a Google Drive folder link).
-3. Their portal, `/clients/<slug>?tour=1`: a walkthrough of To Do,
-   Content Calendar, Documents and My footage folder, then "Bookmark this
-   page" (`startTour` in the client portal).
+3. Their portal, `/clients/<slug>?tour=1`: a walkthrough (`startTour` in
+   the client portal; Tait, 2026-10-06). Each step opens the right page,
+   dims everything else and rings one thing in gold, with the card beside it
+   and an arrow pointing at it: To Do ("where everything you need to do is
+   found") → Time sensitive → To film → a video card (hook, outline,
+   script) → its **Upload footage** button (each video's clips go in its
+   own card) → "film it your way" (script, outline, or just answer the
+   question) → Content Calendar → Documents (a line on what each one is),
+   then "Bookmark this page". The footage folder is left out on purpose.
+   Steps that don't apply to a client are skipped.
 
 Uploads (migration 010) go to the private `onboarding` storage bucket,
 `<client_id>/brand/`, `/voice-memo/`, `/footage/<batch>/<folder path>`. A
@@ -660,7 +669,10 @@ platform, with a "Posts on" key above; 🎥 film dates for client-filmed
 ideas; under the grid, "What posts each day": the month as a list with
 each video's hook and platforms by name), **Documents**
 (the client's important Google Drive docs — `social_client_documents`,
-added on the operator's Clients → Edit; clients read only their own) and **My footage
+added on the operator's Clients → Edit; clients read only their own, and
+never **Team only** ones (`team_only`, migration 012, a checkbox per
+document; Content Research is team only, Tait 2026-10-06), which the
+documents email leaves out too) and **My footage
 folder ↗** (the client's Drive folder — what they upload and what we
 film). Every video card starts with its post date, where it's at (in plain
 words) and a pill per platform it posts on. Then only what's needed:
@@ -677,7 +689,9 @@ operator); editing happens only on the operator dashboard.
 **To Edit** (videos currently with them: edit-by date, revisions if it came
 back, editing instructions, the client's brand guidelines Google Doc —
 `social_drive_folder_links.brand_voice`, set on the Clients page — and the
-raw footage and finished video folder links; nothing else) and
+raw footage and finished video folder links, and the client's documents,
+Team only ones like Content Research included (migration 012); nothing
+else) and
 **Calendar** (edit-by dates). An operator sees every editor's queue with a
 filter, and can click Finished for them.
 
