@@ -308,6 +308,7 @@ const VIDEO_COLUMNS = {
   dueToFilm: "due_to_film", dueToEdit: "due_to_edit", postDate: "post_date",
   finalCutUrl: "final_cut_url", onScreenCaption: "on_screen_caption", filmedBy: "filmed_by",
   conceptApprovedBy: "concept_approved_by", conceptApprovedAt: "concept_approved_at",
+  reviewVideoPath: "review_video_path", reviewVideoName: "review_video_name", reviewVideoAt: "review_video_at",
   createdAt: "created_at", updatedAt: "updated_at",
 };
 // Columns a page may write directly. Only operators have direct write
@@ -447,6 +448,241 @@ function editorInstructions(video) {
   return [eb.instructions, ...OLD_BRIEF_FIELDS.filter(([k]) => eb[k]).map(([k, l]) => l + ": " + eb[k])].filter(Boolean).join("\n");
 }
 
+// ---------- Finished video review (Frame.io style) ----------
+// The finished cut lives in the private 'finished-videos' bucket
+// (migration 014), at <client_id>/<video_id>/<file>, so the page can read
+// the player's exact time: pause anywhere, leave a note pinned to that
+// moment, see every note as a mark on the timeline, click one to jump
+// there. Notes (social_video_comments) belong to the cut they were left
+// on, so a new cut starts a clean round.
+const REVIEW_BUCKET = "finished-videos";
+const RESUMABLE_OVER = 6 * 1024 * 1024;   // bytes; tus needs 6 MB pieces on Supabase
+
+// Storage keys allow a limited set of characters; keep names readable.
+const safeName = s => String(s || "file").replace(/[^A-Za-z0-9._\-()\/]+/g, "_").replace(/_+/g, "_").replace(/^\/+/, "");
+// One file into a storage bucket, at full quality; anything over 6 MB goes
+// in resumable pieces (tus, loaded by pages that upload), so a big video
+// survives a shaky connection. onProgress gets 0 to 100.
+async function uploadToBucket(bucket, path, file, onProgress) {
+  const contentType = file.type || "application/octet-stream";
+  if (window.tus && file.size > RESUMABLE_OVER) {
+    const { data } = await sbClient.auth.getSession();
+    const token = data && data.session && data.session.access_token;
+    await new Promise((resolve, reject) => {
+      const up = new tus.Upload(file, {
+        endpoint: window.SUPABASE_CONFIG.url + "/storage/v1/upload/resumable",
+        retryDelays: [0, 3000, 5000, 10000, 20000],
+        headers: { authorization: "Bearer " + token, "x-upsert": "false" },
+        uploadDataDuringCreation: true,
+        removeFingerprintOnSuccess: true,
+        metadata: { bucketName: bucket, objectName: path, contentType, cacheControl: "3600" },
+        chunkSize: RESUMABLE_OVER,
+        onError: reject,
+        onProgress: (sent, total) => onProgress && onProgress(Math.round(sent / total * 100)),
+        onSuccess: resolve,
+      });
+      up.findPreviousUploads().then(prev => { if (prev.length) up.resumeFromPreviousUpload(prev[0]); up.start(); });
+    });
+    return path;
+  }
+  onProgress && onProgress(5);
+  const { error } = await sbClient.storage.from(bucket).upload(path, file, { contentType, upsert: false });
+  if (error) throw error;
+  onProgress && onProgress(100);
+  return path;
+}
+
+// 75.4 → "1:15"
+function fmtTime(s) {
+  s = Math.max(0, Math.floor(Number(s) || 0));
+  const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, sec = String(s % 60).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
+}
+
+// The notes on a video's current cut, in time order (whole-video notes
+// last). roles: only notes by these authors (the client's own review
+// shows the client's notes; Tait's own review shows his).
+async function loadReviewNotes(video, roles) {
+  if (!video.reviewVideoPath) return [];
+  let q = sbClient.from("social_video_comments").select("*").eq("video_id", video.id).eq("video_path", video.reviewVideoPath);
+  if (roles) q = q.in("author_role", roles);
+  const { data, error } = await q.order("created_at");
+  if (error) throw new Error(error.message);
+  return (data || []).slice().sort((a, b) => (a.at_seconds == null) - (b.at_seconds == null)
+    || (Number(a.at_seconds) || 0) - (Number(b.at_seconds) || 0));
+}
+// The notes as one block of text, for request_revisions' note and the
+// editor's Revisions needed box: "0:12  Make the logo bigger".
+function reviewNotesText(notes) {
+  return notes.map(n => (n.at_seconds == null ? "Whole video" : fmtTime(n.at_seconds)) + "  " + n.body.trim()).join("\n");
+}
+
+// The review window. opts:
+//   title            heading (default: the video's title)
+//   intro            a line under it
+//   notesBy          which authors' notes to show (array of roles)
+//   canNote          true to leave notes
+//   authorRole       'client' | 'operator' | 'editor' (who new notes are by)
+//   authorName       shown on each note
+//   buttons          [{ label, cls, needsNotes, onClick(notes, btn) }] at
+//                    the bottom (needsNotes: off until there's a note)
+async function openReviewPlayer(video, opts) {
+  opts = opts || {};
+  const box = openModal(`
+    <h2>${escapeHtml(opts.title || video.title || "Review the video")}</h2>
+    ${opts.intro ? `<div class="meta" style="margin:0 0 14px">${opts.intro}</div>` : ""}
+    <div class="rv">
+      <div class="rv-stage">
+        <video class="rv-video" controls playsinline preload="metadata"></video>
+        <div class="rv-track" title="Click to jump there"><div class="rv-fill"></div><div class="rv-marks"></div></div>
+        <div class="rv-load meta">Loading the video…</div>
+      </div>
+      <div class="rv-side">
+        <div class="rv-head"><b>Notes</b> <span class="rv-count meta"></span></div>
+        <div class="rv-list"></div>
+        ${opts.canNote ? `<div class="rv-compose">
+          <textarea rows="3" placeholder="Pause where something should change, then type it here"></textarea>
+          <div class="rv-compose-row">
+            <label class="rv-pin"><input type="checkbox" checked> At <span class="rv-at">0:00</span></label>
+            <button class="primary rv-add">Add note</button>
+          </div>
+          <div class="auth-error rv-err"></div>
+        </div>` : ""}
+      </div>
+    </div>
+    <div class="modal-actions rv-actions" style="border:none;padding:16px 0 0;display:flex;gap:8px;flex-wrap:wrap"></div>`);
+  box.classList.add("modal-wide");
+  const vid = box.querySelector(".rv-video"), track = box.querySelector(".rv-track"), fill = box.querySelector(".rv-fill"),
+    marks = box.querySelector(".rv-marks"), list = box.querySelector(".rv-list"), count = box.querySelector(".rv-count"),
+    load = box.querySelector(".rv-load"), actions = box.querySelector(".rv-actions");
+  let notes = [], duration = 0, lockedAt = null;
+
+  const { data: signed, error: signErr } = await sbClient.storage.from(REVIEW_BUCKET).createSignedUrl(video.reviewVideoPath, 6 * 3600);
+  if (signErr || !signed) { load.textContent = "Couldn't load the video: " + ((signErr && signErr.message) || "unknown error"); }
+  else vid.src = signed.signedUrl;
+  vid.addEventListener("loadedmetadata", () => { duration = vid.duration || 0; load.remove(); drawMarks(); });
+  vid.addEventListener("error", () => { if (load.isConnected) load.textContent = "This video won't play in the browser. Ask us to export it as an MP4."; });
+  vid.addEventListener("timeupdate", () => {
+    if (duration) fill.style.width = (vid.currentTime / duration * 100) + "%";
+    if (lockedAt == null) setAt(vid.currentTime);
+    const near = notes.find(n => n.at_seconds != null && Math.abs(vid.currentTime - n.at_seconds) < 0.6);
+    list.querySelectorAll(".rv-note").forEach(el => el.classList.toggle("on", !!near && el.dataset.id === near.id));
+  });
+  track.addEventListener("click", e => {
+    if (!duration || e.target.closest(".rv-mark")) return;
+    const r = track.getBoundingClientRect();
+    vid.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * duration;
+  });
+  const jump = t => { vid.currentTime = Number(t) || 0; vid.pause(); lockedAt = null; setAt(vid.currentTime); };
+
+  function drawMarks() {
+    marks.innerHTML = duration ? notes.filter(n => n.at_seconds != null).map(n =>
+      `<button type="button" class="rv-mark" data-t="${n.at_seconds}" style="left:${Math.min(100, n.at_seconds / duration * 100)}%" title="${escapeHtml(fmtTime(n.at_seconds) + "  " + n.body)}"></button>`).join("") : "";
+    marks.querySelectorAll(".rv-mark").forEach(m => m.onclick = () => jump(m.dataset.t));
+  }
+  function drawList() {
+    count.textContent = notes.length ? `(${notes.length})` : "";
+    list.innerHTML = notes.length ? notes.map(n => `<div class="rv-note" data-id="${n.id}">
+        ${n.at_seconds == null ? `<span class="rv-time whole">Whole video</span>` : `<button type="button" class="rv-time" data-t="${n.at_seconds}">${fmtTime(n.at_seconds)}</button>`}
+        <div class="rv-body">${escapeHtml(n.body)}<div class="meta">${escapeHtml(n.author_name || "")}</div></div>
+        ${opts.canNote && n.author_id === (ME_UID || "") ? `<button type="button" class="rv-del" title="Delete this note" data-del="${n.id}">✕</button>` : ""}
+      </div>`).join("")
+      : `<div class="empty" style="padding:14px 4px">${opts.canNote ? "No notes yet. Pause the video where something should change and type it below." : "No notes on this cut."}</div>`;
+    list.querySelectorAll(".rv-time[data-t]").forEach(b => b.onclick = () => jump(b.dataset.t));
+    list.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
+      b.disabled = true;
+      const { error } = await sbClient.from("social_video_comments").delete().eq("id", b.dataset.del);
+      if (error) { b.disabled = false; alert("Couldn't delete that note: " + error.message); return; }
+      notes = notes.filter(n => n.id !== b.dataset.del); redraw();
+    });
+  }
+  function drawButtons() {
+    actions.innerHTML = "";
+    (opts.buttons || []).forEach(def => {
+      const b = document.createElement("button");
+      b.className = def.cls || "";
+      b.textContent = typeof def.label === "function" ? def.label(notes) : def.label;
+      b.disabled = !!def.needsNotes && !notes.length;
+      b.onclick = () => def.onClick(notes, b);
+      actions.appendChild(b);
+    });
+  }
+  function redraw() { drawMarks(); drawList(); drawButtons(); }
+
+  // Who's writing, for "delete my own note".
+  let ME_UID = null;
+  try { const { data } = await sbClient.auth.getSession(); ME_UID = data && data.session && data.session.user.id; } catch (e) {}
+
+  // Leaving a note: typing pauses the video and holds the time, like
+  // Frame.io, so the note lands on the frame they were looking at.
+  const ta = box.querySelector(".rv-compose textarea"), atEl = box.querySelector(".rv-at"), pin = box.querySelector(".rv-pin input");
+  function setAt(t) { if (atEl) atEl.textContent = fmtTime(t); }
+  if (ta) {
+    ta.addEventListener("focus", () => { if (!vid.paused) vid.pause(); lockedAt = vid.currentTime || 0; setAt(lockedAt); });
+    ta.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); add(); } });
+    box.querySelector(".rv-add").onclick = add;
+  }
+  async function add() {
+    const err = box.querySelector(".rv-err"), btn = box.querySelector(".rv-add");
+    const body = ta.value.trim();
+    err.textContent = "";
+    if (!body) { ta.focus(); return; }
+    const at = pin.checked ? Math.round((lockedAt != null ? lockedAt : vid.currentTime || 0) * 10) / 10 : null;
+    btn.disabled = true;
+    const { data, error } = await sbClient.from("social_video_comments").insert({
+      video_id: video.id, video_path: video.reviewVideoPath, at_seconds: at, body,
+      author_role: opts.authorRole || "client", author_name: opts.authorName || null,
+    }).select("*");
+    btn.disabled = false;
+    if (error) { err.textContent = "Couldn't save that note: " + error.message; return; }
+    notes = notes.concat(data || []).sort((a, b) => (a.at_seconds == null) - (b.at_seconds == null) || (Number(a.at_seconds) || 0) - (Number(b.at_seconds) || 0));
+    ta.value = ""; lockedAt = null; ta.blur();
+    redraw();
+  }
+
+  try { notes = await loadReviewNotes(video, opts.notesBy); redraw(); }
+  catch (e) { drawButtons(); list.innerHTML = `<div class="auth-error">Couldn't load the notes: ${escapeHtml(e.message)}</div>`; }
+  return box;
+}
+
+// The finished video upload, for the editor's Finished step and Tait's
+// video card. Puts the file in this video's folder, then makes it the cut
+// to review (social_set_review_video). onDone(updatedVideoRow).
+function reviewUploadHtml() {
+  return `<div class="rv-upload">
+    <input type="file" accept="video/*" class="rv-file" style="display:none">
+    <button type="button" class="rv-pick">Choose the finished video</button>
+    <span class="meta rv-picked">or drop it here</span>
+    <div class="up-bar" style="display:none"><div style="width:0%"></div></div>
+    <div class="auth-error rv-up-err"></div>
+  </div>`;
+}
+function wireReviewUpload(root, video, onDone) {
+  const zone = root.querySelector(".rv-upload"), input = zone.querySelector(".rv-file"), pick = zone.querySelector(".rv-pick"),
+    picked = zone.querySelector(".rv-picked"), bar = zone.querySelector(".up-bar"), err = zone.querySelector(".rv-up-err");
+  pick.onclick = () => input.click();
+  input.onchange = () => input.files[0] && send(input.files[0]);
+  zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("drag"); });
+  zone.addEventListener("dragleave", () => zone.classList.remove("drag"));
+  zone.addEventListener("drop", e => { e.preventDefault(); zone.classList.remove("drag"); const f = e.dataTransfer.files[0]; if (f) send(f); });
+  async function send(file) {
+    err.textContent = "";
+    if (file.type && !file.type.startsWith("video/")) { err.textContent = "That isn't a video file."; return; }
+    pick.disabled = true; picked.textContent = file.name; bar.style.display = "";
+    const path = `${video.clientId}/${video.id}/${Date.now()}-${safeName(file.name)}`;
+    try {
+      await uploadToBucket(REVIEW_BUCKET, path, file, pct => { bar.firstElementChild.style.width = pct + "%"; });
+      const { data, error } = await sbClient.rpc("social_set_review_video", { p_video_id: video.id, p_path: path, p_name: file.name });
+      if (error) throw new Error(error.message);
+      picked.textContent = "✓ " + file.name + " uploaded";
+      onDone && onDone(data);
+    } catch (e) {
+      err.textContent = "Didn't upload: " + (e.message || e) + ". Try it again.";
+      pick.disabled = false; bar.style.display = "none";
+    }
+  }
+}
+
 // ---------- Video detail modal ----------
 // The "Airtable, but every row is a video card" piece: one shared detail
 // view for a video record, used by the client portal, operator dashboard,
@@ -466,6 +702,7 @@ function ensureModalRoot() {
 }
 function closeVideoModal() {
   const root = document.getElementById("videoModalRoot");
+  if (root) root.querySelectorAll("video").forEach(v => { if (!v.paused) v.pause(); });
   if (root) root.classList.add("hidden");
 }
 // ---------- Date picker: Month · Day · Year dropdowns ----------
@@ -520,6 +757,7 @@ function wireDateSelects(root) {
 function openModal(html) {
   ensureModalRoot();
   const box = document.getElementById("videoModalBox");
+  box.classList.remove("modal-wide");
   box.innerHTML = `<div class="modal-close" onclick="closeVideoModal()">✕</div>` + html;
   wireDateSelects(box);
   document.getElementById("videoModalRoot").classList.remove("hidden");
@@ -543,6 +781,7 @@ function openVideoModal(client, video, opts) {
   const linkLabels = { root: "Client folder", footageUploads: "Raw footage", finalEdits: "Finished video folder", brandVoice: "Brand guidelines", hooks: "Hooks", assets: "Assets", customerData: "Customer data", contentIdeas: "Content ideas" };
   const instructions = opts.hideEditorBrief ? "" : editorInstructions(video);
 
+  document.getElementById("videoModalBox").classList.remove("modal-wide");
   document.getElementById("videoModalBox").innerHTML = `
     <div class="modal-close" onclick="closeVideoModal()">✕</div>
     <h2>${escapeHtml(video.title || video.id)}</h2>

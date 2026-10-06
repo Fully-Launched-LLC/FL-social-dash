@@ -70,7 +70,7 @@ const edCard = (p, t) => $$(p, "#queueList .card").find(c => c.querySelector("[d
 const modal = p => $(p, "#videoModalBox");
 const modalOpen = p => !$(p, "#videoModalRoot").classList.contains("hidden");
 const statusOf = async t => (await db.query("select status, note, concept_approved_at, caption, on_screen_caption, editor_id, due_to_edit::text, post_date::text, filmed_by from social_videos where title=$1", [t])).rows[0];
-const count = async (where, params = []) => (await db.query(`select count(*)::int n from social_videos where ${where}`, params)).rows[0].n;
+const count = async (where, params = [], from = "social_videos") => (await db.query(`select count(*)::int n from ${from} where ${where}`, params)).rows[0].n;
 const allPages = [];
 const track = p => { allPages.push(p); return p; };
 // Client portal: the inline "Suggest changes" / "Request changes" box.
@@ -201,12 +201,26 @@ for (const i of idx) {
 chk("all with the editor", (await count("status='with_editor' and editor_id=$1", [U.ed])) === 30);
 
 // ── 4. Editor ──
-// Finished → "Is the finished video in Google Drive?" → yes → sent.
+// Finished → upload the finished video → send → sent.
+async function dropVideo(p, name) {
+  const zone = $(p, "#videoModalBox .rv-upload");
+  if (!zone) throw new Error("no upload box");
+  const ev = new p.w.Event("drop", { bubbles: true, cancelable: true });
+  ev.dataTransfer = { files: [new p.w.File(["x"], name, { type: "video/mp4" })] };
+  zone.dispatchEvent(ev); await settle();
+}
 async function finishOne(ed, t) {
   await click(btn(edCard(ed, t), "Finished"), "finish " + t);
-  await click($(ed, "#efYes"), "it's in drive " + t);
+  await dropVideo(ed, t + ".mp4");
+  await click($(ed, "#efYes"), "send " + t);
   await click($(ed, "#efDone"), "sent " + t);
 }
+// The review window: a note at the current moment, then a bottom button.
+async function leaveNote(p, text) {
+  $(p, "#videoModalBox .rv-compose textarea").value = text;
+  await click($(p, "#videoModalBox .rv-add"), "add note " + text);
+}
+const reviewBtn = (p, label) => $$(p, "#videoModalBox .rv-actions button").find(b => b.textContent.startsWith(label));
 async function editorFinish(list) {
   const ed = track(await ED());
   for (const i of list) await finishOne(ed, title(i));
@@ -214,17 +228,17 @@ async function editorFinish(list) {
 }
 let ed = track(await ED());
 const e0 = edCard(ed, title(0));
-chk("editor card: edit-by, instructions, brand guidelines, raw footage, finished folder",
+chk("editor card: edit-by, instructions, brand guidelines, raw footage, upload on Finished",
   e0.textContent.includes(ed.w.niceDate(plus(TODAY, 7))) && e0.textContent.includes("Cut it like this: 1") && !!e0.querySelector('a[href="https://docs/fl-brand"]')
-  && !!e0.querySelector('a[href="https://drive/fl-footage"]') && !!e0.querySelector('a[href="https://drive/fl-final"]'));
+  && !!e0.querySelector('a[href="https://drive/fl-footage"]') && e0.textContent.includes("upload the finished video there"));
 // Backing out: "Not yet" leaves it with the editor.
 await click(btn(e0, "Finished"), "finish (not yet)");
-chk("editor asked to confirm it's in Google Drive, with the folder link", $(ed, "#videoModalBox").textContent.includes("Is the finished video in Google Drive?")
-  && !!$(ed, '#videoModalBox a[href="https://drive/fl-final"]') && !ed.ui.confirms.length);
+chk("editor asked for the finished video; Send waits for it", $(ed, "#videoModalBox").textContent.includes("Upload the finished video")
+  && $(ed, "#efYes").disabled && !ed.ui.confirms.length);
 await click($(ed, "#efNo"), "not yet");
 chk("not yet: still with the editor", (await statusOf(title(0))).status === "with_editor");
 await editorFinish(idx);
-chk("all back to Tait", (await count("status='in_review'")) === 30);
+chk("all back to Tait, each with its uploaded cut", (await count("status='in_review' and review_video_path like $1 and review_video_name like 'Post %.mp4'", [FL + "/%"])) === 30);
 
 // ── 5. Tait: revisions, or approve + captions ──
 async function approveWithCaption(p, i) {
@@ -236,14 +250,15 @@ async function approveWithCaption(p, i) {
 op = track(await OP());
 for (const i of idx) {
   if (V.opRev.includes(i)) {
-    await click(btn(opRow(op, "#editsList", title(i)), "Revisions needed"), "revisions " + i);
-    $(op, '#videoModalBox [data-f="revisions"]').value = "Tighten the intro " + i;
-    await click($(op, "#rvSave"), "send revisions " + i);
+    await click(btn(opRow(op, "#editsList", title(i)), "Review & leave notes"), "review " + i);
+    await leaveNote(op, "Tighten the intro " + i);
+    await click(reviewBtn(op, "Send 1 change to the editor"), "send revisions " + i);
   } else await approveWithCaption(op, i);
 }
 if (V.opRev.length) {
   ed = track(await ED());
-  for (const i of V.opRev) chk(`editor sees revisions #${i}`, edCard(ed, title(i))?.textContent.includes("Tighten the intro " + i));
+  for (const i of V.opRev) chk(`editor sees revisions #${i}, with the time`, edCard(ed, title(i))?.textContent.includes("0:00  Tighten the intro " + i));
+  for (const i of V.opRev) chk(`operator note saved #${i}`, (await count("v.title=$1 and c.author_role='operator' and c.at_seconds=0 and c.video_path=v.review_video_path", [title(i)], "social_video_comments c join social_videos v on v.id=c.video_id")) === 1);
   await editorFinish(V.opRev);
   op = track(await OP());
   for (const i of V.opRev) await approveWithCaption(op, i);
@@ -254,14 +269,22 @@ chk("all 30 with the client, both captions", (await count("status='client_review
 cl = track(await CL());
 chk("Finished videos to approve (30)", tabsText(cl).includes("Finished videos to approve (30)"), tabsText(cl));
 const fr = portalCard(cl, "#listFinal", title(0));
-chk("final card: watch link + both captions, read-only", fr && !!fr.querySelector('a[href="https://drive/fl-final"]')
+chk("final card: Review the video + both captions, read-only", fr && !fr.querySelector('a[href="https://drive/fl-final"]')
   && fr.textContent.includes("Caption 1") && fr.textContent.includes("On screen 1") && !fr.querySelector("[data-cap]")
-  && Array.from(fr.querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Approve for posting|Request changes to the video");
+  && Array.from(fr.querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Review the video|Approve for posting");
 chk("All lists the finished videos to approve", $(cl, '[data-panel="final"]').style.display !== "none" && firstTab(cl) === "All (30)");
 for (const i of idx) {
   const card = portalCard(cl, "#listFinal", title(i));
   if (V.clientRev.includes(i)) {
-    await sendNote(cl, card, "Request changes to the video", "Use the other take " + i);
+    await click(btn(card, "Review the video"), "review " + i);
+    chk(`review window: the uploaded cut, no notes yet, Send waits for one #${i}`, $(cl, "#videoModalBox video").src.startsWith("https://signed/" + FL)
+      && $(cl, "#videoModalBox .rv-list").textContent.includes("No notes yet") && reviewBtn(cl, "Send changes").disabled);
+    await leaveNote(cl, "Use the other take " + i);
+    await leaveNote(cl, "Louder music " + i);
+    chk(`two notes listed #${i}`, $$(cl, "#videoModalBox .rv-note").length === 2 && !reviewBtn(cl, "Send 2 changes").disabled);
+    await click($(cl, "#videoModalBox [data-del]"), "delete a note " + i); // the first one: "Use the other take"
+    chk(`deleted one #${i}`, $$(cl, "#videoModalBox .rv-note").length === 1);
+    await click(reviewBtn(cl, "Send 1 change to the editor"), "send changes " + i);
     await dismissThanks(cl, "make those changes");
     continue;
   }
@@ -270,7 +293,8 @@ for (const i of idx) {
 }
 if (V.clientRev.length) {
   ed = track(await ED());
-  for (const i of V.clientRev) chk(`editor sees the client's change #${i}`, edCard(ed, title(i))?.textContent.includes("Use the other take " + i));
+  for (const i of V.clientRev) chk(`editor sees the client's change, with the time, and can watch with the notes #${i}`,
+    edCard(ed, title(i))?.textContent.includes("0:00  Louder music " + i) && !edCard(ed, title(i)).textContent.includes("other take") && !!btn(edCard(ed, title(i)), "Watch with the notes"));
   await editorFinish(V.clientRev);
   op = track(await OP());
   for (const i of V.clientRev) { await click(btn(opRow(op, "#editsList", title(i)), "Approve & add captions"), "again " + i); await click($(op, "#aeSave"), "resend " + i); }
@@ -283,7 +307,7 @@ chk("all 30 ready to post", (await count("status='ready_to_post'")) === 30);
 op = track(await OP());
 chk("no separate Ready to Post page", !$(op, "#view-post") && !$$(op, ".nav-item").some(n => n.textContent.includes("Ready to Post")));
 const p0 = $$(op, "#todoPostList > .card")[0];
-chk("To Do → Ready to post: date, both captions, finished video", p0 && /Post \d{4}-\d{2}-\d{2}/.test(p0.textContent) && p0.textContent.includes("Caption") && p0.textContent.includes("On-screen caption") && !!p0.querySelector('a[href="https://drive/fl-final"]'));
+chk("To Do → Ready to post: date, both captions, download the video", p0 && /Post \d{4}-\d{2}-\d{2}/.test(p0.textContent) && p0.textContent.includes("Caption") && p0.textContent.includes("On-screen caption") && !!btn(p0, "Download video"));
 for (let n = 0; n < V.post; n++) await click(btn($$(op, "#todoPostList > .card")[0], "Mark posted"), "post " + n);
 chk(`${V.post} posted`, (await count("status='posted'")) === V.post);
 

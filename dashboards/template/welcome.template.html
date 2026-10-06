@@ -50,7 +50,6 @@
 const params = new URLSearchParams(location.search);
 const RESET = params.get("mode") === "reset";
 const BUCKET = "onboarding";
-const RESUMABLE_OVER = 6 * 1024 * 1024;   // bytes; tus needs 6 MB pieces on Supabase
 let ME = null, ROLE = null, CLIENT = null, OB = null;
 let current = null;
 // Files in flight or done this visit, per drop zone: { name, size, path, pct, status: "uploading"|"done"|"error", error }
@@ -117,36 +116,8 @@ const setErr = (body, msg) => { const e = body.querySelector("[data-err]"); if (
 const fmtSize = n => n >= 1e9 ? (n / 1e9).toFixed(1) + " GB" : n >= 1e6 ? (n / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1e3)) + " KB";
 
 // ---------- uploads ----------
-// Storage keys allow a limited set of characters; keep names readable.
-const safeName = s => String(s || "file").replace(/[^A-Za-z0-9._\-()\/]+/g, "_").replace(/_+/g, "_").replace(/^\/+/, "");
-async function uploadFile(path, file, onProgress) {
-  const contentType = file.type || "application/octet-stream";
-  if (window.tus && file.size > RESUMABLE_OVER) {
-    const { data } = await sbClient.auth.getSession();
-    const token = data && data.session && data.session.access_token;
-    await new Promise((resolve, reject) => {
-      const up = new tus.Upload(file, {
-        endpoint: window.SUPABASE_CONFIG.url + "/storage/v1/upload/resumable",
-        retryDelays: [0, 3000, 5000, 10000, 20000],
-        headers: { authorization: "Bearer " + token, "x-upsert": "false" },
-        uploadDataDuringCreation: true,
-        removeFingerprintOnSuccess: true,
-        metadata: { bucketName: BUCKET, objectName: path, contentType, cacheControl: "3600" },
-        chunkSize: RESUMABLE_OVER,
-        onError: reject,
-        onProgress: (sent, total) => onProgress && onProgress(Math.round(sent / total * 100)),
-        onSuccess: resolve,
-      });
-      up.findPreviousUploads().then(prev => { if (prev.length) up.resumeFromPreviousUpload(prev[0]); up.start(); });
-    });
-    return path;
-  }
-  onProgress && onProgress(5);
-  const { error } = await sbClient.storage.from(BUCKET).upload(path, file, { contentType, upsert: false });
-  if (error) throw error;
-  onProgress && onProgress(100);
-  return path;
-}
+// Full quality, resumable over 6 MB: uploadToBucket and safeName in shell.js.
+const uploadFile = (path, file, onProgress) => uploadToBucket(BUCKET, path, file, onProgress);
 const uploading = () => UPLOADS.brand.concat(UPLOADS.footage).some(u => u.status === "uploading") || memo.state === "uploading";
 window.addEventListener("beforeunload", e => { if (uploading()) { e.preventDefault(); e.returnValue = ""; } });
 

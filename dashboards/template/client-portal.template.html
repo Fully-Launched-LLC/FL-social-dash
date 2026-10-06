@@ -299,7 +299,8 @@ function clientCardBody(video) {
     ${clientFilmsIt && raw ? `<div class="meta" style="margin-top:10px">${raw.own ? "Upload your clips for this video to its footage folder." : `Upload your clips to your footage folder, with file names starting with <b>${escapeHtml(video.title || "the video title")}</b>.`}</div>` : ""}
     ${final ? fieldRow("On-screen caption", video.onScreenCaption) + fieldRow("Caption", video.caption) : ""}
     <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-      ${watch ? `<a class="btn primary" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${video.finalCutUrl ? "Watch the video" : "Watch it in the finished video folder"}</a>` : ""}
+      ${final && video.reviewVideoPath ? `<button class="primary" data-review>Review the video</button>`
+        : watch ? `<a class="btn primary" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${video.finalCutUrl ? "Watch the video" : "Watch it in the finished video folder"}</a>` : ""}
       ${clientFilmsIt && raw ? `<a class="btn" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">Upload footage</a>` : ""}
     </div>
     <div class="note-box" style="display:none;margin-top:12px">
@@ -313,8 +314,13 @@ function clientCardBody(video) {
 // of a browser prompt.
 function wireActions(root, video) {
   const actions = root.querySelector(".actions"), noteBox = root.querySelector(".note-box");
+  const review = root.querySelector("[data-review]");
+  if (review) review.onclick = () => openClientReview(video);
   actionsFor(video).forEach(key => {
     const a = VIDEO_ACTIONS[key];
+    // With the video uploaded here, changes are notes on the video itself
+    // (Review the video), not one text box.
+    if (key === "request_revisions" && video.reviewVideoPath) return;
     const b = document.createElement("button");
     b.textContent = a.label;
     b.className = a.destructive ? "reject" : a.needsNote ? "" : "primary";
@@ -340,6 +346,25 @@ function openNoteBox(root, noteBox, video, key) {
     if (!text.value.trim()) { text.focus(); text.placeholder = "Write a few words first."; return; }
     doAction(key, video.id, send, text.value.trim());
   };
+}
+// The finished video, Frame.io style (openReviewPlayer in shell.js): they
+// pause where something should change and leave a note pinned to that
+// moment. "Send changes" sends every note, with its time, to the editor
+// (request_revisions; the note lists them), or they approve it for posting.
+function openClientReview(video) {
+  const by = IS_OPERATOR ? "Fully Launched (for " + CLIENT.name + ")" : (CLIENT.contact_name || CLIENT.name);
+  const changes = n => n.length ? `Send ${n.length} change${n.length === 1 ? "" : "s"} to the editor` : "Send changes to the editor";
+  openReviewPlayer(video, {
+    intro: "Play the video. Wherever something should change, pause and type a note: it's pinned to that exact moment. Then send your changes, or approve it for posting.",
+    notesBy: ["client"], canNote: true, authorRole: "client", authorName: by,
+    buttons: [
+      { label: "Approve for posting", cls: "primary", onClick: (notes, b) => notes.length
+          ? confirmStep("Approve it with notes left?", `You've left ${notes.length} note${notes.length === 1 ? "" : "s"}. Approving posts the video as it is, and the notes aren't sent.`,
+              "Approve for posting", () => doAction("approve_final", video.id, null))
+          : doAction("approve_final", video.id, b) },
+      { label: changes, cls: "reject", needsNotes: true, onClick: (notes, b) => doAction("request_revisions", video.id, b, reviewNotesText(notes)) },
+    ],
+  });
 }
 function videoCard(video) {
   const card = document.createElement("div");
