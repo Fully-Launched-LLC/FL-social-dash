@@ -446,7 +446,8 @@ button.big { padding:14px 40px; font-size:16px; }
 @media (max-width:760px) { .tour-card:not(.tour-bookmark) { left:16px !important; right:auto !important; top:auto !important; bottom:16px !important; } }
 
 
-/* Finished video review (Frame.io style): the video and its timeline of
+/* Finished video review (Frame.io style; the video streams from Google
+   Drive): the video and its timeline of
    notes on the left, the notes and the note box on the right; stacked on
    phones. Each note is a gold mark on the timeline. */
 .modal-box.modal-wide { max-width:1120px; }
@@ -478,9 +479,13 @@ button.big { padding:14px 40px; font-size:16px; }
 .rv-pin { display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--sub); }
 .rv-pin input { width:auto; }
 .rv-at { font-weight:700; color:var(--gold); }
-.rv-upload { border:2px dashed var(--line-2); border-radius:10px; padding:14px; margin:4px 0 14px; }
-.rv-upload.drag { border-color:var(--gold); }
-.rv-upload .rv-picked { margin-left:8px; }
+.rv-frame { width:100%; aspect-ratio:16/9; max-height:66vh; border:0; border-radius:10px; background:#000; display:block; }
+/* Timed automatically by the player, or typed when it's Drive's player. */
+.rv-typed { display:none; }
+.rv-typed-mode .rv-auto { display:none; }
+.rv-typed-mode .rv-typed { display:flex; }
+.rv-time-in { width:64px; padding:4px 6px; font:inherit; font-size:0.85rem; }
+.rv-typed .meta { font-size:0.75rem; }
 @media (max-width:860px) {
   .rv { grid-template-columns:1fr; }
   .rv-side { max-height:none; }

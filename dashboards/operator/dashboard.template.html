@@ -6,7 +6,6 @@
 <title>Fully Launched — Operator</title>
 <style>/*__SHELL_CSS__*/</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <script src="/supabase/config.js"></script>
 </head>
 <body>
@@ -228,43 +227,18 @@ async function sendToEditor(id, btn) {
   if (!editorId) { alert("Pick an editor first."); return; }
   await updateVideo(id, { editorId, status: "with_editor" });
 }
-// Revisions live in editor_brief.revisions, which only the editor's page
-// and this one show — never the client portal (unlike `note`).
-function revisionsNeeded(id) {
-  const x = findVideo(id);
-  if (!x) return;
-  const v = x.video;
-  const box = openModal(`
-    <h2>Revisions needed</h2>
-    <div class="meta" style="margin-bottom:12px">${escapeHtml(x.client.name)} · ${escapeHtml(v.title || "")}. The editor sees this on the video card. The client never does.</div>
-    ${textField("revisions", "What needs to change", "", 6)}
-    <div class="auth-error" id="rvError"></div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="primary" id="rvSave">Send back to the editor</button>
-      <button onclick="closeVideoModal()">Cancel</button>
-    </div>`);
-  box.querySelector("#rvSave").onclick = async e => {
-    const revisions = box.querySelector('[data-f="revisions"]').value.trim();
-    if (!revisions) { box.querySelector("#rvError").textContent = "Write what needs to change first."; return; }
-    e.target.disabled = true; e.target.textContent = "Saving…";
-    const ok = await updateVideo(id, { editorBrief: Object.assign({}, v.editorBrief, { revisions }), status: "with_editor" });
-    if (ok) closeVideoModal(); else { e.target.disabled = false; e.target.textContent = "Send back to the editor"; }
-  };
-}
-// The finished cut, Frame.io style (openReviewPlayer in shell.js). At Edit
-// review Tait leaves his own notes, pinned to moments, and sends them to
-// the editor as the revisions, or approves it. After that it's read only,
-// with every note left on this cut (the client's included).
+// Edit review, Frame.io style (openReviewPlayer in shell.js; the video
+// streams from Drive). Tait leaves notes pinned to moments and sends them
+// to the editor as the revisions (editor_brief.revisions, which only the
+// editor's page and this one show — never the client portal), or approves
+// it and adds the captions.
 function operatorReview(id) {
   const x = findVideo(id);
   if (!x) return;
   const v = x.video;
-  if (v.status !== "in_review") {
-    openReviewPlayer(v, { intro: `${escapeHtml(x.client.name)} · ${escapeHtml(STATUS_LABEL[v.status] || v.status)}. Every note left on this cut.` });
-    return;
-  }
   const changes = n => n.length ? `Send ${n.length} change${n.length === 1 ? "" : "s"} to the editor` : "Send changes to the editor";
   openReviewPlayer(v, {
+    folders: x.client.driveFolders,
     intro: `${escapeHtml(x.client.name)} · Edit review. Pause where something should change and leave a note; the editor gets them with their times. The client never sees these.`,
     notesBy: ["operator"], canNote: true, authorRole: "operator", authorName: (ME && ME.name) || "Operator",
     buttons: [
@@ -276,19 +250,6 @@ function operatorReview(id) {
         } },
     ],
   });
-}
-// Tait uploads a finished cut himself (edited outside the dashboard, or a
-// fix): it becomes the cut everyone reviews.
-function uploadFinishedVideo(id) {
-  const x = findVideo(id);
-  if (!x) return;
-  const box = openModal(`
-    <h2>${x.video.reviewVideoPath ? "Replace the finished video" : "Upload the finished video"}</h2>
-    <p style="line-height:1.55;margin:8px 0 12px">${escapeHtml(x.client.name)} · <b>${escapeHtml(x.video.title || "")}</b>. The client watches this one and leaves their notes on it.${x.video.reviewVideoPath ? " Notes on the old cut stay with the old cut." : ""}</p>
-    ${reviewUploadHtml()}
-    <div class="modal-actions"><button class="primary" id="ufDone" disabled>Done</button><button onclick="closeVideoModal()">Cancel</button></div>`);
-  wireReviewUpload(box, x.video, async () => { box.querySelector("#ufDone").disabled = false; await loadLiveData(); });
-  box.querySelector("#ufDone").onclick = () => openOperatorVideoModal(id);
 }
 // Approving an edit is where the posting details go on: caption,
 // on-screen caption, platforms and post date, then it's off to the client
@@ -402,13 +363,10 @@ function rowHtml(x, rightHtml) {
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${watchHtml(v, watch)}${rightHtml || statusBadge(v.status, STATUS_LABEL)}</div>
   </div>`;
 }
-// Once there's a finished cut: Review (the uploaded cut, with its notes),
-// else the Drive link as before.
+// The finished video's Drive link, once there is one.
 function watchHtml(v, watch) {
-  if (!["in_review", "client_review", "ready_to_post", "posted"].includes(v.status)) return "";
-  // (at Edit review, "Review & leave notes" is already among its buttons)
-  if (v.reviewVideoPath) return v.status === "in_review" ? "" : smallBtn("Review", `operatorReview('${v.id}')`);
-  return watch ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${watch.label}</a>` : "";
+  return watch && ["in_review", "client_review", "ready_to_post", "posted"].includes(v.status)
+    ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${watch.label}</a>` : "";
 }
 function smallBtn(label, onclick, cls) {
   return `<button class="${cls || ""}" style="font-size:0.78rem;padding:5px 10px" onclick="${onclick}">${escapeHtml(label)}</button>`;
@@ -443,7 +401,7 @@ function operatorActionsHtml(x, inCard) {
   }
   if (isReadyForEditor(x)) out.push(editorSelect(v.editorId), smallBtn("Send to editor", `sendToEditor('${id}', this)`, "primary"));
   if (v.status === "in_review") {
-    out.push(v.reviewVideoPath ? smallBtn("Review & leave notes", `operatorReview('${id}')`) : smallBtn("Revisions needed", `revisionsNeeded('${id}')`, "reject"),
+    out.push(smallBtn("Review & leave notes", `operatorReview('${id}')`),
       smallBtn("Approve & add captions", `approveEdit('${id}')`, "primary"));
   }
   if (v.status === "client_review") out.push(smallBtn("Approve for client", `approveForClient('${id}', 'ready_to_post', 'video')`, "primary"));
@@ -456,7 +414,6 @@ function openOperatorVideoModal(id) {
   if (!x) return;
   const abandoned = x.video.status === "rejected";
   const actions = (abandoned ? smallBtn("Restore", `restoreVideo('${id}')`, "primary") : operatorActionsHtml(x, true)) +
-    (abandoned ? "" : smallBtn(x.video.reviewVideoPath ? "Replace finished video" : "Upload finished video", `uploadFinishedVideo('${id}')`)) +
     smallBtn("Edit", `closeVideoModal();openVideoForm('${id}')`) +
     `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/clients/${encodeURIComponent(x.client.slug)}" target="_blank" rel="noopener">Open portal</a>` +
     (x.video.editorId && x.video.status === "with_editor" ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/editor/dashboard.html?editor=${encodeURIComponent(x.video.editorId)}" target="_blank" rel="noopener">Open editor portal</a>` : "") +
@@ -815,25 +772,13 @@ function postCardHtml(x) {
       ${v.onScreenCaption ? `<div style="margin-top:8px"><b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">On-screen caption</b><div style="white-space:pre-wrap;font-size:0.9rem">${escapeHtml(v.onScreenCaption)}</div></div>` : ""}
       ${v.caption ? `<div style="margin-top:8px"><b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">Caption</b><div style="white-space:pre-wrap;font-size:0.9rem">${escapeHtml(v.caption)}</div></div>` : ""}
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-        ${v.reviewVideoPath ? smallBtn("Download video", `downloadFinished('${v.id}', this)`)
-          : watch ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${watch.label}</a>` : ""}
+        ${watch ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${watch.label}</a>` : ""}
         ${v.caption ? smallBtn("Copy caption", `copyCaption('${v.id}', this)`) : ""}
         ${smallBtn("Mark posted", `markPosted('${v.id}')`, "primary")}
       </div>
     </div>`;
 }
 
-// The finished file, for posting: a short-lived link that downloads it
-// under its original name.
-async function downloadFinished(id, btn) {
-  const x = findVideo(id);
-  if (!x || !x.video.reviewVideoPath) return;
-  btn.disabled = true;
-  const { data, error } = await sbClient.storage.from(REVIEW_BUCKET).createSignedUrl(x.video.reviewVideoPath, 600, { download: x.video.reviewVideoName || true });
-  btn.disabled = false;
-  if (error || !data) { alert("Couldn't get the video: " + ((error && error.message) || "unknown error")); return; }
-  location.href = data.signedUrl;
-}
 async function copyCaption(id, btn) {
   const x = findVideo(id);
   try { await navigator.clipboard.writeText(x.video.caption || ""); btn.textContent = "Copied ✓"; }

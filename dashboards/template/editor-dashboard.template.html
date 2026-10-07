@@ -6,7 +6,6 @@
 <title>Fully Launched — Editor</title>
 <style>/*__SHELL_CSS__*/</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <script src="/supabase/config.js"></script>
 </head>
 <body>
@@ -107,19 +106,22 @@ function queue() {
   return ROLE === "operator" && editorFilter !== "all" ? VIDEOS.filter(x => x.video.editorId === editorFilter) : VIDEOS;
 }
 
-// The finished video is uploaded right here (migration 014), so the
-// operator and the client can review it with notes pinned to moments in
-// it. The pop-up takes the file, then sends it to the operator.
+// The finished video goes in the client's finished video folder, named
+// after the video, so there's no link to paste; the operator and client
+// open it from that folder. Before it's sent, a pop-up makes sure it's
+// really in Google Drive, with a button to open that folder.
 function finishVideo(videoId, btn) {
   const x = VIDEOS.find(y => y.video.id === videoId);
   if (!x) return;
-  const t = x.video.title || "this video";
+  const t = x.video.title || "this video", f = x.client.driveFolders || {};
   const box = openModal(`
-    <h2>Upload the finished video</h2>
-    <p style="line-height:1.55;margin:8px 0 12px">Upload the finished cut of <b>${escapeHtml(t)}</b> for ${escapeHtml(x.client.name)}. The operator and the client watch it and leave their notes on it here.</p>
-    ${reviewUploadHtml()}
-    <div class="modal-actions"><button class="primary" id="efYes" disabled>Send to the operator</button><button id="efNo">Not yet</button></div>`);
-  wireReviewUpload(box, x.video, () => { box.querySelector("#efYes").disabled = false; });
+    <h2>Is the finished video in Google Drive?</h2>
+    <p style="line-height:1.55;margin:8px 0 14px">Before you send <b>${escapeHtml(t)}</b> to the operator, make sure the finished video is uploaded to
+      ${escapeHtml(x.client.name)}'s finished video folder, named <b>${escapeHtml(t)}</b>. The operator and the client watch it from there.</p>
+    ${f.finalEdits
+      ? `<a class="btn" href="${escapeHtml(f.finalEdits)}" target="_blank" rel="noopener" style="margin-bottom:16px">Open the finished video folder</a>`
+      : `<p style="color:var(--red);margin:0 0 16px">This client has no finished video folder yet. Ask the operator to add one.</p>`}
+    <div class="modal-actions"><button class="primary" id="efYes">Yes — it's in Google Drive, send it</button><button id="efNo">Not yet</button></div>`);
   box.querySelector("#efNo").onclick = closeVideoModal;
   box.querySelector("#efYes").onclick = e => { e.target.disabled = true; e.target.textContent = "Sending…"; sendFinished(videoId, btn, t); };
 }
@@ -207,21 +209,24 @@ function editorCardBody(client, video) {
   return `
     ${revisionsBox(video)}
     ${fieldBlock("Editing instructions", editorInstructions(video))}
-    <div class="meta" style="margin-top:10px">When it's done, click <b>${escapeHtml(VIDEO_ACTIONS.mark_delivered.label)}</b> and upload the finished video there.</div>
+    <div class="meta" style="margin-top:10px">${f.finalEdits
+      ? `Upload the finished video to the finished video folder and name it <b>${escapeHtml(video.title || "after the video")}</b>.`
+      : `<b style="color:var(--red)">This client has no finished video folder yet.</b> Ask the operator to add one before you finish this.`}</div>
     <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-      ${video.reviewVideoPath && hasRevisions(video) ? `<button data-notes="${video.id}">Watch with the notes</button>` : ""}
+      ${hasRevisions(video) ? `<button data-notes="${video.id}">Watch with the notes</button>` : ""}
       ${f.brandVoice ? `<a class="btn" href="${escapeHtml(f.brandVoice)}" target="_blank" rel="noopener">Brand guidelines</a>` : ""}
       ${raw ? `<a class="btn" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">${raw.label}</a>` : ""}
+      ${f.finalEdits ? `<a class="btn" href="${escapeHtml(f.finalEdits)}" target="_blank" rel="noopener">Finished video folder</a>` : ""}
     </div>
     ${(client.documents || []).length ? `<div class="meta" style="margin:14px 0 6px">${escapeHtml(client.name)}'s documents</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">${client.documents.map(d => `<a class="btn" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.title)}</a>`).join("")}</div>` : ""}`;
 }
 
-// The last cut with every note on it (client's and operator's), each
-// pinned to its moment. Read only.
+// The cut that was sent back, with the notes on it pinned to their
+// moments (the client's or the operator's). Read only.
 function watchWithNotes(videoId) {
   const x = VIDEOS.find(y => y.video.id === videoId);
-  if (x) openReviewPlayer(x.video, { intro: "The notes on your last cut. Click a time to jump to it." });
+  if (x) openReviewPlayer(x.video, { folders: x.client.driveFolders, which: "sent", intro: "The notes on your last cut. Click a time to jump to it." });
 }
 function wireNotesButton(root) {
   root.querySelectorAll("[data-notes]").forEach(b => b.onclick = () => watchWithNotes(b.dataset.notes));

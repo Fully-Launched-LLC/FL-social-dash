@@ -61,6 +61,7 @@ export function makeHarness(db) {
         select(cols = "*") { if (st.op === "select") st.cols = cols; else st.returning = cols; return b; },
         eq(c, v) { st.where.push(`${q(c)} = ${p(v)}`); return b; },
         in(c, arr) { st.where.push(`${q(c)} = any(${p(arr)})`); return b; },
+        is(c, v) { if (v === null) st.where.push(`${q(c)} is null`); else throw new Error("unsupported is"); return b; },
         not(c, op, v) { if (op === "is" && v === null) st.where.push(`${q(c)} is not null`); else throw new Error("unsupported not"); return b; },
         order(c, o = {}) { st.order.push(`${q(c)} ${o.ascending === false ? "desc" : "asc"}${o.nullsFirst === false ? " nulls last" : ""}`); return b; },
         maybeSingle() { st.single = true; return b; },

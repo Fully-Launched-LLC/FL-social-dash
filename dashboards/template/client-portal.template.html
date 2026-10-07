@@ -285,7 +285,6 @@ function clientCardBody(video) {
   const clientFilmsIt = isIdea && fb === "client";
   const weFilmIt = isIdea && fb === "us";
   const final = video.status === "client_review";
-  const watch = final ? finishedVideoLink(video, DRIVE_FOLDERS) : null;
   const raw = rawFootageLink(video, DRIVE_FOLDERS);
   return `
     ${cardFacts(video, fb)}
@@ -299,8 +298,7 @@ function clientCardBody(video) {
     ${clientFilmsIt && raw ? `<div class="meta" style="margin-top:10px">${raw.own ? "Upload your clips for this video to its footage folder." : `Upload your clips to your footage folder, with file names starting with <b>${escapeHtml(video.title || "the video title")}</b>.`}</div>` : ""}
     ${final ? fieldRow("On-screen caption", video.onScreenCaption) + fieldRow("Caption", video.caption) : ""}
     <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-      ${final && video.reviewVideoPath ? `<button class="primary" data-review>Review the video</button>`
-        : watch ? `<a class="btn primary" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${video.finalCutUrl ? "Watch the video" : "Watch it in the finished video folder"}</a>` : ""}
+      ${final ? `<button class="primary" data-review>Review the video</button>` : ""}
       ${clientFilmsIt && raw ? `<a class="btn" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">Upload footage</a>` : ""}
     </div>
     <div class="note-box" style="display:none;margin-top:12px">
@@ -318,9 +316,9 @@ function wireActions(root, video) {
   if (review) review.onclick = () => openClientReview(video);
   actionsFor(video).forEach(key => {
     const a = VIDEO_ACTIONS[key];
-    // With the video uploaded here, changes are notes on the video itself
-    // (Review the video), not one text box.
-    if (key === "request_revisions" && video.reviewVideoPath) return;
+    // Changes are notes on the video itself (Review the video), not one
+    // text box.
+    if (key === "request_revisions") return;
     const b = document.createElement("button");
     b.textContent = a.label;
     b.className = a.destructive ? "reject" : a.needsNote ? "" : "primary";
@@ -355,6 +353,7 @@ function openClientReview(video) {
   const by = IS_OPERATOR ? "Fully Launched (for " + CLIENT.name + ")" : (CLIENT.contact_name || CLIENT.name);
   const changes = n => n.length ? `Send ${n.length} change${n.length === 1 ? "" : "s"} to the editor` : "Send changes to the editor";
   openReviewPlayer(video, {
+    folders: DRIVE_FOLDERS,
     intro: "Play the video. Wherever something should change, pause and type a note: it's pinned to that exact moment. Then send your changes, or approve it for posting.",
     notesBy: ["client"], canNote: true, authorRole: "client", authorName: by,
     buttons: [

@@ -308,7 +308,6 @@ const VIDEO_COLUMNS = {
   dueToFilm: "due_to_film", dueToEdit: "due_to_edit", postDate: "post_date",
   finalCutUrl: "final_cut_url", onScreenCaption: "on_screen_caption", filmedBy: "filmed_by",
   conceptApprovedBy: "concept_approved_by", conceptApprovedAt: "concept_approved_at",
-  reviewVideoPath: "review_video_path", reviewVideoName: "review_video_name", reviewVideoAt: "review_video_at",
   createdAt: "created_at", updatedAt: "updated_at",
 };
 // Columns a page may write directly. Only operators have direct write
@@ -449,19 +448,20 @@ function editorInstructions(video) {
 }
 
 // ---------- Finished video review (Frame.io style) ----------
-// The finished cut lives in the private 'finished-videos' bucket
-// (migration 014), at <client_id>/<video_id>/<file>, so the page can read
-// the player's exact time: pause anywhere, leave a note pinned to that
-// moment, see every note as a mark on the timeline, click one to jump
-// there. Notes (social_video_comments) belong to the cut they were left
-// on, so a new cut starts a clean round.
-const REVIEW_BUCKET = "finished-videos";
+// The finished video stays in Google Drive (Tait, 2026-10-07). The page
+// streams it from Drive into its own player (the Drive API, with the key in
+// social_settings, migration 014), so it can read the exact time: pause
+// anywhere, leave a note pinned to that moment, see every note as a mark on
+// the timeline, click one to jump there. If it can't stream (no key yet, a
+// folder that isn't shared by link, a format the browser can't play), it
+// shows Drive's own player and the reviewer types the time. Notes
+// (social_video_comments) stay open until the video moves on.
 const RESUMABLE_OVER = 6 * 1024 * 1024;   // bytes; tus needs 6 MB pieces on Supabase
 
 // Storage keys allow a limited set of characters; keep names readable.
 const safeName = s => String(s || "file").replace(/[^A-Za-z0-9._\-()\/]+/g, "_").replace(/_+/g, "_").replace(/^\/+/, "");
 // One file into a storage bucket, at full quality; anything over 6 MB goes
-// in resumable pieces (tus, loaded by pages that upload), so a big video
+// in resumable pieces (tus, loaded by pages that upload), so a big file
 // survives a shaky connection. onProgress gets 0 to 100.
 async function uploadToBucket(bucket, path, file, onProgress) {
   const contentType = file.type || "application/octet-stream";
@@ -498,18 +498,82 @@ function fmtTime(s) {
   const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, sec = String(s % 60).padStart(2, "0");
   return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
 }
+// What a reviewer types → seconds: "1:15", "75", "1:02:03". null when
+// blank; NaN when it isn't a time.
+function parseTime(str) {
+  const s = String(str || "").trim();
+  if (!s) return null;
+  if (!/^\d+(:\d{1,2}){0,2}$/.test(s)) return NaN;
+  return s.split(":").reduce((t, part) => t * 60 + Number(part), 0);
+}
 
-// The notes on a video's current cut, in time order (whole-video notes
-// last). roles: only notes by these authors (the client's own review
-// shows the client's notes; Tait's own review shows his).
-async function loadReviewNotes(video, roles) {
-  if (!video.reviewVideoPath) return [];
-  let q = sbClient.from("social_video_comments").select("*").eq("video_id", video.id).eq("video_path", video.reviewVideoPath);
+// A Google Drive link → { id, kind: "file" | "folder" }, or null.
+function driveRef(url) {
+  const s = String(url || "");
+  let m = s.match(/\/folders\/([A-Za-z0-9_-]{10,})/);
+  if (m) return { id: m[1], kind: "folder" };
+  m = s.match(/\/file\/d\/([A-Za-z0-9_-]{10,})/) || (/drive\.google\.com/.test(s) && s.match(/[?&]id=([A-Za-z0-9_-]{10,})/));
+  return m ? { id: m[1], kind: "file" } : null;
+}
+
+// The Drive API key (social_settings 'google_api_key'), read once.
+let GOOGLE_KEY;
+async function googleKey() {
+  if (GOOGLE_KEY === undefined) {
+    const { data } = await sbClient.from("social_settings").select("value").eq("key", "google_api_key").maybeSingle();
+    GOOGLE_KEY = (data && data.value) || null;
+  }
+  return GOOGLE_KEY;
+}
+const DRIVE_API = "https://www.googleapis.com/drive/v3/files";
+// What's in a Drive folder shared by link, newest first.
+async function driveList(folderId, key) {
+  const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
+  const r = await fetch(`${DRIVE_API}?q=${q}&fields=files(id,name,mimeType,modifiedTime)&orderBy=modifiedTime%20desc&pageSize=200&key=${encodeURIComponent(key)}`);
+  if (!r.ok) throw new Error("Google Drive said " + r.status);
+  return (await r.json()).files || [];
+}
+const looseName = s => String(s || "").toLowerCase().replace(/\.[a-z0-9]{2,4}$/, "").replace(/[^a-z0-9]+/g, " ").trim();
+// The finished video's Drive file: the exact file if the operator linked
+// one; else the newest video in the video's own finished folder (if its
+// link is a folder); else, in the client's finished video folder, the
+// newest video named after it, or the newest video in a folder named
+// after it (editors name both after the video). null when it can't tell.
+async function findFinishedFile(video, folders) {
+  const own = driveRef(video.finalCutUrl);
+  if (own && own.kind === "file") return { id: own.id };
+  const key = await googleKey();
+  if (!key) return null;
+  const newestVideo = files => files.find(f => (f.mimeType || "").startsWith("video/")) || null;
+  try {
+    if (own) return newestVideo(await driveList(own.id, key));
+    const root = driveRef(folders && folders.finalEdits), title = looseName(video.title);
+    if (!root || root.kind !== "folder" || !title) return null;
+    const named = (await driveList(root.id, key)).filter(f => looseName(f.name).includes(title));
+    const file = newestVideo(named);
+    if (file) return file;
+    for (const f of named.filter(f => f.mimeType === "application/vnd.google-apps.folder")) {
+      const inner = newestVideo(await driveList(f.id, key));
+      if (inner) return inner;
+    }
+  } catch (e) { /* not shared by link, or Drive is down: Drive's own player instead */ }
+  return null;
+}
+
+const byTime = (a, b) => (a.at_seconds == null) - (b.at_seconds == null) || (Number(a.at_seconds) || 0) - (Number(b.at_seconds) || 0)
+  || String(a.created_at).localeCompare(String(b.created_at));
+// A video's notes, in time order (whole-video notes last). which: "open"
+// (this round's, still being written) or "sent" (the last round, as the
+// editor got it). roles: only notes by these authors.
+async function loadReviewNotes(video, which, roles) {
+  let q = sbClient.from("social_video_comments").select("*").eq("video_id", video.id);
+  q = which === "sent" ? q.not("closed_at", "is", null) : q.is("closed_at", null);
   if (roles) q = q.in("author_role", roles);
   const { data, error } = await q.order("created_at");
   if (error) throw new Error(error.message);
-  return (data || []).slice().sort((a, b) => (a.at_seconds == null) - (b.at_seconds == null)
-    || (Number(a.at_seconds) || 0) - (Number(b.at_seconds) || 0));
+  let notes = data || [];
+  if (which === "sent") { const last = notes.reduce((m, n) => n.closed_at > m ? n.closed_at : m, ""); notes = notes.filter(n => n.closed_at === last); }
+  return notes.slice().sort(byTime);
 }
 // The notes as one block of text, for request_revisions' note and the
 // editor's Revisions needed box: "0:12  Make the logo bigger".
@@ -518,32 +582,27 @@ function reviewNotesText(notes) {
 }
 
 // The review window. opts:
-//   title            heading (default: the video's title)
-//   intro            a line under it
-//   notesBy          which authors' notes to show (array of roles)
-//   canNote          true to leave notes
-//   authorRole       'client' | 'operator' | 'editor' (who new notes are by)
-//   authorName       shown on each note
-//   buttons          [{ label, cls, needsNotes, onClick(notes, btn) }] at
-//                    the bottom (needsNotes: off until there's a note)
+//   folders     the client's driveFolders (to find the finished file)
+//   title       heading (default: the video's title)
+//   intro       a line under it
+//   which       "open" (default) or "sent" notes; notesBy: only these authors
+//   canNote     true to leave notes; authorRole / authorName for new ones
+//   buttons     [{ label (text or notes => text), cls, needsNotes, onClick(notes, btn) }]
 async function openReviewPlayer(video, opts) {
   opts = opts || {};
   const box = openModal(`
     <h2>${escapeHtml(opts.title || video.title || "Review the video")}</h2>
     ${opts.intro ? `<div class="meta" style="margin:0 0 14px">${opts.intro}</div>` : ""}
     <div class="rv">
-      <div class="rv-stage">
-        <video class="rv-video" controls playsinline preload="metadata"></video>
-        <div class="rv-track" title="Click to jump there"><div class="rv-fill"></div><div class="rv-marks"></div></div>
-        <div class="rv-load meta">Loading the video…</div>
-      </div>
+      <div class="rv-stage"><div class="rv-load meta">Finding the video in Google Drive…</div></div>
       <div class="rv-side">
         <div class="rv-head"><b>Notes</b> <span class="rv-count meta"></span></div>
         <div class="rv-list"></div>
         ${opts.canNote ? `<div class="rv-compose">
           <textarea rows="3" placeholder="Pause where something should change, then type it here"></textarea>
           <div class="rv-compose-row">
-            <label class="rv-pin"><input type="checkbox" checked> At <span class="rv-at">0:00</span></label>
+            <label class="rv-pin rv-auto"><input type="checkbox" checked> At <span class="rv-at">0:00</span></label>
+            <label class="rv-pin rv-typed">At <input type="text" class="rv-time-in" placeholder="0:12" inputmode="numeric"> <span class="meta">blank = whole video</span></label>
             <button class="primary rv-add">Add note</button>
           </div>
           <div class="auth-error rv-err"></div>
@@ -552,40 +611,58 @@ async function openReviewPlayer(video, opts) {
     </div>
     <div class="modal-actions rv-actions" style="border:none;padding:16px 0 0;display:flex;gap:8px;flex-wrap:wrap"></div>`);
   box.classList.add("modal-wide");
-  const vid = box.querySelector(".rv-video"), track = box.querySelector(".rv-track"), fill = box.querySelector(".rv-fill"),
-    marks = box.querySelector(".rv-marks"), list = box.querySelector(".rv-list"), count = box.querySelector(".rv-count"),
-    load = box.querySelector(".rv-load"), actions = box.querySelector(".rv-actions");
-  let notes = [], duration = 0, lockedAt = null;
+  const stage = box.querySelector(".rv-stage"), list = box.querySelector(".rv-list"), count = box.querySelector(".rv-count"),
+    actions = box.querySelector(".rv-actions");
+  let notes = [], duration = 0, lockedAt = null, vid = null, marks = null, fill = null, cutRef = null;
 
-  const { data: signed, error: signErr } = await sbClient.storage.from(REVIEW_BUCKET).createSignedUrl(video.reviewVideoPath, 6 * 3600);
-  if (signErr || !signed) { load.textContent = "Couldn't load the video: " + ((signErr && signErr.message) || "unknown error"); }
-  else vid.src = signed.signedUrl;
-  vid.addEventListener("loadedmetadata", () => { duration = vid.duration || 0; load.remove(); drawMarks(); });
-  vid.addEventListener("error", () => { if (load.isConnected) load.textContent = "This video won't play in the browser. Ask us to export it as an MP4."; });
-  vid.addEventListener("timeupdate", () => {
-    if (duration) fill.style.width = (vid.currentTime / duration * 100) + "%";
-    if (lockedAt == null) setAt(vid.currentTime);
-    const near = notes.find(n => n.at_seconds != null && Math.abs(vid.currentTime - n.at_seconds) < 0.6);
-    list.querySelectorAll(".rv-note").forEach(el => el.classList.toggle("on", !!near && el.dataset.id === near.id));
-  });
-  track.addEventListener("click", e => {
-    if (!duration || e.target.closest(".rv-mark")) return;
-    const r = track.getBoundingClientRect();
-    vid.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * duration;
-  });
-  const jump = t => { vid.currentTime = Number(t) || 0; vid.pause(); lockedAt = null; setAt(vid.currentTime); };
+  // Typed times until the player can tell the time itself.
+  const setTyped = typed => box.classList.toggle("rv-typed-mode", typed);
+  setTyped(true);
+  const atEl = box.querySelector(".rv-at");
+  const setAt = t => { if (atEl) atEl.textContent = fmtTime(t); };
+
+  function showDrivePlayer(file, why) {
+    vid = null; setTyped(true);
+    const link = file ? `https://drive.google.com/file/d/${file.id}/view` : (finishedVideoLink(video, opts.folders) || {}).url;
+    stage.innerHTML = (file ? `<iframe class="rv-frame" src="https://drive.google.com/file/d/${encodeURIComponent(file.id)}/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>` : "")
+      + `<div class="meta" style="margin-top:8px">${why ? escapeHtml(why) + " " : ""}Pause it, then type the time you're on next to your note.</div>`
+      + (link ? `<a class="btn" style="margin-top:8px" href="${escapeHtml(link)}" target="_blank" rel="noopener">${file ? "Open it in Google Drive" : "Open the video in Google Drive"}</a>` : "");
+  }
+  function showOwnPlayer(file, key) {
+    stage.innerHTML = `<video class="rv-video" controls playsinline preload="metadata"></video>
+      <div class="rv-track" title="Click to jump there"><div class="rv-fill"></div><div class="rv-marks"></div></div>`;
+    vid = stage.querySelector("video"); marks = stage.querySelector(".rv-marks"); fill = stage.querySelector(".rv-fill");
+    const track = stage.querySelector(".rv-track");
+    vid.addEventListener("loadedmetadata", () => { duration = vid.duration || 0; setTyped(false); drawMarks(); });
+    vid.addEventListener("error", () => showDrivePlayer(file, "This video can't play here, so it's in Google's player."));
+    vid.addEventListener("timeupdate", () => {
+      if (duration) fill.style.width = (vid.currentTime / duration * 100) + "%";
+      if (lockedAt == null) setAt(vid.currentTime);
+      const near = notes.find(n => n.at_seconds != null && Math.abs(vid.currentTime - n.at_seconds) < 0.6);
+      list.querySelectorAll(".rv-note").forEach(el => el.classList.toggle("on", !!near && el.dataset.id === near.id));
+    });
+    track.addEventListener("click", e => {
+      if (!duration || e.target.closest(".rv-mark")) return;
+      const r = track.getBoundingClientRect();
+      vid.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * duration;
+    });
+    vid.src = `${DRIVE_API}/${encodeURIComponent(file.id)}?alt=media&key=${encodeURIComponent(key)}`;
+  }
+  const jump = t => { if (!vid) return; vid.currentTime = Number(t) || 0; vid.pause(); lockedAt = null; setAt(vid.currentTime); };
 
   function drawMarks() {
+    if (!marks) return;
     marks.innerHTML = duration ? notes.filter(n => n.at_seconds != null).map(n =>
       `<button type="button" class="rv-mark" data-t="${n.at_seconds}" style="left:${Math.min(100, n.at_seconds / duration * 100)}%" title="${escapeHtml(fmtTime(n.at_seconds) + "  " + n.body)}"></button>`).join("") : "";
     marks.querySelectorAll(".rv-mark").forEach(m => m.onclick = () => jump(m.dataset.t));
   }
+  let ME_UID = null;
   function drawList() {
     count.textContent = notes.length ? `(${notes.length})` : "";
     list.innerHTML = notes.length ? notes.map(n => `<div class="rv-note" data-id="${n.id}">
         ${n.at_seconds == null ? `<span class="rv-time whole">Whole video</span>` : `<button type="button" class="rv-time" data-t="${n.at_seconds}">${fmtTime(n.at_seconds)}</button>`}
         <div class="rv-body">${escapeHtml(n.body)}<div class="meta">${escapeHtml(n.author_name || "")}</div></div>
-        ${opts.canNote && n.author_id === (ME_UID || "") ? `<button type="button" class="rv-del" title="Delete this note" data-del="${n.id}">✕</button>` : ""}
+        ${opts.canNote && n.author_id === ME_UID ? `<button type="button" class="rv-del" title="Delete this note" data-del="${n.id}">✕</button>` : ""}
       </div>`).join("")
       : `<div class="empty" style="padding:14px 4px">${opts.canNote ? "No notes yet. Pause the video where something should change and type it below." : "No notes on this cut."}</div>`;
     list.querySelectorAll(".rv-time[data-t]").forEach(b => b.onclick = () => jump(b.dataset.t));
@@ -609,16 +686,11 @@ async function openReviewPlayer(video, opts) {
   }
   function redraw() { drawMarks(); drawList(); drawButtons(); }
 
-  // Who's writing, for "delete my own note".
-  let ME_UID = null;
-  try { const { data } = await sbClient.auth.getSession(); ME_UID = data && data.session && data.session.user.id; } catch (e) {}
-
   // Leaving a note: typing pauses the video and holds the time, like
   // Frame.io, so the note lands on the frame they were looking at.
-  const ta = box.querySelector(".rv-compose textarea"), atEl = box.querySelector(".rv-at"), pin = box.querySelector(".rv-pin input");
-  function setAt(t) { if (atEl) atEl.textContent = fmtTime(t); }
+  const ta = box.querySelector(".rv-compose textarea"), pin = box.querySelector(".rv-auto input"), typedIn = box.querySelector(".rv-time-in");
   if (ta) {
-    ta.addEventListener("focus", () => { if (!vid.paused) vid.pause(); lockedAt = vid.currentTime || 0; setAt(lockedAt); });
+    ta.addEventListener("focus", () => { if (vid && duration) { if (!vid.paused) vid.pause(); lockedAt = vid.currentTime || 0; setAt(lockedAt); } });
     ta.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); add(); } });
     box.querySelector(".rv-add").onclick = add;
   }
@@ -627,60 +699,32 @@ async function openReviewPlayer(video, opts) {
     const body = ta.value.trim();
     err.textContent = "";
     if (!body) { ta.focus(); return; }
-    const at = pin.checked ? Math.round((lockedAt != null ? lockedAt : vid.currentTime || 0) * 10) / 10 : null;
+    let at;
+    if (box.classList.contains("rv-typed-mode")) {
+      at = parseTime(typedIn.value);
+      if (Number.isNaN(at)) { err.textContent = "Type the time like 0:12 (minutes:seconds), or leave it blank for the whole video."; typedIn.focus(); return; }
+    } else at = pin.checked ? Math.round((lockedAt != null ? lockedAt : vid.currentTime || 0) * 10) / 10 : null;
     btn.disabled = true;
     const { data, error } = await sbClient.from("social_video_comments").insert({
-      video_id: video.id, video_path: video.reviewVideoPath, at_seconds: at, body,
+      video_id: video.id, cut_ref: cutRef, at_seconds: at, body,
       author_role: opts.authorRole || "client", author_name: opts.authorName || null,
     }).select("*");
     btn.disabled = false;
     if (error) { err.textContent = "Couldn't save that note: " + error.message; return; }
-    notes = notes.concat(data || []).sort((a, b) => (a.at_seconds == null) - (b.at_seconds == null) || (Number(a.at_seconds) || 0) - (Number(b.at_seconds) || 0));
-    ta.value = ""; lockedAt = null; ta.blur();
+    notes = notes.concat(data || []).sort(byTime);
+    ta.value = ""; if (typedIn) typedIn.value = ""; lockedAt = null; ta.blur();
     redraw();
   }
 
-  try { notes = await loadReviewNotes(video, opts.notesBy); redraw(); }
+  try { const { data } = await sbClient.auth.getSession(); ME_UID = data && data.session && data.session.user.id; } catch (e) {}
+  try { notes = await loadReviewNotes(video, opts.which || "open", opts.notesBy); redraw(); }
   catch (e) { drawButtons(); list.innerHTML = `<div class="auth-error">Couldn't load the notes: ${escapeHtml(e.message)}</div>`; }
-  return box;
-}
 
-// The finished video upload, for the editor's Finished step and Tait's
-// video card. Puts the file in this video's folder, then makes it the cut
-// to review (social_set_review_video). onDone(updatedVideoRow).
-function reviewUploadHtml() {
-  return `<div class="rv-upload">
-    <input type="file" accept="video/*" class="rv-file" style="display:none">
-    <button type="button" class="rv-pick">Choose the finished video</button>
-    <span class="meta rv-picked">or drop it here</span>
-    <div class="up-bar" style="display:none"><div style="width:0%"></div></div>
-    <div class="auth-error rv-up-err"></div>
-  </div>`;
-}
-function wireReviewUpload(root, video, onDone) {
-  const zone = root.querySelector(".rv-upload"), input = zone.querySelector(".rv-file"), pick = zone.querySelector(".rv-pick"),
-    picked = zone.querySelector(".rv-picked"), bar = zone.querySelector(".up-bar"), err = zone.querySelector(".rv-up-err");
-  pick.onclick = () => input.click();
-  input.onchange = () => input.files[0] && send(input.files[0]);
-  zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("drag"); });
-  zone.addEventListener("dragleave", () => zone.classList.remove("drag"));
-  zone.addEventListener("drop", e => { e.preventDefault(); zone.classList.remove("drag"); const f = e.dataTransfer.files[0]; if (f) send(f); });
-  async function send(file) {
-    err.textContent = "";
-    if (file.type && !file.type.startsWith("video/")) { err.textContent = "That isn't a video file."; return; }
-    pick.disabled = true; picked.textContent = file.name; bar.style.display = "";
-    const path = `${video.clientId}/${video.id}/${Date.now()}-${safeName(file.name)}`;
-    try {
-      await uploadToBucket(REVIEW_BUCKET, path, file, pct => { bar.firstElementChild.style.width = pct + "%"; });
-      const { data, error } = await sbClient.rpc("social_set_review_video", { p_video_id: video.id, p_path: path, p_name: file.name });
-      if (error) throw new Error(error.message);
-      picked.textContent = "✓ " + file.name + " uploaded";
-      onDone && onDone(data);
-    } catch (e) {
-      err.textContent = "Didn't upload: " + (e.message || e) + ". Try it again.";
-      pick.disabled = false; bar.style.display = "none";
-    }
-  }
+  const file = await findFinishedFile(video, opts.folders), key = await googleKey();
+  cutRef = file ? file.id : null;
+  if (file && key) showOwnPlayer(file, key);
+  else showDrivePlayer(file, file ? "" : "We couldn't find the finished file here.");
+  return box;
 }
 
 // ---------- Video detail modal ----------

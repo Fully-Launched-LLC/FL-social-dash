@@ -347,9 +347,9 @@ fully-social-os/
                                client, read by editors), 013 (editor
                                onboarding: invited_at, setup_at,
                                social_editor_setup_done), 014 (Frame.io-style
-                               review: finished videos uploaded to the
-                               'finished-videos' bucket, review_video_path,
-                               social_video_comments, social_set_review_video)
+                               review: social_video_comments, notes
+                               pinned to moments; social_settings, the
+                               Google Drive API key)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -445,30 +445,37 @@ client actions as replaced by `006_client_journey.sql`):
   caption edits), request_revisions. mark_filmed / mark_ready_to_edit /
   reject still exist for older pages; no page shows them.
 - **Editors** — no direct writes. Only `social_editor_mark_delivered(video,
-  final_cut_url)` and `social_set_review_video` (migration 014). Finished
-  asks for the finished video and uploads it to the private
-  `finished-videos` bucket at `<client_id>/<video_id>/<file>`; it becomes the
-  video's `review_video_path`, the cut everyone reviews. Videos finished
-  before uploads (no `review_video_path`) still use the Drive links:
-  `finishedVideoLink` in shell.js, or `final_cut_url` set in the video form.
+  final_cut_url)`. The editor dashboard doesn't send a link: editors upload
+  into the client's Final edits folder, naming the file after the video, and
+  every Watch button opens that folder (`finishedVideoLink` in shell.js). An
+  operator can still set `final_cut_url` in the video form to point at one
+  exact file (or the video's own finished folder), and Watch then opens that instead.
   Every editor policy requires `social_editors.active` — a deactivated
   editor sees nothing. (Revoke their session in Supabase Auth too.)
 
-**Reviewing a finished video** (Tait, 2026-10-06, modeled on Frame.io;
-`openReviewPlayer` in shell.js): the video plays in the page, and a note is
-pinned to the moment it's paused on (typing pauses it and holds the time;
-untick "At 0:12" for a whole-video note). Each note is a gold mark on the
-timeline under the video; clicking a mark or a note's time jumps there.
-Notes are `social_video_comments` rows tied to the cut they were left on
-(`video_path`), so a new cut starts a clean round. The client: **Review
-the video** → notes → **Send N changes to the editor** (request_revisions,
-its note listing every note as "0:12  text", so the editor's Revisions
-needed box shows them) or **Approve for posting**. Tait at Edit review:
-**Review & leave notes** → **Send N changes to the editor**
+**Reviewing a finished video** (Tait, 2026-10-06/07, modeled on Frame.io;
+`openReviewPlayer` in shell.js). Every video file stays in Google Drive
+(Tait's call: safer and cheaper than Supabase storage). The page finds the
+finished file (`findFinishedFile`: the `final_cut_url` file; else the newest
+video in that folder; else, in the client's Final edits folder, the newest
+video named after the video, or inside a folder named after it) and
+streams it from the Drive API into its own player, using the browser key
+in `social_settings` ('google_api_key', limited to the Drive API and this
+site). That needs the client's Final edits folder shared "anyone with the
+link can view". Then a note is pinned to the moment it's paused on (typing
+pauses it and holds the time); each note is a gold mark on the timeline;
+clicking a mark or a note's time jumps there. Without the key, sharing, or
+a format the browser plays, it falls back to Drive's own player and the
+reviewer types the time ("0:12"; blank = whole video). Notes are
+`social_video_comments` rows; a trigger closes a video's open notes when it
+leaves Edit review or Client final review, so each cut starts a clean round
+and the editor's **Watch with the notes** shows the last batch sent. The
+client: **Review the video** → notes → **Send N changes to the editor**
+(request_revisions, its note listing every note as "0:12  text", so the
+editor's Revisions needed box shows them) or **Approve for posting**. Tait
+at Edit review: **Review & leave notes** → **Send N changes to the editor**
 (`editor_brief.revisions`, never shown to the client) or **Approve & add
-captions**. The editor: **Watch with the notes** on a video sent back.
-Tait can **Upload / Replace finished video** on any video card (for a cut
-made outside the dashboard), and Ready to post has **Download video**.
+captions**.
 
 `VIDEO_ACTIONS` in `dashboards/template/shell.js` mirrors the transition
 table to decide which buttons to show — keep the two in step. The database
