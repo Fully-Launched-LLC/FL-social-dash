@@ -239,7 +239,7 @@ function operatorReview(id) {
   const changes = n => n.length ? `Send ${n.length} change${n.length === 1 ? "" : "s"} to the editor` : "Send changes to the editor";
   openReviewPlayer(v, {
     folders: x.client.driveFolders,
-    intro: `${escapeHtml(x.client.name)} · Edit review. Pause where something should change and leave a note; the editor gets them with their times. The client never sees these.`,
+    intro: `${escapeHtml(x.client.name)} · Edit review. Pause where something should change and leave a comment, or leave one about the whole video; the editor gets them with their times. The client never sees these.`,
     notesBy: ["operator"], canNote: true, authorRole: "operator", authorName: (ME && ME.name) || "Operator",
     buttons: [
       { label: "Approve & add captions", cls: "primary", onClick: () => approveEdit(id) },
@@ -401,7 +401,7 @@ function operatorActionsHtml(x, inCard) {
   }
   if (isReadyForEditor(x)) out.push(editorSelect(v.editorId), smallBtn("Send to editor", `sendToEditor('${id}', this)`, "primary"));
   if (v.status === "in_review") {
-    out.push(smallBtn("Review & leave notes", `operatorReview('${id}')`),
+    out.push(smallBtn("Review & comment", `operatorReview('${id}')`),
       smallBtn("Approve & add captions", `approveEdit('${id}')`, "primary"));
   }
   if (v.status === "client_review") out.push(smallBtn("Approve for client", `approveForClient('${id}', 'ready_to_post', 'video')`, "primary"));

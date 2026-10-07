@@ -581,7 +581,30 @@ function reviewNotesText(notes) {
   return notes.map(n => (n.at_seconds == null ? "Whole video" : fmtTime(n.at_seconds)) + "  " + n.body.trim()).join("\n");
 }
 
-// The review window. opts:
+// Initials for a comment's avatar: "Mark Ruiz" → "MR".
+function initials(name) {
+  const w = String(name || "?").replace(/\(.*?\)/g, "").trim().split(/\s+/).filter(Boolean);
+  return ((w[0] || "?")[0] + (w.length > 1 ? w[w.length - 1][0] : "")).toUpperCase();
+}
+// How long ago, the short way: "now", "4m", "2h", "3d", then the date.
+function ago(ts) {
+  const s = (Date.now() - new Date(ts).getTime()) / 1000;
+  if (!(s >= 0)) return "";
+  if (s < 60) return "now";
+  if (s < 3600) return Math.floor(s / 60) + "m";
+  if (s < 86400) return Math.floor(s / 3600) + "h";
+  if (s < 7 * 86400) return Math.floor(s / 86400) + "d";
+  return new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// The open review window's keyboard shortcuts (one listener for the page).
+let REVIEW_KEYS = null;
+if (typeof document !== "undefined") document.addEventListener("keydown", e => { if (REVIEW_KEYS) REVIEW_KEYS(e); });
+
+// The review window, laid out like Frame.io: the video with its own
+// controls on the left, comment marks on its scrub bar; the comments on
+// the right, numbered in time order, and the comment box at the bottom,
+// pinned to the current moment ("At 0:12") or to the whole video. opts:
 //   folders     the client's driveFolders (to find the finished file)
 //   title       heading (default: the video's title)
 //   intro       a line under it
@@ -596,14 +619,17 @@ async function openReviewPlayer(video, opts) {
     <div class="rv">
       <div class="rv-stage"><div class="rv-load meta">Finding the video in Google Drive…</div></div>
       <div class="rv-side">
-        <div class="rv-head"><b>Notes</b> <span class="rv-count meta"></span></div>
+        <div class="rv-head"><b>Comments</b> <span class="rv-count meta"></span></div>
         <div class="rv-list"></div>
         ${opts.canNote ? `<div class="rv-compose">
-          <textarea rows="3" placeholder="Pause where something should change, then type it here"></textarea>
+          <div class="rv-when" role="radiogroup" aria-label="What the comment is about">
+            <div class="rv-when-at on" role="radio" tabindex="0" aria-checked="true">At <b class="rv-at">0:00</b><input type="text" class="rv-time-in" placeholder="0:12" inputmode="numeric" aria-label="Time in the video"></div>
+            <button type="button" class="rv-when-all" role="radio" aria-checked="false">Whole video</button>
+          </div>
+          <textarea rows="3" placeholder="Leave your comment…"></textarea>
           <div class="rv-compose-row">
-            <label class="rv-pin rv-auto"><input type="checkbox" checked> At <span class="rv-at">0:00</span></label>
-            <label class="rv-pin rv-typed">At <input type="text" class="rv-time-in" placeholder="0:12" inputmode="numeric"> <span class="meta">blank = whole video</span></label>
-            <button class="primary rv-add">Add note</button>
+            <span class="meta rv-hint"></span>
+            <button class="primary rv-add">Add comment</button>
           </div>
           <div class="auth-error rv-err"></div>
         </div>` : ""}
@@ -613,63 +639,133 @@ async function openReviewPlayer(video, opts) {
   box.classList.add("modal-wide");
   const stage = box.querySelector(".rv-stage"), list = box.querySelector(".rv-list"), count = box.querySelector(".rv-count"),
     actions = box.querySelector(".rv-actions");
-  let notes = [], duration = 0, lockedAt = null, vid = null, marks = null, fill = null, cutRef = null;
+  let notes = [], duration = 0, vid = null, marks = null, fill = null, head = null, timeEl = null, playBtn = null, cutRef = null, activeId = null;
 
   // Typed times until the player can tell the time itself.
-  const setTyped = typed => box.classList.toggle("rv-typed-mode", typed);
+  const hint = box.querySelector(".rv-hint");
+  const setTyped = typed => {
+    box.classList.toggle("rv-typed-mode", typed);
+    if (hint) hint.textContent = typed ? "Pause the video, then type the time you're on." : "Pause where something should change. The comment is pinned to that moment.";
+  };
   setTyped(true);
   const atEl = box.querySelector(".rv-at");
   const setAt = t => { if (atEl) atEl.textContent = fmtTime(t); };
 
+  // ── the video ──
   function showDrivePlayer(file, why) {
     vid = null; setTyped(true);
     const link = file ? `https://drive.google.com/file/d/${file.id}/view` : (finishedVideoLink(video, opts.folders) || {}).url;
     stage.innerHTML = (file ? `<iframe class="rv-frame" src="https://drive.google.com/file/d/${encodeURIComponent(file.id)}/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>` : "")
-      + `<div class="meta" style="margin-top:8px">${why ? escapeHtml(why) + " " : ""}Pause it, then type the time you're on next to your note.</div>`
+      + `<div class="meta" style="margin-top:8px">${why ? escapeHtml(why) + " " : ""}Pause it, then type the time you're on next to your comment.</div>`
       + (link ? `<a class="btn" style="margin-top:8px" href="${escapeHtml(link)}" target="_blank" rel="noopener">${file ? "Open it in Google Drive" : "Open the video in Google Drive"}</a>` : "");
   }
   function showOwnPlayer(file, key) {
-    stage.innerHTML = `<video class="rv-video" controls playsinline preload="metadata"></video>
-      <div class="rv-track" title="Click to jump there"><div class="rv-fill"></div><div class="rv-marks"></div></div>`;
+    stage.innerHTML = `<div class="rv-player">
+        <video class="rv-video" playsinline preload="metadata"></video>
+        <div class="rv-bar">
+          <div class="rv-track" title="Click or drag to move through the video"><div class="rv-rail"></div><div class="rv-fill"></div><div class="rv-head-dot"></div><div class="rv-marks"></div></div>
+          <div class="rv-ctrls">
+            <button type="button" class="rv-play" aria-label="Play">▶</button>
+            <span class="rv-clock">0:00 / 0:00</span>
+            <button type="button" class="rv-speed" title="Playback speed">1x</button>
+            <button type="button" class="rv-mute" aria-label="Mute">Sound on</button>
+            <span style="flex:1"></span>
+            <button type="button" class="rv-full" aria-label="Full screen">Full screen</button>
+          </div>
+        </div>
+      </div>
+      <div class="meta rv-loading">Loading the video…</div>`;
+    const player = stage.querySelector(".rv-player"), track = stage.querySelector(".rv-track");
     vid = stage.querySelector("video"); marks = stage.querySelector(".rv-marks"); fill = stage.querySelector(".rv-fill");
-    const track = stage.querySelector(".rv-track");
-    vid.addEventListener("loadedmetadata", () => { duration = vid.duration || 0; setTyped(false); drawMarks(); });
-    vid.addEventListener("error", () => showDrivePlayer(file, "This video can't play here, so it's in Google's player."));
-    vid.addEventListener("timeupdate", () => {
-      if (duration) fill.style.width = (vid.currentTime / duration * 100) + "%";
-      if (lockedAt == null) setAt(vid.currentTime);
+    head = stage.querySelector(".rv-head-dot"); timeEl = stage.querySelector(".rv-clock"); playBtn = stage.querySelector(".rv-play");
+    const muteBtn = stage.querySelector(".rv-mute"), speedBtn = stage.querySelector(".rv-speed");
+    const tick = () => {
+      const pct = duration ? vid.currentTime / duration * 100 : 0;
+      fill.style.width = pct + "%"; head.style.left = pct + "%";
+      timeEl.textContent = `${fmtTime(vid.currentTime)} / ${fmtTime(duration)}`;
+      setAt(vid.currentTime);
       const near = notes.find(n => n.at_seconds != null && Math.abs(vid.currentTime - n.at_seconds) < 0.6);
-      list.querySelectorAll(".rv-note").forEach(el => el.classList.toggle("on", !!near && el.dataset.id === near.id));
+      list.querySelectorAll(".rv-note").forEach(el => el.classList.toggle("on", (!!near && el.dataset.id === near.id) || el.dataset.id === activeId));
+    };
+    vid.addEventListener("loadedmetadata", () => {
+      duration = vid.duration || 0; setTyped(false);
+      const l = stage.querySelector(".rv-loading"); if (l) l.remove();
+      drawMarks(); tick();
     });
-    track.addEventListener("click", e => {
-      if (!duration || e.target.closest(".rv-mark")) return;
+    vid.addEventListener("error", () => showDrivePlayer(file, "This video can't play here, so it's in Google's player."));
+    vid.addEventListener("timeupdate", tick);
+    vid.addEventListener("seeked", tick);
+    vid.addEventListener("play", () => { playBtn.textContent = "❚❚"; playBtn.setAttribute("aria-label", "Pause"); activeId = null; });
+    vid.addEventListener("pause", () => { playBtn.textContent = "▶"; playBtn.setAttribute("aria-label", "Play"); });
+    const toggle = () => { if (vid.paused) vid.play().catch(() => {}); else vid.pause(); };
+    playBtn.onclick = toggle;
+    vid.addEventListener("click", toggle);
+    speedBtn.onclick = () => {
+      const speeds = [1, 1.5, 2, 0.5], next = speeds[(speeds.indexOf(vid.playbackRate) + 1) % speeds.length];
+      vid.playbackRate = next; speedBtn.textContent = next + "x";
+    };
+    muteBtn.onclick = () => { vid.muted = !vid.muted; muteBtn.textContent = vid.muted ? "Muted" : "Sound on"; };
+    stage.querySelector(".rv-full").onclick = () => {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else if (player.requestFullscreen) player.requestFullscreen().catch(() => {});
+    };
+    // Scrubbing: click or drag anywhere on the bar.
+    const seekTo = e => {
+      if (!duration) return;
       const r = track.getBoundingClientRect();
       vid.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * duration;
-    });
+    };
+    let dragging = false;
+    track.addEventListener("pointerdown", e => { if (e.target.closest(".rv-mark")) return; dragging = true; if (track.setPointerCapture && e.pointerId != null) track.setPointerCapture(e.pointerId); seekTo(e); });
+    track.addEventListener("pointermove", e => { if (dragging) seekTo(e); });
+    track.addEventListener("pointerup", () => { dragging = false; });
+    track.addEventListener("click", e => { if (!e.target.closest(".rv-mark")) seekTo(e); });
+    // Space plays and pauses; arrows step 5 seconds (not while typing),
+    // wherever the focus is while this window is open.
+    REVIEW_KEYS = e => {
+      if (!vid || !vid.isConnected || document.getElementById("videoModalRoot").classList.contains("hidden")) return;
+      if (e.target.closest && e.target.closest("textarea, input, select, [contenteditable]")) return;
+      if (e.key === " ") { e.preventDefault(); toggle(); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); vid.currentTime = Math.max(0, vid.currentTime - 5); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); vid.currentTime = Math.min(duration || 0, vid.currentTime + 5); }
+    };
     vid.src = `${DRIVE_API}/${encodeURIComponent(file.id)}?alt=media&key=${encodeURIComponent(key)}`;
   }
-  const jump = t => { if (!vid) return; vid.currentTime = Number(t) || 0; vid.pause(); lockedAt = null; setAt(vid.currentTime); };
+  // Jump to a comment's moment, paused there, and light it up.
+  const jump = (t, id) => {
+    activeId = id || null;
+    if (vid) { vid.pause(); vid.currentTime = Number(t) || 0; }
+    list.querySelectorAll(".rv-note").forEach(el => el.classList.toggle("on", el.dataset.id === activeId));
+    const el = id && list.querySelector(`.rv-note[data-id="${id}"]`);
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest" });
+  };
 
+  // ── the comments ──
+  const num = n => notes.indexOf(n) + 1;
   function drawMarks() {
     if (!marks) return;
     marks.innerHTML = duration ? notes.filter(n => n.at_seconds != null).map(n =>
-      `<button type="button" class="rv-mark" data-t="${n.at_seconds}" style="left:${Math.min(100, n.at_seconds / duration * 100)}%" title="${escapeHtml(fmtTime(n.at_seconds) + "  " + n.body)}"></button>`).join("") : "";
-    marks.querySelectorAll(".rv-mark").forEach(m => m.onclick = () => jump(m.dataset.t));
+      `<button type="button" class="rv-mark ${n.author_role === "client" ? "by-client" : "by-team"}" data-t="${n.at_seconds}" data-id="${n.id}"
+        style="left:${Math.min(100, n.at_seconds / duration * 100)}%" title="#${num(n)} ${escapeHtml(fmtTime(n.at_seconds) + " · " + (n.author_name || "") + ": " + n.body)}">${escapeHtml(initials(n.author_name))}</button>`).join("") : "";
+    marks.querySelectorAll(".rv-mark").forEach(m => m.onclick = () => jump(m.dataset.t, m.dataset.id));
   }
   let ME_UID = null;
   function drawList() {
     count.textContent = notes.length ? `(${notes.length})` : "";
-    list.innerHTML = notes.length ? notes.map(n => `<div class="rv-note" data-id="${n.id}">
-        ${n.at_seconds == null ? `<span class="rv-time whole">Whole video</span>` : `<button type="button" class="rv-time" data-t="${n.at_seconds}">${fmtTime(n.at_seconds)}</button>`}
-        <div class="rv-body">${escapeHtml(n.body)}<div class="meta">${escapeHtml(n.author_name || "")}</div></div>
-        ${opts.canNote && n.author_id === ME_UID ? `<button type="button" class="rv-del" title="Delete this note" data-del="${n.id}">✕</button>` : ""}
+    list.innerHTML = notes.length ? notes.map(n => `<div class="rv-note${n.id === activeId ? " on" : ""}" data-id="${n.id}">
+        <span class="rv-avatar ${n.author_role === "client" ? "by-client" : "by-team"}">${escapeHtml(initials(n.author_name))}</span>
+        <div class="rv-note-main">
+          <div class="rv-note-top"><b>${escapeHtml(n.author_name || "")}</b> <span class="meta">${escapeHtml(ago(n.created_at))}</span><span class="rv-num meta">#${num(n)}</span></div>
+          <div class="rv-body">${n.at_seconds == null ? `<span class="rv-time whole">Whole video</span>` : `<button type="button" class="rv-time" data-t="${n.at_seconds}">${fmtTime(n.at_seconds)}</button>`} ${escapeHtml(n.body)}</div>
+        </div>
+        ${opts.canNote && n.author_id === ME_UID ? `<button type="button" class="rv-del" title="Delete this comment" aria-label="Delete this comment" data-del="${n.id}">✕</button>` : ""}
       </div>`).join("")
-      : `<div class="empty" style="padding:14px 4px">${opts.canNote ? "No notes yet. Pause the video where something should change and type it below." : "No notes on this cut."}</div>`;
-    list.querySelectorAll(".rv-time[data-t]").forEach(b => b.onclick = () => jump(b.dataset.t));
+      : `<div class="empty" style="padding:14px 4px">${opts.canNote ? "No comments yet. Pause the video where something should change and leave a comment, or leave one about the whole video." : "No comments on this cut."}</div>`;
+    list.querySelectorAll(".rv-time[data-t]").forEach(b => b.onclick = () => jump(b.dataset.t, b.closest(".rv-note").dataset.id));
     list.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
       b.disabled = true;
       const { error } = await sbClient.from("social_video_comments").delete().eq("id", b.dataset.del);
-      if (error) { b.disabled = false; alert("Couldn't delete that note: " + error.message); return; }
+      if (error) { b.disabled = false; alert("Couldn't delete that comment: " + error.message); return; }
       notes = notes.filter(n => n.id !== b.dataset.del); redraw();
     });
   }
@@ -686,11 +782,25 @@ async function openReviewPlayer(video, opts) {
   }
   function redraw() { drawMarks(); drawList(); drawButtons(); }
 
-  // Leaving a note: typing pauses the video and holds the time, like
-  // Frame.io, so the note lands on the frame they were looking at.
-  const ta = box.querySelector(".rv-compose textarea"), pin = box.querySelector(".rv-auto input"), typedIn = box.querySelector(".rv-time-in");
+  // ── the comment box ── At the current moment (typing pauses the video,
+  // so the comment lands on the frame they were looking at; moving the
+  // playhead moves the time with it), or about the whole video.
+  const ta = box.querySelector(".rv-compose textarea"), typedIn = box.querySelector(".rv-time-in");
+  const atBtn = box.querySelector(".rv-when-at"), allBtn = box.querySelector(".rv-when-all");
+  let whole = false;
+  const setWhole = w => {
+    whole = w;
+    atBtn.classList.toggle("on", !w); allBtn.classList.toggle("on", w);
+    atBtn.setAttribute("aria-checked", String(!w)); allBtn.setAttribute("aria-checked", String(w));
+  };
   if (ta) {
-    ta.addEventListener("focus", () => { if (vid && duration) { if (!vid.paused) vid.pause(); lockedAt = vid.currentTime || 0; setAt(lockedAt); } });
+    atBtn.onclick = e => { setWhole(false); if (e.target !== typedIn) (box.classList.contains("rv-typed-mode") ? typedIn : ta).focus(); };
+    atBtn.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target === atBtn) { e.preventDefault(); atBtn.onclick(e); } });
+    allBtn.onclick = () => { setWhole(true); ta.focus(); };
+    typedIn.addEventListener("focus", () => setWhole(false));
+    const pauseForNote = () => { if (vid && duration && !vid.paused && !whole) vid.pause(); };
+    ta.addEventListener("focus", pauseForNote);
+    ta.addEventListener("input", pauseForNote);
     ta.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); add(); } });
     box.querySelector(".rv-add").onclick = add;
   }
@@ -699,26 +809,30 @@ async function openReviewPlayer(video, opts) {
     const body = ta.value.trim();
     err.textContent = "";
     if (!body) { ta.focus(); return; }
-    let at;
-    if (box.classList.contains("rv-typed-mode")) {
-      at = parseTime(typedIn.value);
-      if (Number.isNaN(at)) { err.textContent = "Type the time like 0:12 (minutes:seconds), or leave it blank for the whole video."; typedIn.focus(); return; }
-    } else at = pin.checked ? Math.round((lockedAt != null ? lockedAt : vid.currentTime || 0) * 10) / 10 : null;
+    let at = null;
+    if (!whole) {
+      if (box.classList.contains("rv-typed-mode")) {
+        at = parseTime(typedIn.value);
+        if (at == null || Number.isNaN(at)) { err.textContent = "Type the time like 0:12 (minutes:seconds), or choose Whole video."; typedIn.focus(); return; }
+      } else at = Math.round((vid.currentTime || 0) * 10) / 10;
+    }
     btn.disabled = true;
     const { data, error } = await sbClient.from("social_video_comments").insert({
       video_id: video.id, cut_ref: cutRef, at_seconds: at, body,
       author_role: opts.authorRole || "client", author_name: opts.authorName || null,
     }).select("*");
     btn.disabled = false;
-    if (error) { err.textContent = "Couldn't save that note: " + error.message; return; }
+    if (error) { err.textContent = "Couldn't save that comment: " + error.message; return; }
     notes = notes.concat(data || []).sort(byTime);
-    ta.value = ""; if (typedIn) typedIn.value = ""; lockedAt = null; ta.blur();
+    ta.value = ""; if (typedIn) typedIn.value = "";
+    setWhole(false); // most comments are about a moment
+    activeId = data && data[0] ? data[0].id : null;
     redraw();
   }
 
   try { const { data } = await sbClient.auth.getSession(); ME_UID = data && data.session && data.session.user.id; } catch (e) {}
   try { notes = await loadReviewNotes(video, opts.which || "open", opts.notesBy); redraw(); }
-  catch (e) { drawButtons(); list.innerHTML = `<div class="auth-error">Couldn't load the notes: ${escapeHtml(e.message)}</div>`; }
+  catch (e) { drawButtons(); list.innerHTML = `<div class="auth-error">Couldn't load the comments: ${escapeHtml(e.message)}</div>`; }
 
   const file = await findFinishedFile(video, opts.folders), key = await googleKey();
   cutRef = file ? file.id : null;

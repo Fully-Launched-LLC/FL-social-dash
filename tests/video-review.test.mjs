@@ -101,6 +101,7 @@ chk("asked Drive with the key", drive.length === 2 && drive.every(u => u.include
 chk("this round's open note is listed", box.querySelectorAll(".rv-note").length === 1);
 // Once the player knows the length, times are automatic and notes are marks.
 let t = 30;
+vid.play = async () => {};
 Object.defineProperty(vid, "duration", { get: () => 80 });
 Object.defineProperty(vid, "currentTime", { get: () => t, set: x => { t = +x; vid.dispatchEvent(new p.w.Event("timeupdate")); } });
 vid.pause = () => {};
@@ -108,14 +109,30 @@ vid.dispatchEvent(new p.w.Event("loadedmetadata")); await settle();
 chk("the player tells the time: no typed time box", !box.classList.contains("rv-typed-mode") && box.querySelectorAll(".rv-mark").length === 1);
 const ta = box.querySelector(".rv-compose textarea");
 ta.dispatchEvent(new p.w.Event("focus"));
-t = 99; // the video kept going; the note keeps the moment they started typing
 ta.value = "Cut this pause";
 box.querySelector(".rv-add").click(); await settle();
 const saved = (await db.query(`select at_seconds, cut_ref, author_name from social_video_comments where body='Cut this pause'`)).rows[0];
-chk("the note lands on the moment they paused, on this cut, by Mark", saved && Number(saved.at_seconds) === 30 && saved.cut_ref === "markcut0001" && saved.author_name === "Mark", saved);
-chk("…and shows as a second mark", box.querySelectorAll(".rv-mark").length === 2);
+chk("the comment lands on the moment the video is on, on this cut, by Mark", saved && Number(saved.at_seconds) === 30 && saved.cut_ref === "markcut0001" && saved.author_name === "Mark", saved);
+chk("…shows as a second mark, with his initials", box.querySelectorAll(".rv-mark").length === 2 && box.querySelector(`.rv-mark[data-t="30"]`)?.textContent === "M");
+// A general comment, about the whole video.
+box.querySelector(".rv-when-all").click();
+ta.value = "Music is a bit loud overall";
+box.querySelector(".rv-add").click(); await settle();
+const general = (await db.query(`select at_seconds from social_video_comments where body='Music is a bit loud overall'`)).rows[0];
+chk("Whole video: a general comment, no time, listed last, no mark", general && general.at_seconds === null
+  && box.querySelector(".rv-note:last-child").textContent.includes("Whole video") && box.querySelectorAll(".rv-mark").length === 2);
+chk("comments numbered in time order", Array.from(box.querySelectorAll(".rv-num")).map(n => n.textContent).join(",") === "#1,#2,#3");
+box.querySelector(".rv-when-at").click();
+t = 45;
+ta.value = "Logo here";
+box.querySelector(".rv-add").click(); await settle();
+chk("back to At: pinned to where the playhead is now", Number((await db.query(`select at_seconds from social_video_comments where body='Logo here'`)).rows[0].at_seconds) === 45);
 box.querySelector('.rv-time[data-t="30"]').click();
-chk("clicking a note's time jumps there", t === 30);
+chk("clicking a comment's time jumps there and highlights it", t === 30 && box.querySelector(".rv-note.on .rv-time")?.dataset.t === "30");
+const mk = Array.from(box.querySelectorAll(".rv-mark")).find(m => m.dataset.t === "45");
+mk.click();
+chk("clicking a mark on the bar jumps there too", t === 45 && box.querySelector(".rv-note.on").textContent.includes("Logo here"));
+chk("the clock shows where it is", box.querySelector(".rv-clock").textContent === "0:45 / 1:20");
 chk("no page errors", !p.ui.errors.length && !p.ui.alerts.length, [p.ui.errors, p.ui.alerts]);
 
 // A link to the exact file skips the search; with no key, Drive's player.

@@ -463,17 +463,22 @@ streams it from the Drive API into its own player, using the browser key
 in `social_settings` ('google_api_key', limited to the Drive API and this
 site). That needs the client's Final edits folder shared "anyone with the
 link can view". Then a note is pinned to the moment it's paused on (typing
-pauses it and holds the time); each note is a gold mark on the timeline;
-clicking a mark or a note's time jumps there. Without the key, sharing, or
+pauses it; moving the playhead moves the time with it) or to the **Whole
+video** (a general suggestion). The window is laid out like Frame.io (Tait,
+2026-10-07): the player has its own controls (play, clock, speed, sound,
+full screen; Space plays/pauses, arrows step 5 s) and every timed comment is
+a mark with the author's initials on the scrub bar; comments are numbered
+#1, #2 in time order with avatar, name and how long ago; clicking a mark or
+a comment's time jumps there. Without the key, sharing, or
 a format the browser plays, it falls back to Drive's own player and the
 reviewer types the time ("0:12"; blank = whole video). Notes are
 `social_video_comments` rows; a trigger closes a video's open notes when it
 leaves Edit review or Client final review, so each cut starts a clean round
-and the editor's **Watch with the notes** shows the last batch sent. The
+and the editor's **Watch with the comments** shows the last batch sent. The
 client: **Review the video** → notes → **Send N changes to the editor**
 (request_revisions, its note listing every note as "0:12  text", so the
 editor's Revisions needed box shows them) or **Approve for posting**. Tait
-at Edit review: **Review & leave notes** → **Send N changes to the editor**
+at Edit review: **Review & comment** → **Send N changes to the editor**
 (`editor_brief.revisions`, never shown to the client) or **Approve & add
 captions**.
 
