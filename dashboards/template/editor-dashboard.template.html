@@ -194,6 +194,7 @@ function renderQueue() {
       ${editorCardBody(client, video)}
     `;
     card.querySelector(".actions").appendChild(finishButton(video.id));
+    wireNotesButton(card);
     card.querySelector("[data-open]").onclick = () => openEditorVideoModal(video.id);
     list.appendChild(card);
   });
@@ -212,12 +213,23 @@ function editorCardBody(client, video) {
       ? `Upload the finished video to the finished video folder and name it <b>${escapeHtml(video.title || "after the video")}</b>.`
       : `<b style="color:var(--red)">This client has no finished video folder yet.</b> Ask the operator to add one before you finish this.`}</div>
     <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      ${hasRevisions(video) ? `<button data-notes="${video.id}">Watch with the notes</button>` : ""}
       ${f.brandVoice ? `<a class="btn" href="${escapeHtml(f.brandVoice)}" target="_blank" rel="noopener">Brand guidelines</a>` : ""}
       ${raw ? `<a class="btn" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">${raw.label}</a>` : ""}
       ${f.finalEdits ? `<a class="btn" href="${escapeHtml(f.finalEdits)}" target="_blank" rel="noopener">Finished video folder</a>` : ""}
     </div>
     ${(client.documents || []).length ? `<div class="meta" style="margin:14px 0 6px">${escapeHtml(client.name)}'s documents</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">${client.documents.map(d => `<a class="btn" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.title)}</a>`).join("")}</div>` : ""}`;
+}
+
+// The cut that was sent back, with the notes on it pinned to their
+// moments (the client's or the operator's). Read only.
+function watchWithNotes(videoId) {
+  const x = VIDEOS.find(y => y.video.id === videoId);
+  if (x) openReviewPlayer(x.video, { folders: x.client.driveFolders, which: "sent", intro: "The notes on your last cut. Click a time to jump to it." });
+}
+function wireNotesButton(root) {
+  root.querySelectorAll("[data-notes]").forEach(b => b.onclick = () => watchWithNotes(b.dataset.notes));
 }
 
 // Same content as the card, for the calendar and a clicked title.
@@ -228,6 +240,7 @@ function openEditorVideoModal(videoId) {
     <div class="meta" style="margin-bottom:10px">${escapeHtml(x.client.name)}${x.video.dueToEdit ? " · edit by " + escapeHtml(x.video.dueToEdit) : ""}</div>
     ${editorCardBody(x.client, x.video)}`);
   box.querySelector(".actions").appendChild(finishButton(videoId));
+  wireNotesButton(box);
 }
 
 function renderCalendar() {

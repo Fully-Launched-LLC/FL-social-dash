@@ -346,7 +346,10 @@ fully-social-os/
                                (team-only documents: hidden from the
                                client, read by editors), 013 (editor
                                onboarding: invited_at, setup_at,
-                               social_editor_setup_done)
+                               social_editor_setup_done), 014 (Frame.io-style
+                               review: social_video_comments, notes
+                               pinned to moments; social_settings, the
+                               Google Drive API key)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -446,9 +449,33 @@ client actions as replaced by `006_client_journey.sql`):
   into the client's Final edits folder, naming the file after the video, and
   every Watch button opens that folder (`finishedVideoLink` in shell.js). An
   operator can still set `final_cut_url` in the video form to point at one
-  exact file, and Watch then opens that instead.
+  exact file (or the video's own finished folder), and Watch then opens that instead.
   Every editor policy requires `social_editors.active` — a deactivated
   editor sees nothing. (Revoke their session in Supabase Auth too.)
+
+**Reviewing a finished video** (Tait, 2026-10-06/07, modeled on Frame.io;
+`openReviewPlayer` in shell.js). Every video file stays in Google Drive
+(Tait's call: safer and cheaper than Supabase storage). The page finds the
+finished file (`findFinishedFile`: the `final_cut_url` file; else the newest
+video in that folder; else, in the client's Final edits folder, the newest
+video named after the video, or inside a folder named after it) and
+streams it from the Drive API into its own player, using the browser key
+in `social_settings` ('google_api_key', limited to the Drive API and this
+site). That needs the client's Final edits folder shared "anyone with the
+link can view". Then a note is pinned to the moment it's paused on (typing
+pauses it and holds the time); each note is a gold mark on the timeline;
+clicking a mark or a note's time jumps there. Without the key, sharing, or
+a format the browser plays, it falls back to Drive's own player and the
+reviewer types the time ("0:12"; blank = whole video). Notes are
+`social_video_comments` rows; a trigger closes a video's open notes when it
+leaves Edit review or Client final review, so each cut starts a clean round
+and the editor's **Watch with the notes** shows the last batch sent. The
+client: **Review the video** → notes → **Send N changes to the editor**
+(request_revisions, its note listing every note as "0:12  text", so the
+editor's Revisions needed box shows them) or **Approve for posting**. Tait
+at Edit review: **Review & leave notes** → **Send N changes to the editor**
+(`editor_brief.revisions`, never shown to the client) or **Approve & add
+captions**.
 
 `VIDEO_ACTIONS` in `dashboards/template/shell.js` mirrors the transition
 table to decide which buttons to show — keep the two in step. The database

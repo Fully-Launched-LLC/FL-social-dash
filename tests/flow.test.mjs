@@ -70,7 +70,7 @@ const edCard = (p, t) => $$(p, "#queueList .card").find(c => c.querySelector("[d
 const modal = p => $(p, "#videoModalBox");
 const modalOpen = p => !$(p, "#videoModalRoot").classList.contains("hidden");
 const statusOf = async t => (await db.query("select status, note, concept_approved_at, caption, on_screen_caption, editor_id, due_to_edit::text, post_date::text, filmed_by from social_videos where title=$1", [t])).rows[0];
-const count = async (where, params = []) => (await db.query(`select count(*)::int n from social_videos where ${where}`, params)).rows[0].n;
+const count = async (where, params = [], from = "social_videos") => (await db.query(`select count(*)::int n from ${from} where ${where}`, params)).rows[0].n;
 const allPages = [];
 const track = p => { allPages.push(p); return p; };
 // Client portal: the inline "Suggest changes" / "Request changes" box.
@@ -207,6 +207,14 @@ async function finishOne(ed, t) {
   await click($(ed, "#efYes"), "it's in drive " + t);
   await click($(ed, "#efDone"), "sent " + t);
 }
+// The review window (no Drive key in tests, so Drive's player and a typed
+// time): a note, then a bottom button.
+async function leaveNote(p, text, at) {
+  $(p, "#videoModalBox .rv-compose textarea").value = text;
+  $(p, "#videoModalBox .rv-time-in").value = at || "";
+  await click($(p, "#videoModalBox .rv-add"), "add note " + text);
+}
+const reviewBtn = (p, label) => $$(p, "#videoModalBox .rv-actions button").find(b => b.textContent.startsWith(label));
 async function editorFinish(list) {
   const ed = track(await ED());
   for (const i of list) await finishOne(ed, title(i));
@@ -236,14 +244,15 @@ async function approveWithCaption(p, i) {
 op = track(await OP());
 for (const i of idx) {
   if (V.opRev.includes(i)) {
-    await click(btn(opRow(op, "#editsList", title(i)), "Revisions needed"), "revisions " + i);
-    $(op, '#videoModalBox [data-f="revisions"]').value = "Tighten the intro " + i;
-    await click($(op, "#rvSave"), "send revisions " + i);
+    await click(btn(opRow(op, "#editsList", title(i)), "Review & leave notes"), "review " + i);
+    await leaveNote(op, "Tighten the intro " + i, "0:12");
+    await click(reviewBtn(op, "Send 1 change to the editor"), "send revisions " + i);
   } else await approveWithCaption(op, i);
 }
 if (V.opRev.length) {
   ed = track(await ED());
-  for (const i of V.opRev) chk(`editor sees revisions #${i}`, edCard(ed, title(i))?.textContent.includes("Tighten the intro " + i));
+  for (const i of V.opRev) chk(`editor sees revisions #${i}, with the time`, edCard(ed, title(i))?.textContent.includes("0:12  Tighten the intro " + i));
+  for (const i of V.opRev) chk(`operator note saved, then closed when sent #${i}`, (await count("v.title=$1 and c.author_role='operator' and c.at_seconds=12 and c.closed_at is not null", [title(i)], "social_video_comments c join social_videos v on v.id=c.video_id")) === 1);
   await editorFinish(V.opRev);
   op = track(await OP());
   for (const i of V.opRev) await approveWithCaption(op, i);
@@ -254,14 +263,26 @@ chk("all 30 with the client, both captions", (await count("status='client_review
 cl = track(await CL());
 chk("Finished videos to approve (30)", tabsText(cl).includes("Finished videos to approve (30)"), tabsText(cl));
 const fr = portalCard(cl, "#listFinal", title(0));
-chk("final card: watch link + both captions, read-only", fr && !!fr.querySelector('a[href="https://drive/fl-final"]')
+chk("final card: Review the video + both captions, read-only", fr && !fr.querySelector('a[href="https://drive/fl-final"]')
   && fr.textContent.includes("Caption 1") && fr.textContent.includes("On screen 1") && !fr.querySelector("[data-cap]")
-  && Array.from(fr.querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Approve for posting|Request changes to the video");
+  && Array.from(fr.querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Review the video|Approve for posting");
 chk("All lists the finished videos to approve", $(cl, '[data-panel="final"]').style.display !== "none" && firstTab(cl) === "All (30)");
 for (const i of idx) {
   const card = portalCard(cl, "#listFinal", title(i));
   if (V.clientRev.includes(i)) {
-    await sendNote(cl, card, "Request changes to the video", "Use the other take " + i);
+    await click(btn(card, "Review the video"), "review " + i);
+    chk(`review window: Drive's player for the folder, typed times, no notes yet, Send waits for one #${i}`,
+      !!$(cl, '#videoModalBox a[href="https://drive/fl-final"]') && $(cl, "#videoModalBox").classList.contains("rv-typed-mode")
+      && $(cl, "#videoModalBox .rv-list").textContent.includes("No notes yet") && reviewBtn(cl, "Send changes").disabled);
+    $(cl, "#videoModalBox .rv-compose textarea").value = "Bad time"; $(cl, "#videoModalBox .rv-time-in").value = "abc";
+    await click($(cl, "#videoModalBox .rv-add"), "bad time " + i);
+    chk(`a bad time is caught #${i}`, $(cl, "#videoModalBox .rv-err").textContent.includes("0:12") && !$$(cl, "#videoModalBox .rv-note").length);
+    await leaveNote(cl, "Use the other take " + i, "1:05");
+    await leaveNote(cl, "Louder music " + i);
+    chk(`two notes listed #${i}`, $$(cl, "#videoModalBox .rv-note").length === 2 && !reviewBtn(cl, "Send 2 changes").disabled);
+    await click($(cl, "#videoModalBox [data-del]"), "delete a note " + i); // the first one: "Use the other take" (1:05; whole-video notes go last)
+    chk(`deleted one #${i}`, $$(cl, "#videoModalBox .rv-note").length === 1);
+    await click(reviewBtn(cl, "Send 1 change to the editor"), "send changes " + i);
     await dismissThanks(cl, "make those changes");
     continue;
   }
@@ -270,7 +291,8 @@ for (const i of idx) {
 }
 if (V.clientRev.length) {
   ed = track(await ED());
-  for (const i of V.clientRev) chk(`editor sees the client's change #${i}`, edCard(ed, title(i))?.textContent.includes("Use the other take " + i));
+  for (const i of V.clientRev) chk(`editor sees the client's change, with the time, and can watch with the notes #${i}`,
+    edCard(ed, title(i))?.textContent.includes("Whole video  Louder music " + i) && !edCard(ed, title(i)).textContent.includes("other take") && !!btn(edCard(ed, title(i)), "Watch with the notes"));
   await editorFinish(V.clientRev);
   op = track(await OP());
   for (const i of V.clientRev) { await click(btn(opRow(op, "#editsList", title(i)), "Approve & add captions"), "again " + i); await click($(op, "#aeSave"), "resend " + i); }

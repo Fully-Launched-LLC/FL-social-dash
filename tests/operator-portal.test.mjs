@@ -42,7 +42,7 @@ const steps = [
   ["Change me", "Suggest changes", "Shorter hook", "concept_pending"],
   ["Film me", "Video has been filmed", null, "ready_to_edit"],
   ["Final ok", "Approve for posting", null, "ready_to_post"],
-  ["Final redo", "Request changes to the video", "Louder music", "with_editor"],
+  ["Final redo", "Review the video", "0:30  Louder music", "with_editor"],
 ];
 const tab = async key => { p.d.querySelector(`#videoTabs [data-tab="${key}"]`)?.click(); await settle(); };
 for (const [t, label, note, want] of steps) {
@@ -50,7 +50,16 @@ for (const [t, label, note, want] of steps) {
   chk(`${t}: "${label}" shows for operator`, !!b);
   if (!b) continue;
   b.click(); await settle();
-  if (note) {
+  if (label === "Review the video") {
+    // The review window: a timed note, then send it to the editor.
+    const box = p.d.getElementById("videoModalBox");
+    box.querySelector(".rv-compose textarea").value = "Louder music";
+    box.querySelector(".rv-time-in").value = "0:30";
+    box.querySelector(".rv-add").click(); await settle();
+    Array.from(box.querySelectorAll(".rv-actions button")).find(b => b.textContent === "Send 1 change to the editor").click(); await settle();
+    const n = (await db.query("select author_role, author_name, at_seconds from social_video_comments")).rows;
+    chk("operator's note in the portal counts as the client's review, marked as us", n.length === 1 && n[0].author_role === "client" && /^Fully Launched \(for /.test(n[0].author_name) && Number(n[0].at_seconds) === 30, n);
+  } else if (note) {
     const box = c.querySelector(".note-box");
     box.querySelector("textarea").value = note;
     box.querySelector("[data-send]").click(); await settle();
@@ -72,7 +81,7 @@ chk("no alerts or page errors (FL)", !p.ui.alerts.length && !p.ui.errors.length,
 p = await open("dad-co");
 chk("concierge: approve final shows", !!btn(card(p, "Dad final"), "Approve for posting"));
 chk("concierge (we film): no filmed button", !btn(card(p, "Dad final"), "Video has been filmed"));
-chk("concierge: final card has only Approve / Request changes", Array.from(card(p, "Dad final").querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Approve for posting|Request changes to the video");
+chk("concierge: final card has only Review / Approve", Array.from(card(p, "Dad final").querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Review the video|Approve for posting");
 
 const log = (await db.query("select action, changed_by_role from social_status_audit_log where action <> 'created'")).rows;
 chk("audit log: all by operator, none as client", log.length >= 5 && log.every(r => r.changed_by_role === "operator" && r.action === "direct_update"), log);
