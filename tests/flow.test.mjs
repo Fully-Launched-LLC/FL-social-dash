@@ -253,7 +253,7 @@ for (const i of idx) {
 }
 if (V.opRev.length) {
   ed = track(await ED());
-  for (const i of V.opRev) chk(`editor sees revisions #${i}, with the time`, edCard(ed, title(i))?.textContent.includes("0:12  Tighten the intro " + i));
+  for (const i of V.opRev) chk(`editor sees revisions #${i}, with the time`, new RegExp("0:12\\s+Tighten the intro " + i).test(edCard(ed, title(i))?.querySelector(".ed-revisions")?.textContent || ""));
   for (const i of V.opRev) chk(`operator note saved, then closed when sent #${i}`, (await count("v.title=$1 and c.author_role='operator' and c.at_seconds=12 and c.closed_at is not null", [title(i)], "social_video_comments c join social_videos v on v.id=c.video_id")) === 1);
   await editorFinish(V.opRev);
   op = track(await OP());
@@ -294,7 +294,7 @@ for (const i of idx) {
 if (V.clientRev.length) {
   ed = track(await ED());
   for (const i of V.clientRev) chk(`editor sees the client's change, with the time, and can watch with the notes #${i}`,
-    edCard(ed, title(i))?.textContent.includes("Whole video  Louder music " + i) && !edCard(ed, title(i)).textContent.includes("other take") && !!btn(edCard(ed, title(i)), "Watch with the comments"));
+    /Whole video\s+Louder music/.test(edCard(ed, title(i))?.querySelector(".ed-revisions")?.textContent || "") && !edCard(ed, title(i)).textContent.includes("other take") && !!btn(edCard(ed, title(i)), "Watch with the comments"));
   await editorFinish(V.clientRev);
   op = track(await OP());
   for (const i of V.clientRev) { await click(btn(opRow(op, "#editsList", title(i)), "Approve & add captions"), "again " + i); await click($(op, "#aeSave"), "resend " + i); }

@@ -730,6 +730,15 @@ operator); editing happens only on the operator dashboard.
 
 ### Editor dashboard — `/editor/dashboard.html`
 
+Each video card (Tait, 2026-10-07): **Revisions needed** at the top when
+it came back (each line's time as a chip, and **Watch with the comments**),
+then three numbered steps: **1. Get the raw footage** (Open the raw footage:
+the video's own folder, else the client's), **2. Edit it** (instructions,
+brand guidelines, documents), **3. Upload the finished video** (Open the
+upload folder: the video's own finished folder when its "exact finished
+file" link is a folder, else the client's finished video folder; then
+Finished). The walkthrough points at revisions and each step.
+
 **To Edit** (a **Time sensitive** card first: edits due within 3 days or
 late, and anything sent back with revisions; then videos currently with
 them: edit-by date, revisions if it came back, editing instructions, the client's brand guidelines Google Doc —

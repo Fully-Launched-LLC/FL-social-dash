@@ -64,7 +64,7 @@ chk("a folder can be added to a video that had none", (await row("B no folder"))
 
 // The editor gets the video's own folder.
 const ed = await openPage("editor/dashboard.html", ED, "https://fl.test/editor/dashboard.html");
-const edLink = Array.from(ed.d.querySelectorAll("a")).find(a => a.textContent.includes("Raw footage"));
+const edLink = Array.from(ed.d.querySelectorAll("a")).find(a => a.textContent === "Open the raw footage");
 chk("editor: raw footage opens this video's folder", edLink?.href === "https://drive.google.com/drive/folders/own-c", edLink && edLink.href);
 
 // A client who films uploads into the video's own folder.

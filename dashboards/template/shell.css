@@ -514,3 +514,18 @@ button.big { padding:14px 40px; font-size:16px; }
   .rv-side { max-height:none; }
 }
 
+
+/* The editor's video card: revisions on top, then three numbered steps
+   (raw footage, edit, upload). */
+.ed-revisions { margin:0 0 14px; padding:12px 14px; border:2px solid var(--accent); border-radius:10px; }
+.ed-rev-head { display:block; font-size:0.72rem; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
+.ed-rev { font-size:0.9rem; line-height:1.5; margin:4px 0; white-space:pre-wrap; overflow-wrap:anywhere; }
+.ed-rev .rv-time { cursor:default; }
+.ed-steps { display:flex; flex-direction:column; gap:10px; }
+.ed-step { display:flex; gap:12px; align-items:flex-start; padding:12px; border:1px solid var(--border); border-radius:10px; }
+.ed-num { flex:none; width:26px; height:26px; border-radius:50%; background:var(--ink); color:var(--card); font-weight:700; font-size:0.85rem; display:flex; align-items:center; justify-content:center; }
+.ed-body { flex:1 1 auto; min-width:0; }
+.ed-body > b { display:block; margin:2px 0 4px; }
+.ed-body .meta { line-height:1.5; }
+.ed-body > div[style] { margin-top:6px; }
+.ed-btns { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
