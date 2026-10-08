@@ -738,6 +738,12 @@ brand guidelines, documents), **3. Upload the finished video** (Open the
 upload folder: the video's own finished folder when its "exact finished
 file" link is a folder, else the client's finished video folder; then
 Finished). The walkthrough points at revisions and each step.
+Above the list, filters (Tait, 2026-10-07; remembered per browser):
+**Show** All / Time sensitive (due within 3 days or late, or sent back) /
+Revisions needed, with counts; **Client** (also narrows the Calendar);
+**Due** any date / overdue / today / this week / next week / later (weeks
+end Sunday); **Order** due soonest or latest first. They replace the old
+Time sensitive card.
 
 **To Edit** (a **Time sensitive** card first: edits due within 3 days or
 late, and anything sent back with revisions; then videos currently with
