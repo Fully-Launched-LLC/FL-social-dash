@@ -57,7 +57,7 @@ chk("password saved, and they're marked set up", ed.ui.log.some(l => l.updateUse
 const tc = () => ed.d.getElementById("tourCard");
 const seen = [], text = {};
 chk("then the walkthrough starts", !!tc() && tc().textContent.includes("Step 1 of 5"), tc() && tc().textContent);
-for (let k = 0; k < 5; k++) { const h = tc().querySelector("h2").textContent; seen.push(h); text[h] = tc().textContent; tc().querySelector("[data-tour-next]").click(); }
+for (let k = 0; k < 5; k++) { const h = tc().querySelector("h2").textContent; seen.push(h); text[h] = tc().textContent; tc().querySelector("[data-tour-next]").click(); await settle(); }
 chk("it walks To Edit, Time sensitive, when an edit is due, Calendar, Important documents", seen.join("|") === "To Edit|Time sensitive|When an edit is due|Calendar|Important documents", seen);
 chk("…explaining the Edit by date and the documents", /Edit by/.test(text["When an edit is due"]) && /Customer Data/.test(text["Important documents"]) && /Content Research/.test(text["Important documents"]));
 chk("then: bookmark this page", tc().textContent.includes("Bookmark this page") && tc().textContent.includes("fl.test"));

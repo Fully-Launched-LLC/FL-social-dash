@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Tests for the Supabase migrations and the three dashboards. Run `npm install` in this folder once, then `npm test`.",
   "scripts": {
-    "test": "node db.test.mjs && node parity.test.mjs && node operator-approve.test.mjs && node operator-portal.test.mjs && node operator-editor.test.mjs && node date-dropdowns.test.mjs && node todo-tabs.test.mjs && node abandon-delete.test.mjs && node client-calendar.test.mjs && node film-by-category.test.mjs && node client-questions.test.mjs && node time-sensitive.test.mjs && node footage.test.mjs && node onboarding.test.mjs && node api.test.mjs && node documents.test.mjs && node editor-onboarding.test.mjs && node video-review.test.mjs && node flow.test.mjs 1 && node flow.test.mjs 2 && node flow.test.mjs 3"
+    "test": "node db.test.mjs && node parity.test.mjs && node operator-approve.test.mjs && node operator-portal.test.mjs && node operator-editor.test.mjs && node date-dropdowns.test.mjs && node todo-tabs.test.mjs && node abandon-delete.test.mjs && node client-calendar.test.mjs && node film-by-category.test.mjs && node client-questions.test.mjs && node time-sensitive.test.mjs && node footage.test.mjs && node onboarding.test.mjs && node api.test.mjs && node documents.test.mjs && node editor-onboarding.test.mjs && node video-review.test.mjs && node skip-onboarding.test.mjs && node flow.test.mjs 1 && node flow.test.mjs 2 && node flow.test.mjs 3"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.0",

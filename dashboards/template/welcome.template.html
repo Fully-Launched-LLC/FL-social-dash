@@ -56,8 +56,11 @@ let current = null;
 const UPLOADS = { brand: [], footage: [] };
 let memo = { state: "none" };   // none | recording | recorded | uploading | error
 
+// A client who's already onboarded (social_clients.skip_onboarding,
+// migration 015) only makes a password, then goes to their dashboard.
+const skipSteps = () => !!(CLIENT && CLIENT.skip_onboarding);
 function stepList() {
-  if (RESET) return [];
+  if (RESET || skipSteps()) return [];
   return [
     { key: "welcome", label: "Welcome" },
     { key: "brand", label: "Your brand" },
@@ -85,6 +88,7 @@ function canOpen(key) {
 function firstOpenStep() {
   if (RESET) return "password";
   if (ROLE !== "operator" && !(OB && OB.password_set_at)) return "password";
+  if (skipSteps()) return "password";
   const s = stepList();
   const open = s.find(x => !isDone(x.key));
   return (open || s[s.length - 1]).key;
@@ -341,6 +345,14 @@ const WIRE = {
         if (RESET) { setErr(body, "Saved. Taking you to your dashboard…"); location.href = await homeFor(ME); return; }
         const r = await save("password");
         if (r.error) { btn.disabled = false; return setErr(body, r.error.message); }
+      }
+      if (skipSteps()) {
+        // Already onboarded: done, straight to the dashboard and its walkthrough.
+        btn.disabled = true;
+        const r = ROLE === "operator" ? { error: null } : await save("done");
+        if (r.error) { btn.disabled = false; return setErr(body, r.error.message); }
+        location.href = "/clients/" + encodeURIComponent(CLIENT.slug) + "?tour=1";
+        return;
       }
       go("welcome");
     };

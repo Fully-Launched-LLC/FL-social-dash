@@ -154,6 +154,7 @@ async function loadLiveData() {
       documents: docsByClient[c.id] || [],
       onboarding: obByClient[c.id] || null,
       onboardingQuestions: c.onboarding_questions || null,
+      skipOnboarding: !!c.skip_onboarding,
       driveFolders: { footageUploads: f.footage_uploads, finalEdits: f.final_edits, brandVoice: f.brand_voice,
         root: f.root, importantDocuments: f.important_documents, previousContent: f.previous_content },
     };
@@ -834,6 +835,8 @@ function openClientPanel(clientId) {
       <option value="self-serve" ${c.clientSystem === "self-serve" ? "selected" : ""}>The client films — they film ideas and upload the footage</option>
       <option value="concierge" ${c.clientSystem === "concierge" ? "selected" : ""}>We film — they approve ideas; we film or already have the footage</option>
     </select>
+    <label style="display:flex;gap:8px;align-items:flex-start;margin:0 0 12px;font-size:0.9rem"><input type="checkbox" id="cpSkipOnboarding" ${c.skipOnboarding ? "checked" : ""} style="width:auto;margin-top:3px">
+      <span>Already onboarded: their invite only asks for a password, then opens their dashboard and the walkthrough (no brand, voice memo or footage steps)</span></label>
     ${lbl("Client's main Google Drive folder (link)")}<input type="text" id="cpRoot" value="${escapeHtml(f.root || "")}" style="width:100%;margin-bottom:10px">
     ${lbl("Important Documents folder (brand files go here during onboarding)")}<input type="text" id="cpImportant" value="${escapeHtml(f.importantDocuments || "")}" style="width:100%;margin-bottom:10px">
     ${lbl("Previous Content folder (their existing footage goes here during onboarding)")}<input type="text" id="cpPrevious" value="${escapeHtml(f.previousContent || "")}" style="width:100%;margin-bottom:10px">
@@ -873,6 +876,10 @@ function openClientPanel(clientId) {
     errEl.textContent = "";
     const name = nameEl.value.trim();
     const client_system = document.getElementById("cpSystem").value;
+    // Only sent when it's on (or being turned off), so this form still
+    // saves before migration 015 adds the column.
+    const skip = document.getElementById("cpSkipOnboarding").checked;
+    const skipField = skip || c.skipOnboarding ? { skip_onboarding: skip } : {};
     const contact = {
       contact_name: document.getElementById("cpContactName").value.trim() || null,
       contact_phone: document.getElementById("cpContactPhone").value.trim() || null,
@@ -890,12 +897,12 @@ function openClientPanel(clientId) {
     let id = clientId;
     e.target.disabled = true;
     if (id) {
-      const { error } = await sbClient.from("social_clients").update(Object.assign({ name, client_system }, contact)).eq("id", id);
+      const { error } = await sbClient.from("social_clients").update(Object.assign({ name, client_system }, skipField, contact)).eq("id", id);
       if (error) { errEl.textContent = error.code === "23505" ? "Another client already uses that contact email." : error.message; e.target.disabled = false; return; }
     } else {
       const slug = slugEl.value.trim();
       if (!/^[a-z0-9-]+$/.test(slug)) { errEl.textContent = "The portal address can only use lowercase letters, digits, and hyphens."; e.target.disabled = false; return; }
-      const { data, error } = await sbClient.from("social_clients").insert(Object.assign({ name, slug, client_system }, contact)).select("id");
+      const { data, error } = await sbClient.from("social_clients").insert(Object.assign({ name, slug, client_system }, skipField, contact)).select("id");
       if (error) { errEl.textContent = error.code === "23505" ? "That portal address or contact email is already used by another client." : error.message; e.target.disabled = false; return; }
       id = data[0].id;
     }

@@ -349,7 +349,9 @@ fully-social-os/
                                social_editor_setup_done), 014 (Frame.io-style
                                review: social_video_comments, notes
                                pinned to moments; social_settings, the
-                               Google Drive API key)
+                               Google Drive API key), 015
+                               (skip_onboarding: already-onboarded clients
+                               only make a password)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -738,6 +740,18 @@ else) and
 **Calendar** (edit-by dates) and **Documents** (each of their clients'
 brand guidelines and documents, Content Research included). An operator sees every editor's queue with a
 filter, and can click Finished for them.
+
+**Already onboarded** (Clients → Edit, `social_clients.skip_onboarding`,
+migration 015; Tait, 2026-10-07, for clients like Hesedea that he onboarded
+and filmed in person): the invite's **Start here** opens the password page
+only; once it's made, onboarding is marked done and they land on their
+dashboard's walkthrough. The client portal sends any invited login that
+hasn't made a password (and hasn't finished onboarding) to `/welcome`
+first, so nothing shows before it. The walkthrough includes reviewing a
+finished video when one is waiting: Finished videos to approve → Review
+the video → inside the review window, the player and its comment marks, a
+comment at a moment or on the whole video, Send changes or Approve. Steps
+that don't apply (nothing to film, no documents) are left out.
 
 ## Adding a client
 
