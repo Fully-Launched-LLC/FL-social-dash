@@ -529,3 +529,8 @@ button.big { padding:14px 40px; font-size:16px; }
 .ed-body .meta { line-height:1.5; }
 .ed-body > div[style] { margin-top:6px; }
 .ed-btns { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+
+/* The editor's filters: Show tabs, then Client, Due and Order. */
+.ed-filters { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:0 0 18px; }
+.ed-filter { display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--sub); }
+.ed-filter select { font:inherit; font-size:0.85rem; padding:6px 8px; border-radius:8px; }

@@ -30,7 +30,14 @@
   <section class="view active" id="view-queue">
     <div class="page-head"><h1>To Edit</h1><p>For each video: download the raw footage, edit it using the instructions, upload it to the finished video folder named after the video, then tap <b>Finished — send to operator</b>. If one comes back, what to change is in its <b>Revisions needed</b> box.</p></div>
     <div class="chip-row" id="editorChips"></div>
-    <div class="card" id="urgentCard"><h2>Time sensitive <span>Edits due in the next 3 days or already late, and anything sent back with revisions. Start here.</span></h2><div id="urgentList"></div></div>
+    <div class="ed-filters">
+      <div class="chip-row" id="showChips" style="margin:0"></div>
+      <label class="ed-filter">Client <select id="fClient"></select></label>
+      <label class="ed-filter">Due <select id="fDue">
+        <option value="">Any date</option><option value="late">Overdue</option><option value="today">Today</option>
+        <option value="week">This week</option><option value="next">Next week</option><option value="later">Later</option></select></label>
+      <label class="ed-filter">Order <select id="fSort"><option value="soon">Due soonest first</option><option value="late">Due latest first</option></select></label>
+    </div>
     <div id="queueList"></div>
   </section>
 
@@ -103,7 +110,8 @@ async function loadData() {
 }
 
 function queue() {
-  return ROLE === "operator" && editorFilter !== "all" ? VIDEOS.filter(x => x.video.editorId === editorFilter) : VIDEOS;
+  const mine = ROLE === "operator" && editorFilter !== "all" ? VIDEOS.filter(x => x.video.editorId === editorFilter) : VIDEOS;
+  return FILTERS.client ? mine.filter(x => x.client.id === FILTERS.client) : mine;
 }
 
 // The finished video goes in the client's finished video folder, named
@@ -181,9 +189,9 @@ function renderEditorChips() {
 }
 
 function renderQueue() {
-  const items = queue();
+  const items = shown();
   const list = document.getElementById("queueList");
-  if (!items.length) { list.innerHTML = '<div class="empty">Nothing to edit right now.</div>'; return; }
+  if (!items.length) { list.innerHTML = `<div class="card"><div class="empty">${VIDEOS.length ? "Nothing matches these filters." : "Nothing to edit right now."}</div></div>`; return; }
   list.innerHTML = "";
   items.forEach(({ client, video }) => {
     const f = client.driveFolders || {};
@@ -265,20 +273,52 @@ function renderCalendar() {
     calState, renderCalendar);
 }
 
-// Time sensitive: edits due within EDIT_SOON_DAYS or late, and
-// anything sent back with revisions, soonest first.
+// ---------- filters (Tait, 2026-10-07) ----------
+// Show: All / Time sensitive (due within EDIT_SOON_DAYS or late, or sent
+// back with revisions) / Revisions needed. Client narrows the list and the
+// calendar. Due: by date. Order: soonest or latest first. Remembered per
+// browser.
 const EDIT_SOON_DAYS = 3;
-function renderUrgent() {
-  const soon = addDaysISO(todayISO(), EDIT_SOON_DAYS);
-  const items = queue().filter(x => hasRevisions(x.video) || (x.video.dueToEdit && x.video.dueToEdit <= soon))
-    .sort((a, b) => (a.video.dueToEdit || "9999").localeCompare(b.video.dueToEdit || "9999"));
-  document.getElementById("urgentList").innerHTML = items.map(({ client, video }) => {
-    const late = video.dueToEdit && video.dueToEdit < todayISO();
-    const when = !video.dueToEdit ? "" : late ? "Late, was due " + niceDate(video.dueToEdit) : video.dueToEdit === todayISO() ? "Due today" : "Due " + niceDate(video.dueToEdit);
-    return `<div class="row video-card" onclick="openEditorVideoModal('${video.id}')"><div class="left"><b>${escapeHtml(video.title || "(untitled)")}</b><div class="meta">${escapeHtml(client.name)}${hasRevisions(video) ? " · Revisions needed" : ""}</div></div>
-      ${when ? `<span class="badge" style="border-color:var(--accent);color:var(--accent)">${escapeHtml(when)}</span>` : ""}</div>`;
-  }).join("") || '<div class="empty">Nothing due in the next 3 days. You\'re all caught up.</div>';
+const FILTER_KEY = "fs-editor-filters";
+let FILTERS = { show: "all", client: "", due: "", sort: "soon" };
+try { Object.assign(FILTERS, JSON.parse(localStorage.getItem(FILTER_KEY) || "{}")); } catch (e) {}
+const saveFilters = () => { try { localStorage.setItem(FILTER_KEY, JSON.stringify(FILTERS)); } catch (e) {} };
+const isSoon = v => hasRevisions(v) || (v.dueToEdit && v.dueToEdit <= addDaysISO(todayISO(), EDIT_SOON_DAYS));
+// Monday-start weeks: "this week" runs to Sunday, "next week" the 7 days after.
+function weekEnd(offsetWeeks) {
+  const d = new Date(todayISO() + "T00:00:00"), toSunday = (7 - d.getDay()) % 7;
+  return addDaysISO(todayISO(), toSunday + 7 * offsetWeeks);
 }
+function dueMatches(v, due) {
+  const t = todayISO(), d = v.dueToEdit;
+  if (!due) return true;
+  if (!d) return due === "later";
+  return { late: d < t, today: d === t, week: d >= t && d <= weekEnd(0), next: d > weekEnd(0) && d <= weekEnd(1), later: d > weekEnd(1) }[due];
+}
+const SHOWS = [["all", "All"], ["soon", "Time sensitive"], ["revisions", "Revisions needed"]];
+function shown() {
+  const base = queue().filter(x => dueMatches(x.video, FILTERS.due));
+  const pick = { all: () => true, soon: x => isSoon(x.video), revisions: x => hasRevisions(x.video) }[FILTERS.show] || (() => true);
+  const dir = FILTERS.sort === "late" ? -1 : 1;
+  return base.filter(pick).sort((a, b) => dir * (a.video.dueToEdit || "9999").localeCompare(b.video.dueToEdit || "9999")
+    || (a.video.title || "").localeCompare(b.video.title || "", undefined, { numeric: true }));
+}
+function renderFilters() {
+  const base = queue().filter(x => dueMatches(x.video, FILTERS.due));
+  const count = { all: base.length, soon: base.filter(x => isSoon(x.video)).length, revisions: base.filter(x => hasRevisions(x.video)).length };
+  const chips = document.getElementById("showChips");
+  chips.innerHTML = SHOWS.map(([k, label]) => `<div class="chip${FILTERS.show === k ? " active" : ""}${count[k] ? "" : " zero"}${k !== "all" && count[k] ? " urgent" : ""}" data-show="${k}">${chipLabel(label, count[k])}</div>`).join("");
+  chips.querySelectorAll("[data-show]").forEach(c => c.onclick = () => { FILTERS.show = c.dataset.show; saveFilters(); renderAll(); });
+  const clients = Object.values(CLIENTS).filter(c => VIDEOS.some(x => x.client.id === c.id)).sort((a, b) => a.name.localeCompare(b.name));
+  if (FILTERS.client && !clients.some(c => c.id === FILTERS.client)) FILTERS.client = "";
+  const fc = document.getElementById("fClient");
+  fc.innerHTML = `<option value="">All clients</option>` + clients.map(c => `<option value="${c.id}"${c.id === FILTERS.client ? " selected" : ""}>${escapeHtml(c.name)}</option>`).join("");
+  document.getElementById("fDue").value = FILTERS.due;
+  document.getElementById("fSort").value = FILTERS.sort;
+}
+["fClient", "fDue", "fSort"].forEach((id, k) => document.getElementById(id).addEventListener("change", e => {
+  FILTERS[["client", "due", "sort"][k]] = e.target.value; saveFilters(); renderAll();
+}));
 
 // Documents: every client they edit for, with that client's documents
 // (Content Research included; migration 012) and brand guidelines.
@@ -290,21 +330,23 @@ function renderDocuments() {
     || '<div class="card"><div class="empty">Each client\'s documents show up here as soon as you have a video of theirs to edit.</div></div>';
 }
 
-function renderAll() { renderEditorChips(); renderUrgent(); renderQueue(); renderCalendar(); renderDocuments(); }
+function renderAll() { renderEditorChips(); renderFilters(); renderQueue(); renderCalendar(); renderDocuments(); }
 
 // ---------- first visit: password, then the walkthrough ----------
 // An editor who hasn't created a password yet (setup_at, migration 013;
 // or anyone opening the invite link, ?setup=1) gets "Create your
 // password" first. Then, and on ?tour=1 (the operator can preview it),
-// the walkthrough: Time sensitive, when an edit is due, revisions (when a
+// the walkthrough: Time sensitive, the filters, when an edit is due, revisions (when a
 // video came back), the three steps on a video card (raw footage, edit,
 // upload; Tait, 2026-10-07), the calendar, the documents, then "bookmark
 // this page" (Tait, 2026-10-06).
 const EDITOR_TOUR = [
   { go: () => tourView("queue"), el: () => document.querySelector('.nav-item[data-view="queue"]'),
     title: "To Edit", html: () => "Every video you're editing is here, with its raw footage, the editing instructions and where to upload the finished video." },
-  { go: () => tourView("queue"), el: () => document.getElementById("urgentCard"),
-    title: "Time sensitive", html: () => "Anything due in the next 3 days, already late, or sent back with revisions shows up here first. Check it whenever you sign in." },
+  { go: () => tourView("queue"), el: () => document.querySelector('#showChips [data-show="soon"]'),
+    title: "Time sensitive", html: () => "Click <b>Time sensitive</b> for anything due in the next 3 days, already late, or sent back with revisions. Check it whenever you sign in." },
+  { go: () => tourView("queue"), el: () => document.querySelector(".ed-filters label"),
+    title: "Filter and sort", html: () => "Narrow the list to one <b>client</b>, to what's <b>due</b> today, this week or next week, and put it in order by when it's due." },
   { go: () => tourView("queue"), el: () => document.querySelector("#queueList .edit-by"),
     title: "When an edit is due", html: () => "Each video shows its <b>Edit by</b> date in the top right corner. It turns gold if it's late." },
   { go: () => tourView("queue"), el: () => document.querySelector("#queueList .ed-revisions"),
