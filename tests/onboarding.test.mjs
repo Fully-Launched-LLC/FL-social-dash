@@ -191,17 +191,17 @@ await db.exec(`insert into social_videos (client_id,title,hook,outline,body,film
 const tp = await openPage("clients/portal.html", CL, "https://fl.test/clients/newco?tour=1");
 const tc = () => tp.d.getElementById("tourCard");
 const ringed = () => { const s = tp.d.getElementById("tourSpot"); return s && s.style.display !== "none"; };
-chk("the portal opens with a walkthrough, starting at To Do", !!tc() && tc().querySelector("h2").textContent === "To Do" && tc().textContent.includes("Step 1 of 8") && /everything you need to do/.test(tc().textContent) && ringed(), tc() && tc().textContent);
+chk("the portal opens with a walkthrough, starting at To Do", !!tc() && tc().querySelector("h2").textContent === "To Do" && tc().textContent.includes("Step 1 of 9") && /everything you need to do/.test(tc().textContent) && ringed(), tc() && tc().textContent);
 chk("…and drops ?tour=1 from the address, so a reload doesn't repeat it", !tp.w.location.search.includes("tour"));
 const seen = [], text = {}, onPage = {};
-for (let k = 0; k < 8; k++) {
+for (let k = 0; k < 9; k++) {
   const h = tc().querySelector("h2").textContent;
   seen.push(h); text[h] = tc().textContent;
   onPage[h] = tp.d.querySelector(".view.active").id + (h === "To film" ? ":" + tp.d.querySelector("#videoTabs .chip.active").dataset.tab : "");
-  tc().querySelector("[data-tour-next]").click();
+  tc().querySelector("[data-tour-next]").click(); await settle();
 }
-chk("it walks To Do, Time sensitive, To film, a card, Upload footage, film it your way, Content Calendar, Documents (no footage folder)",
-  seen.join("|") === "To Do|Time sensitive|To film|Each card is one video|Upload footage on each card|Film it your way|Content Calendar|Documents", seen);
+chk("it walks To Do, Time sensitive, To film, a card, Upload footage, film it your way, Finished videos to approve, Content Calendar, Documents (no footage folder; no review steps without a finished video)",
+  seen.join("|") === "To Do|Time sensitive|To film|Each card is one video|Upload footage on each card|Film it your way|Finished videos to approve|Content Calendar|Documents", seen);
 chk("…opening each page and tab as it goes", onPage["To film"] === "view-videos:film" && onPage["Content Calendar"] === "view-calendar" && onPage["Documents"] === "view-documents", onPage);
 chk("…explains the hook, outline and script, uploading on each card, and filming it their way",
   /Hook.*Outline.*Script/s.test(text["Each card is one video"]) && /its own card/.test(text["Upload footage on each card"]) && /script.*outline.*question/is.test(text["Film it your way"]));

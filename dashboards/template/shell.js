@@ -1169,10 +1169,12 @@ function runTour(TOUR, { onEnd } = {}) {
   // Steps whose target isn't there (no Time sensitive tab, nothing to
   // film, a we-film client with no Upload footage button) are left out.
   const steps = TOUR.filter(t => { t.go(); return visible(t.el()); });
-  const show = () => {
+  // A step's go() may return a promise (one that opens a window first).
+  const show = async () => {
     if (i >= steps.length) return bookmark();
     const t = steps[i];
-    t.go(); target = t.el();
+    await t.go(); target = t.el();
+    if (!target) { i++; return show(); }
     // A big target scrolls to its top, so its title and hook show.
     const big = target.getBoundingClientRect().height > innerHeight * 0.45;
     if (target.scrollIntoView) target.scrollIntoView({ block: big ? "start" : "center" });
@@ -1185,6 +1187,7 @@ function runTour(TOUR, { onEnd } = {}) {
     if (back) back.onclick = () => { i--; show(); };
     card.querySelector("[data-tour-skip]").onclick = bookmark;
     place();
+    setTimeout(place, 400); // again once anything still loading has settled
   };
   addEventListener("resize", place); addEventListener("scroll", place, true);
   show();

@@ -520,7 +520,7 @@ function renderDocuments() {
 // A client who hasn't finished onboarding gets a way back into it.
 function renderOnboardBanner() {
   const o = ONBOARDING;
-  document.getElementById("onboardBanner").innerHTML = o && o.invited_at && !o.completed_at ? `
+  document.getElementById("onboardBanner").innerHTML = o && o.invited_at && !o.completed_at && !CLIENT.skip_onboarding ? `
     <div class="card" style="border-color:var(--gold)"><div class="row" style="border:0;padding:0">
       <div class="left"><b>Finish setting up your account</b><div class="meta">A few quick steps (your brand, a voice memo and your footage) so we can make content that sounds like you.</div></div>
       <a class="btn accent" href="/welcome${IS_OPERATOR ? "?client=" + encodeURIComponent(CLIENT.slug) : ""}">Continue</a></div></div>` : "";
@@ -577,6 +577,13 @@ async function startApp(user, access) {
   DOCUMENTS = docs || [];
   GEN_DOCS = (gen && gen.data) || [];
   ONBOARDING = (ob && ob.data) || null;
+  // Invited but no password yet: the password page first. Nothing here
+  // shows until they've made one. (Not for clients who finished the older
+  // onboarding before the password step existed.)
+  if (!IS_OPERATOR && ONBOARDING && ONBOARDING.invited_at && !ONBOARDING.password_set_at && !ONBOARDING.completed_at) {
+    location.replace("/welcome");
+    return;
+  }
   renderDocuments();
   renderOnboardBanner();
 
@@ -590,10 +597,14 @@ async function startApp(user, access) {
 // right page (and To Do tab), dims everything else, and rings one thing in
 // gold, with the card beside it and an arrow pointing at it. It walks To Do
 // → Time sensitive → To film → a video card (hook, outline, script) → its
-// Upload footage button → "film it your way" → Content Calendar →
-// Documents (what each one is), then "bookmark this page" (Tait,
-// 2026-10-06). The footage folder is left out on purpose: each video's
-// clips go in through its own card.
+// Upload footage button → "film it your way" → Finished videos to approve
+// → Review the video → inside the review window: the player and its
+// comment marks, a comment at a moment or on the whole video, Send changes
+// or Approve (Tait, 2026-10-07) → Content Calendar → Documents (what each
+// one is), then "bookmark this page" (Tait, 2026-10-06). The footage
+// folder is left out on purpose: each video's clips go in through its own
+// card. Steps that don't apply (nothing to film, no finished video, no
+// documents) are left out.
 const tourGo = view => { const n = document.querySelector(`.nav-item[data-view="${view}"]`); if (n && !n.classList.contains("active")) n.click(); };
 const tourTab = key => { if (activeTab !== key) { activeTab = key; renderVideoTabs(); } };
 // The first To film card the client films themselves (it has an Upload
@@ -612,12 +623,27 @@ function docSummaries() {
   const rows = names.map(n => { const m = about.find(([re]) => re.test(n)); return m ? `<li><b>${escapeHtml(n.replace(/\s*\(.*\)\s*$/, ""))}</b>: ${m[1]}</li>` : ""; }).join("");
   return rows ? `<ul class="tour-list">${rows}</ul>` : "";
 }
+// The review steps open the review window on the first finished video
+// waiting for them (once), and point at its parts.
+const tourReviewVideo = () => VIDEOS.find(v => v.status === "client_review");
+let tourReviewOpen = null;
+function tourOpenReview() {
+  const v = tourReviewVideo(), root = document.getElementById("videoModalRoot");
+  if (!v) return;
+  if (tourReviewOpen === v.id && root && !root.classList.contains("hidden")) return;
+  tourReviewOpen = v.id;
+  return openClientReview(v);
+}
+const inReview = sel => () => {
+  const root = document.getElementById("videoModalRoot"), box = document.getElementById("videoModalBox");
+  return root && !root.classList.contains("hidden") && box.classList.contains("modal-wide") ? box.querySelector(sel) : null;
+};
 const TOUR = [
   { go: () => { tourGo("videos"); tourTab("all"); }, el: () => document.querySelector('.nav-item[data-view="videos"]'),
     title: "To Do", html: () => "This is where everything you need to do is found: videos to film, ideas to approve, and finished videos to approve before they post." },
   { go: () => tourGo("videos"), el: () => document.querySelector('#videoTabs .chip[data-tab="urgent"]'),
     title: "Time sensitive", html: () => "Anything due in the next 3 days, or already late, shows up here. Check it first whenever you sign in." },
-  { go: () => { tourGo("videos"); tourTab("film"); }, el: () => document.querySelector('#videoTabs .chip[data-tab="film"]'),
+  { go: () => { tourGo("videos"); tourTab("film"); }, el: () => tourCard() ? document.querySelector('#videoTabs .chip[data-tab="film"]') : null,
     title: "To film", html: () => "Every video that still needs filming, grouped by topic. Pick a topic at the top to film a few in one sitting." },
   { go: () => { tourGo("videos"); tourTab("film"); }, el: () => tourCard(),
     title: "Each card is one video", html: () => "Click a video's title to open it. Inside you'll find:<ul class=\"tour-list\"><li><b>Hook</b>: the first line, the one that makes people stop scrolling.</li><li><b>Outline</b>: the main points, in order.</li><li><b>Script</b>: the whole thing, word for word.</li></ul>" },
@@ -625,14 +651,26 @@ const TOUR = [
     title: "Upload footage on each card", html: () => "Every video has its own <b>Upload footage</b> button. Put that video's clips there, in its own card, so our editor gets the right clips for the right video. Then tap <b>Video has been filmed</b>." },
   { go: () => { tourGo("videos"); tourTab("film"); }, el: () => tourUpload(tourCard()) && tourCard(),
     title: "Film it your way", html: () => "You choose how to capture it. Read the <b>script</b>, talk through the <b>outline</b> in your own words, or just answer the <b>question</b> under How to film it. Whatever works best for you." },
+  { go: () => { tourGo("videos"); tourTab("final"); }, el: () => document.querySelector('#videoTabs .chip[data-tab="final"]'),
+    title: "Finished videos to approve", html: () => "Once a video is edited, it shows up here for you to watch and approve before it posts." },
+  { go: () => { tourGo("videos"); tourTab("final"); }, el: () => document.querySelector("#listFinal > .card [data-review]"),
+    title: "Review the video", html: () => "Click <b>Review the video</b> to watch the finished edit and tell us what you think." },
+  { modal: true, go: tourOpenReview, el: inReview(".rv-stage"),
+    title: "Watch it here", html: () => "Play the video right here. Every comment shows as a dot on the bar under the video, with the initials of who left it. Click a dot to jump to that moment." },
+  { modal: true, go: tourOpenReview, el: inReview(".rv-compose"),
+    title: "Comment on any moment", html: () => "Pause where something should change and type it here. Your comment is pinned to that exact second (<b>At 0:12</b>).<br><br>For a suggestion about the whole video, like the music or the pacing, choose <b>Whole video</b>." },
+  { modal: true, go: tourOpenReview, el: inReview(".rv-actions"),
+    title: "Send changes, or approve", html: () => "Done? <b>Send changes to the editor</b> and we'll make them and send it back to you. Happy with it? <b>Approve for posting</b>." },
   { go: () => tourGo("calendar"), el: () => document.querySelector('.nav-item[data-view="calendar"]'),
     title: "Content Calendar", html: () => "Prefer to see it on a calendar? Every video is on the day it posts, and the green blocks show when to film it. Click any one to open it." },
-  { go: () => tourGo("documents"), el: () => document.querySelector('.nav-item[data-view="documents"]'),
+  { go: () => tourGo("documents"), el: () => DOCUMENTS.length || GEN_DOCS.length ? document.querySelector('.nav-item[data-view="documents"]') : null,
     title: "Documents", html: () => "Your most important documents, in one place." + docSummaries() },
 ];
 function startTour() {
   history.replaceState(null, "", location.pathname + location.hash);
-  runTour(TOUR, { onEnd: () => { tourGo("videos"); tourTab("all"); } });
+  // Every step outside the review window closes it first.
+  const steps = TOUR.map(t => t.modal ? t : { ...t, go: () => { closeVideoModal(); tourReviewOpen = null; return t.go(); } });
+  runTour(steps, { onEnd: () => { closeVideoModal(); tourReviewOpen = null; tourGo("videos"); tourTab("all"); } });
 }
 
 initAuthGate({ resolveAccess: resolveClientPortalAccess, onReady: startApp });
