@@ -113,13 +113,13 @@ function queue() {
 function finishVideo(videoId, btn) {
   const x = VIDEOS.find(y => y.video.id === videoId);
   if (!x) return;
-  const t = x.video.title || "this video", f = x.client.driveFolders || {};
+  const t = x.video.title || "this video", f = x.client.driveFolders || {}, up = uploadFolder(x.video, f);
   const box = openModal(`
     <h2>Is the finished video in Google Drive?</h2>
     <p style="line-height:1.55;margin:8px 0 14px">Before you send <b>${escapeHtml(t)}</b> to the operator, make sure the finished video is uploaded to
-      ${escapeHtml(x.client.name)}'s finished video folder, named <b>${escapeHtml(t)}</b>. The operator and the client watch it from there.</p>
-    ${f.finalEdits
-      ? `<a class="btn" href="${escapeHtml(f.finalEdits)}" target="_blank" rel="noopener" style="margin-bottom:16px">Open the finished video folder</a>`
+      ${up && up.own ? "this video's finished folder" : escapeHtml(x.client.name) + "'s finished video folder"}, named <b>${escapeHtml(t)}</b>. The operator and the client watch it from there.</p>
+    ${up
+      ? `<a class="btn" href="${escapeHtml(up.url)}" target="_blank" rel="noopener" style="margin-bottom:16px">Open the upload folder</a>`
       : `<p style="color:var(--red);margin:0 0 16px">This client has no finished video folder yet. Ask the operator to add one.</p>`}
     <div class="modal-actions"><button class="primary" id="efYes">Yes — it's in Google Drive, send it</button><button id="efNo">Not yet</button></div>`);
   box.querySelector("#efNo").onclick = closeVideoModal;
@@ -155,11 +155,16 @@ function finishButton(videoId) {
 
 // What needs to change on a video sent back: the operator's revisions
 // (editor_brief.revisions) and any change the client asked for (note).
+// Each line with a time ("0:12  Make the logo bigger") shows that time as
+// a chip; Watch with the comments plays the cut with every comment pinned.
 function revisionsBox(video) {
   const items = [(video.editorBrief || {}).revisions, video.note].filter(Boolean);
-  return items.length ? `<div style="margin:0 0 12px;padding:10px 12px;border:2px solid var(--accent);border-radius:8px">
-    <b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--accent);margin-bottom:4px">Revisions needed</b>
-    <div style="white-space:pre-wrap;font-size:0.9rem;line-height:1.5">${items.map(escapeHtml).join("\n\n")}</div></div>` : "";
+  if (!items.length) return "";
+  const line = l => { const m = l.match(/^(\d+:\d{2}(?::\d{2})?|Whole video)\s{2}(.*)$/); return m ? `<div class="ed-rev"><span class="rv-time${m[1] === "Whole video" ? " whole" : ""}">${escapeHtml(m[1])}</span> ${escapeHtml(m[2])}</div>` : `<div class="ed-rev">${escapeHtml(l)}</div>`; };
+  return `<div class="ed-revisions">
+    <b class="ed-rev-head">Revisions needed</b>
+    ${items.map(t => String(t).split("\n").filter(l => l.trim()).map(line).join("")).join('<div style="height:8px"></div>')}
+    <div class="ed-btns"><button class="primary" data-notes="${video.id}">Watch with the comments</button></div></div>`;
 }
 function hasRevisions(video) { return !!((video.editorBrief || {}).revisions || video.note); }
 
@@ -205,21 +210,30 @@ function renderQueue() {
 // upload, and the client's documents (Content Research included). The
 // edit-by date is in the card's header.
 function editorCardBody(client, video) {
-  const f = client.driveFolders || {}, raw = rawFootageLink(video, f);
+  const f = client.driveFolders || {}, raw = rawFootageLink(video, f), up = uploadFolder(video, f);
+  const docs = client.documents || [];
   return `
     ${revisionsBox(video)}
-    ${fieldBlock("Editing instructions", editorInstructions(video))}
-    <div class="meta" style="margin-top:10px">${f.finalEdits
-      ? `Upload the finished video to the finished video folder and name it <b>${escapeHtml(video.title || "after the video")}</b>.`
-      : `<b style="color:var(--red)">This client has no finished video folder yet.</b> Ask the operator to add one before you finish this.`}</div>
-    <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-      ${hasRevisions(video) ? `<button data-notes="${video.id}">Watch with the comments</button>` : ""}
-      ${f.brandVoice ? `<a class="btn" href="${escapeHtml(f.brandVoice)}" target="_blank" rel="noopener">Brand guidelines</a>` : ""}
-      ${raw ? `<a class="btn" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">${raw.label}</a>` : ""}
-      ${f.finalEdits ? `<a class="btn" href="${escapeHtml(f.finalEdits)}" target="_blank" rel="noopener">Finished video folder</a>` : ""}
-    </div>
-    ${(client.documents || []).length ? `<div class="meta" style="margin:14px 0 6px">${escapeHtml(client.name)}'s documents</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">${client.documents.map(d => `<a class="btn" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.title)}</a>`).join("")}</div>` : ""}`;
+    <div class="ed-steps">
+      <div class="ed-step"><span class="ed-num">1</span><div class="ed-body"><b>Get the raw footage</b>
+        <div class="meta">${raw ? (raw.own ? "Every clip for this video is in its own folder." : `Every clip is in ${escapeHtml(client.name)}'s raw footage folder; this video's start with <b>${escapeHtml(video.title || "its title")}</b>.`) : "No raw footage folder yet. Ask the operator for it."}</div>
+        ${raw ? `<div class="ed-btns"><a class="btn primary" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">Open the raw footage</a></div>` : ""}</div></div>
+      <div class="ed-step"><span class="ed-num">2</span><div class="ed-body"><b>Edit it</b>
+        ${fieldBlock("Editing instructions", editorInstructions(video)) || `<div class="meta">No special instructions for this one.</div>`}
+        ${f.brandVoice || docs.length ? `<div class="ed-btns">${f.brandVoice ? `<a class="btn" href="${escapeHtml(f.brandVoice)}" target="_blank" rel="noopener">Brand guidelines</a>` : ""}${docs.map(d => `<a class="btn" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.title)}</a>`).join("")}</div>` : ""}</div></div>
+      <div class="ed-step"><span class="ed-num">3</span><div class="ed-body"><b>Upload the finished video</b>
+        <div class="meta">${up ? `Put it in ${up.own ? "this video's finished folder" : `${escapeHtml(client.name)}'s finished video folder`} and name the file <b>${escapeHtml(video.title || "after the video")}</b>. Then click <b>${escapeHtml(VIDEO_ACTIONS.mark_delivered.label)}</b>.`
+          : `<b style="color:var(--red)">This client has no finished video folder yet.</b> Ask the operator to add one before you finish this.`}</div>
+        <div class="ed-btns actions">${up ? `<a class="btn" href="${escapeHtml(up.url)}" target="_blank" rel="noopener">Open the upload folder</a>` : ""}</div></div></div>
+    </div>`;
+}
+// Where the finished video goes: the video's own finished folder (its
+// "exact finished file" link, when that's a folder), else the client's
+// finished video folder.
+function uploadFolder(video, f) {
+  const own = driveRef(video.finalCutUrl);
+  if (own && own.kind === "folder") return { url: video.finalCutUrl, own: true };
+  return f && f.finalEdits ? { url: f.finalEdits, own: false } : null;
 }
 
 // The cut that was sent back, with the notes on it pinned to their
@@ -282,8 +296,10 @@ function renderAll() { renderEditorChips(); renderUrgent(); renderQueue(); rende
 // An editor who hasn't created a password yet (setup_at, migration 013;
 // or anyone opening the invite link, ?setup=1) gets "Create your
 // password" first. Then, and on ?tour=1 (the operator can preview it),
-// the walkthrough: Time sensitive, when an edit is due, the calendar,
-// the documents, then "bookmark this page" (Tait, 2026-10-06).
+// the walkthrough: Time sensitive, when an edit is due, revisions (when a
+// video came back), the three steps on a video card (raw footage, edit,
+// upload; Tait, 2026-10-07), the calendar, the documents, then "bookmark
+// this page" (Tait, 2026-10-06).
 const EDITOR_TOUR = [
   { go: () => tourView("queue"), el: () => document.querySelector('.nav-item[data-view="queue"]'),
     title: "To Edit", html: () => "Every video you're editing is here, with its raw footage, the editing instructions and where to upload the finished video." },
@@ -291,6 +307,14 @@ const EDITOR_TOUR = [
     title: "Time sensitive", html: () => "Anything due in the next 3 days, already late, or sent back with revisions shows up here first. Check it whenever you sign in." },
   { go: () => tourView("queue"), el: () => document.querySelector("#queueList .edit-by"),
     title: "When an edit is due", html: () => "Each video shows its <b>Edit by</b> date in the top right corner. It turns gold if it's late." },
+  { go: () => tourView("queue"), el: () => document.querySelector("#queueList .ed-revisions"),
+    title: "Revisions", html: () => "When a video comes back with changes, they're at the top of its card, each with the moment in the video it's about. <b>Watch with the comments</b> plays your last cut with every comment pinned to its spot on the bar." },
+  { go: () => tourView("queue"), el: () => document.querySelector("#queueList .ed-step:nth-child(1)"),
+    title: "1. Get the raw footage", html: () => "<b>Open the raw footage</b> takes you straight to this video's clips in Google Drive." },
+  { go: () => tourView("queue"), el: () => document.querySelector("#queueList .ed-step:nth-child(2)"),
+    title: "2. Edit it", html: () => "The editing instructions for this video, plus the client's brand guidelines and documents, so it looks and sounds like them." },
+  { go: () => tourView("queue"), el: () => document.querySelector("#queueList .ed-step:nth-child(3)"),
+    title: "3. Upload the finished video", html: () => "<b>Open the upload folder</b>, put the finished video there named after the video, then click <b>Finished</b>. It goes to us to review." },
   { go: () => tourView("calendar"), el: () => document.querySelector('.nav-item[data-view="calendar"]'),
     title: "Calendar", html: () => "Every edit-by date on a calendar, so you can plan your week. Click a video to open it." },
   { go: () => tourView("documents"), el: () => document.querySelector('.nav-item[data-view="documents"]'),

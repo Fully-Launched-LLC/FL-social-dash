@@ -17,11 +17,11 @@ await db.exec(`
   insert into social_operators values ('${OP}','Tait','tait@x');
   insert into social_editors (id,name,email,invited_at,invite_count) values ('${ED}','Sam Rivera','sam@x',now(),1);
   insert into social_clients (id,name,slug,client_system) values ('${FL}','Fully Launched','test-fully-launched','self-serve');
-  insert into social_drive_folder_links (client_id, brand_voice) values ('${FL}','https://docs.google.com/brand');
+  insert into social_drive_folder_links (client_id, brand_voice, footage_uploads, final_edits) values ('${FL}','https://docs.google.com/brand','https://drive.google.com/drive/folders/rawfootage01','https://drive.google.com/drive/folders/finaledits01');
   insert into social_client_documents (client_id,title,url,position,team_only) values ('${FL}','Customer Data','https://docs.google.com/cd',0,false),('${FL}','Content Research','https://docs.google.com/cr',1,true);
-  insert into social_videos (client_id,title,status,editor_id,due_to_edit) values
-    ('${FL}','Due soon','with_editor','${ED}','${iso(1)}'),
-    ('${FL}','Due later','with_editor','${ED}','${iso(10)}');
+  insert into social_videos (client_id,title,status,editor_id,due_to_edit,editor_brief,final_cut_url) values
+    ('${FL}','Due soon','with_editor','${ED}','${iso(1)}','{"instructions":"Fast cuts.","rawFootageUrl":"https://drive.google.com/drive/folders/ownraw0001","revisions":"0:12  Make the logo bigger\\nWhole video  Music a bit quieter"}','https://drive.google.com/drive/folders/ownfinal001'),
+    ('${FL}','Due later','with_editor','${ED}','${iso(10)}','{}',null);
 `);
 
 // ── Operator: Editors page ──
@@ -56,9 +56,11 @@ chk("password saved, and they're marked set up", ed.ui.log.some(l => l.updateUse
 
 const tc = () => ed.d.getElementById("tourCard");
 const seen = [], text = {};
-chk("then the walkthrough starts", !!tc() && tc().textContent.includes("Step 1 of 5"), tc() && tc().textContent);
-for (let k = 0; k < 5; k++) { const h = tc().querySelector("h2").textContent; seen.push(h); text[h] = tc().textContent; tc().querySelector("[data-tour-next]").click(); await settle(); }
-chk("it walks To Edit, Time sensitive, when an edit is due, Calendar, Important documents", seen.join("|") === "To Edit|Time sensitive|When an edit is due|Calendar|Important documents", seen);
+chk("then the walkthrough starts", !!tc() && tc().textContent.includes("Step 1 of 9"), tc() && tc().textContent);
+for (let k = 0; k < 9; k++) { const h = tc().querySelector("h2").textContent; seen.push(h); text[h] = tc().textContent; tc().querySelector("[data-tour-next]").click(); await settle(); }
+chk("it walks To Edit, Time sensitive, when an edit is due, revisions, the three steps, Calendar, Important documents",
+  seen.join("|") === "To Edit|Time sensitive|When an edit is due|Revisions|1. Get the raw footage|2. Edit it|3. Upload the finished video|Calendar|Important documents", seen);
+chk("…explaining revisions with their moments, and where footage and uploads go", /Watch with the comments/.test(text["Revisions"]) && /Open the raw footage/.test(text["1. Get the raw footage"]) && /Open the upload folder/.test(text["3. Upload the finished video"]));
 chk("…explaining the Edit by date and the documents", /Edit by/.test(text["When an edit is due"]) && /Customer Data/.test(text["Important documents"]) && /Content Research/.test(text["Important documents"]));
 chk("then: bookmark this page", tc().textContent.includes("Bookmark this page") && tc().textContent.includes("fl.test"));
 tc().querySelector("[data-tour-done]").click();
@@ -68,6 +70,19 @@ chk("Got it closes it, back on To Edit, ?setup gone", !tc() && ed.d.querySelecto
 const urgent = ed.d.getElementById("urgentList").textContent;
 chk("Time sensitive lists the edit due tomorrow, not the one in 10 days", urgent.includes("Due soon") && !urgent.includes("Due later"), urgent);
 chk("each video shows its Edit by date", ed.d.querySelectorAll("#queueList .edit-by").length === 2);
+const soon = Array.from(ed.d.querySelectorAll("#queueList > .card")).find(c => c.textContent.includes("Due soon"));
+const later = Array.from(ed.d.querySelectorAll("#queueList > .card")).find(c => c.textContent.includes("Due later"));
+chk("revisions sit at the top of the card, each with its moment, and Watch with the comments", soon.querySelector(".ed-revisions") === soon.querySelector(".ed-revisions, .ed-steps")
+  && Array.from(soon.querySelectorAll(".ed-rev .rv-time")).map(t => t.textContent).join(",") === "0:12,Whole video" && /Make the logo bigger/.test(soon.querySelector(".ed-revisions").textContent)
+  && !!Array.from(soon.querySelectorAll(".ed-revisions button")).find(b => b.textContent === "Watch with the comments"));
+const stepLink = (c, n) => c.querySelector(`.ed-step:nth-child(${n}) a.btn`);
+chk("step 1: the video's own raw footage folder", stepLink(soon, 1)?.textContent === "Open the raw footage" && stepLink(soon, 1).href === "https://drive.google.com/drive/folders/ownraw0001");
+chk("…or the client's raw footage folder", stepLink(later, 1)?.href === "https://drive.google.com/drive/folders/rawfootage01");
+chk("step 2: instructions, brand guidelines and documents", /Fast cuts/.test(soon.querySelector(".ed-step:nth-child(2)").textContent) && /Brand guidelines/.test(soon.querySelector(".ed-step:nth-child(2)").textContent) && /Customer Data/.test(soon.querySelector(".ed-step:nth-child(2)").textContent));
+chk("step 3: the video's own finished folder, then Finished", stepLink(soon, 3)?.href === "https://drive.google.com/drive/folders/ownfinal001" && /this video's finished folder/.test(soon.querySelector(".ed-step:nth-child(3)").textContent)
+  && !!Array.from(soon.querySelectorAll(".ed-step:nth-child(3) button")).find(b => /Finished/.test(b.textContent)));
+chk("…or the client's finished video folder", stepLink(later, 3)?.href === "https://drive.google.com/drive/folders/finaledits01");
+chk("no revisions box without revisions", !later.querySelector(".ed-revisions"));
 const docs = ed.d.getElementById("docsByClient").textContent;
 chk("Documents: the client's brand guidelines and documents, Content Research included", docs.includes("Fully Launched") && docs.includes("Brand guidelines") && docs.includes("Customer Data") && docs.includes("Content Research"), docs);
 
