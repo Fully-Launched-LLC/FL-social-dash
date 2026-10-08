@@ -8,7 +8,7 @@ import { readFileSync } from "fs";
 
 import { fileURLToPath } from "url";
 export const REPO = fileURLToPath(new URL("../", import.meta.url));
-const MIGRATIONS = ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "008_client_onboarding.sql", "009_voice_memo_by_text.sql", "010_onboarding_uploads.sql", "011_client_questions.sql", "012_team_only_documents.sql", "013_editor_onboarding.sql", "014_video_review.sql", "015_skip_onboarding.sql"];
+const MIGRATIONS = ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "008_client_onboarding.sql", "009_voice_memo_by_text.sql", "010_onboarding_uploads.sql", "011_client_questions.sql", "012_team_only_documents.sql", "013_editor_onboarding.sql", "014_video_review.sql", "015_skip_onboarding.sql", "016_editor_tools.sql"];
 
 export async function freshDb() {
   const passthrough = v => v;
@@ -60,7 +60,7 @@ export function makeHarness(db) {
       const b = {
         select(cols = "*") { if (st.op === "select") st.cols = cols; else st.returning = cols; return b; },
         eq(c, v) { st.where.push(`${q(c)} = ${p(v)}`); return b; },
-        in(c, arr) { st.where.push(`${q(c)} = any(${p(arr)})`); return b; },
+        in(c, arr) { st.where.push(`${q(c)}::text = any(${p(arr.map(String))})`); return b; },
         is(c, v) { if (v === null) st.where.push(`${q(c)} is null`); else throw new Error("unsupported is"); return b; },
         not(c, op, v) { if (op === "is" && v === null) st.where.push(`${q(c)} is not null`); else throw new Error("unsupported not"); return b; },
         order(c, o = {}) { st.order.push(`${q(c)} ${o.ascending === false ? "desc" : "asc"}${o.nullsFirst === false ? " nulls last" : ""}`); return b; },

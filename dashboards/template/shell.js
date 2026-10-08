@@ -534,12 +534,15 @@ async function driveList(folderId, key) {
   return (await r.json()).files || [];
 }
 const looseName = s => String(s || "").toLowerCase().replace(/\.[a-z0-9]{2,4}$/, "").replace(/[^a-z0-9]+/g, " ").trim();
-// The finished video's Drive file: the exact file if the operator linked
-// one; else the newest video in the video's own finished folder (if its
-// link is a folder); else, in the client's finished video folder, the
-// newest video named after it, or the newest video in a folder named
-// after it (editors name both after the video). null when it can't tell.
-async function findFinishedFile(video, folders) {
+// The finished video's Drive file: the latest saved version (migration
+// 016) with a file; else the exact file if the operator linked one; else
+// the newest video in the video's own finished folder (if its link is a
+// folder); else, in the client's finished video folder, the newest video
+// named after it, or the newest video in a folder named after it (editors
+// name both after the video). null when it can't tell.
+async function findFinishedFile(video, folders, versions) {
+  const latest = (versions || []).slice().reverse().find(v => v.file_id);
+  if (latest) return { id: latest.file_id, name: latest.file_name, version: latest.version };
   const own = driveRef(video.finalCutUrl);
   if (own && own.kind === "file") return { id: own.id };
   const key = await googleKey();
@@ -552,28 +555,69 @@ async function findFinishedFile(video, folders) {
     const named = (await driveList(root.id, key)).filter(f => looseName(f.name).includes(title));
     const file = newestVideo(named);
     if (file) return file;
-    for (const f of named.filter(f => f.mimeType === "application/vnd.google-apps.folder")) {
+    for (const f of named.filter(f => f.mimeType === DRIVE_FOLDER)) {
       const inner = newestVideo(await driveList(f.id, key));
       if (inner) return inner;
     }
   } catch (e) { /* not shared by link, or Drive is down: Drive's own player instead */ }
   return null;
 }
+const DRIVE_FOLDER = "application/vnd.google-apps.folder";
+async function driveFile(id, key) {
+  const r = await fetch(`${DRIVE_API}/${encodeURIComponent(id)}?fields=id,name,mimeType,modifiedTime&key=${encodeURIComponent(key)}`);
+  if (!r.ok) throw new Error("Google Drive said " + r.status);
+  return r.json();
+}
+// The newest finished video uploaded for a video, for the check before
+// Finished: { status: "found", file } | { status: "none" } | { status:
+// "unknown" } (no key, or a folder Drive won't show us).
+async function latestCut(video, folders) {
+  const key = await googleKey();
+  if (!key) return { status: "unknown" };
+  const own = driveRef(video.finalCutUrl), isVideo = f => (f.mimeType || "").startsWith("video/");
+  try {
+    let files = [];
+    if (own && own.kind === "file") files.push(await driveFile(own.id, key));
+    else if (own) files = await driveList(own.id, key);
+    const root = driveRef(folders && folders.finalEdits), title = looseName(video.title);
+    if (!(own && own.kind === "folder") && root && root.kind === "folder" && title) {
+      const named = (await driveList(root.id, key)).filter(f => looseName(f.name).includes(title));
+      files = files.concat(named);
+      for (const f of named.filter(f => f.mimeType === DRIVE_FOLDER)) files = files.concat(await driveList(f.id, key));
+    }
+    files = files.filter(isVideo).sort((x, y) => String(y.modifiedTime || "").localeCompare(String(x.modifiedTime || "")));
+    return files.length ? { status: "found", file: files[0] } : { status: "none" };
+  } catch (e) { return { status: "unknown", error: e.message }; }
+}
+// A video's saved versions (migration 016), oldest first. [] before 016.
+async function loadVersions(video) {
+  const { data, error } = await sbClient.from("social_video_versions").select("*").eq("video_id", video.id).order("version");
+  return error ? [] : (data || []);
+}
 
 const byTime = (a, b) => (a.at_seconds == null) - (b.at_seconds == null) || (Number(a.at_seconds) || 0) - (Number(b.at_seconds) || 0)
   || String(a.created_at).localeCompare(String(b.created_at));
-// A video's notes, in time order (whole-video notes last). which: "open"
-// (this round's, still being written) or "sent" (the last round, as the
-// editor got it). roles: only notes by these authors.
+// A video's comments, in time order (whole-video comments last), each
+// with its replies (n.replies). which: "open" (this round's, still being
+// written), "sent" (the last round, as the editor got it), or { cut } (every
+// comment left on that Drive file: an earlier version). roles: only
+// comments by these authors.
 async function loadReviewNotes(video, which, roles) {
-  let q = sbClient.from("social_video_comments").select("*").eq("video_id", video.id);
-  q = which === "sent" ? q.not("closed_at", "is", null) : q.is("closed_at", null);
+  let q = sbClient.from("social_video_comments").select("*").eq("video_id", video.id).is("parent_id", null);
+  if (which && which.cut) q = q.eq("cut_ref", which.cut);
+  else q = which === "sent" ? q.not("closed_at", "is", null) : q.is("closed_at", null);
   if (roles) q = q.in("author_role", roles);
   const { data, error } = await q.order("created_at");
   if (error) throw new Error(error.message);
   let notes = data || [];
   if (which === "sent") { const last = notes.reduce((m, n) => n.closed_at > m ? n.closed_at : m, ""); notes = notes.filter(n => n.closed_at === last); }
-  return notes.slice().sort(byTime);
+  notes = notes.slice().sort(byTime);
+  notes.forEach(n => { n.replies = []; });
+  if (notes.length) {
+    const { data: reps } = await sbClient.from("social_video_comments").select("*").in("parent_id", notes.map(n => n.id)).order("created_at");
+    (reps || []).forEach(r => { const n = notes.find(x => x.id === r.parent_id); if (n) n.replies.push(r); });
+  }
+  return notes;
 }
 // The notes as one block of text, for request_revisions' note and the
 // editor's Revisions needed box: "0:12  Make the logo bigger".
@@ -610,16 +654,29 @@ if (typeof document !== "undefined") document.addEventListener("keydown", e => {
 //   intro       a line under it
 //   which       "open" (default) or "sent" notes; notesBy: only these authors
 //   canNote     true to leave notes; authorRole / authorName for new ones
+//   canReply    true to reply under comments (as authorRole / authorName)
+//   canResolve  true to tick comments off as fixed (the editor; operators)
 //   buttons     [{ label (text or notes => text), cls, needsNotes, onClick(notes, btn) }]
+//   viewVersion an earlier version's number (from the version picker):
+//               plays that cut with the comments left on it, read only
 async function openReviewPlayer(video, opts) {
   opts = opts || {};
+  // The window opens at once (the walkthrough points into it straight
+  // away); the version picker joins it once the versions have loaded. Only
+  // a pick from that picker (viewVersion) waits for them first.
+  let versions = opts.viewVersion ? await loadVersions(video) : [];
+  let latestV = versions.length ? versions[versions.length - 1].version : 0;
+  const viewing = opts.viewVersion && opts.viewVersion !== latestV ? versions.find(v => v.version === opts.viewVersion) : null;
+  if (viewing) opts = Object.assign({}, opts, { canNote: false, buttons: [], which: viewing.file_id ? { cut: viewing.file_id } : "sent" });
   const box = openModal(`
     <h2>${escapeHtml(opts.title || video.title || "Review the video")}</h2>
     ${opts.intro ? `<div class="meta" style="margin:0 0 14px">${opts.intro}</div>` : ""}
     <div class="rv">
       <div class="rv-stage"><div class="rv-load meta">Finding the video in Google Drive…</div></div>
       <div class="rv-side">
-        <div class="rv-head"><b>Comments</b> <span class="rv-count meta"></span></div>
+        <div class="rv-head"><b>Comments</b> <span class="rv-count meta"></span>
+          <span class="rv-version-slot"></span></div>
+        ${viewing ? `<div class="rv-old meta">You're looking at <b>v${viewing.version}</b>, an earlier cut, with the comments left on it.</div>` : ""}
         <div class="rv-list"></div>
         ${opts.canNote ? `<div class="rv-compose">
           <div class="rv-when" role="radiogroup" aria-label="What the comment is about">
@@ -757,11 +814,44 @@ async function openReviewPlayer(video, opts) {
         <div class="rv-note-main">
           <div class="rv-note-top"><b>${escapeHtml(n.author_name || "")}</b> <span class="meta">${escapeHtml(ago(n.created_at))}</span><span class="rv-num meta">#${num(n)}</span></div>
           <div class="rv-body">${n.at_seconds == null ? `<span class="rv-time whole">Whole video</span>` : `<button type="button" class="rv-time" data-t="${n.at_seconds}">${fmtTime(n.at_seconds)}</button>`} ${escapeHtml(n.body)}</div>
+          ${opts.canResolve ? `<label class="rv-fix"><input type="checkbox" data-fix="${n.id}"${n.resolved_at ? " checked" : ""}> Fixed</label>`
+            : n.resolved_at ? `<div class="rv-fixed">✓ Fixed</div>` : ""}
+          ${(n.replies || []).map(r => `<div class="rv-reply"><span class="rv-avatar sm ${r.author_role === "client" ? "by-client" : "by-team"}">${escapeHtml(initials(r.author_name))}</span>
+            <div><div class="rv-note-top"><b>${escapeHtml(r.author_name || "")}</b> <span class="meta">${escapeHtml(ago(r.created_at))}</span></div><div class="rv-body">${escapeHtml(r.body)}</div></div></div>`).join("")}
+          ${opts.canReply ? `<button type="button" class="rv-reply-btn" data-reply="${n.id}">Reply</button>
+            <div class="rv-reply-box" data-reply-box="${n.id}" hidden><textarea rows="2" placeholder="Write a reply…"></textarea><div class="rv-reply-row"><button type="button" class="primary" data-reply-send="${n.id}">Reply</button><button type="button" data-reply-cancel="${n.id}">Cancel</button></div></div>` : ""}
         </div>
         ${opts.canNote && n.author_id === ME_UID ? `<button type="button" class="rv-del" title="Delete this comment" aria-label="Delete this comment" data-del="${n.id}">✕</button>` : ""}
       </div>`).join("")
       : `<div class="empty" style="padding:14px 4px">${opts.canNote ? "No comments yet. Pause the video where something should change and leave a comment, or leave one about the whole video." : "No comments on this cut."}</div>`;
     list.querySelectorAll(".rv-time[data-t]").forEach(b => b.onclick = () => jump(b.dataset.t, b.closest(".rv-note").dataset.id));
+    list.querySelectorAll("[data-fix]").forEach(c => c.onchange = async () => {
+      c.disabled = true;
+      const { data, error } = await sbClient.rpc("social_resolve_comment", { p_comment_id: c.dataset.fix, p_done: c.checked });
+      c.disabled = false;
+      if (error) { c.checked = !c.checked; alert("Couldn't save that: " + error.message); return; }
+      const n = notes.find(x => x.id === c.dataset.fix); if (n && data) n.resolved_at = data.resolved_at;
+      if (opts.onChange) opts.onChange(notes);
+    });
+    list.querySelectorAll("[data-reply]").forEach(b => b.onclick = () => {
+      const bx = list.querySelector(`[data-reply-box="${b.dataset.reply}"]`); bx.hidden = false; b.hidden = true; bx.querySelector("textarea").focus();
+    });
+    list.querySelectorAll("[data-reply-cancel]").forEach(b => b.onclick = () => drawList());
+    list.querySelectorAll("[data-reply-send]").forEach(b => b.onclick = async () => {
+      const n = notes.find(x => x.id === b.dataset.replySend), ta = list.querySelector(`[data-reply-box="${n.id}"] textarea`);
+      const body = ta.value.trim();
+      if (!body) { ta.focus(); return; }
+      b.disabled = true;
+      const { data, error } = await sbClient.from("social_video_comments").insert({
+        video_id: video.id, parent_id: n.id, cut_ref: n.cut_ref, body,
+        author_role: opts.authorRole || "client", author_name: opts.authorName || null,
+      }).select("*");
+      b.disabled = false;
+      if (error) { alert("Couldn't send that reply: " + error.message); return; }
+      n.replies = (n.replies || []).concat(data || []);
+      drawList();
+      if (opts.onChange) opts.onChange(notes);
+    });
     list.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
       b.disabled = true;
       const { error } = await sbClient.from("social_video_comments").delete().eq("id", b.dataset.del);
@@ -834,7 +924,13 @@ async function openReviewPlayer(video, opts) {
   try { notes = await loadReviewNotes(video, opts.which || "open", opts.notesBy); redraw(); }
   catch (e) { drawButtons(); list.innerHTML = `<div class="auth-error">Couldn't load the comments: ${escapeHtml(e.message)}</div>`; }
 
-  const file = await findFinishedFile(video, opts.folders), key = await googleKey();
+  if (!opts.viewVersion) { versions = await loadVersions(video); latestV = versions.length ? versions[versions.length - 1].version : 0; }
+  if (versions.length) {
+    box.querySelector(".rv-version-slot").outerHTML = `<select class="rv-version" aria-label="Version">${versions.slice().reverse().map(v => `<option value="${v.version}"${v.version === (viewing ? viewing.version : latestV) ? " selected" : ""}>v${v.version} · ${escapeHtml(niceDate(String(v.created_at).slice(0, 10)))}${v.version === latestV ? " (latest)" : ""}</option>`).join("")}</select>`;
+    const pickV = box.querySelector(".rv-version");
+    pickV.onchange = () => openReviewPlayer(video, Object.assign({}, opts.base || opts, { base: opts.base || opts, viewVersion: Number(pickV.value) }));
+  }
+  const file = viewing ? (viewing.file_id ? { id: viewing.file_id } : null) : await findFinishedFile(video, opts.folders, versions), key = await googleKey();
   cutRef = file ? file.id : null;
   if (file && key) showOwnPlayer(file, key);
   else showDrivePlayer(file, file ? "" : "We couldn't find the finished file here.");

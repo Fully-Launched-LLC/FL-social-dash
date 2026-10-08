@@ -534,3 +534,26 @@ button.big { padding:14px 40px; font-size:16px; }
 .ed-filters { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:0 0 18px; }
 .ed-filter { display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--sub); }
 .ed-filter select { font:inherit; font-size:0.85rem; padding:6px 8px; border-radius:8px; }
+
+/* Review comments: fixed ticks, replies, the version picker. */
+.rv-head { display:flex; align-items:center; gap:6px; }
+.rv-version { margin-left:auto; font:inherit; font-size:0.78rem; padding:3px 6px; border-radius:7px; }
+.rv-old { padding:8px 14px; background:rgba(168,136,79,.10); border-bottom:1px solid var(--border); }
+.rv-fix { display:inline-flex; align-items:center; gap:5px; font-size:0.78rem; color:var(--sub); margin-top:6px; cursor:pointer; }
+.rv-fix input { width:auto; }
+.rv-fixed { font-size:0.78rem; color:var(--gold); font-weight:600; margin-top:6px; }
+.rv-reply { display:flex; gap:8px; margin-top:8px; padding-left:4px; border-left:2px solid var(--border); padding:4px 0 4px 8px; }
+.rv-avatar.sm { width:22px; height:22px; font-size:0.6rem; }
+.rv-reply-btn { margin-top:6px; padding:2px 10px; font-size:0.75rem; box-shadow:none; }
+.rv-reply-box { margin-top:6px; }
+.rv-reply-box textarea { width:100%; font:inherit; font-size:0.85rem; }
+.rv-reply-row { display:flex; gap:6px; margin-top:6px; }
+.rv-reply-row button { padding:4px 10px; font-size:0.78rem; }
+
+.ed-month { font-size:0.85rem; color:var(--sub); margin:-4px 0 8px; }
+.ed-rev-count { float:right; text-transform:none; color:var(--ink); font-weight:600; letter-spacing:0; }
+.ed-rev-tick { display:flex; gap:8px; align-items:flex-start; cursor:pointer; }
+.ed-rev-tick input { width:auto; margin-top:4px; flex:none; }
+.ed-rev-tick input:checked + span { opacity:.55; text-decoration:line-through; }
+.ef-ok { color:var(--ink); line-height:1.55; }
+.ef-bad { color:var(--red); line-height:1.55; }

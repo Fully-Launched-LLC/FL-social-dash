@@ -172,7 +172,39 @@ async function loadLiveData() {
     return { client: CLIENT_BY_ID[r.client_id], video };
   });
   if (globalClientFilter !== "all" && !CLIENT_BY_ID[globalClientFilter]) globalClientFilter = "all";
+  await loadFixCounts();
   renderAll();
+}
+// For videos with an editor or at Edit review: how many of the comments
+// it was sent back with are ticked fixed (migration 016), and every saved
+// version (the Editors page's "this month"). Before 016: none.
+let FIXES = {}, ALL_VERSIONS = [];
+async function loadFixCounts() {
+  const ids = VIDEOS.filter(x => ["with_editor", "in_review"].includes(x.video.status) && (x.video.editorBrief.revisions || x.video.note)).map(x => x.video.id);
+  const [cRes, vRes] = await Promise.all([
+    ids.length ? sbClient.from("social_video_comments").select("id,video_id,parent_id,closed_at,resolved_at").in("video_id", ids) : { data: [] },
+    sbClient.from("social_video_versions").select("video_id,version,created_by,created_at"),
+  ]);
+  FIXES = {};
+  const all = cRes.error ? [] : (cRes.data || []);
+  ids.forEach(id => {
+    const top = all.filter(c => c.video_id === id && !c.parent_id && c.closed_at);
+    const last = top.reduce((m, c) => c.closed_at > m ? c.closed_at : m, "");
+    const batch = top.filter(c => c.closed_at === last);
+    if (batch.length) FIXES[id] = { fixed: batch.filter(c => c.resolved_at).length, total: batch.length };
+  });
+  ALL_VERSIONS = vRes.error ? [] : (vRes.data || []);
+}
+const fixLine = v => FIXES[v.id] ? `Revisions: ${FIXES[v.id].fixed} of ${FIXES[v.id].total} fixed` : "";
+// The comments a video was sent back with, their replies and ticks; Tait
+// can reply and tick too.
+function operatorComments(id) {
+  const x = findVideo(id);
+  if (!x) return;
+  openReviewPlayer(x.video, { folders: x.client.driveFolders, which: "sent",
+    intro: `${escapeHtml(x.client.name)} · the comments this video was sent back with. Reply to answer the editor's questions.`,
+    canReply: true, canResolve: true, authorRole: "operator", authorName: (ME && ME.name) || "Operator",
+    onChange: () => loadLiveData() });
 }
 
 function filteredVideos() {
@@ -347,7 +379,7 @@ function vrowHtml(x, actionsHtml) {
     <div>${platformPills(v.platform)}</div>
     <div>${statusDot(v.status, STATUS_LABEL, !!timeSensitive(x))}</div>
     <div class="acts">${watchHtml(v, watch)}${actionsHtml || ""}</div>
-    ${v.note ? `<div class="note-line">Note: ${escapeHtml(v.note)}</div>` : ""}
+    ${fixLine(v) ? `<div class="note-line">${escapeHtml(fixLine(v))}</div>` : v.note ? `<div class="note-line">Note: ${escapeHtml(v.note)}</div>` : ""}
   </div>`;
 }
 function rowHtml(x, rightHtml) {
@@ -401,6 +433,7 @@ function operatorActionsHtml(x, inCard) {
     out.push(`<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">${raw.label}</a>`);
   }
   if (isReadyForEditor(x)) out.push(editorSelect(v.editorId), smallBtn("Send to editor", `sendToEditor('${id}', this)`, "primary"));
+  if (FIXES[id] && ["with_editor", "in_review"].includes(v.status)) out.push(smallBtn(`Comments & replies (${FIXES[id].fixed}/${FIXES[id].total} fixed)`, `operatorComments('${id}')`));
   if (v.status === "in_review") {
     out.push(smallBtn("Review & comment", `operatorReview('${id}')`),
       smallBtn("Approve & add captions", `approveEdit('${id}')`, "primary"));
@@ -987,7 +1020,11 @@ function renderEditors() {
   const when = iso => iso ? niceDate(iso.slice(0, 10)) : "";
   document.getElementById("editorsList").innerHTML = EDITORS.map(e => {
     const status = !e.active ? "Deactivated" : e.setup_at ? "Set up " + when(e.setup_at) : e.invited_at ? "Invited " + when(e.invited_at) + ", not set up yet" : "Added by hand";
-    return `<div class="row"><div class="left"><b>${escapeHtml(e.name)}</b><div class="meta">${escapeHtml(e.email)} · ${escapeHtml(status)}</div></div>
+    // This month, from the versions they saved (migration 016).
+    const month = todayISO().slice(0, 7), mine = ALL_VERSIONS.filter(v => v.created_by === e.id && String(v.created_at).slice(0, 7) === month);
+    const done = mine.filter(v => v.version === 1).length, rounds = mine.length - done;
+    return `<div class="row"><div class="left"><b>${escapeHtml(e.name)}</b><div class="meta">${escapeHtml(e.email)} · ${escapeHtml(status)}</div>
+      <div class="meta">This month: ${done} video${done === 1 ? "" : "s"} finished · ${rounds} revision round${rounds === 1 ? "" : "s"}</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">${e.active ? `<button data-resend="${e.id}">Resend invite</button>` : ""}<a class="btn" href="/editor/dashboard.html?editor=${encodeURIComponent(e.id)}" target="_blank" rel="noopener">Their page ↗</a></div></div>`;
   }).join("") || '<div class="empty">No editors yet. Click + Invite editor.</div>';
   document.querySelectorAll("#editorsList [data-resend]").forEach(b => b.onclick = () => inviteEditor({ editorId: b.dataset.resend }, b));

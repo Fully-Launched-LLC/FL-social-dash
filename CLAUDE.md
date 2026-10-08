@@ -351,7 +351,9 @@ fully-social-os/
                                pinned to moments; social_settings, the
                                Google Drive API key), 015
                                (skip_onboarding: already-onboarded clients
-                               only make a password)
+                               only make a password), 016 (editor tools:
+                               comment replies and Fixed ticks,
+                               social_video_versions)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -738,6 +740,21 @@ brand guidelines, documents), **3. Upload the finished video** (Open the
 upload folder: the video's own finished folder when its "exact finished
 file" link is a folder, else the client's finished video folder; then
 Finished). The walkthrough points at revisions and each step.
+Editor tools (migration 016, Tait 2026-10-07): each comment a video was
+sent back with has a **Fixed** tick (`social_resolve_comment`; "x of y
+fixed" on the card and on the operator's rows); anyone who can see a
+comment can **reply** under it (`parent_id`; the editor and Tait in Watch
+with the comments / Comments & replies, the client while reviewing);
+**Finished** first looks in the upload folder through the Drive API
+(`latestCut` in shell.js) and won't send until a finished video is there
+and it isn't the same file as the last version (when Drive can't be read,
+the editor confirms instead); each send saves the file as the next
+**version** (`social_add_video_version`: v1, v2, …), and the review window
+has a version picker that plays an earlier cut with the comments left on
+it (comments carry the file in `cut_ref`); **This month** (videos finished =
+first versions, revision rounds = later ones) shows on the editor's page and
+for each editor on the operator's Editors page. Email notifications to
+editors are next (Tait's call).
 Above the list, filters (Tait, 2026-10-07; remembered per browser):
 **Show** All / Time sensitive (due within 3 days or late, or sent back) /
 Revisions needed, with counts; **Client** (also narrows the Calendar);
