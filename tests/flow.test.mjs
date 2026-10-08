@@ -229,7 +229,7 @@ chk("editor card: edit-by, instructions, brand guidelines, raw footage, finished
   && !!e0.querySelector('a[href="https://drive/fl-footage"]') && !!e0.querySelector('a[href="https://drive/fl-final"]'));
 // Backing out: "Not yet" leaves it with the editor.
 await click(btn(e0, "Finished"), "finish (not yet)");
-chk("editor asked to confirm it's in Google Drive, with the folder link", $(ed, "#videoModalBox").textContent.includes("Is the finished video in Google Drive?")
+chk("editor asked to confirm it's in Google Drive (no key to check it here), with the folder link", $(ed, "#videoModalBox").textContent.includes("Make sure the finished video is uploaded")
   && !!$(ed, '#videoModalBox a[href="https://drive/fl-final"]') && !ed.ui.confirms.length);
 await click($(ed, "#efNo"), "not yet");
 chk("not yet: still with the editor", (await statusOf(title(0))).status === "with_editor");

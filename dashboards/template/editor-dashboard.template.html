@@ -28,7 +28,7 @@
   <div id="loadError"></div>
 
   <section class="view active" id="view-queue">
-    <div class="page-head"><h1>To Edit</h1><p>For each video: download the raw footage, edit it using the instructions, upload it to the finished video folder named after the video, then tap <b>Finished — send to operator</b>. If one comes back, what to change is in its <b>Revisions needed</b> box.</p></div>
+    <div class="page-head"><h1>To Edit</h1><div class="ed-month" id="monthStat"></div><p>For each video: download the raw footage, edit it using the instructions, upload it to the finished video folder named after the video, then tap <b>Finished — send to operator</b>. If one comes back, what to change is in its <b>Revisions needed</b> box.</p></div>
     <div class="chip-row" id="editorChips"></div>
     <div class="ed-filters">
       <div class="chip-row" id="showChips" style="margin:0"></div>
@@ -73,6 +73,9 @@ let VIDEOS = [];             // [{ client, video }] — only videos with the edi
 let EDITOR_BY_ID = {};
 let CLIENTS = {};            // id → { name, driveFolders, documents }
 let ME = null;               // the signed-in editor's social_editors row (or the operator's)
+let BATCH = {};              // videoId → the comments sent back last round (each with .replies), migration 014/016
+let VERSIONS = {};           // videoId → its saved versions, oldest first (migration 016)
+let MY_VERSIONS = [];        // every version this editor (or, for the operator, anyone) saved
 // ?editor=<id> (the operator dashboard's "Open editor portal") opens on
 // that editor's work.
 let editorFilter = new URLSearchParams(location.search).get("editor") || "all";
@@ -106,7 +109,41 @@ async function loadData() {
     video.assignedEditor = EDITOR_BY_ID[video.editorId] ? EDITOR_BY_ID[video.editorId].name : null;
     return { client: clients[r.client_id] || { name: "?", displayName: "?", driveFolders: {} }, video };
   });
+  await loadReviewData();
   renderAll();
+}
+
+// The comments each video was sent back with, and the versions (both
+// migration 016; before it, just none of either).
+async function loadReviewData() {
+  const ids = VIDEOS.map(x => x.video.id);
+  const [cRes, vRes] = await Promise.all([
+    ids.length ? sbClient.from("social_video_comments").select("*").in("video_id", ids) : { data: [] },
+    sbClient.from("social_video_versions").select("*").order("version"),
+  ]);
+  const all = cRes.error ? [] : (cRes.data || []);
+  BATCH = {};
+  ids.forEach(id => {
+    const top = all.filter(c => c.video_id === id && !c.parent_id && c.closed_at);
+    const last = top.reduce((m, c) => c.closed_at > m ? c.closed_at : m, "");
+    const batch = top.filter(c => c.closed_at === last).sort(byTime);
+    batch.forEach(c => { c.replies = all.filter(r => r.parent_id === c.id).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at))); });
+    if (batch.length) BATCH[id] = batch;
+  });
+  const vs = vRes.error ? [] : (vRes.data || []);
+  VERSIONS = {};
+  vs.forEach(v => { (VERSIONS[v.video_id] = VERSIONS[v.video_id] || []).push(v); });
+  MY_VERSIONS = vs;
+}
+
+// Done this month, from the versions they saved: first versions are
+// videos finished, later ones revision rounds.
+function renderMonthStat() {
+  const who = ROLE === "editor" ? ME && ME.id : editorFilter !== "all" ? editorFilter : null;
+  const month = todayISO().slice(0, 7);
+  const mine = MY_VERSIONS.filter(v => String(v.created_at).slice(0, 7) === month && (!who || v.created_by === who));
+  const done = mine.filter(v => v.version === 1).length, rounds = mine.length - done;
+  document.getElementById("monthStat").innerHTML = `This month: <b>${done}</b> video${done === 1 ? "" : "s"} finished · <b>${rounds}</b> revision round${rounds === 1 ? "" : "s"}`;
 }
 
 function queue() {
@@ -118,20 +155,59 @@ function queue() {
 // after the video, so there's no link to paste; the operator and client
 // open it from that folder. Before it's sent, a pop-up makes sure it's
 // really in Google Drive, with a button to open that folder.
+// Before it's sent: look in the upload folder (Drive API, latestCut in
+// shell.js) for the finished video. Found and new: it's saved as the next
+// version (social_add_video_version, migration 016) and sent. Not there,
+// or the same file as the last version: say so, with Check again. Drive
+// can't be read (no key, folder not shared): the editor confirms it.
 function finishVideo(videoId, btn) {
   const x = VIDEOS.find(y => y.video.id === videoId);
   if (!x) return;
   const t = x.video.title || "this video", f = x.client.driveFolders || {}, up = uploadFolder(x.video, f);
+  const where = up && up.own ? "this video's finished folder" : escapeHtml(x.client.name) + "'s finished video folder";
   const box = openModal(`
-    <h2>Is the finished video in Google Drive?</h2>
-    <p style="line-height:1.55;margin:8px 0 14px">Before you send <b>${escapeHtml(t)}</b> to the operator, make sure the finished video is uploaded to
-      ${up && up.own ? "this video's finished folder" : escapeHtml(x.client.name) + "'s finished video folder"}, named <b>${escapeHtml(t)}</b>. The operator and the client watch it from there.</p>
-    ${up
-      ? `<a class="btn" href="${escapeHtml(up.url)}" target="_blank" rel="noopener" style="margin-bottom:16px">Open the upload folder</a>`
+    <h2>Send the finished video</h2>
+    <div id="efCheck" style="margin:8px 0 14px"><p class="meta">Checking the upload folder…</p></div>
+    ${up ? `<a class="btn" href="${escapeHtml(up.url)}" target="_blank" rel="noopener" style="margin-bottom:16px">Open the upload folder</a>`
       : `<p style="color:var(--red);margin:0 0 16px">This client has no finished video folder yet. Ask the operator to add one.</p>`}
-    <div class="modal-actions"><button class="primary" id="efYes">Yes — it's in Google Drive, send it</button><button id="efNo">Not yet</button></div>`);
+    <div class="modal-actions"><button class="primary" id="efYes" disabled>Send it to the operator</button><button id="efAgain" hidden>Check again</button><button id="efNo">Not yet</button></div>`);
+  const yes = box.querySelector("#efYes"), again = box.querySelector("#efAgain"), out = box.querySelector("#efCheck");
+  const versions = VERSIONS[videoId] || [], last = versions[versions.length - 1], next = (last ? last.version : 0) + 1;
+  let file = null;
+  const check = async () => {
+    yes.disabled = true; again.hidden = true; file = null;
+    out.innerHTML = `<p class="meta">Checking the upload folder…</p>`;
+    const r = await latestCut(x.video, f);
+    if (r.status === "found") {
+      const same = last && last.file_id === r.file.id && String(r.file.modifiedTime || "") <= String(last.created_at);
+      if (same) {
+        out.innerHTML = `<p class="ef-bad">The newest video in ${where} is <b>${escapeHtml(r.file.name)}</b>, the same file you sent as <b>v${last.version}</b>. Upload your new cut, named <b>${escapeHtml(t)}</b>, then check again.</p>`;
+        again.hidden = false; return;
+      }
+      file = r.file;
+      const a = ago(r.file.modifiedTime);
+      out.innerHTML = `<p class="ef-ok">✓ Found <b>${escapeHtml(r.file.name)}</b>, uploaded ${a === "now" ? "just now" : escapeHtml(a) + " ago"}. It goes to the operator as <b>v${next}</b>.</p>`;
+      yes.disabled = false;
+    } else if (r.status === "none") {
+      out.innerHTML = `<p class="ef-bad">We can't see a finished video for <b>${escapeHtml(t)}</b> in ${where} yet. Upload it there, named <b>${escapeHtml(t)}</b>, then check again.</p>`;
+      again.hidden = false;
+    } else {
+      out.innerHTML = `<p style="line-height:1.55">Make sure the finished video is uploaded to ${where}, named <b>${escapeHtml(t)}</b>. The operator and the client watch it from there.</p>`;
+      yes.textContent = "It's in Google Drive, send it"; yes.disabled = false;
+    }
+  };
+  again.onclick = check;
   box.querySelector("#efNo").onclick = closeVideoModal;
-  box.querySelector("#efYes").onclick = e => { e.target.disabled = true; e.target.textContent = "Sending…"; sendFinished(videoId, btn, t); };
+  yes.onclick = async e => {
+    e.target.disabled = true; e.target.textContent = "Sending…";
+    const v = await sbClient.rpc("social_add_video_version", { p_video_id: videoId, p_file_id: file ? file.id : null, p_file_name: file ? file.name : null });
+    // Before migration 016 there's no version to save; the cut still goes.
+    if (v.error && !/social_add_video_version|function|schema cache/i.test(v.error.message)) {
+      out.innerHTML = `<p class="ef-bad">That didn't save: ${escapeHtml(v.error.message)}</p>`; e.target.disabled = false; e.target.textContent = "Send it to the operator"; return;
+    }
+    sendFinished(videoId, btn, t);
+  };
+  check();
 }
 async function sendFinished(videoId, btn, t) {
   if (btn) { btn.disabled = true; btn.textContent = "Saving…"; }
@@ -163,15 +239,27 @@ function finishButton(videoId) {
 
 // What needs to change on a video sent back: the operator's revisions
 // (editor_brief.revisions) and any change the client asked for (note).
-// Each line with a time ("0:12  Make the logo bigger") shows that time as
-// a chip; Watch with the comments plays the cut with every comment pinned.
+// What to change on a video sent back. When it came with comments
+// (migration 014), each one with its moment and a Fixed tick (016), and
+// "x of y fixed"; else the text it was sent back with, each line's time as
+// a chip. Watch with the comments plays the cut with every comment pinned.
 function revisionsBox(video) {
   const items = [(video.editorBrief || {}).revisions, video.note].filter(Boolean);
   if (!items.length) return "";
-  const line = l => { const m = l.match(/^(\d+:\d{2}(?::\d{2})?|Whole video)\s{2}(.*)$/); return m ? `<div class="ed-rev"><span class="rv-time${m[1] === "Whole video" ? " whole" : ""}">${escapeHtml(m[1])}</span> ${escapeHtml(m[2])}</div>` : `<div class="ed-rev">${escapeHtml(l)}</div>`; };
+  const batch = BATCH[video.id];
+  const chip = t => `<span class="rv-time${t == null || t === "Whole video" ? " whole" : ""}">${escapeHtml(t == null ? "Whole video" : t)}</span>`;
+  let rows;
+  if (batch) {
+    rows = batch.map(c => `<label class="ed-rev ed-rev-tick"><input type="checkbox" data-fix="${c.id}"${c.resolved_at ? " checked" : ""}>
+      <span>${chip(c.at_seconds == null ? null : fmtTime(c.at_seconds))} ${escapeHtml(c.body)} <span class="meta">· ${escapeHtml(c.author_name || "")}${c.replies.length ? ` · ${c.replies.length} repl${c.replies.length === 1 ? "y" : "ies"}` : ""}</span></span></label>`).join("");
+  } else {
+    const line = l => { const m = l.match(/^(\d+:\d{2}(?::\d{2})?|Whole video)\s{2}(.*)$/); return m ? `<div class="ed-rev">${chip(m[1])} ${escapeHtml(m[2])}</div>` : `<div class="ed-rev">${escapeHtml(l)}</div>`; };
+    rows = items.map(t => String(t).split("\n").filter(l => l.trim()).map(line).join("")).join('<div style="height:8px"></div>');
+  }
+  const fixed = batch ? batch.filter(c => c.resolved_at).length : 0;
   return `<div class="ed-revisions">
-    <b class="ed-rev-head">Revisions needed</b>
-    ${items.map(t => String(t).split("\n").filter(l => l.trim()).map(line).join("")).join('<div style="height:8px"></div>')}
+    <b class="ed-rev-head">Revisions needed ${batch ? `<span class="ed-rev-count" data-fixcount="${video.id}">${fixed} of ${batch.length} fixed</span>` : ""}</b>
+    ${rows}
     <div class="ed-btns"><button class="primary" data-notes="${video.id}">Watch with the comments</button></div></div>`;
 }
 function hasRevisions(video) { return !!((video.editorBrief || {}).revisions || video.note); }
@@ -248,10 +336,23 @@ function uploadFolder(video, f) {
 // moments (the client's or the operator's). Read only.
 function watchWithNotes(videoId) {
   const x = VIDEOS.find(y => y.video.id === videoId);
-  if (x) openReviewPlayer(x.video, { folders: x.client.driveFolders, which: "sent", intro: "The comments on your last cut. Click a time or a mark on the bar to jump to it." });
+  if (x) openReviewPlayer(x.video, { folders: x.client.driveFolders, which: "sent",
+    intro: "The comments on your last cut. Click a time or a mark on the bar to jump to it, tick each one off as you fix it, and reply if something isn't clear.",
+    canReply: true, canResolve: true, authorRole: ROLE === "operator" ? "operator" : "editor", authorName: (ME && ME.name) || "Editor",
+    onChange: async () => { await loadReviewData(); renderQueue(); } });
 }
 function wireNotesButton(root) {
   root.querySelectorAll("[data-notes]").forEach(b => b.onclick = () => watchWithNotes(b.dataset.notes));
+  // Tick a comment off as fixed (social_resolve_comment, migration 016).
+  root.querySelectorAll("[data-fix]").forEach(c => c.onchange = async () => {
+    c.disabled = true;
+    const { data, error } = await sbClient.rpc("social_resolve_comment", { p_comment_id: c.dataset.fix, p_done: c.checked });
+    c.disabled = false;
+    if (error) { c.checked = !c.checked; alert("Couldn't save that: " + error.message); return; }
+    Object.values(BATCH).forEach(b => b.forEach(n => { if (n.id === c.dataset.fix) n.resolved_at = data && data.resolved_at; }));
+    const vid = Object.keys(BATCH).find(id => BATCH[id].some(n => n.id === c.dataset.fix));
+    root.querySelectorAll(`[data-fixcount="${vid}"]`).forEach(el => { el.textContent = `${BATCH[vid].filter(n => n.resolved_at).length} of ${BATCH[vid].length} fixed`; });
+  });
 }
 
 // Same content as the card, for the calendar and a clicked title.
@@ -330,7 +431,7 @@ function renderDocuments() {
     || '<div class="card"><div class="empty">Each client\'s documents show up here as soon as you have a video of theirs to edit.</div></div>';
 }
 
-function renderAll() { renderEditorChips(); renderFilters(); renderQueue(); renderCalendar(); renderDocuments(); }
+function renderAll() { renderEditorChips(); renderMonthStat(); renderFilters(); renderQueue(); renderCalendar(); renderDocuments(); }
 
 // ---------- first visit: password, then the walkthrough ----------
 // An editor who hasn't created a password yet (setup_at, migration 013;

@@ -41,7 +41,7 @@ chk("opens filtered to Morgan", titles().length === 1 && titles()[0] === "Morgan
 const fin = t => cards().find(c => c.querySelector("[data-open]").textContent === t)?.querySelector("button.primary");
 fin("Morgan edits this").click(); await settle();
 const pop = p.d.getElementById("videoModalBox");
-chk("pop-up asks if it's in Google Drive; warns there's no folder yet", pop.textContent.includes("Is the finished video in Google Drive?") && pop.textContent.includes("no finished video folder yet"));
+chk("pop-up: can't check Drive (no key), so it asks them to make sure; warns there's no folder yet", pop.textContent.includes("Send the finished video") && pop.textContent.includes("Make sure the finished video is uploaded") && pop.textContent.includes("no finished video folder yet") && !p.d.getElementById("efYes").disabled);
 p.d.getElementById("efYes").click(); await settle();
 chk("sent confirmation shown", p.d.getElementById("videoModalBox").textContent.includes("Sent to the operator"));
 p.d.getElementById("efDone").click(); await settle();
