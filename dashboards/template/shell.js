@@ -1290,6 +1290,9 @@ function runTour(TOUR, { onEnd } = {}) {
       .forEach((st, k) => Object.assign(dims[k].style, st));
     card.style.left = card.style.top = card.style.bottom = card.style.right = "";
     card.removeAttribute("data-arrow");
+    // Phones: the card sits at the bottom, or at the top when what it
+    // points at is in the bottom half, so it never covers it.
+    card.classList.toggle("tour-top", vw < 760 && (top + bottom) / 2 > vh / 2 && r.height <= vh * 0.45);
     if (vw < 760) return;
     if (r.height > vh * 0.45) { Object.assign(card.style, { left: "auto", top: "auto", right: "24px", bottom: "24px" }); return; }
     const w = card.offsetWidth, h = card.offsetHeight, gap = 18;

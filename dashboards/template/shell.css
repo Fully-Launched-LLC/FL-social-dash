@@ -445,6 +445,7 @@ button.big { padding:14px 40px; font-size:16px; }
 .tour-bookmark { left:50% !important; top:50% !important; transform:translate(-50%,-50%); width:min(460px, calc(100vw - 32px)); }
 .tour-url { font-size:20px; font-weight:700; text-align:center; padding:14px; border:2px dashed rgba(4,16,31,.25); border-radius:12px; margin:0 0 12px; }
 @media (max-width:760px) { .tour-card:not(.tour-bookmark) { left:16px !important; right:auto !important; top:auto !important; bottom:16px !important; } }
+@media (max-width:760px) { .tour-card.tour-top:not(.tour-bookmark) { top:16px !important; bottom:auto !important; } }
 
 
 /* Finished video review, laid out like Frame.io (the video streams from
