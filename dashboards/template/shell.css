@@ -429,6 +429,7 @@ button.big { padding:14px 40px; font-size:16px; }
 .tour-card { position:fixed; z-index:2700; left:260px; top:110px; width:min(380px, calc(100vw - 32px)); background:#ffffff; color:#04101f; border-radius:16px; padding:22px 22px 18px; box-shadow:0 20px 50px rgba(4,16,31,.35); }
 .tour-card[data-arrow]::before { content:""; position:absolute; width:16px; height:16px; background:#ffffff; transform:rotate(45deg); }
 .tour-card[data-arrow="left"]::before { left:-8px; top:calc(var(--ay) - 8px); }
+.tour-card[data-arrow="right"]::before { right:-8px; top:calc(var(--ay) - 8px); }
 .tour-card[data-arrow="top"]::before { top:-8px; left:calc(var(--ax) - 8px); }
 .tour-card[data-arrow="bottom"]::before { bottom:-8px; left:calc(var(--ax) - 8px); }
 .tour-card h2 { margin:0 0 8px; font-size:20px; }
