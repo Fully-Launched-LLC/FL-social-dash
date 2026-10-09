@@ -353,7 +353,9 @@ fully-social-os/
                                (skip_onboarding: already-onboarded clients
                                only make a password), 016 (editor tools:
                                comment replies and Fixed ticks,
-                               social_video_versions)
+                               social_video_versions), 017 (two rounds
+                               of changes per video:
+                               client_revision_rounds)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -532,6 +534,21 @@ URLs, domain, keys): `ONBOARDING-SETUP.md`.
 "Forgot password?" sends a link to `/welcome?mode=reset`, which sets a new
 password for anyone and then opens their own dashboard. The site's home
 page sends a client or editor who signs in there to their own dashboard.
+
+**Rounds of changes** (Tait, 2026-10-09; migration 017,
+`REVISION_ROUNDS` in shell.js): a client gets two rounds of changes on each
+finished video. Every cut the editor finishes goes to Tait first (Edit
+review); he sends it to the client. Their **Send changes** opens a pop-up
+("You only get two rounds of revisions. This will be your first round":
+Send it back to the editor / Make more revisions / Cancel), counts the
+round and sends it straight to the editor. The fix comes back to Tait,
+whose review lists the client's changes and which the editor ticked fixed;
+he approves it back to the client. After the client's second round, his
+button is **Approve for posting** (straight to Ready to post). A third
+round is refused by the database. While it's with the editor, and once
+approved, the client can **Watch the video** (the cut they reviewed, with
+the changes they sent, read only; "Being changed by the editor" under
+Finished videos to approve).
 
 ## Client onboarding (`/welcome`)
 

@@ -57,6 +57,8 @@ for (const [t, label, note, want] of steps) {
     box.querySelector(".rv-time-in").value = "0:30";
     box.querySelector(".rv-add").click(); await settle();
     Array.from(box.querySelectorAll(".rv-actions button")).find(b => b.textContent === "Send 1 change to the editor").click(); await settle();
+    // Two rounds of changes (017): the pop-up, then Send it back to the editor.
+    Array.from(box.querySelectorAll(".rv-confirm button")).find(b => /Send it back to the editor/.test(b.textContent)).click(); await settle();
     const n = (await db.query("select author_role, author_name, at_seconds from social_video_comments")).rows;
     chk("operator's note in the portal counts as the client's review, marked as us", n.length === 1 && n[0].author_role === "client" && /^Fully Launched \(for /.test(n[0].author_name) && Number(n[0].at_seconds) === 30, n);
   } else if (note) {
