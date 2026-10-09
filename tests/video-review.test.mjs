@@ -87,6 +87,7 @@ const fetchDrive = (url) => {
       { id: "subfolder01", name: "01. Mark's introduction (posts Mon Oct 12)", mimeType: "application/vnd.google-apps.folder" }],
     subfolder01: [{ id: "notes00000", name: "notes.txt", mimeType: "text/plain" }, { id: "markcut0001", name: "Mark intro v2.mp4", mimeType: "video/mp4" }],
   }[folder] || [];
+  if (url.includes("videoMediaMetadata")) return { ok: true, status: 200, json: async () => ({ videoMediaMetadata: { width: 1080, height: 1920 } }) };
   return { ok: true, status: 200, json: async () => ({ files }) };
 };
 const p = await openPage("clients/portal.html", CL, "https://fl.test/clients/hesedea", { fetch: fetchDrive });
@@ -97,7 +98,8 @@ const box = p.d.getElementById("videoModalBox");
 const vid = box.querySelector("video.rv-video");
 chk("found the video in the folder named after it, and streams it from Drive",
   vid && vid.getAttribute("src") === "https://www.googleapis.com/drive/v3/files/markcut0001?alt=media&key=KEY123", [vid && vid.getAttribute("src"), drive]);
-chk("asked Drive with the key", drive.length === 2 && drive.every(u => u.includes("key=KEY123")), drive);
+chk("asked Drive with the key (two folder lists, then the video's shape)", drive.length === 3 && drive.every(u => u.includes("key=KEY123")) && drive[2].includes("videoMediaMetadata"), drive);
+chk("a vertical video gets the tall frame", box.classList.contains("rv-tall"));
 chk("this round's open note is listed", box.querySelectorAll(".rv-note").length === 1);
 // Once the player knows the length, times are automatic and notes are marks.
 let t = 30;

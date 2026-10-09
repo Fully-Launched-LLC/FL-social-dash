@@ -794,7 +794,12 @@ async function openReviewPlayer(video, opts) {
     vid = stage.querySelector("video"); marks = stage.querySelector(".rv-marks"); fill = stage.querySelector(".rv-fill");
     head = stage.querySelector(".rv-head-dot"); timeEl = stage.querySelector(".rv-clock"); playBtn = stage.querySelector(".rv-play");
     const muteBtn = stage.querySelector(".rv-mute"), speedBtn = stage.querySelector(".rv-speed");
+    // Still nothing after 8 seconds (Google slowing or refusing the
+    // stream, or a file the phone can't read): Google's player instead of
+    // a long "Loading the video…".
+    const slow = setTimeout(() => { if (!duration && vid && stage.contains(vid)) showDrivePlayer(file, "The video was slow to load here, so it's in Google's player."); }, 8000);
     vid.addEventListener("loadedmetadata", () => {
+      clearTimeout(slow);
       duration = vid.duration || 0; setTyped(false);
       const l = stage.querySelector(".rv-loading"); if (l) l.remove();
       drawMarks(); tick();
@@ -1015,6 +1020,13 @@ async function openReviewPlayer(video, opts) {
   }
   const file = opts.file || (viewing ? (viewing.file_id ? { id: viewing.file_id } : null) : await findFinishedFile(video, opts.folders, versions)), key = await googleKey();
   cutRef = file ? file.id : null;
+  // A vertical video gets a tall frame (ours and Google's), so a phone
+  // shows it whole instead of squeezed into a wide box (Tait, 2026-10-09).
+  if (file && key) try {
+    const m = await (await fetch(`${DRIVE_API}/${encodeURIComponent(file.id)}?fields=videoMediaMetadata&key=${encodeURIComponent(key)}`)).json();
+    const vm = m && m.videoMediaMetadata;
+    if (vm && vm.height > vm.width) box.classList.add("rv-tall");
+  } catch (e) { /* shape unknown: the usual wide frame */ }
   if (file && key) showOwnPlayer(file, key);
   else showDrivePlayer(file, file ? "" : "We couldn't find the finished file here.");
   return box;
