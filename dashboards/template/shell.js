@@ -1277,7 +1277,7 @@ function runTour(TOUR, { onEnd } = {}) {
   const visible = el => { for (let n = el; n && n !== document.body; n = n.parentElement) if (n.style && n.style.display === "none") return false; return !!el; };
   // Ring the target, dim everything around it (four panels: a giant
   // box-shadow didn't paint reliably in Chrome), and put the card beside it
-  // (right, else below, else above) with the arrow pointing at it. A big
+  // (right, else below, else above, else left when above would cover it) with the arrow pointing at it. A big
   // target (a whole video card) gets the card in the bottom-right corner
   // instead, over its empty side. Phones: the card sits at the bottom.
   const place = () => {
@@ -1297,6 +1297,9 @@ function runTour(TOUR, { onEnd } = {}) {
     let x, y, arrow;
     if (r.right + pad + gap + w < vw - 16) { x = r.right + pad + gap; y = clamp((top + bottom) / 2 - h / 2, 16, vh - h - 16); arrow = "left"; card.style.setProperty("--ay", clamp((top + bottom) / 2 - y, 22, h - 22) + "px"); }
     else if (bottom + gap + h < vh - 16) { y = bottom + gap; x = clamp(r.left, 16, vw - w - 16); arrow = "top"; card.style.setProperty("--ax", clamp(r.left + r.width / 2 - x, 22, w - 22) + "px"); }
+    // No room above either (a tall target, like a review window's comment
+    // list): beside it on the left, so it doesn't cover what it points at.
+    else if (top - gap - h < 16 && left - gap - w > 16) { x = left - gap - w; y = clamp((top + bottom) / 2 - h / 2, 16, vh - h - 16); arrow = "right"; card.style.setProperty("--ay", clamp((top + bottom) / 2 - y, 22, h - 22) + "px"); }
     else { y = Math.max(top - gap - h, 16); x = clamp(r.left, 16, vw - w - 16); arrow = "bottom"; card.style.setProperty("--ax", clamp(r.left + r.width / 2 - x, 22, w - 22) + "px"); }
     card.style.left = x + "px"; card.style.top = y + "px"; card.dataset.arrow = arrow;
   };
