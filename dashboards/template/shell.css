@@ -457,6 +457,8 @@ button.big { padding:14px 40px; font-size:16px; }
 .rv-player:fullscreen { display:flex; flex-direction:column; justify-content:center; border-radius:0; }
 .rv-video { width:100%; max-height:62vh; background:#000; display:block; cursor:pointer; }
 .rv-player:fullscreen .rv-video { max-height:none; flex:1 1 auto; }
+.rv-demo-screen { aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; text-align:center; color:#fff; cursor:default; }
+.rv-demo-screen .meta { color:rgba(255,255,255,0.7); }
 .rv-bar { background:#0b1626; padding:14px 14px 8px; }
 .rv-track { position:relative; height:26px; cursor:pointer; touch-action:none; }
 .rv-rail, .rv-fill { position:absolute; left:0; top:11px; height:4px; border-radius:99px; pointer-events:none; }
