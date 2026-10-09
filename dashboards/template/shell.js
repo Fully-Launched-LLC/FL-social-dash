@@ -830,7 +830,10 @@ async function openReviewPlayer(video, opts) {
     vid.addEventListener("timeupdate", () => {
       if (soundChecked || vid.muted || vid.currentTime < 2) return;
       soundChecked = true;
-      const silent = vid.webkitAudioDecodedByteCount === 0 || vid.mozHasAudio === false || (vid.audioTracks && vid.audioTracks.length === 0);
+      // Safari (iPhone) lists the audio tracks; Chrome counts decoded audio.
+      const silent = vid.audioTracks ? vid.audioTracks.length === 0
+        : "webkitAudioDecodedByteCount" in vid ? vid.webkitAudioDecodedByteCount === 0
+        : vid.mozHasAudio === false;
       if (!silent || stage.querySelector(".rv-nosound")) return;
       stage.insertAdjacentHTML("beforeend", `<div class="rv-nosound meta">No sound? This video's audio can't play in this browser. <button type="button">Play it in Google's player</button></div>`);
       stage.querySelector(".rv-nosound button").onclick = () => showDrivePlayer(file, "Playing it in Google's player so you get the sound.");
