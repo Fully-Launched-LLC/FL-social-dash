@@ -8,7 +8,7 @@ import { readFileSync } from "fs";
 
 import { fileURLToPath } from "url";
 export const REPO = fileURLToPath(new URL("../", import.meta.url));
-const MIGRATIONS = ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "008_client_onboarding.sql", "009_voice_memo_by_text.sql", "010_onboarding_uploads.sql", "011_client_questions.sql", "012_team_only_documents.sql", "013_editor_onboarding.sql", "014_video_review.sql", "015_skip_onboarding.sql", "016_editor_tools.sql", "017_revision_rounds.sql"];
+const MIGRATIONS = ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "008_client_onboarding.sql", "009_voice_memo_by_text.sql", "010_onboarding_uploads.sql", "011_client_questions.sql", "012_team_only_documents.sql", "013_editor_onboarding.sql", "014_video_review.sql", "015_skip_onboarding.sql", "016_editor_tools.sql", "017_revision_rounds.sql", "018_review_copies.sql"];
 
 export async function freshDb() {
   const passthrough = v => v;
@@ -167,4 +167,12 @@ export function checker() {
   const c = { pass: 0, fail: 0 };
   c.check = (name, cond, extra) => { if (cond) c.pass++; else { c.fail++; console.log("  FAIL:", name, extra === undefined ? "" : JSON.stringify(extra).slice(0, 400)); } };
   return c;
+}
+
+// Choose a file in a page's <input type=file> (jsdom has no file dialog):
+// the editor's "Choose the finished video" (migration 018) by default.
+export function pickFile(page, id = "efPick", name = "cut.mp4", type = "video/mp4") {
+  const inp = page.d.getElementById(id);
+  Object.defineProperty(inp, "files", { value: [new page.w.File(["finished video"], name, { type })], configurable: true });
+  inp.dispatchEvent(new page.w.Event("change"));
 }

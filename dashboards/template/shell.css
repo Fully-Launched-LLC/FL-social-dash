@@ -582,3 +582,5 @@ button.big { padding:14px 40px; font-size:16px; }
 .rv-asked li { margin:6px 0; line-height:1.45; }
 .rv-asked li.done { color:var(--sub); }
 .rv-asked-tick { display:inline-block; width:1.2em; }
+/* "Upload a review copy" under the player (operators). */
+.rv-copy { display:flex; flex-direction:column; gap:8px; align-items:flex-start; margin:10px 0 4px; }

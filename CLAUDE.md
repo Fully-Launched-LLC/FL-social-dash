@@ -355,7 +355,9 @@ fully-social-os/
                                comment replies and Fixed ticks,
                                social_video_versions), 017 (two rounds
                                of changes per video:
-                               client_revision_rounds)
+                               client_revision_rounds), 018 (review
+                               copies: the private 'review' storage
+                               bucket, social_video_versions.storage_path)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -534,6 +536,19 @@ URLs, domain, keys): `ONBOARDING-SETUP.md`.
 "Forgot password?" sends a link to `/welcome?mode=reset`, which sets a new
 password for anyone and then opens their own dashboard. The site's home
 page sends a client or editor who signs in there to their own dashboard.
+
+**Review copies** (Tait, 2026-10-09; migration 018): streaming straight
+from Google Drive with the API key proved unreliable (Google answers with an
+"automated queries" block page; phones wait, then fall back to Drive's own
+player). Each version can have a review copy in the private Supabase
+bucket `review` (`<client id>/<video id>/<file>`,
+`social_video_versions.storage_path`), which the review window plays
+through a signed link (6 hours) before trying Drive. The editor's Finished
+pop-up asks for the same file to be added there (sent with
+`social_add_video_version`'s `p_storage_path`); the operator's review
+window has **Upload a review copy** when the cut has none. Drive stays
+where the files are kept, and the fallback. Clients watch their own copies,
+editors their assigned videos', operators everything.
 
 **Rounds of changes** (Tait, 2026-10-09; migration 017,
 `REVISION_ROUNDS` in shell.js): a client gets two rounds of changes on each

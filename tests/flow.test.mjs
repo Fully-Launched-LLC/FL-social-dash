@@ -8,7 +8,7 @@
 //   node tests/flow.test.mjs 1   smooth path
 //   node tests/flow.test.mjs 2   suggestions, client asks for video changes
 //   node tests/flow.test.mjs 3   Tait asks for revisions; client backs out of "filmed" once; one video switched to "we film"
-import { freshDb, makeHarness, checker } from "./harness.mjs";
+import { freshDb, makeHarness, checker, pickFile } from "./harness.mjs";
 
 const RUN = Number(process.argv[2] || 1);
 const V = {
@@ -204,6 +204,7 @@ chk("all with the editor", (await count("status='with_editor' and editor_id=$1",
 // Finished → "Is the finished video in Google Drive?" → yes → sent.
 async function finishOne(ed, t) {
   await click(btn(edCard(ed, t), "Finished"), "finish " + t);
+  pickFile(ed);
   await click($(ed, "#efYes"), "it's in drive " + t);
   await click($(ed, "#efDone"), "sent " + t);
 }

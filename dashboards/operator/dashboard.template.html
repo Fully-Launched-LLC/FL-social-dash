@@ -6,6 +6,7 @@
 <title>Fully Launched — Operator</title>
 <style>/*__SHELL_CSS__*/</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <script src="/supabase/config.js"></script>
 </head>
 <body>
@@ -273,7 +274,7 @@ function operatorReview(id) {
   const opened = openReviewPlayer(v, {
     folders: x.client.driveFolders,
     intro: `${escapeHtml(x.client.name)} · Edit review. Pause where something should change and leave a comment, or leave one about the whole video; the editor gets them with their times. The client never sees these.`,
-    notesBy: ["operator"], canNote: true, authorRole: "operator", authorName: (ME && ME.name) || "Operator",
+    notesBy: ["operator"], canNote: true, authorRole: "operator", authorName: (ME && ME.name) || "Operator", canUploadCopy: true,
     buttons: [
       { label: clientRoundsUsed(v) ? "Approve for posting" : "Approve & add captions", cls: "primary", onClick: () => approveEdit(id) },
       { label: changes, cls: "reject", needsNotes: true, onClick: async (notes, b) => {

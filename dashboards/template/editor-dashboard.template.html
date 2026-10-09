@@ -6,6 +6,7 @@
 <title>Fully Launched — Editor</title>
 <style>/*__SHELL_CSS__*/</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <script src="/supabase/config.js"></script>
 </head>
 <body>
@@ -170,12 +171,25 @@ function finishVideo(videoId, btn) {
     <div id="efCheck" style="margin:8px 0 14px"><p class="meta">Checking the upload folder…</p></div>
     ${up ? `<a class="btn" href="${escapeHtml(up.url)}" target="_blank" rel="noopener" style="margin-bottom:16px">Open the upload folder</a>`
       : `<p style="color:var(--red);margin:0 0 16px">This client has no finished video folder yet. Ask the operator to add one.</p>`}
+    <div class="ef-copy" style="margin:0 0 16px">
+      <p style="margin:0 0 8px;line-height:1.5"><b>Then add the same file here</b>, so the operator and the client can watch it smoothly on any phone. An MP4 (H.264, AAC audio) plays best.</p>
+      <label class="btn" id="efPickLabel">Choose the finished video<input type="file" id="efPick" accept="video/*" hidden></label>
+      <span class="meta" id="efPicked" style="margin-left:8px"></span>
+    </div>
     <div class="modal-actions"><button class="primary" id="efYes" disabled>Send it to the operator</button><button id="efAgain" hidden>Check again</button><button id="efNo">Not yet</button></div>`);
   const yes = box.querySelector("#efYes"), again = box.querySelector("#efAgain"), out = box.querySelector("#efCheck");
   const versions = VERSIONS[videoId] || [], last = versions[versions.length - 1], next = (last ? last.version : 0) + 1;
-  let file = null;
+  let file = null, driveOk = false, picked = null;
+  // Send needs both: the cut in Drive, and the same file picked here for its
+  // review copy (Supabase, migration 018).
+  const ready = () => { yes.disabled = !(driveOk && picked); };
+  box.querySelector("#efPick").onchange = e => {
+    picked = e.target.files && e.target.files[0] || null;
+    box.querySelector("#efPicked").textContent = picked ? `✓ ${picked.name}` : "";
+    ready();
+  };
   const check = async () => {
-    yes.disabled = true; again.hidden = true; file = null;
+    yes.disabled = true; again.hidden = true; file = null; driveOk = false;
     out.innerHTML = `<p class="meta">Checking the upload folder…</p>`;
     const r = await latestCut(x.video, f);
     if (r.status === "found") {
@@ -187,20 +201,27 @@ function finishVideo(videoId, btn) {
       file = r.file;
       const a = ago(r.file.modifiedTime);
       out.innerHTML = `<p class="ef-ok">✓ Found <b>${escapeHtml(r.file.name)}</b>, uploaded ${a === "now" ? "just now" : escapeHtml(a) + " ago"}. It goes to the operator as <b>v${next}</b>.</p>`;
-      yes.disabled = false;
+      driveOk = true; ready();
     } else if (r.status === "none") {
       out.innerHTML = `<p class="ef-bad">We can't see a finished video for <b>${escapeHtml(t)}</b> in ${where} yet. Upload it there, named <b>${escapeHtml(t)}</b>, then check again.</p>`;
       again.hidden = false;
     } else {
       out.innerHTML = `<p style="line-height:1.55">Make sure the finished video is uploaded to ${where}, named <b>${escapeHtml(t)}</b>. The operator and the client watch it from there.</p>`;
-      yes.textContent = "It's in Google Drive, send it"; yes.disabled = false;
+      yes.textContent = "It's in Google Drive, send it"; driveOk = true; ready();
     }
   };
   again.onclick = check;
   box.querySelector("#efNo").onclick = closeVideoModal;
   yes.onclick = async e => {
-    e.target.disabled = true; e.target.textContent = "Sending…";
-    const v = await sbClient.rpc("social_add_video_version", { p_video_id: videoId, p_file_id: file ? file.id : null, p_file_name: file ? file.name : null });
+    e.target.disabled = true; e.target.textContent = "Uploading…";
+    let path = null;
+    try {
+      path = await uploadToBucket("review", reviewCopyPath(x.video, picked), picked, pct => { e.target.textContent = `Uploading… ${pct}%`; });
+    } catch (err) {
+      out.innerHTML = `<p class="ef-bad">The video didn't upload: ${escapeHtml(err.message || String(err))}. Try again.</p>`; e.target.disabled = false; e.target.textContent = "Send it to the operator"; return;
+    }
+    e.target.textContent = "Sending…";
+    const v = await sbClient.rpc("social_add_video_version", { p_video_id: videoId, p_file_id: file ? file.id : null, p_file_name: file ? file.name : picked.name, p_storage_path: path });
     // Before migration 016 there's no version to save; the cut still goes.
     if (v.error && !/social_add_video_version|function|schema cache/i.test(v.error.message)) {
       out.innerHTML = `<p class="ef-bad">That didn't save: ${escapeHtml(v.error.message)}</p>`; e.target.disabled = false; e.target.textContent = "Send it to the operator"; return;
