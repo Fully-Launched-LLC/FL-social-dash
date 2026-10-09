@@ -133,6 +133,16 @@ const mk = Array.from(box.querySelectorAll(".rv-mark")).find(m => m.dataset.t ==
 mk.click();
 chk("clicking a mark on the bar jumps there too", t === 45 && box.querySelector(".rv-note.on").textContent.includes("Logo here"));
 chk("the clock shows where it is", box.querySelector(".rv-clock").textContent === "0:45 / 1:20");
+// Full screen where the page can't (an iPhone): the phone's own video player.
+let native = false; vid.webkitEnterFullscreen = () => { native = true; };
+box.querySelector(".rv-full").click();
+chk("Full screen on a phone without page full screen uses the phone's own player", native);
+// No sound decoded a couple of seconds in: offer Google's player.
+Object.defineProperty(vid, "webkitAudioDecodedByteCount", { get: () => 0 });
+t = 3; await settle();
+chk("no sound: it offers Google's player", /No sound\?/.test(box.querySelector(".rv-stage").textContent));
+box.querySelector(".rv-nosound button").click(); await settle();
+chk("…which opens Drive's player for the same file", box.querySelector(".rv-stage iframe")?.getAttribute("src")?.includes("/file/d/markcut0001/preview"));
 chk("no page errors", !p.ui.errors.length && !p.ui.alerts.length, [p.ui.errors, p.ui.alerts]);
 
 // A link to the exact file skips the search; with no key, Drive's player.

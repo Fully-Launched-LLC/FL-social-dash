@@ -738,7 +738,7 @@ async function openReviewPlayer(video, opts) {
             <button type="button" class="rv-play" aria-label="Play">▶</button>
             <span class="rv-clock">0:00 / 0:00</span>
             <button type="button" class="rv-speed" title="Playback speed">1x</button>
-            <button type="button" class="rv-mute" aria-label="Mute">Sound on</button>
+            <button type="button" class="rv-mute" aria-label="Mute">Mute</button>
             <span style="flex:1"></span>
             <button type="button" class="rv-full" aria-label="Full screen">Full screen</button>
           </div>
@@ -811,11 +811,30 @@ async function openReviewPlayer(video, opts) {
       const speeds = [1, 1.5, 2, 0.5], next = speeds[(speeds.indexOf(vid.playbackRate) + 1) % speeds.length];
       vid.playbackRate = next; speedBtn.textContent = next + "x";
     };
-    muteBtn.onclick = () => { vid.muted = !vid.muted; muteBtn.textContent = vid.muted ? "Muted" : "Sound on"; };
+    muteBtn.onclick = () => { vid.muted = !vid.muted; muteBtn.textContent = vid.muted ? "Unmute" : "Mute"; muteBtn.setAttribute("aria-label", muteBtn.textContent); };
+    // Full screen: the whole player (video, comment marks, controls) where
+    // the browser allows it; on an iPhone, which only lets the video itself
+    // go full screen, the phone's own player. Either way a vertical video
+    // fills the height (Tait, 2026-10-09).
     stage.querySelector(".rv-full").onclick = () => {
-      if (document.fullscreenElement) document.exitFullscreen();
-      else if (player.requestFullscreen) player.requestFullscreen().catch(() => {});
+      const fs = document.fullscreenElement || document.webkitFullscreenElement;
+      if (fs) return (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      const go = player.requestFullscreen || player.webkitRequestFullscreen;
+      if (go) { const p = go.call(player); if (p && p.catch) p.catch(() => vid.webkitEnterFullscreen && vid.webkitEnterFullscreen()); }
+      else if (vid.webkitEnterFullscreen) vid.webkitEnterFullscreen();
     };
+    // No sound: some exports (a .mov with uncompressed "LPCM" audio) play
+    // silently in Chrome. A couple of seconds in, if the browser has
+    // decoded no audio, offer Google's player, which plays the sound.
+    let soundChecked = false;
+    vid.addEventListener("timeupdate", () => {
+      if (soundChecked || vid.muted || vid.currentTime < 2) return;
+      soundChecked = true;
+      const silent = vid.webkitAudioDecodedByteCount === 0 || vid.mozHasAudio === false || (vid.audioTracks && vid.audioTracks.length === 0);
+      if (!silent || stage.querySelector(".rv-nosound")) return;
+      stage.insertAdjacentHTML("beforeend", `<div class="rv-nosound meta">No sound? This video's audio can't play in this browser. <button type="button">Play it in Google's player</button></div>`);
+      stage.querySelector(".rv-nosound button").onclick = () => showDrivePlayer(file, "Playing it in Google's player so you get the sound.");
+    });
     // Scrubbing: click or drag anywhere on the bar.
     const seekTo = e => {
       if (!duration) return;

@@ -318,7 +318,7 @@ function editorCardBody(client, video) {
         ${fieldBlock("Editing instructions", editorInstructions(video)) || `<div class="meta">No special instructions for this one.</div>`}
         ${f.brandVoice || docs.length ? `<div class="ed-btns">${f.brandVoice ? `<a class="btn" href="${escapeHtml(f.brandVoice)}" target="_blank" rel="noopener">Brand guidelines</a>` : ""}${docs.map(d => `<a class="btn" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.title)}</a>`).join("")}</div>` : ""}</div></div>
       <div class="ed-step"><span class="ed-num">3</span><div class="ed-body"><b>Upload the finished video</b>
-        <div class="meta">${up ? `Put it in ${up.own ? "this video's finished folder" : `${escapeHtml(client.name)}'s finished video folder`} and name the file <b>${escapeHtml(video.title || "after the video")}</b>. Then click <b>${escapeHtml(VIDEO_ACTIONS.mark_delivered.label)}</b>.`
+        <div class="meta">${up ? `Put it in ${up.own ? "this video's finished folder" : `${escapeHtml(client.name)}'s finished video folder`} and name the file <b>${escapeHtml(video.title || "after the video")}</b>. Export it as an <b>MP4 (H.264 video, AAC audio)</b> so the sound plays in every browser. Then click <b>${escapeHtml(VIDEO_ACTIONS.mark_delivered.label)}</b>.`
           : `<b style="color:var(--red)">This client has no finished video folder yet.</b> Ask the operator to add one before you finish this.`}</div>
         <div class="ed-btns actions">${up ? `<a class="btn" href="${escapeHtml(up.url)}" target="_blank" rel="noopener">Open the upload folder</a>` : ""}</div></div></div>
     </div>`;
