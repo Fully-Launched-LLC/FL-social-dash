@@ -193,7 +193,10 @@ function finishVideo(videoId, btn) {
     out.innerHTML = `<p class="meta">Checking the upload folder…</p>`;
     const r = await latestCut(x.video, f);
     if (r.status === "found") {
-      const same = last && last.file_id === r.file.id && String(r.file.modifiedTime || "") <= String(last.created_at);
+      // Compared as times: Postgres and Drive write them differently
+      // ("2026-10-06 23:15:48+00" vs "2026-10-06T23:15:48Z").
+      const at = t => new Date(String(t || "").replace(" ", "T").replace(/([+-]\d\d)$/, "$1:00")).getTime();
+      const same = last && last.file_id === r.file.id && at(r.file.modifiedTime) <= at(last.created_at);
       if (same) {
         out.innerHTML = `<p class="ef-bad">The newest video in ${where} is <b>${escapeHtml(r.file.name)}</b>, the same file you sent as <b>v${last.version}</b>. Upload your new cut, named <b>${escapeHtml(t)}</b>, then check again.</p>`;
         again.hidden = false; return;
