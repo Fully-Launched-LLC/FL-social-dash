@@ -560,3 +560,16 @@ button.big { padding:14px 40px; font-size:16px; }
 .ed-rev-tick input:checked + span { opacity:.55; text-decoration:line-through; }
 .ef-ok { color:var(--ink); line-height:1.55; }
 .ef-bad { color:var(--red); line-height:1.55; }
+
+/* Before a round of changes is sent (client portal, confirmRound). */
+.rv-confirm { position:fixed; inset:0; z-index:2600; background:rgba(4,16,31,.55); display:flex; align-items:center; justify-content:center; padding:16px; }
+.rv-confirm-box { background:#ffffff; color:#04101f; border-radius:14px; max-width:440px; width:100%; padding:22px; box-shadow:0 20px 50px rgba(4,16,31,.35); }
+.rv-confirm-box h2 { margin:0 0 8px; font-size:1.15rem; }
+.rv-confirm-box p { margin:0 0 10px; line-height:1.55; }
+.rv-confirm-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+/* The client's last round of changes, in the operator's edit review. */
+.rv-asked { border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin:0 0 14px; background:var(--bg); }
+.rv-asked ul { list-style:none; margin:8px 0 0; padding:0; }
+.rv-asked li { margin:6px 0; line-height:1.45; }
+.rv-asked li.done { color:var(--sub); }
+.rv-asked-tick { display:inline-block; width:1.2em; }

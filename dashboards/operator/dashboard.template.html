@@ -270,18 +270,34 @@ function operatorReview(id) {
   if (!x) return;
   const v = x.video;
   const changes = n => n.length ? `Send ${n.length} change${n.length === 1 ? "" : "s"} to the editor` : "Send changes to the editor";
-  openReviewPlayer(v, {
+  const opened = openReviewPlayer(v, {
     folders: x.client.driveFolders,
     intro: `${escapeHtml(x.client.name)} · Edit review. Pause where something should change and leave a comment, or leave one about the whole video; the editor gets them with their times. The client never sees these.`,
     notesBy: ["operator"], canNote: true, authorRole: "operator", authorName: (ME && ME.name) || "Operator",
     buttons: [
-      { label: "Approve & add captions", cls: "primary", onClick: () => approveEdit(id) },
+      { label: clientRoundsUsed(v) ? "Approve for posting" : "Approve & add captions", cls: "primary", onClick: () => approveEdit(id) },
       { label: changes, cls: "reject", needsNotes: true, onClick: async (notes, b) => {
           b.disabled = true; b.textContent = "Sending…";
           const ok = await updateVideo(id, { editorBrief: Object.assign({}, v.editorBrief, { revisions: reviewNotesText(notes) }), status: "with_editor" });
           if (ok) closeVideoModal(); else { b.disabled = false; b.textContent = changes(notes); }
         } },
     ],
+  });
+  // Back from the client's changes: list what they asked for, and which
+  // ones the editor ticked as fixed, so Tait can check each one in this cut
+  // before it goes back to them (Tait, 2026-10-09).
+  if ((v.clientRevisionRounds || 0) > 0) opened.then(async box => {
+    if (!box || !box.isConnected) return;
+    let asked = [];
+    try { asked = await loadReviewNotes(v, "sent", ["client"]); } catch (e) { return; }
+    if (!asked.length) return;
+    const fixed = asked.filter(n => n.resolved_at).length;
+    const el = document.createElement("div");
+    el.className = "rv-asked";
+    el.innerHTML = `<b>${escapeHtml(x.client.name)}'s changes, round ${v.clientRevisionRounds} of ${REVISION_ROUNDS}</b> <span class="meta">· the editor ticked ${fixed} of ${asked.length} as fixed. Check each one in this cut.</span>
+      <ul>${asked.map(n => `<li class="${n.resolved_at ? "done" : ""}"><span class="rv-asked-tick">${n.resolved_at ? "✓" : "○"}</span> <span class="rv-time${n.at_seconds == null ? " whole" : ""}">${n.at_seconds == null ? "Whole video" : fmtTime(n.at_seconds)}</span> ${escapeHtml(n.body)}${(n.replies || []).map(r => `<div class="meta">${escapeHtml(r.author_name || "")}: ${escapeHtml(r.body)}</div>`).join("")}</li>`).join("")}</ul>`;
+    const rv = box.querySelector(".rv");
+    if (rv) rv.parentNode.insertBefore(el, rv);
   });
 }
 // Approving an edit is where the posting details go on: caption,
@@ -291,16 +307,19 @@ function approveEdit(id) {
   const x = findVideo(id);
   if (!x) return;
   const v = x.video;
+  // After the client's last round of changes, it's Tait's to approve for
+  // posting; it doesn't go back to the client (Tait, 2026-10-09).
+  const toPost = clientRoundsUsed(v), sendLabel = toPost ? "Approve for posting" : "Approve & send to client";
   const box = openModal(`
-    <h2>Approve edit — add captions</h2>
-    <div class="meta" style="margin-bottom:12px">${escapeHtml(x.client.name)} · ${escapeHtml(v.title || "")}. The client sees these when they approve it for posting.</div>
+    <h2>${toPost ? "Approve for posting" : "Approve edit — add captions"}</h2>
+    <div class="meta" style="margin-bottom:12px">${escapeHtml(x.client.name)} · ${escapeHtml(v.title || "")}. ${toPost ? `They've used both rounds of changes, so this goes straight to <b>Ready to post</b>. Check the captions.` : "The client sees these when they approve it for posting."}</div>
     ${textField("onScreenCaption", "On-screen caption (text shown on the video)", v.onScreenCaption, 2)}
     ${textField("caption", "Caption (the post caption)", v.caption, 5)}
     ${textField("platform", "Platforms (comma-separated)", (v.platform || []).join(", "))}
     ${dateField("postDate", "Post date", v.postDate)}
     <div class="auth-error" id="aeError"></div>
     <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="primary" id="aeSave">Approve &amp; send to client</button>
+      <button class="primary" id="aeSave">${escapeHtml(sendLabel)}</button>
       <button onclick="closeVideoModal()">Cancel</button>
     </div>`);
   box.querySelector("#aeSave").onclick = async e => {
@@ -310,8 +329,8 @@ function approveEdit(id) {
     const platform = box.querySelector('[data-f="platform"]').value.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
     const onScreenCaption = box.querySelector('[data-f="onScreenCaption"]').value.trim() || null;
     const editorBrief = Object.assign({}, v.editorBrief, { revisions: null });
-    const ok = await updateVideo(id, { caption, onScreenCaption, platform, editorBrief, postDate: box.querySelector('[data-f="postDate"]').value || null, note: null, status: "client_review" });
-    if (ok) closeVideoModal(); else { e.target.disabled = false; e.target.textContent = "Approve & send to client"; }
+    const ok = await updateVideo(id, { caption, onScreenCaption, platform, editorBrief, postDate: box.querySelector('[data-f="postDate"]').value || null, note: null, status: toPost ? "ready_to_post" : "client_review" });
+    if (ok) closeVideoModal(); else { e.target.disabled = false; e.target.textContent = sendLabel; }
   };
 }
 // Stand-in for the client's own Approve buttons, for when they say yes by
@@ -436,7 +455,7 @@ function operatorActionsHtml(x, inCard) {
   if (FIXES[id] && ["with_editor", "in_review"].includes(v.status)) out.push(smallBtn(`Comments & replies (${FIXES[id].fixed}/${FIXES[id].total} fixed)`, `operatorComments('${id}')`));
   if (v.status === "in_review") {
     out.push(smallBtn("Review & comment", `operatorReview('${id}')`),
-      smallBtn("Approve & add captions", `approveEdit('${id}')`, "primary"));
+      smallBtn(clientRoundsUsed(v) ? "Approve for posting" : "Approve & add captions", `approveEdit('${id}')`, "primary"));
   }
   if (v.status === "client_review") out.push(smallBtn("Approve for client", `approveForClient('${id}', 'ready_to_post', 'video')`, "primary"));
   if (v.status === "ready_to_post") out.push(smallBtn("Mark posted", `markPosted('${id}')`, "primary"));

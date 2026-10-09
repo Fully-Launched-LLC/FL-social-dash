@@ -308,14 +308,22 @@ const VIDEO_COLUMNS = {
   dueToFilm: "due_to_film", dueToEdit: "due_to_edit", postDate: "post_date",
   finalCutUrl: "final_cut_url", onScreenCaption: "on_screen_caption", filmedBy: "filmed_by",
   conceptApprovedBy: "concept_approved_by", conceptApprovedAt: "concept_approved_at",
+  clientRevisionRounds: "client_revision_rounds",
   createdAt: "created_at", updatedAt: "updated_at",
 };
+// Rounds of changes a client gets on each finished video (Tait,
+// 2026-10-09). The database enforces the same number
+// (social_client_revision_limit, migration 017).
+const REVISION_ROUNDS = 2;
+// After the client's last round, Tait approves the fix for posting
+// himself: it doesn't go back to the client.
+const clientRoundsUsed = v => (v.clientRevisionRounds || 0) >= REVISION_ROUNDS;
 // Columns a page may write directly. Only operators have direct write
 // access (RLS); clients and editors go through VIDEO_ACTIONS below.
 // Gate-1 columns are deliberately absent — use the approve_concept action,
 // so every approval is stamped and logged.
 const VIDEO_WRITABLE = ["clientId","title","platform","hook","overview","outline","body","concept",
-  "filmingDirection","caption","note","status","editorId","editorBrief","dueToFilm","dueToEdit","postDate","finalCutUrl","onScreenCaption","filmedBy"];
+  "filmingDirection","caption","note","status","editorId","editorBrief","dueToFilm","dueToEdit","postDate","finalCutUrl","onScreenCaption","filmedBy","clientRevisionRounds"];
 
 function videoFromRow(row) {
   const v = {};
@@ -659,6 +667,7 @@ if (typeof document !== "undefined") document.addEventListener("keydown", e => {
 //   buttons     [{ label (text or notes => text), cls, needsNotes, onClick(notes, btn) }]
 //   viewVersion an earlier version's number (from the version picker):
 //               plays that cut with the comments left on it, read only
+//   file        { id }: play this exact Drive file (no version picker)
 //   demo        { notes, seconds }: a practice window for the walkthrough
 //               when no real video is waiting. A pretend player, these
 //               sample comments, and nothing read from or saved anywhere.
@@ -976,13 +985,13 @@ async function openReviewPlayer(video, opts) {
   try { notes = await loadReviewNotes(video, opts.which || "open", opts.notesBy); redraw(); }
   catch (e) { drawButtons(); list.innerHTML = `<div class="auth-error">Couldn't load the comments: ${escapeHtml(e.message)}</div>`; }
 
-  if (!opts.viewVersion) { versions = await loadVersions(video); latestV = versions.length ? versions[versions.length - 1].version : 0; }
+  if (!opts.viewVersion && !opts.file) { versions = await loadVersions(video); latestV = versions.length ? versions[versions.length - 1].version : 0; }
   if (versions.length) {
     box.querySelector(".rv-version-slot").outerHTML = `<select class="rv-version" aria-label="Version">${versions.slice().reverse().map(v => `<option value="${v.version}"${v.version === (viewing ? viewing.version : latestV) ? " selected" : ""}>v${v.version} · ${escapeHtml(niceDate(String(v.created_at).slice(0, 10)))}${v.version === latestV ? " (latest)" : ""}</option>`).join("")}</select>`;
     const pickV = box.querySelector(".rv-version");
     pickV.onchange = () => openReviewPlayer(video, Object.assign({}, opts.base || opts, { base: opts.base || opts, viewVersion: Number(pickV.value) }));
   }
-  const file = viewing ? (viewing.file_id ? { id: viewing.file_id } : null) : await findFinishedFile(video, opts.folders, versions), key = await googleKey();
+  const file = opts.file || (viewing ? (viewing.file_id ? { id: viewing.file_id } : null) : await findFinishedFile(video, opts.folders, versions)), key = await googleKey();
   cutRef = file ? file.id : null;
   if (file && key) showOwnPlayer(file, key);
   else showDrivePlayer(file, file ? "" : "We couldn't find the finished file here.");

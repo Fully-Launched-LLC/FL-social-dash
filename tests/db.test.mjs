@@ -20,11 +20,11 @@ await db.exec(`
   alter default privileges in schema public grant all on sequences to anon, authenticated;
   alter default privileges in schema public grant execute on functions to anon, authenticated;
 `);
-for (const f of ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql"]) {
+for (const f of ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "017_revision_rounds.sql"]) {
   await db.exec(readFileSync(MIG + f, "utf8"));
 }
 // Re-running every migration, in order, is safe (006 replaces 003's client function again).
-for (const f of ["003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql"]) {
+for (const f of ["003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "017_revision_rounds.sql"]) {
   await db.exec(readFileSync(MIG + f, "utf8"));
 }
 
