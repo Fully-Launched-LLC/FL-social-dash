@@ -60,7 +60,7 @@ for (let k = 0; k < 20 && tc() && tc().querySelector("[data-tour-next]"); k++) {
   tc().querySelector("[data-tour-next]").click(); await settle();
 }
 chk("the walkthrough: To Do, finished videos, Review the video, then inside the review window, then the calendar (no filming or documents steps for them)",
-  seen.join("|") === "To Do|Time sensitive|Finished videos to approve|Review the video|Watch it here|Comment on any moment|Send changes, or approve|Content Calendar", seen);
+  seen.join("|") === "To Do|Time sensitive|Finished videos to approve|Review the video|Watch it here|Read the feedback|Comment on any moment|Send changes, or approve|Content Calendar", seen);
 chk("the review steps happen inside the real review window, and it closes after", review["Watch it here"] && review["Comment on any moment"] && review["Send changes, or approve"]
   && !review["Review the video"] && !review["Content Calendar"], review);
 chk("it explains comments at a moment and on the whole video", /pinned to that exact second/.test(text["Comment on any moment"]) && /Whole video/.test(text["Comment on any moment"]));

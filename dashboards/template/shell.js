@@ -659,8 +659,12 @@ if (typeof document !== "undefined") document.addEventListener("keydown", e => {
 //   buttons     [{ label (text or notes => text), cls, needsNotes, onClick(notes, btn) }]
 //   viewVersion an earlier version's number (from the version picker):
 //               plays that cut with the comments left on it, read only
+//   demo        { notes, seconds }: a practice window for the walkthrough
+//               when no real video is waiting. A pretend player, these
+//               sample comments, and nothing read from or saved anywhere.
 async function openReviewPlayer(video, opts) {
   opts = opts || {};
+  const demo = opts.demo || null;
   // The window opens at once (the walkthrough points into it straight
   // away); the version picker joins it once the versions have loaded. Only
   // a pick from that picker (viewVersion) waits for them first.
@@ -707,18 +711,18 @@ async function openReviewPlayer(video, opts) {
   setTyped(true);
   const atEl = box.querySelector(".rv-at");
   const setAt = t => { if (atEl) atEl.textContent = fmtTime(t); };
-
-  // ── the video ──
-  function showDrivePlayer(file, why) {
-    vid = null; setTyped(true);
-    const link = file ? `https://drive.google.com/file/d/${file.id}/view` : (finishedVideoLink(video, opts.folders) || {}).url;
-    stage.innerHTML = (file ? `<iframe class="rv-frame" src="https://drive.google.com/file/d/${encodeURIComponent(file.id)}/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>` : "")
-      + `<div class="meta" style="margin-top:8px">${why ? escapeHtml(why) + " " : ""}Pause it, then type the time you're on next to your comment.</div>`
-      + (link ? `<a class="btn" style="margin-top:8px" href="${escapeHtml(link)}" target="_blank" rel="noopener">${file ? "Open it in Google Drive" : "Open the video in Google Drive"}</a>` : "");
+  // The bar, the clock and the comment lit up for the current moment.
+  function tick() {
+    if (!vid || !fill) return;
+    const pct = duration ? vid.currentTime / duration * 100 : 0;
+    fill.style.width = pct + "%"; head.style.left = pct + "%";
+    timeEl.textContent = `${fmtTime(vid.currentTime)} / ${fmtTime(duration)}`;
+    setAt(vid.currentTime);
+    const near = notes.find(n => n.at_seconds != null && Math.abs(vid.currentTime - n.at_seconds) < 0.6);
+    list.querySelectorAll(".rv-note").forEach(el => el.classList.toggle("on", (!!near && el.dataset.id === near.id) || el.dataset.id === activeId));
   }
-  function showOwnPlayer(file, key) {
-    stage.innerHTML = `<div class="rv-player">
-        <video class="rv-video" playsinline preload="metadata"></video>
+  const playerHtml = screen => `<div class="rv-player">
+        ${screen}
         <div class="rv-bar">
           <div class="rv-track" title="Click or drag to move through the video"><div class="rv-rail"></div><div class="rv-fill"></div><div class="rv-head-dot"></div><div class="rv-marks"></div></div>
           <div class="rv-ctrls">
@@ -730,20 +734,57 @@ async function openReviewPlayer(video, opts) {
             <button type="button" class="rv-full" aria-label="Full screen">Full screen</button>
           </div>
         </div>
-      </div>
+      </div>`;
+  // The practice player: no file, a clock that runs while "playing", and
+  // the same bar, marks and comment box as the real one.
+  function showDemoPlayer() {
+    stage.innerHTML = playerHtml(`<div class="rv-video rv-demo-screen"><div><b>Practice video</b><div class="meta">Your finished videos play here</div></div></div>`);
+    marks = stage.querySelector(".rv-marks"); fill = stage.querySelector(".rv-fill");
+    head = stage.querySelector(".rv-head-dot"); timeEl = stage.querySelector(".rv-clock"); playBtn = stage.querySelector(".rv-play");
+    const track = stage.querySelector(".rv-track");
+    duration = demo.seconds || 45;
+    let t = 0, timer = null;
+    vid = {
+      get currentTime() { return t; },
+      set currentTime(v) { t = Math.max(0, Math.min(duration, Number(v) || 0)); tick(); },
+      get paused() { return !timer; },
+      get isConnected() { return stage.isConnected; },
+      pause() { if (timer) { clearInterval(timer); timer = null; } playBtn.textContent = "▶"; },
+      play() {
+        if (!timer) {
+          activeId = null; playBtn.textContent = "❚❚";
+          timer = setInterval(() => {
+            if (!stage.isConnected || document.getElementById("videoModalRoot").classList.contains("hidden")) return vid.pause();
+            t = Math.min(duration, t + 0.25); if (t >= duration) vid.pause(); tick();
+          }, 250);
+        }
+        return Promise.resolve();
+      },
+    };
+    playBtn.onclick = () => vid.paused ? vid.play() : vid.pause();
+    track.addEventListener("click", e => {
+      if (e.target.closest(".rv-mark")) return;
+      const r = track.getBoundingClientRect();
+      vid.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * duration;
+    });
+    setTyped(false); drawMarks(); tick();
+  }
+
+  // ── the video ──
+  function showDrivePlayer(file, why) {
+    vid = null; setTyped(true);
+    const link = file ? `https://drive.google.com/file/d/${file.id}/view` : (finishedVideoLink(video, opts.folders) || {}).url;
+    stage.innerHTML = (file ? `<iframe class="rv-frame" src="https://drive.google.com/file/d/${encodeURIComponent(file.id)}/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>` : "")
+      + `<div class="meta" style="margin-top:8px">${why ? escapeHtml(why) + " " : ""}Pause it, then type the time you're on next to your comment.</div>`
+      + (link ? `<a class="btn" style="margin-top:8px" href="${escapeHtml(link)}" target="_blank" rel="noopener">${file ? "Open it in Google Drive" : "Open the video in Google Drive"}</a>` : "");
+  }
+  function showOwnPlayer(file, key) {
+    stage.innerHTML = playerHtml(`<video class="rv-video" playsinline preload="metadata"></video>`) + `
       <div class="meta rv-loading">Loading the video…</div>`;
     const player = stage.querySelector(".rv-player"), track = stage.querySelector(".rv-track");
     vid = stage.querySelector("video"); marks = stage.querySelector(".rv-marks"); fill = stage.querySelector(".rv-fill");
     head = stage.querySelector(".rv-head-dot"); timeEl = stage.querySelector(".rv-clock"); playBtn = stage.querySelector(".rv-play");
     const muteBtn = stage.querySelector(".rv-mute"), speedBtn = stage.querySelector(".rv-speed");
-    const tick = () => {
-      const pct = duration ? vid.currentTime / duration * 100 : 0;
-      fill.style.width = pct + "%"; head.style.left = pct + "%";
-      timeEl.textContent = `${fmtTime(vid.currentTime)} / ${fmtTime(duration)}`;
-      setAt(vid.currentTime);
-      const near = notes.find(n => n.at_seconds != null && Math.abs(vid.currentTime - n.at_seconds) < 0.6);
-      list.querySelectorAll(".rv-note").forEach(el => el.classList.toggle("on", (!!near && el.dataset.id === near.id) || el.dataset.id === activeId));
-    };
     vid.addEventListener("loadedmetadata", () => {
       duration = vid.duration || 0; setTyped(false);
       const l = stage.querySelector(".rv-loading"); if (l) l.remove();
@@ -842,7 +883,8 @@ async function openReviewPlayer(video, opts) {
       const body = ta.value.trim();
       if (!body) { ta.focus(); return; }
       b.disabled = true;
-      const { data, error } = await sbClient.from("social_video_comments").insert({
+      const { data, error } = demo ? { data: [{ id: "demo-" + Date.now(), parent_id: n.id, body, author_role: opts.authorRole || "client", author_name: opts.authorName || null, author_id: ME_UID, created_at: new Date().toISOString() }] }
+        : await sbClient.from("social_video_comments").insert({
         video_id: video.id, parent_id: n.id, cut_ref: n.cut_ref, body,
         author_role: opts.authorRole || "client", author_name: opts.authorName || null,
       }).select("*");
@@ -854,7 +896,7 @@ async function openReviewPlayer(video, opts) {
     });
     list.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
       b.disabled = true;
-      const { error } = await sbClient.from("social_video_comments").delete().eq("id", b.dataset.del);
+      const { error } = demo ? {} : await sbClient.from("social_video_comments").delete().eq("id", b.dataset.del);
       if (error) { b.disabled = false; alert("Couldn't delete that comment: " + error.message); return; }
       notes = notes.filter(n => n.id !== b.dataset.del); redraw();
     });
@@ -907,7 +949,8 @@ async function openReviewPlayer(video, opts) {
       } else at = Math.round((vid.currentTime || 0) * 10) / 10;
     }
     btn.disabled = true;
-    const { data, error } = await sbClient.from("social_video_comments").insert({
+    const { data, error } = demo ? { data: [{ id: "demo-" + Date.now(), at_seconds: at, body, author_role: opts.authorRole || "client", author_name: opts.authorName || null, author_id: ME_UID, created_at: new Date().toISOString(), replies: [] }] }
+      : await sbClient.from("social_video_comments").insert({
       video_id: video.id, cut_ref: cutRef, at_seconds: at, body,
       author_role: opts.authorRole || "client", author_name: opts.authorName || null,
     }).select("*");
@@ -920,6 +963,15 @@ async function openReviewPlayer(video, opts) {
     redraw();
   }
 
+  if (demo) {
+    ME_UID = "demo-me";
+    notes = demo.notes.map(n => Object.assign({ replies: [] }, n)).sort(byTime);
+    if (demo.versions) {
+      box.querySelector(".rv-version-slot").outerHTML = `<select class="rv-version" aria-label="Version">${demo.versions.map((v, k) => `<option>${escapeHtml(v)}${k ? "" : " (latest)"}</option>`).join("")}</select>`;
+    }
+    showDemoPlayer(); redraw();
+    return box;
+  }
   try { const { data } = await sbClient.auth.getSession(); ME_UID = data && data.session && data.session.user.id; } catch (e) {}
   try { notes = await loadReviewNotes(video, opts.which || "open", opts.notesBy); redraw(); }
   catch (e) { drawButtons(); list.innerHTML = `<div class="auth-error">Couldn't load the comments: ${escapeHtml(e.message)}</div>`; }

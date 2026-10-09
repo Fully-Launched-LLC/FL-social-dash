@@ -191,17 +191,27 @@ await db.exec(`insert into social_videos (client_id,title,hook,outline,body,film
 const tp = await openPage("clients/portal.html", CL, "https://fl.test/clients/newco?tour=1");
 const tc = () => tp.d.getElementById("tourCard");
 const ringed = () => { const s = tp.d.getElementById("tourSpot"); return s && s.style.display !== "none"; };
-chk("the portal opens with a walkthrough, starting at To Do", !!tc() && tc().querySelector("h2").textContent === "To Do" && tc().textContent.includes("Step 1 of 9") && /everything you need to do/.test(tc().textContent) && ringed(), tc() && tc().textContent);
+chk("the portal opens with a walkthrough, starting at To Do", !!tc() && tc().querySelector("h2").textContent === "To Do" && tc().textContent.includes("Step 1 of 15") && /everything you need to do/.test(tc().textContent) && ringed(), tc() && tc().textContent);
 chk("…and drops ?tour=1 from the address, so a reload doesn't repeat it", !tp.w.location.search.includes("tour"));
 const seen = [], text = {}, onPage = {};
-for (let k = 0; k < 9; k++) {
+const practice = {};
+for (let k = 0; k < 15; k++) {
   const h = tc().querySelector("h2").textContent;
   seen.push(h); text[h] = tc().textContent;
+  const box = tp.d.getElementById("videoModalBox"), open = !tp.d.getElementById("videoModalRoot").classList.contains("hidden");
+  if (open && box.classList.contains("modal-wide")) practice[h] = { title: box.querySelector("h2").textContent, comments: box.querySelectorAll(".rv-note").length, marks: box.querySelectorAll(".rv-mark").length, del: box.querySelectorAll(".rv-del").length, reply: !!box.querySelector(".rv-reply"), version: !!box.querySelector(".rv-version"), screen: !!box.querySelector(".rv-demo-screen") };
   onPage[h] = tp.d.querySelector(".view.active").id + (h === "To film" ? ":" + tp.d.querySelector("#videoTabs .chip.active").dataset.tab : "");
   tc().querySelector("[data-tour-next]").click(); await settle();
 }
-chk("it walks To Do, Time sensitive, To film, a card, Upload footage, film it your way, Finished videos to approve, Content Calendar, Documents (no footage folder; no review steps without a finished video)",
-  seen.join("|") === "To Do|Time sensitive|To film|Each card is one video|Upload footage on each card|Film it your way|Finished videos to approve|Content Calendar|Documents", seen);
+chk("it walks To Do, Time sensitive, To film, a card, Upload footage, film it your way, Finished videos to approve, the review steps, Content Calendar, Documents (no footage folder)",
+  seen.join("|") === "To Do|Time sensitive|To film|Each card is one video|Upload footage on each card|Film it your way|Finished videos to approve|Watch it here|Read the feedback|Comment on any moment|Change your comments|Send changes, or approve|When it comes back|Content Calendar|Documents", seen);
+const pw = practice["Watch it here"] || {};
+chk("no finished video yet: the review steps run in a practice window (pretend player, two sample comments with marks, a reply, delete buttons, versions)",
+  pw.title === "Practice: review a video" && pw.screen && pw.comments === 2 && pw.marks === 1 && pw.reply && pw.del === 2 && pw.version, practice);
+chk("…every review step is inside it, and it explains reading feedback, deleting a comment and versions",
+  ["Read the feedback", "Comment on any moment", "Change your comments", "Send changes, or approve", "When it comes back"].every(h => practice[h] && practice[h].title === "Practice: review a video")
+  && /Reply/.test(text["Read the feedback"]) && /✕/.test(text["Change your comments"]) && /v2/.test(text["When it comes back"]), practice);
+chk("…and the practice window saves nothing", (await db.query("select count(*)::int n from social_video_comments")).rows[0].n === 0);
 chk("…opening each page and tab as it goes", onPage["To film"] === "view-videos:film" && onPage["Content Calendar"] === "view-calendar" && onPage["Documents"] === "view-documents", onPage);
 chk("…explains the hook, outline and script, uploading on each card, and filming it their way",
   /Hook.*Outline.*Script/s.test(text["Each card is one video"]) && /its own card/.test(text["Upload footage on each card"]) && /script.*outline.*question/is.test(text["Film it your way"]));
