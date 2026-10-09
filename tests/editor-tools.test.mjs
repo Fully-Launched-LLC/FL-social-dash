@@ -1,6 +1,6 @@
 // Editor tools (migration 016): tick off each revision, replies, the check
 // before Finished, versions, and "done this month".
-import { freshDb, makeHarness, checker } from "./harness.mjs";
+import { freshDb, makeHarness, checker, pickFile } from "./harness.mjs";
 
 const db = await freshDb();
 const { as, openPage, settle } = makeHarness(db);
@@ -103,6 +103,7 @@ const pop = () => ed.d.getElementById("videoModalBox");
 chk("Finished checks the folder: nothing there yet, so it won't send", /can't see a finished video/.test(pop().textContent) && ed.d.getElementById("efYes").disabled && !ed.d.getElementById("efAgain").hidden);
 DRIVE.FinalEditsFolder01 = [{ id: "newcut00001", name: "Mark's introduction v1.mov", mimeType: "video/quicktime", modifiedTime: new Date().toISOString() }];
 ed.d.getElementById("efAgain").click(); await settle();
+pickFile(ed);
 chk("uploaded: Check again finds it, as v1", /Found Mark's introduction v1.mov/.test(pop().textContent) && /v1/.test(pop().textContent) && !ed.d.getElementById("efYes").disabled, pop().textContent.replace(/\s+/g, " "));
 ed.d.getElementById("efYes").click(); await settle();
 const v = await one(`select version, file_id, file_name, created_by from social_video_versions where video_id='${V1}'`);

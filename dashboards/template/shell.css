@@ -456,9 +456,13 @@ button.big { padding:14px 40px; font-size:16px; }
 .rv { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:18px; align-items:start; }
 .rv-stage { min-width:0; }
 .rv-player { background:#000; border-radius:12px; overflow:hidden; }
-.rv-player:fullscreen { display:flex; flex-direction:column; justify-content:center; border-radius:0; }
+.rv-player:fullscreen, .rv-player:-webkit-full-screen { display:flex; flex-direction:column; justify-content:center; border-radius:0; width:100%; height:100%; }
 .rv-video { width:100%; max-height:62vh; background:#000; display:block; cursor:pointer; }
-.rv-player:fullscreen .rv-video { max-height:none; flex:1 1 auto; }
+/* Full screen: the video takes all the height above the controls and keeps
+   its shape, so a vertical video fills the height with black at the sides. */
+.rv-player:fullscreen .rv-video, .rv-player:-webkit-full-screen .rv-video { max-height:none; flex:1 1 auto; min-height:0; height:100%; width:100%; object-fit:contain; }
+.rv-video { object-fit:contain; }
+.rv-nosound { margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .rv-demo-screen { aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; text-align:center; color:#fff; cursor:default; }
 .rv-demo-screen .meta { color:rgba(255,255,255,0.7); }
 .rv-bar { background:#0b1626; padding:14px 14px 8px; }
@@ -478,9 +482,13 @@ button.big { padding:14px 40px; font-size:16px; }
 .rv-ctrls button:hover { border-color:#fff; }
 .rv-play { min-width:40px; }
 .rv-clock { font-variant-numeric:tabular-nums; margin:0 6px; }
-@media (max-width:520px) { .rv-mute { display:none; } .rv-ctrls { gap:4px; } .rv-ctrls button { padding:4px 7px; } .rv-clock { margin:0 2px; font-size:0.75rem; } }
+@media (max-width:520px) { .rv-ctrls { gap:4px; } .rv-ctrls button { padding:4px 7px; } .rv-clock { margin:0 2px; font-size:0.75rem; } }
 .rv-loading { padding:8px 0; }
 .rv-frame { width:100%; aspect-ratio:16/9; max-height:66vh; border:0; border-radius:12px; background:#000; display:block; }
+/* A vertical video: a tall 9:16 frame, centered, as tall as fits. */
+.rv-tall .rv-frame { aspect-ratio:9/16; width:auto; height:min(66vh, 620px); max-width:100%; margin:0 auto; }
+.rv-tall .rv-video { aspect-ratio:9/16; width:auto; height:min(62vh, 580px); max-width:100%; margin:0 auto; }
+.rv-tall .rv-player:fullscreen .rv-video, .rv-tall .rv-player:-webkit-full-screen .rv-video { aspect-ratio:auto; width:100%; height:100%; }
 .rv-load { padding:10px 0; }
 .rv-side { border:1px solid var(--border); border-radius:12px; display:flex; flex-direction:column; max-height:74vh; background:var(--card); }
 .rv-head { padding:12px 14px; border-bottom:1px solid var(--border); }
@@ -574,3 +582,5 @@ button.big { padding:14px 40px; font-size:16px; }
 .rv-asked li { margin:6px 0; line-height:1.45; }
 .rv-asked li.done { color:var(--sub); }
 .rv-asked-tick { display:inline-block; width:1.2em; }
+/* "Upload a review copy" under the player (operators). */
+.rv-copy { display:flex; flex-direction:column; gap:8px; align-items:flex-start; margin:10px 0 4px; }

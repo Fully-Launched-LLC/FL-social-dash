@@ -8,7 +8,7 @@
 //   node tests/flow.test.mjs 1   smooth path
 //   node tests/flow.test.mjs 2   suggestions, client asks for video changes
 //   node tests/flow.test.mjs 3   Tait asks for revisions; client backs out of "filmed" once; one video switched to "we film"
-import { freshDb, makeHarness, checker } from "./harness.mjs";
+import { freshDb, makeHarness, checker, pickFile } from "./harness.mjs";
 
 const RUN = Number(process.argv[2] || 1);
 const V = {
@@ -204,6 +204,7 @@ chk("all with the editor", (await count("status='with_editor' and editor_id=$1",
 // Finished → "Is the finished video in Google Drive?" → yes → sent.
 async function finishOne(ed, t) {
   await click(btn(edCard(ed, t), "Finished"), "finish " + t);
+  pickFile(ed);
   await click($(ed, "#efYes"), "it's in drive " + t);
   await click($(ed, "#efDone"), "sent " + t);
 }
@@ -273,8 +274,8 @@ for (const i of idx) {
   const card = portalCard(cl, "#listFinal", title(i));
   if (V.clientRev.includes(i)) {
     await click(btn(card, "Review the video"), "review " + i);
-    chk(`review window: Drive's player for the folder, typed times, no notes yet, Send waits for one #${i}`,
-      !!$(cl, '#videoModalBox a[href="https://drive/fl-final"]') && $(cl, "#videoModalBox").classList.contains("rv-typed-mode")
+    chk(`review window: plays the editor's review copy (018), typed times until it loads, no notes yet, Send waits for one #${i}`,
+      ($(cl, "#videoModalBox video.rv-video")?.getAttribute("src") || "").startsWith("https://signed/") && $(cl, "#videoModalBox").classList.contains("rv-typed-mode")
       && $(cl, "#videoModalBox .rv-list").textContent.includes("No comments yet") && reviewBtn(cl, "Send changes").disabled);
     $(cl, "#videoModalBox .rv-compose textarea").value = "Bad time"; $(cl, "#videoModalBox .rv-time-in").value = "abc";
     await click($(cl, "#videoModalBox .rv-add"), "bad time " + i);
@@ -285,6 +286,8 @@ for (const i of idx) {
     await click($(cl, "#videoModalBox [data-del]"), "delete a note " + i); // the first one: "Use the other take" (1:05; whole-video notes go last)
     chk(`deleted one #${i}`, $$(cl, "#videoModalBox .rv-note").length === 1);
     await click(reviewBtn(cl, "Send 1 change to the editor"), "send changes " + i);
+    // Two rounds of changes (017): the pop-up, then Send it back to the editor.
+    await click(Array.from($$(cl, "#videoModalBox .rv-confirm button")).find(b => /Send it back to the editor/.test(b.textContent)), "send it back " + i);
     await dismissThanks(cl, "make those changes");
     continue;
   }
