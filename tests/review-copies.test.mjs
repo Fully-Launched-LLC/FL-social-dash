@@ -72,6 +72,17 @@ const ver2 = (await db.query(`select version, storage_path from social_video_ver
 chk("an existing version without a copy gets it added (still v1)", ver2.length === 1 && ver2[0].storage_path.endsWith("again.mp4"), ver2);
 chk("no page errors (operator)", !op.ui.errors.length && !op.ui.alerts.length, [op.ui.errors, op.ui.alerts]);
 
+// A video already with the client: Review copy on its card replaces v1's copy.
+op.w.closeVideoModal();
+await db.exec(`update social_videos set status='client_review' where id='${V}'`);
+await op.w.loadLiveData(); await settle();
+op.w.openOperatorVideoModal(V); await settle();
+Array.from(op.d.querySelectorAll("#videoModalBox button")).find(b => b.textContent === "Review copy").click(); await settle();
+chk("with the client: its card has Review copy, which says v1 already has one", /v1<\/b> has a review copy/.test(op.d.getElementById("videoModalBox").innerHTML));
+pickFile(op, "rcPick", "fixed.mp4"); await settle();
+const vc = (await db.query(`select version, storage_path from social_video_versions where video_id='${V}' order by version`)).rows;
+chk("…uploading replaces v1's copy (no new version)", vc.length === 1 && vc[0].storage_path.startsWith(`${A}/${V}/`) && vc[0].storage_path.endsWith("fixed.mp4") && /Uploaded/.test(op.d.getElementById("rcMsg").textContent), vc);
+
 // The database: a copy must be this video's own.
 const bad = await as(OP, "select version from social_add_video_version($1, null, 'x.mp4', $2)", [V, `${B}/${V}/x.mp4`]);
 chk("a review copy under another client's folder is refused", !!bad.error && /isn't this video's/.test(bad.error.message), bad);

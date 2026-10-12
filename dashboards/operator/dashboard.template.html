@@ -459,10 +459,40 @@ function operatorActionsHtml(x, inCard) {
       smallBtn(clientRoundsUsed(v) ? "Approve for posting" : "Approve & add captions", `approveEdit('${id}')`, "primary"));
   }
   if (v.status === "client_review") out.push(smallBtn("Approve for client", `approveForClient('${id}', 'ready_to_post', 'video')`, "primary"));
+  if (inCard && ["client_review", "ready_to_post"].includes(v.status)) out.push(smallBtn("Review copy", `reviewCopyModal('${id}')`));
   if (v.status === "ready_to_post") out.push(smallBtn("Mark posted", `markPosted('${id}')`, "primary"));
   return out.join("");
 }
 
+// The review copy (Supabase, migration 018) of a video that's already with
+// the client or ready to post: what's there, and upload or replace it. It
+// goes on the latest version (or becomes v1).
+async function reviewCopyModal(id) {
+  const x = findVideo(id);
+  if (!x) return;
+  const v = x.video, versions = await loadVersions(v), latest = versions[versions.length - 1] || null;
+  const own = driveRef(v.finalCutUrl);
+  const box = openModal(`<h2>Review copy</h2>
+    <div class="meta" style="margin-bottom:12px">${escapeHtml(x.client.name)} · ${escapeHtml(v.title || "")}</div>
+    <p style="line-height:1.55;margin:0 0 12px">${latest && latest.storage_path
+      ? `<b>v${latest.version}</b> has a review copy, so it plays smoothly on phones. Upload a new file to replace it.`
+      : `${latest ? `<b>v${latest.version}</b>` : "This video"} has no review copy yet, so it plays from Google Drive, which can be slow or blocked on phones. Upload the finished video (an MP4 plays best).`}</p>
+    <label class="btn">Choose the video<input type="file" id="rcPick" accept="video/*" hidden></label>
+    <span class="meta" id="rcMsg" style="margin-left:8px"></span>
+    <div class="modal-actions"><button onclick="closeVideoModal()">Close</button></div>`);
+  box.querySelector("#rcPick").onchange = async e => {
+    const f = e.target.files && e.target.files[0], msg = box.querySelector("#rcMsg");
+    if (!f) return;
+    try {
+      const path = await uploadToBucket("review", reviewCopyPath(v, f), f, pct => { msg.textContent = `Uploading… ${pct}%`; });
+      const { error } = latest
+        ? await sbClient.from("social_video_versions").update({ storage_path: path }).eq("id", latest.id)
+        : await sbClient.rpc("social_add_video_version", { p_video_id: v.id, p_file_id: own && own.kind === "file" ? own.id : null, p_file_name: f.name, p_storage_path: path });
+      if (error) throw error;
+      msg.textContent = `✓ Uploaded. ${latest ? "v" + latest.version : "v1"} now plays from it.`;
+    } catch (err) { msg.textContent = "That didn't upload: " + (err.message || err); }
+  };
+}
 function openOperatorVideoModal(id) {
   const x = findVideo(id);
   if (!x) return;
