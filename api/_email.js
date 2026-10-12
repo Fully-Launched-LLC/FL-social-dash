@@ -95,24 +95,38 @@ function documentsEmail({ contactName, clientName, docs, portalDocs, portal, por
   return { subject, html, text };
 }
 
+// "Forgot password? Create a new one." (Tait, 2026-10-12): sent from Tait,
+// one button to the "Set a new password" page (api/forgot-password.js).
+function resetPasswordEmail({ link, portal }) {
+  const subject = "Forgot your password?";
+  const html = frame({ portal, title: "Hey, you forgot your password?", footer: false, rows: `
+        <tr><td style="padding:10px 32px 4px;${BODY};font-size:16px">Click right here to change your password.</td></tr>
+        <tr><td style="padding:16px 32px 6px">${button(link, "Change my password")}</td></tr>
+        <tr><td style="padding:14px 32px 32px;${SMALL}">This link only works once. If you didn't ask for it, ignore this email and your password stays the same.</td></tr>` });
+  const text = `Hey, you forgot your password?\n\nClick right here to change your password:\n${link}\n\nThis link only works once. If you didn't ask for it, ignore this email and your password stays the same.`;
+  return { subject, html, text };
+}
+
 // Send one email through Resend, from EMAIL_FROM (or the default). If
 // EMAIL_FROM is on a domain Resend hasn't verified (e.g. a typo), try once
 // more from the default sender and say so.
-async function sendEmail({ to, subject, html, text }) {
+// `from` overrides both (the password email comes from Tait).
+async function sendEmail({ to, subject, html, text, from: fromOverride }) {
   const send = from => fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: "Bearer " + env("RESEND_API_KEY"), "Content-Type": "application/json" },
     body: JSON.stringify({ from, to: [to], subject, html, text, reply_to: env("EMAIL_REPLY_TO") || DEFAULT_REPLY_TO }),
   });
-  let mail = await send(env("EMAIL_FROM") || DEFAULT_FROM);
+  const chosen = fromOverride || env("EMAIL_FROM");
+  let mail = await send(chosen || DEFAULT_FROM);
   let m = mail.ok ? {} : await mail.json().catch(() => ({}));
   let warning;
-  if (!mail.ok && env("EMAIL_FROM") && /not verified/i.test(m.message || "")) {
-    warning = `EMAIL_FROM (${env("EMAIL_FROM")}) isn't a verified Resend domain: ${m.message} Sent from ${DEFAULT_FROM} instead. Fix EMAIL_FROM in Vercel.`;
+  if (!mail.ok && chosen && /not verified/i.test(m.message || "")) {
+    warning = `${chosen} isn't a verified Resend domain: ${m.message} Sent from ${DEFAULT_FROM} instead. Fix EMAIL_FROM in Vercel.`;
     mail = await send(DEFAULT_FROM);
     m = mail.ok ? {} : await mail.json().catch(() => ({}));
   }
   return mail.ok ? { ok: true, ...(warning ? { warning } : {}) } : { ok: false, message: m.message || String(mail.status) };
 }
 
-module.exports = { inviteEmail, editorInviteEmail, documentsEmail, sendEmail, DEFAULT_FROM };
+module.exports = { inviteEmail, editorInviteEmail, resetPasswordEmail, documentsEmail, sendEmail, DEFAULT_FROM };

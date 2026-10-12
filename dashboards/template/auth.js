@@ -51,8 +51,7 @@ function authRenderForm() {
         <div class="auth-error" id="authError"></div>
         <button type="submit" class="primary" id="authSubmit">Sign in</button>
       </form>
-      <a href="#" id="authMagic" class="auth-forgot">No password? Email me a sign-in link</a>
-      <a href="#" id="authForgot" class="auth-forgot">Forgot password?</a>
+      <a href="#" id="authForgot" class="auth-forgot">Forgot password? Create a new one.</a>
       <div id="authSwitchWrap" class="hidden">
         <a href="#" id="authSwitchBtn" class="auth-forgot">Not the right account? Sign out</a>
       </div>
@@ -69,25 +68,21 @@ function authRenderForm() {
     btn.disabled = false; btn.textContent = "Sign in";
     if (error) authSetMessage(error.message, false);
   });
+  // Emails a one-time "create a new password" link, from Tait, and only to
+  // people Fully Launched has added (api/forgot-password.js). There's no
+  // "email me a sign-in link" option: nobody gets in without an invite.
   document.getElementById("authForgot").addEventListener("click", async e => {
     e.preventDefault();
     const email = (document.getElementById("authEmail").value || "").trim();
     if (!email) { authSetMessage('Enter your email above, then click "Forgot password?" again.', false); return; }
-    authSetMessage("Sending reset email…", true);
-    // Lands on /welcome?mode=reset, the "Set a new password" page.
-    const { error } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: location.origin + "/welcome?mode=reset" });
-    authSetMessage(error ? error.message : "Password reset email sent — check your inbox.", !error);
-  });
-  // Invited clients sign in this way — the invite email is the same kind
-  // of link. Never creates a login: only people already invited (or set
-  // up) can get in.
-  document.getElementById("authMagic").addEventListener("click", async e => {
-    e.preventDefault();
-    const email = (document.getElementById("authEmail").value || "").trim();
-    if (!email) { authSetMessage("Enter your email above, then click the link again.", false); return; }
-    authSetMessage("Sending your sign-in link…", true);
-    const { error } = await sbClient.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: location.href.split("#")[0] } });
-    authSetMessage(error ? error.message : "Check your inbox — we sent you a link to sign in.", !error);
+    authSetMessage("Sending…", true);
+    try {
+      const res = await fetch("/api/forgot-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
+      const out = await res.json().catch(() => ({}));
+      authSetMessage(res.ok ? out.message : (out.error || "Something went wrong. Try again."), res.ok);
+    } catch (err) {
+      authSetMessage("Couldn't reach the server. Check your connection and try again.", false);
+    }
   });
   document.getElementById("authSwitchBtn").addEventListener("click", e => { e.preventDefault(); authSignOut(); });
 }
