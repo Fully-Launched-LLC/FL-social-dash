@@ -598,6 +598,39 @@ async function latestCut(video, folders) {
   } catch (e) { return { status: "unknown", error: e.message }; }
 }
 // A video's saved versions (migration 016), oldest first. [] before 016.
+// A Drive file id (a review copy's path in Supabase has slashes).
+const isDriveId = id => !!id && !String(id).includes("/");
+// Where a video's review copies go: review/<client id>/<video id>/<file>.
+const reviewCopyPath = (video, file) => `${video.clientId}/${video.id}/${Date.now()}-${safeName(file.name).replace(/\//g, "_")}`;
+// The operator's "Upload a review copy", under the player when the cut has
+// none: the file from their computer (or their synced Drive folder) goes to
+// Supabase and is attached to the latest version (or becomes v1).
+function offerReviewCopy(box, video, latestVer, driveFile, reopen) {
+  const el = document.createElement("div");
+  el.className = "rv-copy";
+  el.innerHTML = `<div class="meta">Playing from Google Drive, which can be slow or blocked on phones. Upload this video as a review copy so it plays smoothly for everyone.</div>
+    <label class="btn rv-copy-pick">Upload a review copy<input type="file" accept="video/*" hidden></label>
+    <span class="meta rv-copy-msg"></span>`;
+  const stage = box.querySelector(".rv-stage");
+  stage.parentNode.insertBefore(el, stage.nextSibling);
+  el.querySelector("input").onchange = async e => {
+    const f = e.target.files && e.target.files[0], msg = el.querySelector(".rv-copy-msg");
+    if (!f) return;
+    el.querySelector(".rv-copy-pick").hidden = true;
+    try {
+      const path = await uploadToBucket("review", reviewCopyPath(video, f), f, pct => { msg.textContent = `Uploading… ${pct}%`; });
+      const { error } = latestVer && !latestVer.storage_path
+        ? await sbClient.from("social_video_versions").update({ storage_path: path }).eq("id", latestVer.id)
+        : await sbClient.rpc("social_add_video_version", { p_video_id: video.id, p_file_id: driveFile ? driveFile.id : null, p_file_name: f.name, p_storage_path: path });
+      if (error) throw error;
+      msg.textContent = "Uploaded.";
+      reopen();
+    } catch (err) {
+      msg.textContent = "That didn't upload: " + (err.message || err);
+      el.querySelector(".rv-copy-pick").hidden = false;
+    }
+  };
+}
 async function loadVersions(video) {
   const { data, error } = await sbClient.from("social_video_versions").select("*").eq("video_id", video.id).order("version");
   return error ? [] : (data || []);
@@ -738,7 +771,7 @@ async function openReviewPlayer(video, opts) {
             <button type="button" class="rv-play" aria-label="Play">▶</button>
             <span class="rv-clock">0:00 / 0:00</span>
             <button type="button" class="rv-speed" title="Playback speed">1x</button>
-            <button type="button" class="rv-mute" aria-label="Mute">Sound on</button>
+            <button type="button" class="rv-mute" aria-label="Mute">Mute</button>
             <span style="flex:1"></span>
             <button type="button" class="rv-full" aria-label="Full screen">Full screen</button>
           </div>
@@ -787,19 +820,25 @@ async function openReviewPlayer(video, opts) {
       + `<div class="meta" style="margin-top:8px">${why ? escapeHtml(why) + " " : ""}Pause it, then type the time you're on next to your comment.</div>`
       + (link ? `<a class="btn" style="margin-top:8px" href="${escapeHtml(link)}" target="_blank" rel="noopener">${file ? "Open it in Google Drive" : "Open the video in Google Drive"}</a>` : "");
   }
-  function showOwnPlayer(file, key) {
+  function showOwnPlayer(file, key, src) {
     stage.innerHTML = playerHtml(`<video class="rv-video" playsinline preload="metadata"></video>`) + `
       <div class="meta rv-loading">Loading the video…</div>`;
     const player = stage.querySelector(".rv-player"), track = stage.querySelector(".rv-track");
     vid = stage.querySelector("video"); marks = stage.querySelector(".rv-marks"); fill = stage.querySelector(".rv-fill");
     head = stage.querySelector(".rv-head-dot"); timeEl = stage.querySelector(".rv-clock"); playBtn = stage.querySelector(".rv-play");
     const muteBtn = stage.querySelector(".rv-mute"), speedBtn = stage.querySelector(".rv-speed");
+    // Still nothing after 8 seconds (Google slowing or refusing the
+    // stream, or a file the phone can't read): Google's player instead of
+    // a long "Loading the video…".
+    const slow = setTimeout(() => { if (!duration && vid && stage.contains(vid) && isDriveId(file.id)) showDrivePlayer(file, "The video was slow to load here, so it's in Google's player."); }, src ? 20000 : 8000);
     vid.addEventListener("loadedmetadata", () => {
+      clearTimeout(slow);
+      if (vid.videoHeight > vid.videoWidth) box.classList.add("rv-tall");
       duration = vid.duration || 0; setTyped(false);
       const l = stage.querySelector(".rv-loading"); if (l) l.remove();
       drawMarks(); tick();
     });
-    vid.addEventListener("error", () => showDrivePlayer(file, "This video can't play here, so it's in Google's player."));
+    vid.addEventListener("error", () => showDrivePlayer(isDriveId(file.id) ? file : null, "This video can't play here, so it's in Google's player."));
     vid.addEventListener("timeupdate", tick);
     vid.addEventListener("seeked", tick);
     vid.addEventListener("play", () => { playBtn.textContent = "❚❚"; playBtn.setAttribute("aria-label", "Pause"); activeId = null; });
@@ -811,11 +850,33 @@ async function openReviewPlayer(video, opts) {
       const speeds = [1, 1.5, 2, 0.5], next = speeds[(speeds.indexOf(vid.playbackRate) + 1) % speeds.length];
       vid.playbackRate = next; speedBtn.textContent = next + "x";
     };
-    muteBtn.onclick = () => { vid.muted = !vid.muted; muteBtn.textContent = vid.muted ? "Muted" : "Sound on"; };
+    muteBtn.onclick = () => { vid.muted = !vid.muted; muteBtn.textContent = vid.muted ? "Unmute" : "Mute"; muteBtn.setAttribute("aria-label", muteBtn.textContent); };
+    // Full screen: the whole player (video, comment marks, controls) where
+    // the browser allows it; on an iPhone, which only lets the video itself
+    // go full screen, the phone's own player. Either way a vertical video
+    // fills the height (Tait, 2026-10-09).
     stage.querySelector(".rv-full").onclick = () => {
-      if (document.fullscreenElement) document.exitFullscreen();
-      else if (player.requestFullscreen) player.requestFullscreen().catch(() => {});
+      const fs = document.fullscreenElement || document.webkitFullscreenElement;
+      if (fs) return (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      const go = player.requestFullscreen || player.webkitRequestFullscreen;
+      if (go) { const p = go.call(player); if (p && p.catch) p.catch(() => vid.webkitEnterFullscreen && vid.webkitEnterFullscreen()); }
+      else if (vid.webkitEnterFullscreen) vid.webkitEnterFullscreen();
     };
+    // No sound: some exports (a .mov with uncompressed "LPCM" audio) play
+    // silently in Chrome. A couple of seconds in, if the browser has
+    // decoded no audio, offer Google's player, which plays the sound.
+    let soundChecked = false;
+    vid.addEventListener("timeupdate", () => {
+      if (soundChecked || vid.muted || vid.currentTime < 2) return;
+      soundChecked = true;
+      // Safari (iPhone) lists the audio tracks; Chrome counts decoded audio.
+      const silent = vid.audioTracks ? vid.audioTracks.length === 0
+        : "webkitAudioDecodedByteCount" in vid ? vid.webkitAudioDecodedByteCount === 0
+        : vid.mozHasAudio === false;
+      if (!silent || stage.querySelector(".rv-nosound") || !isDriveId(file.id)) return;
+      stage.insertAdjacentHTML("beforeend", `<div class="rv-nosound meta">No sound? This video's audio can't play in this browser. <button type="button">Play it in Google's player</button></div>`);
+      stage.querySelector(".rv-nosound button").onclick = () => showDrivePlayer(file, "Playing it in Google's player so you get the sound.");
+    });
     // Scrubbing: click or drag anywhere on the bar.
     const seekTo = e => {
       if (!duration) return;
@@ -836,7 +897,7 @@ async function openReviewPlayer(video, opts) {
       else if (e.key === "ArrowLeft") { e.preventDefault(); vid.currentTime = Math.max(0, vid.currentTime - 5); }
       else if (e.key === "ArrowRight") { e.preventDefault(); vid.currentTime = Math.min(duration || 0, vid.currentTime + 5); }
     };
-    vid.src = `${DRIVE_API}/${encodeURIComponent(file.id)}?alt=media&key=${encodeURIComponent(key)}`;
+    vid.src = src || `${DRIVE_API}/${encodeURIComponent(file.id)}?alt=media&key=${encodeURIComponent(key)}`;
   }
   // Jump to a comment's moment, paused there, and light it up.
   const jump = (t, id) => {
@@ -991,10 +1052,40 @@ async function openReviewPlayer(video, opts) {
     const pickV = box.querySelector(".rv-version");
     pickV.onchange = () => openReviewPlayer(video, Object.assign({}, opts.base || opts, { base: opts.base || opts, viewVersion: Number(pickV.value) }));
   }
-  const file = opts.file || (viewing ? (viewing.file_id ? { id: viewing.file_id } : null) : await findFinishedFile(video, opts.folders, versions)), key = await googleKey();
+  // Which cut, and its review copy in Supabase (migration 018) if it has
+  // one: that's what plays. Without one, the Drive file streams as before.
+  const latestVer = versions.length ? versions[versions.length - 1] : null;
+  let file = null, copy = null;
+  if (opts.file) {
+    file = opts.file;
+    const m = (await loadVersions(video)).reverse().find(x => x.file_id === file.id || x.storage_path === file.id);
+    copy = m && m.storage_path;
+  } else if (viewing) {
+    file = viewing.file_id || viewing.storage_path ? { id: viewing.file_id || viewing.storage_path } : null;
+    copy = viewing.storage_path;
+  } else if (latestVer && latestVer.storage_path) {
+    file = { id: latestVer.file_id || latestVer.storage_path, name: latestVer.file_name, version: latestVer.version };
+    copy = latestVer.storage_path;
+  } else file = await findFinishedFile(video, opts.folders, versions);
+  const key = await googleKey(), onDrive = !!(file && isDriveId(file.id));
   cutRef = file ? file.id : null;
-  if (file && key) showOwnPlayer(file, key);
-  else showDrivePlayer(file, file ? "" : "We couldn't find the finished file here.");
+  let src = null;
+  if (copy) try {
+    const { data } = await sbClient.storage.from("review").createSignedUrl(copy, 6 * 3600);
+    src = data && data.signedUrl;
+  } catch (e) { /* no copy to hand: Drive */ }
+  // A vertical video gets a tall frame (ours and Google's), so a phone
+  // shows it whole instead of squeezed into a wide box (Tait, 2026-10-09).
+  // A review copy says its own shape once it loads.
+  if (!src && onDrive && key) try {
+    const m = await (await fetch(`${DRIVE_API}/${encodeURIComponent(file.id)}?fields=videoMediaMetadata&key=${encodeURIComponent(key)}`)).json();
+    const vm = m && m.videoMediaMetadata;
+    if (vm && vm.height > vm.width) box.classList.add("rv-tall");
+  } catch (e) { /* shape unknown: the usual wide frame */ }
+  if (src) showOwnPlayer(file, null, src);
+  else if (onDrive && key) showOwnPlayer(file, key);
+  else showDrivePlayer(onDrive ? file : null, onDrive ? "" : "We couldn't find the finished file here.");
+  if (opts.canUploadCopy && !copy && !viewing) offerReviewCopy(box, video, latestVer, onDrive ? file : null, () => openReviewPlayer(video, opts));
   return box;
 }
 

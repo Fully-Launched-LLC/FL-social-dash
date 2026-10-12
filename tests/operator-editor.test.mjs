@@ -1,6 +1,6 @@
 // The operator in the editor portal: reaches it from the operator
 // dashboard, sees every editor's work, and can click Finished for them.
-import { freshDb, makeHarness, checker } from "./harness.mjs";
+import { freshDb, makeHarness, checker, pickFile } from "./harness.mjs";
 
 const db = await freshDb();
 const { openPage, settle } = makeHarness(db);
@@ -41,8 +41,14 @@ chk("opens filtered to Morgan", titles().length === 1 && titles()[0] === "Morgan
 const fin = t => cards().find(c => c.querySelector("[data-open]").textContent === t)?.querySelector("button.primary");
 fin("Morgan edits this").click(); await settle();
 const pop = p.d.getElementById("videoModalBox");
-chk("pop-up: can't check Drive (no key), so it asks them to make sure; warns there's no folder yet", pop.textContent.includes("Send the finished video") && pop.textContent.includes("Make sure the finished video is uploaded") && pop.textContent.includes("no finished video folder yet") && !p.d.getElementById("efYes").disabled);
+chk("pop-up: can't check Drive (no key), so it asks them to make sure; warns there's no folder yet", pop.textContent.includes("Send the finished video") && pop.textContent.includes("Make sure the finished video is uploaded") && pop.textContent.includes("no finished video folder yet"));
+chk("…and Send waits for the same file to be added here (the review copy)", p.d.getElementById("efYes").disabled && /add the same file here/.test(pop.textContent));
+pickFile(p);
+chk("…picked: Send is ready", !p.d.getElementById("efYes").disabled);
 p.d.getElementById("efYes").click(); await settle();
+const rv = (await db.query("select v.storage_path, s.client_id, s.id from social_video_versions v join social_videos s on s.id = v.video_id where s.title='Morgan edits this'")).rows[0];
+chk("the review copy is uploaded to review/<client>/<video>/ and saved on the version", rv && rv.storage_path.startsWith(rv.client_id + "/" + rv.id + "/") && rv.storage_path.endsWith("cut.mp4")
+  && p.ui.log.some(l => l.upload && l.upload.bucket === "review" && l.upload.path === rv.storage_path), [rv, p.ui.log.filter(l => l.upload)]);
 chk("sent confirmation shown", p.d.getElementById("videoModalBox").textContent.includes("Sent to the operator"));
 p.d.getElementById("efDone").click(); await settle();
 let r = (await db.query("select status, final_cut_url from social_videos where title='Morgan edits this'")).rows[0];
@@ -53,6 +59,7 @@ chk("no link asked for, no browser pop-ups", !p.ui.promptsShown.length && !p.ui.
 Array.from(p.d.querySelectorAll("#editorChips .chip")).find(c => c.textContent === "All editors").click(); await settle();
 chk("Tait's video visible under All editors", titles().includes("Tait edits this"), titles());
 fin("Tait edits this").click(); await settle();
+pickFile(p);
 p.d.getElementById("efYes").click(); await settle();
 r = (await db.query("select status from social_videos where title='Tait edits this'")).rows[0];
 chk("operator finished their own video", r.status === "in_review", r);
