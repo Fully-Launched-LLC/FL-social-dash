@@ -228,10 +228,15 @@ chk("reset page: just the new password step", ed.d.querySelector("#stepBody h1")
 ed.d.getElementById("pw1").value = "brandnew99"; ed.d.getElementById("pw2").value = "brandnew99";
 ed.d.querySelector("#stepBody [data-next]").click(); await settle();
 chk("reset saves the new password", ed.ui.log.some(l => l.updateUser && l.updateUser.password === "brandnew99"));
-const login = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
+const login = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html", {
+  fetch: async () => ({ ok: true, status: 200, json: async () => ({ ok: true, message: "If that email has a Fully Launched login, we just sent it a link to create a new password. Check your inbox." }) }),
+});
+chk("login: no 'Email me a sign-in link' option", !login.d.getElementById("authMagic") && !/sign-in link/i.test(login.d.getElementById("authGate").textContent));
+chk("login: 'Forgot password? Create a new one.'", login.d.getElementById("authForgot").textContent === "Forgot password? Create a new one.");
 login.d.getElementById("authEmail").value = "someone@x"; login.d.getElementById("authForgot").click(); await settle();
-const rs = login.ui.log.find(l => l.reset);
-chk("Forgot password now lands on /welcome?mode=reset", rs && rs.reset === "someone@x" && rs.opts.redirectTo === "https://fl.test/welcome?mode=reset", rs);
+const rs = login.ui.log.find(l => l.fetch === "/api/forgot-password");
+chk("Forgot password asks our server (not Supabase) to send the email", rs && JSON.parse(rs.body).email === "someone@x" && !login.ui.log.some(l => l.reset || l.otp), login.ui.log);
+chk("…and says to check the inbox", /Check your inbox/.test(login.d.getElementById("authError").textContent));
 
 // Before migration 008 is run: saving a client still works (the new folder columns are skipped).
 await db.exec(`alter table social_drive_folder_links drop column root, drop column important_documents, drop column previous_content`);

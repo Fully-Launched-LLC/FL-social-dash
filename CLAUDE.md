@@ -362,6 +362,8 @@ fully-social-os/
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
                                invite.js (branded invite email),
+                               forgot-password.js ("create a new password"
+                               email from Tait, only to people already added),
                                invite-editor.js (editor invite: adds the
                                social_editors row, "Welcome to the Fully
                                Launched editor dashboard" email),
@@ -525,16 +527,24 @@ sign-in email. Without
 The first time a login with a *confirmed*
 email matching a client's `contact_email` opens a portal,
 `social_claim_client_invite()` links it to that client
-(`social_client_users`); operators and editors are never linked. Clients
-sign in again with "Email me a sign-in link" on the login screen.
+(`social_client_users`); operators and editors are never linked. There is
+no "email me a sign-in link" on the login screen (removed 2026-10-12, Tait:
+nobody gets in without an email from him).
 Invites are **on** (`INVITES_ENABLED = true` in the operator template)
 since 2026-09-29, Tait's decision. The CRM fix is written
 (`supabase/crm/013_team_only_access.sql`, tested) but must be run in the SQL
 Editor; until then any client login can read the CRM. Setup steps (redirect
 URLs, domain, keys): `ONBOARDING-SETUP.md`.
 
-"Forgot password?" sends a link to `/welcome?mode=reset`, which sets a new
-password for anyone and then opens their own dashboard. The site's home
+"Forgot password? Create a new one." (Tait, 2026-10-12) calls
+`/api/forgot-password`, which emails a one-time recovery link from Tait
+("Hey, you forgot your password? Click right here to change your
+password.") only to someone already added: an operator, an active editor, a
+client's login, or an invited client contact email. Anyone else gets the
+same on-screen answer and no email. The link opens `/welcome?mode=reset`
+(signed in by auth.js's verifyOtp), which sets a new password and then
+opens their own dashboard. Sender: `RESET_EMAIL_FROM`, default
+`Tait Allen <tait@fullylaunched.com>`. The site's home
 page sends a client or editor who signs in there to their own dashboard.
 
 **Review copies** (Tait, 2026-10-09; migration 018): streaming straight

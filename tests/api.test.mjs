@@ -9,7 +9,7 @@ const chk = (n, cond, x) => counts.check(n, cond, x);
 
 const ENV = { SUPABASE_URL: "https://sb.test", SUPABASE_ANON_KEY: "anon", SUPABASE_SERVICE_ROLE_KEY: "service", PORTAL_URL: "https://social.fullylaunched.com" };
 function setEnv(extra = {}) {
-  for (const k of ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "PORTAL_URL", "RESEND_API_KEY", "EMAIL_FROM", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "ANTHROPIC_MODEL"]) delete process.env[k];
+  for (const k of ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "PORTAL_URL", "RESEND_API_KEY", "EMAIL_FROM", "RESET_EMAIL_FROM", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "ANTHROPIC_MODEL"]) delete process.env[k];
   Object.assign(process.env, ENV, extra);
 }
 
@@ -24,7 +24,7 @@ function world(o) {
     if (u.includes("/rest/v1/social_operators")) return json(o.operators.filter(id => u.includes(id)).map(id => ({ id })));
     if (u.includes("/rest/v1/social_client_users")) return json((o.clientUsers || []).filter(x => u.includes(x.id)).map(x => ({ client_id: x.client_id })));
     if (u.includes("/rest/v1/social_clients")) return json((o.clients || []).filter(c => u.includes(c.id)));
-    if (u.includes("/rest/v1/social_client_onboarding") && method === "GET") return json(o.onboarding ? [o.onboarding] : []);
+    if (u.includes("/rest/v1/social_client_onboarding") && method === "GET") return json(o.onboarding && (!u.includes("invited_email=") || u.includes("invited_email=eq." + encodeURIComponent(o.onboarding.invited_email))) ? [o.onboarding] : []);
     if (u.includes("/rest/v1/social_client_documents") && method === "GET") return json(o.docLinks || []);
     if (u.includes("/rest/v1/social_editors") && method === "GET") return json((o.editors || []).filter(e => u.includes(e.id) || u.includes(encodeURIComponent(e.email))));
     if (u.includes("/rest/v1/social_client_generated_docs") && method === "GET" && o.builtDocs) return json(o.builtDocs);
@@ -49,6 +49,7 @@ const invite = require("../api/invite.js");
 const build = require("../api/build-documents.js");
 const sendDocs = require("../api/send-documents.js");
 const inviteEditor = require("../api/invite-editor.js");
+const forgot = require("../api/forgot-password.js");
 const C1 = "11111111-1111-1111-1111-111111111111", C2 = "22222222-2222-2222-2222-222222222222";
 const base = {
   users: { opTok: { id: "op1", email: "tait@x" }, clTok: { id: "cl1", email: "pat@x" }, edTok: { id: "ed1", email: "ed@x" } },
@@ -189,6 +190,46 @@ r = await call(inviteEditor, "opTok", { editorId: "ed9" });
 calls = world({ ...base, generateLink: (b, json) => b.type === "invite" ? json({ msg: "already registered" }, 422) : json({ id: "cl1", properties: { hashed_token: "h11" } }) });
 r = await call(inviteEditor, "opTok", { name: "Pat", email: "pat@newco.test" });
 chk("invite-editor: a client's login can't become an editor (and nothing is saved or sent)", r.status === 400 && /client/.test(r.body.error) && !calls.some(c => c.url.includes("social_editors?on_conflict")) && !calls.some(c => c.url.startsWith("https://api.resend.com")), r.body);
+
+// ── forgot password (no login needed) ──
+{
+  setEnv({ RESEND_API_KEY: "re_1" });
+  const ED_ID = "e1", NOBODY = "n1", PEND = "p1";
+  // Supabase only makes a recovery link for an email that has a login.
+  const logins = { "op@fl.test": "u-op", "ed@fl.test": ED_ID, "cl@newco.test": "u-cl", "stranger@x.test": NOBODY, "pat@newco.test": PEND };
+  const fw = extra => world({ ...base, editors: [{ id: ED_ID, email: "ed@fl.test" }], operators: ["u-op"], clientUsers: [{ id: "u-cl", client_id: C1 }],
+    onboarding: { client_id: C1, invited_email: "pat@newco.test", invited_at: "2026-10-01T00:00:00Z" },
+    generateLink: (b, json) => logins[b.email] ? json({ id: logins[b.email], email: b.email, hashed_token: "rh-" + logins[b.email] }) : json({ msg: "User not found" }, 404), ...extra });
+  const sent = c => c.filter(x => x.url.startsWith("https://api.resend.com")).map(x => JSON.parse(x.body));
+  for (const [who, email, id] of [["an operator", "op@fl.test", "u-op"], ["an editor", "ED@fl.test ", ED_ID], ["a client's login", "cl@newco.test", "u-cl"], ["an invited client who hasn't signed in yet", "pat@newco.test", PEND]]) {
+    const c = fw(); const r = await call(forgot, null, { email });
+    const m = sent(c)[0];
+    chk(`forgot: ${who} gets the email`, r.status === 200 && m && m.to[0] === email.trim().toLowerCase(), r.body);
+    if (who === "an operator") {
+      const gl = JSON.parse(c.find(x => x.url.includes("generate_link")).body);
+      chk("forgot: a recovery link (never creates a login)", gl.type === "recovery");
+      chk("forgot: sent from Tait", m.from === "Tait Allen <tait@fullylaunched.com>", m.from);
+      chk("forgot: 'Hey, you forgot your password? Click right here to change your password.'", m.html.includes("Hey, you forgot your password?") && m.html.includes("Click right here to change your password.") && m.text.includes("Click right here to change your password"));
+      chk("forgot: the button opens our own Set a new password page", m.html.includes('href="https://social.fullylaunched.com/welcome?mode=reset&amp;token_hash=rh-u-op&amp;type=recovery"') && !m.html.includes("sb.test"), m.html.match(/href="[^"]*"/g));
+    }
+  }
+  let c = fw(); let r = await call(forgot, null, { email: "nobody@x.test" });
+  const same = r.body.message;
+  chk("forgot: an email with no login → nothing sent", r.status === 200 && sent(c).length === 0, r.body);
+  c = fw(); r = await call(forgot, null, { email: "stranger@x.test" });
+  chk("forgot: a login Tait never added (not operator, editor, client or invited) → nothing sent", r.status === 200 && sent(c).length === 0, r.body);
+  chk("forgot: same answer either way (doesn't reveal who has an account)", r.body.message === same && /Check your inbox/.test(same));
+  c = fw({ editors: [] }); r = await call(forgot, null, { email: "ed@fl.test" });
+  chk("forgot: a deactivated editor → nothing sent", sent(c).length === 0);
+  c = fw(); r = await call(forgot, null, { email: "not-an-email" });
+  chk("forgot: a bad email → 400", r.status === 400 && sent(c).length === 0);
+  c = fw({ resend: (b, json) => json({ message: "Rate limited" }, 429) }); r = await call(forgot, null, { email: "op@fl.test" });
+  chk("forgot: the email fails → says so", r.status === 500 && /couldn't send/.test(r.body.error), r.body);
+  setEnv({ RESEND_API_KEY: "re_1", RESET_EMAIL_FROM: "Tait <tait@other.test>" });
+  c = fw({ resend: (b, json) => b.from.includes("other.test") ? json({ message: "The other.test domain is not verified." }, 403) : json({ id: "x" }) });
+  r = await call(forgot, null, { email: "op@fl.test" });
+  chk("forgot: an unverified sender → falls back to the Fully Launched default", r.status === 200 && sent(c).at(-1).from === "Fully Launched <hello@fullylaunched.com>", sent(c).map(x => x.from));
+}
 
 console.log(`${counts.pass} passed, ${counts.fail} failed`);
 process.exit(counts.fail ? 1 : 0);
