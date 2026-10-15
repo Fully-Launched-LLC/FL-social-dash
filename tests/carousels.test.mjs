@@ -65,9 +65,11 @@ box.querySelector('[data-slide="1"][data-k="text"]').dispatchEvent(new op.w.Even
 box.querySelector("#carSend").click(); await settle();
 chk("Send to the editor needs an editor", op.ui.alerts.some(a => /Pick an editor/.test(a)) && (await db.query(`select status from social_carousels where id='${C1}'`)).rows[0].status === "idea");
 box.querySelector("#carEditor").value = ED;
+box.querySelector('[data-part="y"]').value = "2026"; box.querySelector('[data-part="m"]').value = "10"; box.querySelector('[data-part="d"]').value = "26";
+box.querySelector('[data-part="d"]').dispatchEvent(new op.w.Event("change"));
 box.querySelector("#carSend").click(); await settle();
-let row = (await db.query(`select status, editor_id, slides from social_carousels where id='${C1}'`)).rows[0];
-chk("saved: the edited copy, Aria assigned, with the editor", row.status === "with_editor" && row.editor_id === ED && row.slides[1].text === "Who exactly is your shop for?", row);
+let row = (await db.query(`select status, editor_id, slides, due_to_edit::text due from social_carousels where id='${C1}'`)).rows[0];
+chk("saved: the edited copy, Aria assigned, with the editor, edit by Oct 26", row.status === "with_editor" && row.editor_id === ED && row.slides[1].text === "Who exactly is your shop for?" && row.due === "2026-10-26", row);
 
 chk("now Aria reads that carousel and the guide; Linda reads nothing", (await count(ED, "social_carousels")) === 1 && (await count(ED, "social_carousel_guides")) === 1 && (await count(ED2, "social_carousels")) === 0);
 chk("an editor can't change a carousel directly", (await readAs(ED, `update social_carousels set status='approved' where id='${C1}' returning id`)).rows?.length === 0 || !!(await readAs(ED, `update social_carousels set status='approved' where id='${C1}' returning id`)).error);
@@ -77,10 +79,16 @@ chk("sending it for review needs slides first", /Upload the slides first/.test((
 
 // ── Aria's Carousels page ──────────────────────────────────────────────
 let ed = await openPage("editor/dashboard.html", ED, "https://fl.test/editor/dashboard.html");
-const card = () => ed.d.querySelector(`[data-carcard="${C1}"]`);
-chk("editor: a Carousels page with only her carousel", !!ed.d.querySelector('.nav-item[data-view="carousels"]') && ed.d.querySelectorAll("[data-carcard]").length === 1 && !!card());
+const card = () => ed.d.querySelector(`#carCards [data-carcard="${C1}"]`);
+chk("editor: a Carousels page with only her carousel", !!ed.d.querySelector('.nav-item[data-view="carousels"]') && ed.d.querySelectorAll("#carCards [data-carcard]").length === 1 && !!card());
 chk("…the slides' words and photo notes, with Copy buttons and the client's name", card().querySelectorAll(".car-slide").length === 2 && card().textContent.includes("Wikimedia Commons") && card().textContent.includes("Fully Launched") && card().querySelectorAll("[data-copy]").length === 2);
 chk("…Send for review is off until there are slides", card().querySelector("[data-submit]").disabled);
+const todoTab = () => ed.d.querySelector('#edTabs [data-edtab="carousels"]');
+chk("To Do has a Carousels to edit tab with her count, and opens on it when there are no videos", todoTab() && todoTab().textContent.replace(/\s+/g, " ").trim() === "Carousels to edit 1" && todoTab().classList.contains("active")
+  && ed.d.querySelectorAll(`#queueList [data-carcard="${C1}"]`).length === 1, todoTab() && todoTab().textContent);
+chk("…and her calendar shows it on Oct 26", Array.from(ed.d.querySelectorAll("#calGrid .cal-block")).some(b => /Carousel due/.test(b.textContent) && b.textContent.includes("Gymshark")), ed.d.getElementById("calGrid").textContent.slice(0, 200));
+chk("…the card shows the edit-by date", /Oct 26/.test(card().querySelector(".edit-by").textContent) && /Oct 26/.test(ed.d.querySelector(`#queueList [data-carcard="${C1}"] .edit-by`).textContent));
+chk("…its cards work like the Carousels page (copy, upload, send)", !!ed.d.querySelector(`#queueList [data-carcard="${C1}"] [data-upload]`) && ed.d.querySelectorAll(`#queueList [data-carcard="${C1}"] [data-copy]`).length === 2);
 card().querySelector("[data-guide]").click(); await settle();
 chk("…the guide opens from the card", ed.d.getElementById("videoModalBox").textContent.includes("Navy"));
 ed.w.closeVideoModal();
@@ -98,6 +106,7 @@ chk("× removes a slide (row and file)", (await db.query(`select count(*)::int n
 card().querySelector("[data-submit]").click(); await settle();
 row = (await db.query(`select status, submitted_at from social_carousels where id='${C1}'`)).rows[0];
 chk("Send to Tait for review: to review", row.status === "to_review" && !!row.submitted_at, row);
+chk("…and it leaves To Do's Carousels to edit (count 0)", todoTab().textContent.replace(/\s+/g, " ").trim() === "Carousels to edit 0" && !ed.d.querySelector("#queueList [data-carcard]"), todoTab().textContent);
 chk("…then the editor can't upload more", !card().querySelector("[data-upload]") && !!(await readAs(ED, `insert into social_carousel_uploads (carousel_id, storage_path) values ('${C1}', '${FL}/${C1}/late.png')`)).error);
 
 // ── Tait reviews: send it back, then approve ──────────────────────────

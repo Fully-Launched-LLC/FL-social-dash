@@ -284,9 +284,11 @@ function renderEditorChips() {
   el.querySelectorAll(".chip").forEach(c => c.onclick = () => { editorFilter = c.dataset.e; renderAll(); });
 }
 
-// To Do holds only what the editor has to do, in two tabs (Tait,
-// 2026-10-15): To edit (first cuts) and To make revisions (sent back with
-// changes), soonest edit-by first. Nothing to do: both are empty.
+// To Do holds only what the editor has to do (Tait, 2026-10-15): To edit
+// (first cuts) and To make revisions (sent back with changes), soonest
+// edit-by first, then Carousels to edit (their carousels that are with them
+// or sent back, the same cards as the Carousels page). Nothing to do: all
+// empty.
 const ED_TABS = [
   { key: "edit", label: "To edit", match: x => !hasRevisions(x.video) },
   { key: "revisions", label: "To make revisions", match: x => hasRevisions(x.video) },
@@ -294,19 +296,29 @@ const ED_TABS = [
 let edTab = null;
 const inEdTab = key => queue().filter(ED_TABS.find(t => t.key === key).match);
 function renderEdTabs() {
-  if (!ED_TABS.some(t => t.key === edTab)) edTab = (ED_TABS.find(t => inEdTab(t.key).length) || ED_TABS[0]).key;
+  const nCar = carouselsToEdit().length;
+  if (edTab !== "carousels" && !ED_TABS.some(t => t.key === edTab)) edTab = (ED_TABS.find(t => inEdTab(t.key).length) || (nCar ? { key: "carousels" } : ED_TABS[0])).key;
+  // Nothing in the video tabs yet (carousels load second): open on carousels.
+  if (edTab === "edit" && !inEdTab("edit").length && !inEdTab("revisions").length && nCar && !edTabPicked) edTab = "carousels";
   const el = document.getElementById("edTabs");
-  el.innerHTML = ED_TABS.map(t => `<div class="chip${t.key === edTab ? " active" : ""}${inEdTab(t.key).length ? "" : " zero"}" data-edtab="${t.key}">${chipLabel(t.label, inEdTab(t.key).length)}</div>`).join("");
-  el.querySelectorAll("[data-edtab]").forEach(c => c.onclick = () => { edTab = c.dataset.edtab; renderEdTabs(); renderQueue(); });
+  el.innerHTML = ED_TABS.map(t => `<div class="chip${t.key === edTab ? " active" : ""}${inEdTab(t.key).length ? "" : " zero"}" data-edtab="${t.key}">${chipLabel(t.label, inEdTab(t.key).length)}</div>`).join("")
+    + `<div class="chip${edTab === "carousels" ? " active" : ""}${nCar ? "" : " zero"}" data-edtab="carousels">${chipLabel("Carousels to edit", nCar)}</div>`;
+  el.querySelectorAll("[data-edtab]").forEach(c => c.onclick = () => { edTab = c.dataset.edtab; edTabPicked = true; renderEdTabs(); renderQueue(); });
 }
+let edTabPicked = false;
 function shown() {
   return inEdTab(edTab).sort((a, b) => (a.video.dueToEdit || "9999").localeCompare(b.video.dueToEdit || "9999")
     || (a.video.title || "").localeCompare(b.video.title || "", undefined, { numeric: true }));
 }
 
 function renderQueue() {
-  const items = shown();
   const list = document.getElementById("queueList");
+  if (edTab === "carousels") {
+    list.innerHTML = carouselCardsHtml(carouselsToEdit()) || `<div class="card"><div class="empty">No carousels to edit right now.</div></div>`;
+    wireCarouselCards(list);
+    return;
+  }
+  const items = shown();
   list.innerHTML = "";
   items.forEach(({ client, video }) => {
     const f = client.driveFolders || {};
@@ -402,9 +414,20 @@ function openEditorVideoModal(videoId) {
 function renderCalendar() {
   const byDay = {};
   queue().forEach(x => { if (x.video.dueToEdit) (byDay[x.video.dueToEdit] = byDay[x.video.dueToEdit] || []).push(x); });
-  renderMonthCalendar(document.getElementById("calGrid"), byDay, x =>
-    `<div class="cal-block k-${hasRevisions(x.video) ? "approve" : "edit"} video-card" onclick="openEditorVideoModal('${x.video.id}')"><div class="t">${escapeHtml(x.video.title || "(untitled)")}</div><div class="s">${hasRevisions(x.video) ? "Revisions · " : "Edit due · "}${escapeHtml(x.client.name)}</div></div>`,
+  // Carousels still with them, on their edit-by date (migration 023).
+  if (typeof CAROUSELS !== "undefined") carouselsToEdit().forEach(c => { if (c.due_to_edit) (byDay[c.due_to_edit] = byDay[c.due_to_edit] || []).push({ carousel: c }); });
+  renderMonthCalendar(document.getElementById("calGrid"), byDay, x => x.carousel
+    ? `<div class="cal-block k-film video-card" onclick="openCarouselFromCalendar('${x.carousel.id}')"><div class="t">${escapeHtml(x.carousel.title)}</div><div class="s">Carousel due${ROLE === "operator" && EDITOR_BY_ID[x.carousel.editor_id] ? " · " + escapeHtml(EDITOR_BY_ID[x.carousel.editor_id].name) : ""}</div></div>`
+    : `<div class="cal-block k-${hasRevisions(x.video) ? "approve" : "edit"} video-card" onclick="openEditorVideoModal('${x.video.id}')"><div class="t">${escapeHtml(x.video.title || "(untitled)")}</div><div class="s">${hasRevisions(x.video) ? "Revisions · " : "Edit due · "}${escapeHtml(x.client.name)}</div></div>`,
     calState, renderCalendar);
+}
+// A carousel on the calendar: its card, on To Do's Carousels to edit tab.
+function openCarouselFromCalendar(id) {
+  tourView("queue");
+  edTab = "carousels"; edTabPicked = true;
+  renderEdTabs(); renderQueue();
+  const card = document.querySelector(`#queueList [data-carcard="${id}"]`);
+  if (card && card.scrollIntoView) card.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderAll() { renderEditorChips(); renderEdTabs(); renderQueue(); renderCalendar(); if (CAR_LOADED) renderCarousels(); }
@@ -424,21 +447,32 @@ async function loadCarousels() {
   (guides.data || []).forEach(g => { CAR_GUIDES[g.client_id] = g.body_md; });
   CAR_UPLOADS = await loadCarouselUploads(CAROUSELS.map(c => c.id));
   CAR_LOADED = true;
-  renderCarousels();
+  refreshCarousels();
 }
 // With them first (sent back, then new), then waiting on Tait, then done.
 const CAR_EDITOR_ORDER = ["changes", "with_editor", "to_review", "approved", "posted"];
-function renderCarousels() {
-  const mine = ROLE === "operator" && editorFilter !== "all" ? CAROUSELS.filter(c => c.editor_id === editorFilter) : CAROUSELS;
-  const list = mine.slice().sort((a, b) => CAR_EDITOR_ORDER.indexOf(a.status) - CAR_EDITOR_ORDER.indexOf(b.status) || a.position - b.position);
-  const el = document.getElementById("carCards");
-  el.innerHTML = list.map(c => {
+// The carousels this page shows: the editor's own (RLS), or, for the
+// operator, every assigned one narrowed by the editor filter.
+const myCarousels = () => ROLE === "operator" && editorFilter !== "all" ? CAROUSELS.filter(c => c.editor_id === editorFilter) : CAROUSELS;
+// Still with the editor: new, or sent back with changes.
+const carouselsToEdit = () => sortCarousels(myCarousels().filter(c => ["with_editor", "changes"].includes(c.status)));
+// With them first, soonest edit-by first (migration 023), then by number.
+const sortCarousels = list => list.slice().sort((a, b) => CAR_EDITOR_ORDER.indexOf(a.status) - CAR_EDITOR_ORDER.indexOf(b.status)
+  || (a.due_to_edit || "9999").localeCompare(b.due_to_edit || "9999") || a.position - b.position);
+// "Edit by Mon, Oct 26", gold-red once it's late and still with them.
+function carouselDueBadge(c) {
+  if (!c.due_to_edit) return "";
+  const late = c.due_to_edit < todayISO() && ["with_editor", "changes"].includes(c.status);
+  return `<span class="badge edit-by" style="border-color:${late ? "var(--red)" : "var(--border)"};color:${late ? "var(--red)" : "var(--sub)"}">${late ? "Overdue, was due " : "Edit by "}${escapeHtml(niceDate(c.due_to_edit))}</span>`;
+}
+function carouselCardsHtml(list) {
+  return list.map(c => {
     const editable = ["with_editor", "changes"].includes(c.status);
     const client = (CLIENTS[c.client_id] || {}).name || "";
     const ups = CAR_UPLOADS[c.id] || [];
     return `<div class="card" data-carcard="${escapeHtml(c.id)}">
       <div class="row" style="padding-top:0"><div class="left"><b>${escapeHtml(c.title)}</b><div class="meta">${[client, c.format, c.category, ROLE === "operator" ? (EDITOR_BY_ID[c.editor_id] || {}).name : ""].filter(Boolean).map(escapeHtml).join(" · ")}</div></div>
-        ${statusDot(c.status, CAROUSEL_STATUS, c.status === "changes")}</div>
+        <div>${carouselDueBadge(c)} ${statusDot(c.status, CAROUSEL_STATUS, c.status === "changes")}</div></div>
       ${c.status === "changes" && c.review_note ? `<div class="car-note"><b>Tait sent it back:</b> ${escapeHtml(c.review_note)}</div>` : ""}
       ${c.status === "to_review" ? `<p class="meta">With Tait for review. It comes back here if he wants changes.</p>` : ""}
       ${c.notes ? `<div class="car-note"><b>Note:</b> ${escapeHtml(c.notes)}</div>` : ""}
@@ -450,12 +484,26 @@ function renderCarousels() {
         <button data-guide="${escapeHtml(c.client_id)}">Guide</button>
         <span class="meta" data-upmsg="${escapeHtml(c.id)}"></span></div>
     </div>`;
-  }).join("") || `<div class="card"><div class="empty">No carousels for you yet. When Tait gives you one, it shows up here.</div></div>`;
+  }).join("");
+}
+function wireCarouselCards(el) {
   wireCarouselCopy(el);
   el.querySelectorAll("[data-guide]").forEach(b => b.onclick = () => openCarouselGuide(CAR_GUIDES[b.dataset.guide]));
   el.querySelectorAll("[data-upload]").forEach(inp => inp.onchange = () => uploadCarouselSlides(inp.dataset.upload, Array.from(inp.files || [])));
   el.querySelectorAll("[data-remove]").forEach(b => b.onclick = () => removeCarouselSlide(b.dataset.remove));
   el.querySelectorAll("[data-submit]").forEach(b => b.onclick = () => submitCarousel(b.dataset.submit, b));
+}
+function renderCarousels() {
+  const el = document.getElementById("carCards");
+  el.innerHTML = carouselCardsHtml(sortCarousels(myCarousels())) || `<div class="card"><div class="empty">No carousels for you yet. When Tait gives you one, it shows up here.</div></div>`;
+  wireCarouselCards(el);
+}
+// After a carousel changes: its page, and To Do's tab and count.
+function refreshCarousels() {
+  renderCarousels();
+  renderEdTabs();
+  if (edTab === "carousels") renderQueue();
+  renderCalendar();
 }
 document.getElementById("carGuideRead").onclick = () => {
   const first = CAROUSELS[0];
@@ -466,12 +514,12 @@ document.getElementById("carGuideRead").onclick = () => {
 async function uploadCarouselSlides(id, files) {
   const c = CAROUSELS.find(x => x.id === id);
   if (!c || !files.length) return;
-  const msg = document.querySelector(`[data-upmsg="${id}"]`);
+  const msgs = document.querySelectorAll(`[data-upmsg="${id}"]`);
   files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
   const start = (CAR_UPLOADS[id] || []).length;
   for (let i = 0; i < files.length; i++) {
     const f = files[i];
-    if (msg) msg.textContent = `Uploading ${i + 1} of ${files.length}…`;
+    msgs.forEach(m => { m.textContent = `Uploading ${i + 1} of ${files.length}…`; });
     try {
       const path = `${c.client_id}/${c.id}/${Date.now()}-${i}-${safeName(f.name)}`;
       await uploadToBucket("carousels", path, f);
@@ -483,7 +531,7 @@ async function uploadCarouselSlides(id, files) {
     }
   }
   Object.assign(CAR_UPLOADS, await loadCarouselUploads([id]));
-  renderCarousels();
+  refreshCarousels();
 }
 async function removeCarouselSlide(uploadId) {
   const u = Object.values(CAR_UPLOADS).flat().find(x => x.id === uploadId);
@@ -492,7 +540,7 @@ async function removeCarouselSlide(uploadId) {
   if (error) { alert("Couldn't remove it: " + error.message); return; }
   await sbClient.storage.from("carousels").remove([u.storage_path]);
   CAR_UPLOADS[u.carousel_id] = (CAR_UPLOADS[u.carousel_id] || []).filter(x => x.id !== uploadId);
-  renderCarousels();
+  refreshCarousels();
 }
 async function submitCarousel(id, btn) {
   btn.disabled = true;
@@ -500,7 +548,7 @@ async function submitCarousel(id, btn) {
   if (error) { btn.disabled = false; alert(error.message); return; }
   const c = CAROUSELS.find(x => x.id === id);
   if (c && data) Object.assign(c, data);
-  renderCarousels();
+  refreshCarousels();
 }
 
 // ---------- first visit: password, then the walkthrough ----------
