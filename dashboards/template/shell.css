@@ -44,7 +44,10 @@
 .main input[type=date]::-webkit-calendar-picker-indicator { filter:none; }
 * { box-sizing:border-box; }
 html { color-scheme: dark; }
-html, body { height:100%; }
+/* No fixed height: the page grows with its content, so the light work area
+   runs the full length when scrolled (a fixed 100% height stopped it after
+   one screen, showing the dark background under long pages). */
+html, body { height:auto; }
 body {
   margin:0; background:var(--bg); color:var(--ink);
   font-family:var(--font-body); font-size:14px;
