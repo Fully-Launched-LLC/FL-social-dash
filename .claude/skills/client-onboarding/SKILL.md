@@ -41,6 +41,16 @@ search, `title contains 'Fully Social OS'`):
   Finished Videos       editors' cuts
 ```
 
+**Brand guidelines** (Tait, 2026-10-15): one Google Doc per client,
+`<Client>: Brand guidelines`, in Important Documents, with three sections:
+**Colors** (each with its name, hex code and a color swatch), **Logo** (the
+image itself) and **Font** (the typeface and weights they use, and where
+it's from). Built only from the brand files the client uploads at
+onboarding (`social_client_onboarding.brand`) or that Tait sends; anything
+missing is marked `[pending: needs <what>]`, never guessed. Its link goes
+on Clients → Edit → Brand guidelines, which puts it first on the Documents
+page for operators and editors. Example: `TEST Client: Brand guidelines`.
+
 Then put the links on the operator dashboard, Clients → Edit: main folder,
 Important Documents, Previous Content, raw footage, finished videos. Their
 onboarding steps' folder buttons use these. Per-video raw footage folders

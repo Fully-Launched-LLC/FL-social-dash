@@ -9,7 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <script src="/supabase/config.js"></script>
 </head>
-<body>
+<body class="navy-work">
 
 <div id="authGate" class="auth-gate"></div>
 <div id="appShell" class="hidden">
@@ -398,12 +398,15 @@ function renderCalendar() {
     calState, renderCalendar);
 }
 
+// The Brand guidelines row on a Documents page (shell.js has brandRow).
 // Documents: every client they edit for, with that client's documents
 // (Content Research included; migration 012) and brand guidelines.
 function renderDocuments() {
-  const list = Object.values(CLIENTS).filter(c => c.documents.length || c.driveFolders.brandVoice).sort((a, b) => a.name.localeCompare(b.name));
+  // Every client they edit for, brand guidelines first (colors, logo, font;
+  // Tait, 2026-10-15), saying so when there isn't one yet.
+  const list = Object.values(CLIENTS).filter(c => VIDEOS.some(x => x.client.id === c.id) || c.documents.length || c.driveFolders.brandVoice).sort((a, b) => a.name.localeCompare(b.name));
   document.getElementById("docsByClient").innerHTML = list.map(c => `<div class="card"><h2>${escapeHtml(c.name)}</h2>
-    ${c.driveFolders.brandVoice ? `<div class="row"><div class="left"><b>Brand guidelines</b></div><a class="btn primary" href="${escapeHtml(c.driveFolders.brandVoice)}" target="_blank" rel="noopener">Open</a></div>` : ""}
+    ${brandRow(c.driveFolders.brandVoice, "Not added yet. Ask the operator for them.")}
     ${c.documents.map(d => `<div class="row"><div class="left"><b>${escapeHtml(d.title)}</b></div><a class="btn primary" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">Open</a></div>`).join("")}</div>`).join("")
     || '<div class="card"><div class="empty">Each client\'s documents show up here as soon as you have a video of theirs to edit.</div></div>';
 }

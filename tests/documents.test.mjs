@@ -40,7 +40,7 @@ chk("no Documents page or document links for the client", (!navs.includes("Docum
 // The operator viewing the same portal sees every document, on Documents.
 let opPortal = await openPage("clients/portal.html", OP, "https://fl.test/clients/test-fully-launched");
 const opDocs = () => Array.from(opPortal.d.querySelectorAll("#docsList .row")).map(r => r.querySelector("b").textContent);
-chk("operator in the portal: Documents shown, listing both documents", opPortal.d.getElementById("docsNav").style.display !== "none" && opDocs().join() === "Brand Voice,Customer Data", opDocs());
+chk("operator in the portal: Documents shown, Brand guidelines first (not added yet), then both documents", opPortal.d.getElementById("docsNav").style.display !== "none" && opDocs().join() === "Brand guidelines,Brand Voice,Customer Data" && /Not added yet/.test(opPortal.d.getElementById("docsList").textContent), opDocs());
 
 // Remove one, rename the other.
 op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
@@ -91,9 +91,11 @@ const ff = (await db.query("select * from social_client_footage_folders()")).row
 await db.exec("rollback");
 chk("…only its two footage folders, and nothing else", ff.length === 1 && Object.keys(ff[0]).join() === "footage_uploads,final_edits" && ff[0].footage_uploads === "https://drive/raw" && ff[0].final_edits === "https://drive/final", ff);
 chk("…while the operator still reads the whole row", (await readAs(OP, "social_drive_folder_links")) === 1);
+opPortal = await openPage("clients/portal.html", OP, "https://fl.test/clients/test-fully-launched");
+chk("operator: Brand guidelines opens the client's doc once it's set", !!opPortal.d.querySelector('#docsList a[href="https://docs.google.com/brand"]') && /colors, logo and font/.test(opPortal.d.getElementById("docsList").textContent));
 const clientPage = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
 chk("the client's page never loads a document link", !/docs\.google\.com|drive\/important/.test(clientPage.d.body.innerHTML) && !clientPage.ui.log.some(l => l.table === "social_drive_folder_links" || l.table === "social_client_documents" || l.table === "social_client_generated_docs"), clientPage.ui.log.filter(l => l.table).map(l => l.table));
-chk("operator in the portal sees Team only documents too, marked", opDocs().join() === "Customer Data (2026),Content Research" && opPortal.d.getElementById("docsList").textContent.includes("Team only"), opDocs());
+chk("operator in the portal sees Team only documents too, marked", opDocs().join() === "Brand guidelines,Customer Data (2026),Content Research" && opPortal.d.getElementById("docsList").textContent.includes("Team only"), opDocs());
 
 const ED = "00000000-0000-0000-0000-00000000000e";
 await db.exec(`insert into auth.users (id) values ('${ED}');

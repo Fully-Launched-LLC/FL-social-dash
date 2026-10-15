@@ -784,6 +784,13 @@ operator); editing happens only on the operator dashboard.
 
 ### Editor dashboard — `/editor/dashboard.html`
 
+The editor portal's work area is navy like its sidebar, with white
+headings and tabs and white cards (`body.navy-work` in shell.css; Tait,
+2026-10-15). The operator dashboard and client portal keep the light work
+area. Every Documents page (the editor's, and the operator's in a client
+portal) starts each client with **Brand guidelines** (their colors, logo
+and font; `brandRow` in shell.js), saying so when there isn't one yet.
+
 **To Do** is two tabs and nothing else (Tait, 2026-10-15): **To edit**
 (first cuts) and **To make revisions** (sent back with changes), soonest
 edit-by first; empty when there's nothing. The old Show / Client / Due /
