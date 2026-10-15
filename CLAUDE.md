@@ -881,8 +881,14 @@ slides** (images into `carousels/<client id>/<carousel id>/`, in file-name
 order; × removes one) and **Send to Tait for review**
 (`social_editor_submit_carousel`, needs at least one slide). Editors read
 no client documents here either. Clients see none of it. The Fully
-Launched copy (30 carousels) and guide were loaded by SQL, not kept in this
-public repo.
+Launched copy (45 carousels: 30 founder stories plus 15 from our own voice
+memos and Customer Data, every third one ours) and guide were loaded by
+SQL, not kept in this public repo. The guide opens with example slides
+(`dashboards/template/carousel-examples/`, copied to
+`/assets/carousel-examples/` by build.py; public-domain or CC BY-SA photos,
+credited on the slide). Guides render Markdown images
+(`![caption](/assets/… or https://…)`, side by side when on consecutive
+lines) and `[label](https://…)` links (`mdToHtml` in shell.js).
 
 ## Adding a client
 
