@@ -591,3 +591,7 @@ button.big { padding:14px 40px; font-size:16px; }
 .process li.done { color: var(--ink); }
 .process li.done::before { content: "✓ "; }
 .process li.now { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+/* An empty tab or filter row (still loading, or nothing to pick, like an
+   editor's own page with no editor picker) shows nothing, not an empty bar. */
+.chip-row:empty { display: none; }
