@@ -147,6 +147,21 @@ const cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/te
 chk("the client: no Carousels page, and the page never asks for carousels", cl.d.getElementById("carouselsNav").style.display === "none"
   && !cl.ui.log.some(l => /carousel/.test(l.table || "")), cl.ui.log.filter(l => l.table).map(l => l.table));
 
+// ── Time sensitive: due in the next 7 days (or late), soonest first ──
+const iso = d => { const t = new Date(); t.setDate(t.getDate() + d); return t.toISOString().slice(0, 10); };
+await db.exec(`insert into social_carousels (client_id, position, title, status, editor_id, due_to_edit, slides) values
+  ('${FL}', 10, 'Due in 20 days', 'with_editor', '${ED2}', '${iso(20)}', '[]'),
+  ('${FL}', 11, 'Due in 2 days', 'with_editor', '${ED2}', '${iso(2)}', '[]'),
+  ('${FL}', 12, 'Overdue', 'changes', '${ED2}', '${iso(-1)}', '[]')`);
+const ld = await openPage("editor/dashboard.html", ED2, "https://fl.test/editor/dashboard.html");
+const ldTab = k => ld.d.querySelector(`#edTabs [data-edtab="${k}"]`);
+const titlesIn = () => Array.from(ld.d.querySelectorAll("#queueList [data-carcard] .left b")).map(b => b.textContent);
+chk("Time sensitive comes first, gold, with what's due this week or late, and To Do opens on it", ld.d.querySelector("#edTabs [data-edtab]").dataset.edtab === "time"
+  && ldTab("time").textContent.replace(/\s+/g, " ").trim() === "Time sensitive 2" && ldTab("time").classList.contains("urgent") && ldTab("time").classList.contains("active"), ldTab("time") && ldTab("time").textContent);
+chk("…soonest first, the late one on top marked overdue", titlesIn().join("|") === "Overdue|Due in 2 days" && /Overdue/.test(ld.d.querySelector("#queueList .edit-by").textContent), titlesIn());
+ldTab("carousels").click(); await settle();
+chk("Carousels to edit: all of them, soonest due first", titlesIn().join("|") === "Overdue|Due in 2 days|Due in 20 days", titlesIn());
+
 chk("no page errors", !op.ui.errors.length && !ed.ui.errors.length && !cl.ui.errors.length, [op.ui.errors, ed.ui.errors, cl.ui.errors]);
 console.log(`${counts.pass} passed, ${counts.fail} failed`);
 process.exit(counts.fail ? 1 : 0);

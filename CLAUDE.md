@@ -887,8 +887,10 @@ memos and Customer Data, every third one ours) and guide were loaded by
 SQL, not kept in this public repo. Each carousel has an edit-by date (`due_to_edit`, migration
 023), set on the operator's carousel form, shown as "Edit by" on the
 editor's cards and as "Carousel due" blocks on the editor's Calendar. The
-editor's To Do has a third tab, **Carousels to edit** (with them or sent
-back, soonest first), with the same cards as the Carousels page; it opens
+editor's To Do starts with **Time sensitive** (every video and carousel
+due in the next 7 days or overdue, soonest first, gold when not empty; To
+Do opens on it then), and has **Carousels to edit** (with them or sent
+back, soonest due first), with the same cards as the Carousels page; it opens
 there when there are no videos. The guide opens with example slides
 (`dashboards/template/carousel-examples/`, copied to
 `/assets/carousel-examples/` by build.py; public-domain or CC BY-SA photos,
