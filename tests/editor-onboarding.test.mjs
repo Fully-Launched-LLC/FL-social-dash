@@ -84,12 +84,15 @@ chk("revisions sit at the top of the card, each with its moment, and Watch with 
   && Array.from(soon.querySelectorAll(".ed-rev .rv-time")).map(t => t.textContent).join(",") === "0:12,Whole video" && /Make the logo bigger/.test(soon.querySelector(".ed-revisions").textContent)
   && !!Array.from(soon.querySelectorAll(".ed-revisions button")).find(b => b.textContent === "Watch with the comments"));
 const stepLink = (c, n) => c.querySelector(`.ed-step:nth-child(${n}) a.btn`);
-chk("step 1: the video's own raw footage folder", stepLink(soon, 1)?.textContent === "Open the raw footage" && stepLink(soon, 1).href === "https://drive.google.com/drive/folders/ownraw0001");
-chk("…or the client's raw footage folder", stepLink(later, 1)?.href === "https://drive.google.com/drive/folders/rawfootage01");
-chk("step 2: instructions, brand guidelines and documents", /Fast cuts/.test(soon.querySelector(".ed-step:nth-child(2)").textContent) && /Brand guidelines/.test(soon.querySelector(".ed-step:nth-child(2)").textContent) && /Customer Data/.test(soon.querySelector(".ed-step:nth-child(2)").textContent));
-chk("step 3: the video's own finished folder, then Finished", stepLink(soon, 3)?.href === "https://drive.google.com/drive/folders/ownfinal001" && /this video's finished folder/.test(soon.querySelector(".ed-step:nth-child(3)").textContent)
-  && !!Array.from(soon.querySelectorAll(".ed-step:nth-child(3) button")).find(b => /Finished/.test(b.textContent)));
-chk("…or the client's finished video folder", stepLink(later, 3)?.href === "https://drive.google.com/drive/folders/finaledits01");
+// Sent back: only the revisions and the upload (Tait, 2026-10-15).
+chk("revision card: just the revisions and one upload step, no raw footage or Edit it", soon.querySelectorAll(".ed-step").length === 1
+  && /Upload the fixed video/.test(soon.querySelector(".ed-step").textContent) && !/Open the raw footage|Edit it/.test(soon.textContent), soon.textContent.replace(/\s+/g, " "));
+chk("…its upload goes to the video's own finished folder, then Finished", stepLink(soon, 1)?.href === "https://drive.google.com/drive/folders/ownfinal001" && /this video's finished folder/.test(soon.querySelector(".ed-step").textContent)
+  && !!Array.from(soon.querySelectorAll(".ed-step button")).find(b => /Finished/.test(b.textContent)));
+// A first cut: all three steps.
+chk("first cut, step 1: the client's raw footage folder", stepLink(later, 1)?.textContent === "Open the raw footage" && stepLink(later, 1).href === "https://drive.google.com/drive/folders/rawfootage01");
+chk("step 2: Edit it, with brand guidelines and documents", /Edit it/.test(later.querySelector(".ed-step:nth-child(2)").textContent) && /Brand guidelines/.test(later.querySelector(".ed-step:nth-child(2)").textContent) && /Customer Data/.test(later.querySelector(".ed-step:nth-child(2)").textContent));
+chk("step 3: the client's finished video folder, then Finished", stepLink(later, 3)?.href === "https://drive.google.com/drive/folders/finaledits01" && !!Array.from(later.querySelectorAll(".ed-step:nth-child(3) button")).find(b => /Finished/.test(b.textContent)));
 chk("no revisions box without revisions", !later.querySelector(".ed-revisions"));
 const docs = ed.d.getElementById("docsByClient").textContent;
 chk("Documents: the client's brand guidelines and documents, Content Research included", docs.includes("Fully Launched") && docs.includes("Brand guidelines") && docs.includes("Customer Data") && docs.includes("Content Research"), docs);

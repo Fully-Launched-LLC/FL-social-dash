@@ -76,12 +76,15 @@ const calState = { offset: 0 };
 
 async function loadData() {
   let vq = sbClient.from("social_videos").select("*").eq("status", "with_editor").order("due_to_edit", { nullsFirst: false });
-  const [videosRes, clientsRes, foldersRes, editorsRes, docsRes] = await Promise.all([
+  const [videosRes, clientsRes, foldersRes, editorsRes, docsRes, genRes] = await Promise.all([
     vq,
     sbClient.from("social_clients").select("id,name,slug"),
     sbClient.from("social_drive_folder_links").select("*"),
     sbClient.from("social_editors").select("id,name,active"),
     sbClient.from("social_client_documents").select("client_id,title,url").order("position"),
+    // Built from the onboarding voice memo (Customer Data, Your Voice);
+    // editors read them for clients they edit for (migration 020).
+    sbClient.from("social_client_generated_docs").select("*").order("kind"),
   ]);
   const errors = [videosRes, clientsRes, foldersRes, editorsRes, docsRes].filter(r => r.error).map(r => r.error.message);
   document.getElementById("loadError").innerHTML = errors.length
@@ -90,10 +93,12 @@ async function loadData() {
   const folders = {};
   (foldersRes.data || []).forEach(f => { folders[f.client_id] = { footageUploads: f.footage_uploads, finalEdits: f.final_edits, brandVoice: f.brand_voice }; });
   const clients = {};
-  (clientsRes.data || []).forEach(c => { clients[c.id] = { id: c.id, name: c.name, displayName: c.name, driveFolders: folders[c.id] || {}, documents: [] }; });
+  (clientsRes.data || []).forEach(c => { clients[c.id] = { id: c.id, name: c.name, displayName: c.name, driveFolders: folders[c.id] || {}, documents: [], generated: [] }; });
   // The client's documents, Team only ones (Content Research) included
   // (migration 012).
   (docsRes.data || []).forEach(d => { if (clients[d.client_id]) clients[d.client_id].documents.push(d); });
+  // Before migration 020 this read errors for editors; they just don't get these.
+  if (!genRes.error) (genRes.data || []).forEach(d => { if (clients[d.client_id]) clients[d.client_id].generated.push(d); });
   CLIENTS = clients;
   EDITOR_BY_ID = {};
   (editorsRes.data || []).forEach(e => { EDITOR_BY_ID[e.id] = e; });
@@ -331,18 +336,25 @@ function renderQueue() {
 // edit-by date is in the card's header.
 function editorCardBody(client, video) {
   const f = client.driveFolders || {}, raw = rawFootageLink(video, f), up = uploadFolder(video, f);
-  const docs = client.documents || [];
+  const docs = client.documents || [], gen = client.generated || [];
+  // Sent back with revisions: only what's needed to fix it (Tait,
+  // 2026-10-15): the revisions with Watch with the comments, then the
+  // upload. The raw footage and Edit it steps are for the first cut.
+  const rev = hasRevisions(video);
+  const folderName = up ? (up.own ? "this video's finished folder" : `${escapeHtml(client.name)}'s finished video folder`) : "";
   return `
     ${revisionsBox(video)}
     <div class="ed-steps">
-      <div class="ed-step"><span class="ed-num">1</span><div class="ed-body"><b>Get the raw footage</b>
+      ${rev ? "" : `<div class="ed-step"><span class="ed-num">1</span><div class="ed-body"><b>Get the raw footage</b>
         <div class="meta">${raw ? (raw.own ? "Every clip for this video is in its own folder." : `Every clip is in ${escapeHtml(client.name)}'s raw footage folder; this video's start with <b>${escapeHtml(video.title || "its title")}</b>.`) : "No raw footage folder yet. Ask the operator for it."}</div>
         ${raw ? `<div class="ed-btns"><a class="btn primary" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">Open the raw footage</a></div>` : ""}</div></div>
       <div class="ed-step"><span class="ed-num">2</span><div class="ed-body"><b>Edit it</b>
         ${fieldBlock("Editing instructions", editorInstructions(video)) || `<div class="meta">No special instructions for this one.</div>`}
-        ${f.brandVoice || docs.length ? `<div class="ed-btns">${f.brandVoice ? `<a class="btn" href="${escapeHtml(f.brandVoice)}" target="_blank" rel="noopener">Brand guidelines</a>` : ""}${docs.map(d => `<a class="btn" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.title)}</a>`).join("")}</div>` : ""}</div></div>
-      <div class="ed-step"><span class="ed-num">3</span><div class="ed-body"><b>Upload the finished video</b>
-        <div class="meta">${up ? `Put it in ${up.own ? "this video's finished folder" : `${escapeHtml(client.name)}'s finished video folder`} and name the file <b>${escapeHtml(video.title || "after the video")}</b>. Export it as an <b>MP4 (H.264 video, AAC audio)</b> so the sound plays in every browser. Then click <b>${escapeHtml(VIDEO_ACTIONS.mark_delivered.label)}</b>.`
+        ${f.brandVoice || docs.length || gen.length ? `<div class="ed-btns">${f.brandVoice ? `<a class="btn" href="${escapeHtml(f.brandVoice)}" target="_blank" rel="noopener">Brand guidelines</a>` : ""}${docs.map(d => `<a class="btn" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.title)}</a>`).join("")}${gen.map(d => `<button type="button" data-gen="${escapeHtml(d.id)}">${escapeHtml(d.title)}</button>`).join("")}</div>` : ""}</div></div>`}
+      <div class="ed-step${rev ? " ed-upload" : ""}">${rev ? "" : `<span class="ed-num">3</span>`}<div class="ed-body"><b>${rev ? "Upload the fixed video" : "Upload the finished video"}</b>
+        <div class="meta">${up ? (rev
+            ? `Put the new version in ${folderName}, named <b>${escapeHtml(video.title || "after the video")}</b> like before, as an <b>MP4 (H.264 video, AAC audio)</b>. Then click <b>${escapeHtml(VIDEO_ACTIONS.mark_delivered.label)}</b>.`
+            : `Put it in ${folderName} and name the file <b>${escapeHtml(video.title || "after the video")}</b>. Export it as an <b>MP4 (H.264 video, AAC audio)</b> so the sound plays in every browser. Then click <b>${escapeHtml(VIDEO_ACTIONS.mark_delivered.label)}</b>.`)
           : `<b style="color:var(--red)">This client has no finished video folder yet.</b> Ask the operator to add one before you finish this.`}</div>
         <div class="ed-btns actions">${up ? `<a class="btn" href="${escapeHtml(up.url)}" target="_blank" rel="noopener">Open the upload folder</a>` : ""}</div></div></div>
     </div>`;
@@ -404,12 +416,22 @@ function renderCalendar() {
 function renderDocuments() {
   // Every client they edit for, brand guidelines first (colors, logo, font;
   // Tait, 2026-10-15), saying so when there isn't one yet.
-  const list = Object.values(CLIENTS).filter(c => VIDEOS.some(x => x.client.id === c.id) || c.documents.length || c.driveFolders.brandVoice).sort((a, b) => a.name.localeCompare(b.name));
+  const list = Object.values(CLIENTS).filter(c => VIDEOS.some(x => x.client.id === c.id) || c.documents.length || (c.generated || []).length || c.driveFolders.brandVoice).sort((a, b) => a.name.localeCompare(b.name));
   document.getElementById("docsByClient").innerHTML = list.map(c => `<div class="card"><h2>${escapeHtml(c.name)}</h2>
     ${brandRow(c.driveFolders.brandVoice, "Not added yet. Ask the operator for them.")}
+    ${(c.generated || []).map(d => `<div class="row"><div class="left"><b>${escapeHtml(d.title)}</b><div class="meta">Built from their onboarding voice memo</div></div><button class="primary" data-gen="${escapeHtml(d.id)}">Read</button></div>`).join("")}
     ${c.documents.map(d => `<div class="row"><div class="left"><b>${escapeHtml(d.title)}</b></div><a class="btn primary" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">Open</a></div>`).join("")}</div>`).join("")
     || '<div class="card"><div class="empty">Each client\'s documents show up here as soon as you have a video of theirs to edit.</div></div>';
 }
+// "Read" on a document built from the voice memo, wherever it shows (the
+// Documents page or a video card): it opens right here.
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-gen]");
+  if (!b) return;
+  const d = Object.values(CLIENTS).flatMap(c => c.generated || []).find(x => x.id === b.dataset.gen);
+  if (d) openModal(`<h2>${escapeHtml(d.title)}</h2><div class="doc-body">${docBodyHtml(d)}</div>
+    <div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Close</button></div>`);
+});
 
 function renderAll() { renderEditorChips(); renderEdTabs(); renderQueue(); renderCalendar(); renderDocuments(); }
 

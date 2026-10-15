@@ -790,6 +790,10 @@ headings and tabs and white cards (`body.navy-work` in shell.css; Tait,
 area. Every Documents page (the editor's, and the operator's in a client
 portal) starts each client with **Brand guidelines** (their colors, logo
 and font; `brandRow` in shell.js), saying so when there isn't one yet.
+Editors see every document of each client they edit for (Tait,
+2026-10-15): the brand guidelines, every Google Doc on Clients → Edit →
+Documents (Team only ones included, 012) and the documents built from the
+voice memo (migration 020), on the Documents page and on each video card.
 
 **To Do** is two tabs and nothing else (Tait, 2026-10-15): **To edit**
 (first cuts) and **To make revisions** (sent back with changes), soonest
@@ -807,7 +811,11 @@ the video's own folder, else the client's), **2. Edit it** (instructions,
 brand guidelines, documents), **3. Upload the finished video** (Open the
 upload folder: the video's own finished folder when its "exact finished
 file" link is a folder, else the client's finished video folder; then
-Finished). The walkthrough points at revisions and each step.
+Finished). A video sent back with revisions shows only what's needed to
+fix it (Tait, 2026-10-15): the **Revisions needed** box with **Watch with
+the comments**, then **Upload the fixed video** with Finished; the raw
+footage and Edit it steps are for first cuts. The walkthrough points at
+revisions and each step.
 Editor tools (migration 016, Tait 2026-10-07): each comment a video was
 sent back with has a **Fixed** tick (`social_resolve_comment`; "x of y
 fixed" on the card and on the operator's rows); anyone who can see a
