@@ -1346,6 +1346,14 @@ function mdToHtml(md) {
     const t = line.trimEnd();
     let m;
     let im;
+    // [instagram](https://www.instagram.com/p/<code>/) on its own line: the
+    // post itself, through Instagram's own embed (swipe through every slide).
+    if ((im = t.trim().match(/^\[instagram\]\(https:\/\/www\.instagram\.com\/p\/([A-Za-z0-9_-]+)\/?\)$/))) {
+      close();
+      if (!gallery) { out.push('<div class="md-gallery md-embeds">'); gallery = true; }
+      out.push(`<iframe class="md-ig" src="https://www.instagram.com/p/${im[1]}/embed/" loading="lazy" allowtransparency="true" scrolling="no" title="Instagram post"></iframe>`);
+      return;
+    }
     if ((im = t.trim().match(/^!\[([^\]]*)\]\(((?:\/assets\/|https:\/\/)[^)\s]+)\)$/))) {
       close();
       if (!gallery) { out.push('<div class="md-gallery">'); gallery = true; }

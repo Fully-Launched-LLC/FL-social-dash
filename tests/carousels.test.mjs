@@ -20,7 +20,7 @@ await db.exec(`
   insert into social_client_users (id,client_id,email) values ('${CL}','${FL}','fl@x');
   insert into social_editors (id,name,email) values ('${ED}','Aria','aria@x'),('${ED2}','Linda','linda@x');
   update social_editors set setup_at = now();
-  insert into social_carousel_guides (client_id, body_md) values ('${FL}', '# Carousel guide\n\n## Examples\n\n![The hook](/assets/carousel-examples/founder-1-hook.jpg)\n![A story slide](/assets/carousel-examples/founder-2-story.jpg)\n\n- [A real post](https://www.instagram.com/p/DdR361EjDyJ/)\n- [not a link](javascript:alert(1))\n\n## Brand\n\nNavy \`#04101F\` and gold.');
+  insert into social_carousel_guides (client_id, body_md) values ('${FL}', '# Carousel guide\n\n## Examples\n\n![The hook](/assets/carousel-examples/founder-1-hook.jpg)\n![A story slide](/assets/carousel-examples/founder-2-story.jpg)\n\n[instagram](https://www.instagram.com/p/DdR361EjDyJ/)\n[instagram](https://www.instagram.com/p/bad\"onload=x/)\n\n- [A real post](https://www.instagram.com/p/DdR361EjDyJ/)\n- [not a link](javascript:alert(1))\n\n## Brand\n\nNavy \`#04101F\` and gold.');
   insert into social_carousels (id, client_id, position, title, format, category, slides, caption, sources) values
     ('${C1}','${FL}',1,'Gymshark started in a garage','Founder story','E-commerce',
      '[{"text":"He was delivering pizzas\\n\\nHis brand is worth *£1 billion*","photo":"Ben Francis, Wikimedia Commons"},{"text":"Who is your shop for?","photo":"Solid navy"}]',
@@ -48,7 +48,9 @@ op.d.getElementById("carGuideRead").click(); await settle();
 chk("the guide opens, Markdown rendered", op.d.getElementById("videoModalBox").textContent.includes("Navy") && !!op.d.querySelector("#videoModalBox code"));
 const gImgs = Array.from(op.d.querySelectorAll("#videoModalBox .md-gallery img")).map(i => i.getAttribute("src"));
 chk("…with the example slides side by side, captioned", gImgs.join() === "/assets/carousel-examples/founder-1-hook.jpg,/assets/carousel-examples/founder-2-story.jpg"
-  && op.d.querySelectorAll("#videoModalBox .md-gallery").length === 1 && op.d.querySelector("#videoModalBox figcaption").textContent === "The hook", gImgs);
+  && op.d.querySelectorAll("#videoModalBox .md-gallery:not(.md-embeds)").length === 1 && op.d.querySelector("#videoModalBox figcaption").textContent === "The hook", gImgs);
+const igs = Array.from(op.d.querySelectorAll("#videoModalBox iframe.md-ig")).map(f => f.getAttribute("src"));
+chk("…Instagram posts embedded with Instagram's own player; nothing else becomes a frame", igs.join() === "https://www.instagram.com/p/DdR361EjDyJ/embed/", igs);
 const gLinks = Array.from(op.d.querySelectorAll("#videoModalBox .doc-body a")).map(a => a.getAttribute("href"));
 chk("…and links to the real posts; only https links work", gLinks.includes("https://www.instagram.com/p/DdR361EjDyJ/") && !gLinks.some(h => /^javascript/.test(h)), gLinks);
 op.w.closeVideoModal();
