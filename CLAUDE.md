@@ -746,7 +746,12 @@ are raised (white offset shadows). On phones the sidebar becomes a top bar.
 One shared file; the slug comes from the URL. Two pages only (client
 feedback, 2026-10-15: too busy, unclear what to do first, no need for
 Drive): **To Do** and **Content Calendar**. No Documents page and no footage
-folder link: clients never get general Google Drive access.
+folder link: clients never get general Google Drive access. An operator
+viewing the portal also gets a **Documents** page (Tait, 2026-10-15): every
+document for that client, Team only ones marked, and the ones built from
+the voice memo. Migration 019 takes away a client login's read access to
+`social_client_documents` and `social_client_generated_docs`, so it's not
+only hidden.
 
 **To Do** opens with **Your next step**: one card naming the single thing to
 do first (finished videos to approve, then ideas to approve, then videos to
@@ -763,8 +768,8 @@ To Do; they're on the Content Calendar. **Content Calendar**
 (each post date shows the video's full title and a colored pill per
 platform, with a "Posts on" key above; 🎥 film dates for client-filmed
 ideas; under the grid, "What posts each day": the month as a list with
-each video's hook and platforms by name). The operator still adds documents
-on Clients → Edit; editors see them, clients don't. Every video card starts with its post date, where it's at (in plain
+each video's hook and platforms by name). The operator adds documents on
+Clients → Edit; editors and operators see them, clients don't. Every video card starts with its post date, where it's at (in plain
 words) and a pill per platform it posts on. Then only what's needed:
 client-filmed ideas — film-by date, hook, script, outline, how to film it,
 upload link; we-film ideas — when we film it, hook, script, outline, and

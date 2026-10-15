@@ -19,6 +19,7 @@
   <div class="sync-badge" id="operatorBadge" style="display:none">Viewing as operator</div>
   <div class="nav-item active" data-view="videos">To Do</div>
   <div class="nav-item" data-view="calendar">Content Calendar</div>
+  <div class="nav-item" data-view="documents" id="docsNav" style="display:none">Documents</div>
 </nav>
 
 <main class="main">
@@ -63,6 +64,12 @@
     </div>
   </section>
 
+  <!-- Operators only (Tait, 2026-10-15): clients never see documents. -->
+  <section class="view" id="view-documents">
+    <div class="page-head"><h1>Documents</h1><p>Only you can see this page. The client's portal has no Documents page, and their login can't read these (migration 019).</p></div>
+    <div class="card"><div id="docsList"></div></div>
+  </section>
+
   <section class="view" id="view-calendar">
     <div class="page-head"><h1>Content Calendar</h1><p>Every video on the day it posts, and where it posts<span id="calFilmNote"> (green blocks show when to film it)</span>. Click one to open it.</p></div>
     <div class="chip-row" id="calLegend" style="margin-bottom:10px"></div>
@@ -92,6 +99,8 @@
 
 let CLIENT = null;          // the social_clients row
 let DRIVE_FOLDERS = {};     // from social_drive_folder_links
+let DOCUMENTS = [];         // operator only: social_client_documents, in order
+let GEN_DOCS = [];          // operator only: built from the onboarding voice memo
 let ONBOARDING = null;      // their social_client_onboarding row, if any
 let VIDEOS = [];            // from social_videos (videoFromRow shape)
 let HIDDEN_CONCEPTS = 0;    // operator view only: ideas the client can't see (sent back with suggestions)
@@ -437,7 +446,7 @@ function openClientVideoModal(videoId) {
 function renderOperatorBanner() {
   document.getElementById("operatorBanner").innerHTML = IS_OPERATOR ? `
     <div class="card" style="margin-bottom:14px"><b>You're viewing ${escapeHtml(CLIENT.name)}'s portal as the operator.</b>
-      <div class="meta">This is exactly what the client sees, and you can click their buttons for them. It's recorded as you, not the client.
+      <div class="meta">This is exactly what the client sees, plus a Documents page only you can see. You can click their buttons for them. It's recorded as you, not the client.
       To edit a video, use the <a href="/operator/dashboard.html" style="color:inherit;text-decoration:underline">operator dashboard</a>.
       ${HIDDEN_CONCEPTS ? `<br>${HIDDEN_CONCEPTS} idea(s) with suggestions are back with you. Edit and send them again from the operator dashboard.` : ""}</div></div>` : "";
 }
@@ -577,6 +586,23 @@ function renderAgenda() {
     </div>`).join("") : `<div class="empty">Nothing posts this month.</div>`;
 }
 
+// Operator only: every document for this client, Team only ones marked.
+function renderDocuments() {
+  const gen = GEN_DOCS.map(d => `
+    <div class="row"><div class="left"><b>${escapeHtml(d.title)}</b><div class="meta">Built from their onboarding voice memo</div></div>
+      <button class="primary" data-gen="${escapeHtml(d.id)}">Read</button></div>`).join("");
+  const drive = DOCUMENTS.map(d => `
+    <div class="row"><div class="left"><b>${escapeHtml(d.title)}</b>${d.team_only ? `<div class="meta">Team only</div>` : ""}</div>
+      <a class="btn primary" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">Open</a></div>`).join("");
+  document.getElementById("docsList").innerHTML = gen + drive
+    || `<div class="empty">No documents yet. Add them on the operator dashboard: Clients → Edit → Documents.</div>`;
+  document.querySelectorAll("#docsList [data-gen]").forEach(b => b.onclick = () => {
+    const d = GEN_DOCS.find(x => x.id === b.dataset.gen);
+    openModal(`<h2>${escapeHtml(d.title)}</h2><div class="doc-body">${docBodyHtml(d)}</div>
+      <div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Close</button></div>`);
+  });
+}
+
 // A client who hasn't finished onboarding gets a way back into it.
 function renderOnboardBanner() {
   const o = ONBOARDING;
@@ -628,6 +654,17 @@ async function startApp(user, access) {
 
   const { data: ob } = await sbClient.from("social_client_onboarding").select("*").eq("client_id", CLIENT.id).maybeSingle();
   ONBOARDING = ob || null;
+  // Documents: operators only. A client's login can't read them anyway (019).
+  if (IS_OPERATOR) {
+    const [{ data: docs }, { data: gen }] = await Promise.all([
+      sbClient.from("social_client_documents").select("*").eq("client_id", CLIENT.id).order("position"),
+      sbClient.from("social_client_generated_docs").select("*").eq("client_id", CLIENT.id).order("kind"),
+    ]);
+    DOCUMENTS = docs || [];
+    GEN_DOCS = gen || [];
+    document.getElementById("docsNav").style.display = "";
+    renderDocuments();
+  }
   // Invited but no password yet: the password page first. Nothing here
   // shows until they've made one. (Not for clients who finished the older
   // onboarding before the password step existed.)

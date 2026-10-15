@@ -111,7 +111,8 @@ const clientFilmed = idx.filter(i => !V.switchToUs.includes(i));
 
 // ── 2. Client (films their own) ──
 let cl = track(await CL());
-chk("client nav: To Do and Calendar only (no Drive: no Documents, no footage folder)", $$(cl, ".nav-item").map(n => n.textContent.trim()).join("|") === "To Do|Content Calendar", $$(cl, ".nav-item").map(n => n.textContent.trim()));
+const shownNav = p => $$(p, ".nav-item").filter(n => n.style.display !== "none").map(n => n.textContent.trim());
+chk("client nav: To Do and Calendar only (no Drive: no Documents, no footage folder)", shownNav(cl).join("|") === "To Do|Content Calendar", shownNav(cl));
 chk("no footage folder card", !$(cl, "#footageCard") && !$(cl, "#footageCardLink"));
 chk("Your next step: approve the we-film idea first, else film", $(cl, "#nextStep").textContent.includes(V.switchToUs.length ? `Approve ${V.switchToUs.length} idea` : `Film ${clientFilmed.length} video`), $(cl, "#nextStep").textContent);
 chk("My Videos opens on All", $(cl, "#videoTabs .chip.active").dataset.tab === "all" && firstTab(cl) === `All (30)`, tabsText(cl));
