@@ -748,9 +748,13 @@ One shared file; the slug comes from the URL. Two pages: **To Do** and
 only see the things they need to do"). No footage folder link and no
 Google Drive for clients. An operator viewing the portal also gets a
 **Documents** page: every document for that client, Team only ones marked,
-and the ones built from the voice memo; migration 019 takes away a client
-login's read access to `social_client_documents` and
-`social_client_generated_docs`.
+and the ones built from the voice memo. Only operators and editors can
+read client documents (migration 019): a client's login can't read
+`social_client_documents`, `social_client_generated_docs` or
+`social_drive_folder_links` (whose row also holds the brand guidelines,
+important documents and other document links). The portal gets just the
+raw footage and finished video folders from
+`social_client_footage_folders()`.
 
 **To Do** is two tabs and nothing else: **To film** (videos the client
 films, grouped by category with a filter row, remembered per browser;

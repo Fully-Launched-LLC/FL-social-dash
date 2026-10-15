@@ -602,9 +602,14 @@ async function startApp(user, access) {
   document.getElementById("brandName").textContent = CLIENT.name;
   document.getElementById("operatorBadge").style.display = IS_OPERATOR ? "block" : "none";
 
-  // Folder links are still read for each video's Upload footage button and
-  // the review player; the client never gets a general Drive folder link.
-  const { data: folderRow } = await sbClient.from("social_drive_folder_links").select("*").eq("client_id", CLIENT.id).maybeSingle();
+  // Only two folders, for each video's Upload footage button and the review
+  // player; never the document links in the same row. A client's login
+  // can't read social_drive_folder_links at all (019): it gets just these
+  // two from social_client_footage_folders().
+  const { data: folderRows } = IS_OPERATOR
+    ? await sbClient.from("social_drive_folder_links").select("footage_uploads, final_edits").eq("client_id", CLIENT.id)
+    : await sbClient.rpc("social_client_footage_folders");
+  const folderRow = Array.isArray(folderRows) ? folderRows[0] : folderRows;   // Supabase returns a list; one row either way
   DRIVE_FOLDERS = folderRow ? { footageUploads: folderRow.footage_uploads, finalEdits: folderRow.final_edits } : {};
 
   const { data: ob } = await sbClient.from("social_client_onboarding").select("*").eq("client_id", CLIENT.id).maybeSingle();
