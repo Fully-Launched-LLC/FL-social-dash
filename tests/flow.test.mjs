@@ -111,13 +111,15 @@ const clientFilmed = idx.filter(i => !V.switchToUs.includes(i));
 
 // ── 2. Client (films their own) ──
 let cl = track(await CL());
-chk("client nav: To Do, Calendar, Documents, footage folder", $$(cl, ".nav-item").map(n => n.textContent.trim()).join("|") === "To Do|Content Calendar|Documents|My footage folder ↗", $$(cl, ".nav-item").map(n => n.textContent.trim()));
-chk("footage folder card on My Videos", $(cl, "#footageCard").style.display !== "none" && $(cl, "#footageCardLink").href === "https://drive/fl-footage");
+chk("client nav: To Do and Calendar only (no Drive: no Documents, no footage folder)", $$(cl, ".nav-item").map(n => n.textContent.trim()).join("|") === "To Do|Content Calendar", $$(cl, ".nav-item").map(n => n.textContent.trim()));
+chk("no footage folder card", !$(cl, "#footageCard") && !$(cl, "#footageCardLink"));
+chk("Your next step: approve the we-film idea first, else film", $(cl, "#nextStep").textContent.includes(V.switchToUs.length ? `Approve ${V.switchToUs.length} idea` : `Film ${clientFilmed.length} video`), $(cl, "#nextStep").textContent);
 chk("My Videos opens on All", $(cl, "#videoTabs .chip.active").dataset.tab === "all" && firstTab(cl) === `All (30)`, tabsText(cl));
 chk("All shows the To film group with its heading", $(cl, '[data-panel="film"]').style.display !== "none" && $(cl, '[data-panel="film"] .panel-title').style.display !== "none");
 chk("client can't edit anything on a card", !$$(cl, "#view-videos button").some(b => b.textContent.includes("Edit")) && !$(cl, "#view-videos textarea:not(.note-box textarea)"));
-chk(`To film shows every video that needs filming, whoever films it (${clientFilmed.length + V.switchToUs.length})`, tabsText(cl).includes(`To film (${clientFilmed.length + V.switchToUs.length})`), tabsText(cl));
-chk("no separate Ideas to approve tab", !tabsText(cl).includes("Ideas to approve"));
+chk(`To film shows only the videos the client films (${clientFilmed.length})`, tabsText(cl).includes(`To film (${clientFilmed.length})`), tabsText(cl));
+if (V.switchToUs.length) chk("we-film ideas sit under Ideas to approve", tabsText(cl).includes(`Ideas to approve (${V.switchToUs.length})`), tabsText(cl));
+else chk("no Ideas to approve tab when there are none", !tabsText(cl).includes("Ideas to approve"), tabsText(cl));
 const c0 = portalCard(cl, "#listToFilm", title(0));
 chk("to-film card: film-by, hook, script, outline, how to film", c0 && ["Film by " + nice(day(-10)), "Hook 1", "Talking points 1", "- Point A1\n- Point B1", "Film it like this: 1"].every(t => c0.textContent.includes(t)), c0 && c0.textContent);
 chk("to-film card: upload link + only Video has been filmed / Suggest changes", c0 && !!c0.querySelector('a[href="https://drive/fl-footage"]')
@@ -164,21 +166,21 @@ const s0 = await statusOf(title(0)), s29 = await statusOf(title(clientFilmed.at(
 chk("edit due 7 days after filming", s0.due_to_edit === plus(TODAY, 7), s0);
 chk("posts 14 days after filming, or on the planned date if later",
   s0.post_date === (day(0) > plus(TODAY, 14) ? day(0) : plus(TODAY, 14)) && s29.post_date === (day(clientFilmed.at(-1)) > plus(TODAY, 14) ? day(clientFilmed.at(-1)) : plus(TODAY, 14)), [s0.post_date, s29.post_date]);
-if (V.switchToUs.length) chk("To film now has just the we-film idea", tabsText(cl).includes(`To film (${V.switchToUs.length})`), tabsText(cl));
-else chk("To film now empty with a stay-tuned note", tabsText(cl).includes("To film (0)") && $(cl, "#listToFilm").textContent.includes("Stay tuned"), tabsText(cl));
+if (V.switchToUs.length) chk("To film gone; the we-film idea is the next step", !tabsText(cl).includes("To film") && $(cl, "#nextStep").textContent.includes("Approve 1 idea"), [tabsText(cl), $(cl, "#nextStep").textContent]);
+else chk("nothing to do: hang tight, no tabs", $(cl, "#nextStep").textContent.includes("Hang tight") && $(cl, "#videoTabs").style.display === "none", $(cl, "#nextStep").textContent);
 
 // A "we film" video on this client: approve the idea, then Tait films it.
 if (V.switchToUs.length) {
   const i = V.switchToUs[0];
-  await click($$(cl, "#videoTabs .chip").find(c => c.dataset.tab === "film"), "to film tab");
-  const card = portalCard(cl, "#listToFilm", title(i));
+  await click($(cl, "#nextStep [data-next]"), "next step: see the ideas");
+  chk("next step opens Ideas to approve", $(cl, "#videoTabs .chip.active").dataset.tab === "ideas");
+  const card = portalCard(cl, "#listIdeas", title(i));
   chk("we-film card: no upload, no film-by, Approve idea / Suggest changes", card && !card.querySelector('a[href="https://drive/fl-footage"]') && !card.textContent.includes("Film by")
     && Array.from(card.querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Approve idea|Suggest changes");
   await click(btn(card, "Approve idea"), "approve we-film idea");
   await dismissThanks(cl, "Stay tuned");
   chk("approved → to film on Tait's side", (await statusOf(title(i))).status === "to_film");
-  const after = portalCard(cl, "#listToFilm", title(i));
-  chk("still in the client's To film once approved, with nothing for them to click", !!after && !after.querySelector(".actions button"), after && after.textContent);
+  chk("once approved it leaves To Do (nothing for them to do); hang tight", !portalCard(cl, "#listIdeas", title(i)) && !portalCard(cl, "#listToFilm", title(i)) && $(cl, "#nextStep").textContent.includes("Hang tight"), $(cl, "#nextStep").textContent);
   op = track(await OP());
   chk("Tait sees it ready for an editor with the raw footage link", !!opRow(op, "#toEditorList", title(i))?.querySelector('a[href="https://drive/fl-footage"]'));
 }
@@ -322,15 +324,15 @@ $(op, "#bkText").dispatchEvent(new op.w.Event("input"));
 await click($(op, "#bkSave"), "save premium ideas");
 chk("premium ideas default to we film", (await count("client_id=$1 and filmed_by='us' and status='concept_pending'", [PREM])) === 3);
 let prem = track(await PREMP());
-chk("premium tabs: All, To film (we-film ideas too), Finished", $$(prem, "#videoTabs .chip").map(c => c.textContent.trim().replace(/\s+(\d+)$/, " ($1)")).join("|") .replace(/Time sensitive \(\d+\)/, "Time sensitive") === "All (3)|Time sensitive|To film (3)|Finished videos to approve (0)", $$(prem, "#videoTabs .chip").map(c => c.textContent.trim().replace(/\s+(\d+)$/, " ($1)")));
-chk("premium still has its footage folder link", $(prem, "#footageCardLink").href === "https://drive/prem-footage");
-const pc = portalCard(prem, "#listToFilm", "Prem 1");
+chk("premium tabs: All and Ideas to approve only (empty tabs hidden)", $$(prem, "#videoTabs .chip").map(c => c.textContent.trim().replace(/\s+(\d+)$/, " ($1)")).filter(t => !t.startsWith("Time sensitive")).join("|") === "All (3)|Ideas to approve (3)", $$(prem, "#videoTabs .chip").map(c => c.textContent.trim().replace(/\s+(\d+)$/, " ($1)")));
+chk("premium: next step is approving 3 ideas, no footage folder link", $(prem, "#nextStep").textContent.includes("Approve 3 ideas") && !$(prem, "#footageCardLink"), $(prem, "#nextStep").textContent);
+const pc = portalCard(prem, "#listIdeas", "Prem 1");
 chk("premium idea card: hook, script, outline, how we'll make it — no upload", pc && ["Prem hook 1", "Prem script 1", "- Prem point 1", "How we'll make itWe film it 1"].every(t => pc.textContent.includes(t)) && !pc.textContent.includes("How to film it") && !pc.querySelector("a[href*='footage']"), pc && pc.textContent);
 await click(btn(pc, "Approve idea"), "premium approve 1"); await dismissThanks(prem, "Stay tuned");
-await click(btn(portalCard(prem, "#listToFilm", "Prem 2"), "Approve idea"), "premium approve 2"); await dismissThanks(prem, "approve before it posts");
-await sendNote(prem, portalCard(prem, "#listToFilm", "Prem 3"), "Suggest changes", "Different angle");
+await click(btn(portalCard(prem, "#listIdeas", "Prem 2"), "Approve idea"), "premium approve 2"); await dismissThanks(prem, "approve before it posts");
+await sendNote(prem, portalCard(prem, "#listIdeas", "Prem 3"), "Suggest changes", "Different angle");
 await dismissThanks(prem, "rework");
-chk("premium: approved we-film videos stay in To film (we're filming them); the one sent back leaves", !!portalCard(prem, "#listToFilm", "Prem 1") && !!portalCard(prem, "#listToFilm", "Prem 2") && !portalCard(prem, "#listToFilm", "Prem 3") && !btn(portalCard(prem, "#listToFilm", "Prem 1"), "Approve idea"));
+chk("premium: approved and sent-back ideas all leave To Do; hang tight", !portalCard(prem, "#listIdeas", "Prem 1") && !portalCard(prem, "#listIdeas", "Prem 2") && !portalCard(prem, "#listIdeas", "Prem 3") && $(prem, "#nextStep").textContent.includes("Hang tight"), $(prem, "#nextStep").textContent);
 chk("premium: 2 approved, 1 back with Tait", (await count("client_id=$1 and status='to_film'", [PREM])) === 2 && (await statusOf("Prem 3")).concept_approved_at === null);
 op = track(await OP());
 for (const t of ["Prem 1", "Prem 2"]) {
