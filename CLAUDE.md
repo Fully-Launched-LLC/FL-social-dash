@@ -368,7 +368,8 @@ fully-social-os/
                                social_carousel_guides,
                                social_carousel_uploads, the private
                                'carousels' bucket,
-                               social_editor_submit_carousel)
+                               social_editor_submit_carousel), 023
+                               (social_carousels.due_to_edit)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -883,7 +884,12 @@ order; × removes one) and **Send to Tait for review**
 no client documents here either. Clients see none of it. The Fully
 Launched copy (45 carousels: 30 founder stories plus 15 from our own voice
 memos and Customer Data, every third one ours) and guide were loaded by
-SQL, not kept in this public repo. The guide opens with example slides
+SQL, not kept in this public repo. Each carousel has an edit-by date (`due_to_edit`, migration
+023), set on the operator's carousel form, shown as "Edit by" on the
+editor's cards and as "Carousel due" blocks on the editor's Calendar. The
+editor's To Do has a third tab, **Carousels to edit** (with them or sent
+back, soonest first), with the same cards as the Carousels page; it opens
+there when there are no videos. The guide opens with example slides
 (`dashboards/template/carousel-examples/`, copied to
 `/assets/carousel-examples/` by build.py; public-domain or CC BY-SA photos,
 credited on the slide). Guides render Markdown images

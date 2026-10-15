@@ -584,7 +584,7 @@ function renderCarousels() {
   document.getElementById("carList").innerHTML = list.map(c => `
     <div class="row" data-car="${escapeHtml(c.id)}" style="cursor:pointer">
       <div class="left"><b>${c.position ? c.position + ". " : ""}${escapeHtml(c.title)}</b>
-        <div class="meta">${[c.format, c.category, editorName(c.editor_id)].filter(Boolean).map(escapeHtml).join(" · ")}</div></div>
+        <div class="meta">${[c.format, c.category, editorName(c.editor_id), c.due_to_edit ? "edit by " + niceDate(c.due_to_edit) : ""].filter(Boolean).map(escapeHtml).join(" · ")}</div></div>
       <div>${statusDot(c.status, CAROUSEL_STATUS, c.status === "to_review")} <button data-car-open="${escapeHtml(c.id)}">Open</button></div>
     </div>`).join("") || `<div class="empty">${CAROUSELS.length ? "None here." : "No carousels yet."}</div>`;
   document.querySelectorAll("#carList [data-car]").forEach(r => r.onclick = () => openCarousel(r.dataset.car));
@@ -632,6 +632,7 @@ function openCarousel(id) {
     <label class="modal-field"><b>Notes for the editor</b><textarea data-f="notes" rows="2" style="width:100%">${escapeHtml(c.notes || "")}</textarea></label>
     ${carouselSourcesHtml(c)}
     <label class="modal-field"><b>Editor</b><select id="carEditor" style="width:100%">${editorOpts}</select></label>
+    <div class="modal-field"><b>Edit by</b>${dateSelectHtml("due_to_edit", c.due_to_edit || "")}</div>
     <div class="modal-actions">
       <button class="primary" id="carSave">Save</button>
       ${["idea", "changes"].includes(c.status) ? `<button id="carSend">Save and send to the editor</button>` : ""}
@@ -653,6 +654,7 @@ function openCarousel(id) {
   const values = () => {
     const v = { slides: slides.filter(s => s.text.trim() || s.photo.trim()), editor_id: box.querySelector("#carEditor").value || null };
     box.querySelectorAll("[data-f]").forEach(el => { v[el.dataset.f] = el.value; });
+    v.due_to_edit = v.due_to_edit || null;
     return v;
   };
   const save = async (extra, btn) => {
