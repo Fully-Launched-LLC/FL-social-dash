@@ -284,11 +284,21 @@ function renderEditorChips() {
   el.querySelectorAll(".chip").forEach(c => c.onclick = () => { editorFilter = c.dataset.e; renderAll(); });
 }
 
-// To Do holds only what the editor has to do (Tait, 2026-10-15): To edit
-// (first cuts) and To make revisions (sent back with changes), soonest
-// edit-by first, then Carousels to edit (their carousels that are with them
-// or sent back, the same cards as the Carousels page). Nothing to do: all
-// empty.
+// To Do holds only what the editor has to do (Tait, 2026-10-15): Time
+// sensitive (every video and carousel due in the next 7 days or overdue,
+// soonest first), To edit (first cuts) and To make revisions (sent back with
+// changes), soonest edit-by first, then Carousels to edit (their carousels
+// that are with them or sent back, soonest due first, the same cards as the
+// Carousels page). Nothing to do: all empty.
+const ED_SOON_DAYS = 7;
+const soonCutoff = () => addDaysISO(todayISO(), ED_SOON_DAYS);
+const timeVideos = () => queue().filter(x => x.video.dueToEdit && x.video.dueToEdit <= soonCutoff());
+const timeCarousels = () => (typeof CAROUSELS === "undefined" ? [] : carouselsToEdit()).filter(c => c.due_to_edit && c.due_to_edit <= soonCutoff());
+// Both kinds in one list, soonest due first.
+const timeItems = () => [
+  ...timeVideos().map(x => ({ due: x.video.dueToEdit, video: x })),
+  ...timeCarousels().map(c => ({ due: c.due_to_edit, carousel: c })),
+].sort((a, b) => a.due.localeCompare(b.due));
 const ED_TABS = [
   { key: "edit", label: "To edit", match: x => !hasRevisions(x.video) },
   { key: "revisions", label: "To make revisions", match: x => hasRevisions(x.video) },
@@ -296,12 +306,15 @@ const ED_TABS = [
 let edTab = null;
 const inEdTab = key => queue().filter(ED_TABS.find(t => t.key === key).match);
 function renderEdTabs() {
-  const nCar = carouselsToEdit().length;
-  if (edTab !== "carousels" && !ED_TABS.some(t => t.key === edTab)) edTab = (ED_TABS.find(t => inEdTab(t.key).length) || (nCar ? { key: "carousels" } : ED_TABS[0])).key;
+  const nCar = carouselsToEdit().length, nTime = timeItems().length;
+  if (!["carousels", "time"].includes(edTab) && !ED_TABS.some(t => t.key === edTab)) edTab = (ED_TABS.find(t => inEdTab(t.key).length) || (nCar ? { key: "carousels" } : ED_TABS[0])).key;
   // Nothing in the video tabs yet (carousels load second): open on carousels.
   if (edTab === "edit" && !inEdTab("edit").length && !inEdTab("revisions").length && nCar && !edTabPicked) edTab = "carousels";
+  // Something due this week: open on Time sensitive.
+  if (nTime && !edTabPicked) edTab = "time";
+  if (edTab === "time" && !nTime && !edTabPicked) edTab = (ED_TABS.find(t => inEdTab(t.key).length) || (nCar ? { key: "carousels" } : ED_TABS[0])).key;
   const el = document.getElementById("edTabs");
-  el.innerHTML = ED_TABS.map(t => `<div class="chip${t.key === edTab ? " active" : ""}${inEdTab(t.key).length ? "" : " zero"}" data-edtab="${t.key}">${chipLabel(t.label, inEdTab(t.key).length)}</div>`).join("")
+  el.innerHTML = `<div class="chip${edTab === "time" ? " active" : ""}${nTime ? " urgent" : " zero"}" data-edtab="time">${chipLabel("Time sensitive", nTime)}</div>` + ED_TABS.map(t => `<div class="chip${t.key === edTab ? " active" : ""}${inEdTab(t.key).length ? "" : " zero"}" data-edtab="${t.key}">${chipLabel(t.label, inEdTab(t.key).length)}</div>`).join("")
     + `<div class="chip${edTab === "carousels" ? " active" : ""}${nCar ? "" : " zero"}" data-edtab="carousels">${chipLabel("Carousels to edit", nCar)}</div>`;
   el.querySelectorAll("[data-edtab]").forEach(c => c.onclick = () => { edTab = c.dataset.edtab; edTabPicked = true; renderEdTabs(); renderQueue(); });
 }
@@ -318,9 +331,18 @@ function renderQueue() {
     wireCarouselCards(list);
     return;
   }
-  const items = shown();
   list.innerHTML = "";
-  items.forEach(({ client, video }) => {
+  if (edTab === "time") {
+    const items = timeItems();
+    if (!items.length) { list.innerHTML = `<div class="card"><div class="empty">Nothing due in the next ${ED_SOON_DAYS} days.</div></div>`; return; }
+    items.forEach(it => it.video ? appendVideoCard(list, it.video) : list.insertAdjacentHTML("beforeend", carouselCardsHtml([it.carousel])));
+    wireCarouselCards(list);
+    return;
+  }
+  shown().forEach(x => appendVideoCard(list, x));
+}
+function appendVideoCard(list, { client, video }) {
+  {
     const f = client.driveFolders || {};
     const overdue = video.dueToEdit && video.dueToEdit < todayISO();
     const card = document.createElement("div");
@@ -337,7 +359,7 @@ function renderQueue() {
     wireNotesButton(card);
     card.querySelector("[data-open]").onclick = () => openEditorVideoModal(video.id);
     list.appendChild(card);
-  });
+  }
 }
 
 // What the editor sees on a video: revisions (if it came back), the
@@ -455,7 +477,8 @@ const CAR_EDITOR_ORDER = ["changes", "with_editor", "to_review", "approved", "po
 // operator, every assigned one narrowed by the editor filter.
 const myCarousels = () => ROLE === "operator" && editorFilter !== "all" ? CAROUSELS.filter(c => c.editor_id === editorFilter) : CAROUSELS;
 // Still with the editor: new, or sent back with changes.
-const carouselsToEdit = () => sortCarousels(myCarousels().filter(c => ["with_editor", "changes"].includes(c.status)));
+const carouselsToEdit = () => myCarousels().filter(c => ["with_editor", "changes"].includes(c.status))
+  .sort((a, b) => (a.due_to_edit || "9999").localeCompare(b.due_to_edit || "9999") || a.position - b.position);
 // With them first, soonest edit-by first (migration 023), then by number.
 const sortCarousels = list => list.slice().sort((a, b) => CAR_EDITOR_ORDER.indexOf(a.status) - CAR_EDITOR_ORDER.indexOf(b.status)
   || (a.due_to_edit || "9999").localeCompare(b.due_to_edit || "9999") || a.position - b.position);
@@ -502,7 +525,7 @@ function renderCarousels() {
 function refreshCarousels() {
   renderCarousels();
   renderEdTabs();
-  if (edTab === "carousels") renderQueue();
+  renderQueue();
   renderCalendar();
 }
 document.getElementById("carGuideRead").onclick = () => {
