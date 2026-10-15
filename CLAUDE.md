@@ -748,9 +748,13 @@ One shared file; the slug comes from the URL. Two pages: **To Do** and
 only see the things they need to do"). No footage folder link and no
 Google Drive for clients. An operator viewing the portal also gets a
 **Documents** page: every document for that client, Team only ones marked,
-and the ones built from the voice memo; migration 019 takes away a client
-login's read access to `social_client_documents` and
-`social_client_generated_docs`.
+and the ones built from the voice memo. Only operators and editors can
+read client documents (migration 019): a client's login can't read
+`social_client_documents`, `social_client_generated_docs` or
+`social_drive_folder_links` (whose row also holds the brand guidelines,
+important documents and other document links). The portal gets just the
+raw footage and finished video folders from
+`social_client_footage_folders()`.
 
 **To Do** is two tabs and nothing else: **To film** (videos the client
 films, grouped by category with a filter row, remembered per browser;
@@ -779,6 +783,13 @@ what the client sees and can click the client's buttons (logged as the
 operator); editing happens only on the operator dashboard.
 
 ### Editor dashboard — `/editor/dashboard.html`
+
+The editor portal's work area is navy like its sidebar, with white
+headings and tabs and white cards (`body.navy-work` in shell.css; Tait,
+2026-10-15). The operator dashboard and client portal keep the light work
+area. Every Documents page (the editor's, and the operator's in a client
+portal) starts each client with **Brand guidelines** (their colors, logo
+and font; `brandRow` in shell.js), saying so when there isn't one yet.
 
 **To Do** is two tabs and nothing else (Tait, 2026-10-15): **To edit**
 (first cuts) and **To make revisions** (sent back with changes), soonest

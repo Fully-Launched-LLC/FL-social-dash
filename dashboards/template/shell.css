@@ -44,7 +44,10 @@
 .main input[type=date]::-webkit-calendar-picker-indicator { filter:none; }
 * { box-sizing:border-box; }
 html { color-scheme: dark; }
-html, body { height:100%; }
+/* No fixed height: the page grows with its content, so the light work area
+   runs the full length when scrolled (a fixed 100% height stopped it after
+   one screen, showing the dark background under long pages). */
+html, body { height:auto; }
 body {
   margin:0; background:var(--bg); color:var(--ink);
   font-family:var(--font-body); font-size:14px;
@@ -591,3 +594,32 @@ button.big { padding:14px 40px; font-size:16px; }
 .process li.done { color: var(--ink); }
 .process li.done::before { content: "✓ "; }
 .process li.now { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+/* An empty tab or filter row (still loading, or nothing to pick, like an
+   editor's own page with no editor picker) shows nothing, not an empty bar. */
+.chip-row:empty { display: none; }
+
+/* Navy work area (Tait, 2026-10-15, the editor portal): the page behind
+   the cards is navy like the sidebar, with white headings and tabs; the
+   cards themselves stay white with navy text. body.navy-work puts the
+   :root (navy) colors back on .main, then gives every card inside it the
+   light colors from the block above. */
+body.navy-work .main {
+  --navy:#04101f; --white:#ffffff; --gold:#C4AB82;
+  --bg:#04101f; --card:#04101f; --card2:#04101f;
+  --border:rgba(255,255,255,.12); --line-2:rgba(255,255,255,.22); --line-strong:rgba(255,255,255,.4);
+  --ink:#ffffff; --sub:rgba(255,255,255,.72); --sub2:rgba(255,255,255,.5);
+  --accent:#C4AB82; --accent-ink:#04101f;
+  --green:#C4AB82; --red:#C4AB82; --amber:#C4AB82; --purple:#C4AB82;
+  color-scheme:dark; color:var(--ink);
+}
+body.navy-work .main .card {
+  --navy:#ffffff; --white:#04101f; --gold:#a8884f;
+  --bg:#f3f5f8; --card:#ffffff; --card2:#ffffff;
+  --border:rgba(4,16,31,.10); --line-2:rgba(4,16,31,.18); --line-strong:rgba(4,16,31,.38);
+  --ink:#04101f; --sub:rgba(4,16,31,.68); --sub2:rgba(4,16,31,.48);
+  --accent:#a8884f; --accent-ink:#ffffff;
+  --green:#a8884f; --red:#a8884f; --amber:#a8884f; --purple:#a8884f;
+  color-scheme:light; color:var(--ink); border-color:transparent;
+}
+body.navy-work .main .chip-row { box-shadow:none; }

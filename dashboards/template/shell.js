@@ -1447,3 +1447,11 @@ function runTour(TOUR, { onEnd } = {}) {
   show();
 }
 
+
+// A client's Brand guidelines document (social_drive_folder_links.brand_voice)
+// as a Documents row: their colors, logo and font (Tait, 2026-10-15). With
+// none yet, the row stays and says what to do.
+function brandRow(url, missing) {
+  return `<div class="row"><div class="left"><b>Brand guidelines</b><div class="meta">${url ? "Their colors, logo and font" : escapeHtml(missing)}</div></div>
+    ${url ? `<a class="btn primary" href="${escapeHtml(url)}" target="_blank" rel="noopener">Open</a>` : ""}</div>`;
+}

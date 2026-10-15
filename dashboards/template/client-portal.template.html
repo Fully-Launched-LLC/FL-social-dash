@@ -80,6 +80,7 @@
 let CLIENT = null;          // the social_clients row
 let DRIVE_FOLDERS = {};     // from social_drive_folder_links
 let DOCUMENTS = [];         // operator only: social_client_documents, in order
+let BRAND_URL = null;       // operator only: their brand guidelines (social_drive_folder_links.brand_voice)
 let GEN_DOCS = [];          // operator only: built from the onboarding voice memo
 let ONBOARDING = null;      // their social_client_onboarding row, if any
 let VIDEOS = [];            // from social_videos (videoFromRow shape)
@@ -549,8 +550,8 @@ function renderDocuments() {
   const drive = DOCUMENTS.map(d => `
     <div class="row"><div class="left"><b>${escapeHtml(d.title)}</b>${d.team_only ? `<div class="meta">Team only</div>` : ""}</div>
       <a class="btn primary" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">Open</a></div>`).join("");
-  document.getElementById("docsList").innerHTML = gen + drive
-    || `<div class="empty">No documents yet. Add them on the operator dashboard: Clients → Edit → Documents.</div>`;
+  // Brand guidelines first, always (Tait, 2026-10-15).
+  document.getElementById("docsList").innerHTML = brandRow(BRAND_URL, "Not added yet. Add the link on the operator dashboard: Clients → Edit → Brand guidelines.") + gen + drive;
   document.querySelectorAll("#docsList [data-gen]").forEach(b => b.onclick = () => {
     const d = GEN_DOCS.find(x => x.id === b.dataset.gen);
     openModal(`<h2>${escapeHtml(d.title)}</h2><div class="doc-body">${docBodyHtml(d)}</div>
@@ -602,10 +603,16 @@ async function startApp(user, access) {
   document.getElementById("brandName").textContent = CLIENT.name;
   document.getElementById("operatorBadge").style.display = IS_OPERATOR ? "block" : "none";
 
-  // Folder links are still read for each video's Upload footage button and
-  // the review player; the client never gets a general Drive folder link.
-  const { data: folderRow } = await sbClient.from("social_drive_folder_links").select("*").eq("client_id", CLIENT.id).maybeSingle();
+  // Only two folders, for each video's Upload footage button and the review
+  // player; never the document links in the same row. A client's login
+  // can't read social_drive_folder_links at all (019): it gets just these
+  // two from social_client_footage_folders().
+  const { data: folderRows } = IS_OPERATOR
+    ? await sbClient.from("social_drive_folder_links").select("footage_uploads, final_edits, brand_voice").eq("client_id", CLIENT.id)
+    : await sbClient.rpc("social_client_footage_folders");
+  const folderRow = Array.isArray(folderRows) ? folderRows[0] : folderRows;   // Supabase returns a list; one row either way
   DRIVE_FOLDERS = folderRow ? { footageUploads: folderRow.footage_uploads, finalEdits: folderRow.final_edits } : {};
+  BRAND_URL = IS_OPERATOR && folderRow ? folderRow.brand_voice || null : null;
 
   const { data: ob } = await sbClient.from("social_client_onboarding").select("*").eq("client_id", CLIENT.id).maybeSingle();
   ONBOARDING = ob || null;
