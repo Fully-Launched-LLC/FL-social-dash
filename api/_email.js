@@ -71,30 +71,6 @@ function editorInviteEmail({ name, link, portal }) {
   return { subject, html, text };
 }
 
-// "Here are your important documents": each document Tait added (Google
-// Docs, with links) and any built in the portal, plus a button to the
-// portal's Documents page.
-function documentsEmail({ contactName, clientName, docs, portalDocs, portal, portalLink }) {
-  const first = firstName(contactName);
-  const hello = first ? `Hi ${esc(first)},` : "Hi,";
-  const subject = `Here are your important documents, ${clientName}`;
-  const intro = `Thanks for your voice memo. We turned it into your important documents. They're the foundation for every piece of content we make with you, so read them through and tell us if anything doesn't sound like you.`;
-  const docRow = d => `<tr><td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.12);${BODY}">
-      <b>${esc(d.title)}</b><br><a href="${esc(d.url)}" style="color:#C4AB82;font-weight:700;text-decoration:none">Open the document →</a></td></tr>`;
-  const portalRow = t => `<tr><td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.12);${BODY}"><b>${esc(t)}</b><br><span style="color:rgba(255,255,255,.6)">On your portal's Documents page</span></td></tr>`;
-  const html = frame({ portal, title: subject, rows: `
-        <tr><td style="padding:8px 32px 10px;${BODY}">${hello}<br><br>${intro}</td></tr>
-        <tr><td style="padding:0 32px 8px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${docs.map(docRow).join("")}${portalDocs.map(portalRow).join("")}</table></td></tr>
-        <tr><td style="padding:18px 32px 26px">
-          ${button(portalLink, "See them in my portal")}
-          <div style="${SMALL};padding-top:14px">They're always on your portal's Documents page. Sign in at <a href="${esc(portal)}" style="color:#ffffff">${esc(portal.replace(/^https?:\/\//, ""))}</a>.</div>
-        </td></tr>` });
-  const text = `${first ? "Hi " + first + "," : "Hi,"}\n\n${intro}\n\n` +
-    docs.map(d => `${d.title}: ${d.url}`).concat(portalDocs.map(t => `${t}: on your portal's Documents page`)).join("\n") +
-    `\n\nSee them in your portal: ${portalLink}\n\nFully Launched · fullylaunched.com`;
-  return { subject, html, text };
-}
-
 // "Forgot password? Create a new one." (Tait, 2026-10-12): sent from Tait,
 // one button to the "Set a new password" page (api/forgot-password.js).
 function resetPasswordEmail({ link, portal }) {
@@ -129,4 +105,4 @@ async function sendEmail({ to, subject, html, text, from: fromOverride }) {
   return mail.ok ? { ok: true, ...(warning ? { warning } : {}) } : { ok: false, message: m.message || String(mail.status) };
 }
 
-module.exports = { inviteEmail, editorInviteEmail, resetPasswordEmail, documentsEmail, sendEmail, DEFAULT_FROM };
+module.exports = { inviteEmail, editorInviteEmail, resetPasswordEmail, sendEmail, DEFAULT_FROM };

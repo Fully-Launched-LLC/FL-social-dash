@@ -367,8 +367,6 @@ fully-social-os/
                                invite-editor.js (editor invite: adds the
                                social_editors row, "Welcome to the Fully
                                Launched editor dashboard" email),
-                               send-documents.js (branded "here are your
-                               important documents" email),
                                build-documents.js (documents from a pasted
                                transcript); _lib.js, _email.js
   ONBOARDING-SETUP.md          the steps only Tait can do to turn onboarding on
@@ -630,10 +628,12 @@ for word) and **Your Voice** (candidate 3-3-3 marked To confirm, plus the
 voice profile) under the skills' rules: nothing invented, quotes word for
 word. Every quote is then checked against the transcript and any that isn't
 found is flagged in the document. They're saved in
-`social_client_generated_docs` and shown in the welcome steps and on the
-portal's Documents page. For now Tait builds the documents by hand (no
-`ANTHROPIC_API_KEY`, his choice, 2026-09-29) as Google Docs added on Clients
-→ Edit → Documents, then emails them with **Email them their documents**.
+`social_client_generated_docs`, for the team only (migration 019; the
+portal's Documents page shows them to operators). For now Tait builds the
+documents by hand (no `ANTHROPIC_API_KEY`, his choice, 2026-09-29) as
+Google Docs added on Clients → Edit → Documents. Clients aren't sent them:
+the "Email them their documents" button and `api/send-documents.js` were
+removed (Tait, 2026-10-15: no Google Drive links to clients).
 Don't click Save and build documents without the key: it marks the
 documents failed, and the client's welcome page says so. The Content Ideas document still comes later, from
 Tait's content research. Operators see each client's progress on Clients,
@@ -743,33 +743,32 @@ are raised (white offset shadows). On phones the sidebar becomes a top bar.
 
 ### Client portal — `/clients/<slug>`
 
-One shared file; the slug comes from the URL. Two pages only (client
-feedback, 2026-10-15: too busy, unclear what to do first, no need for
-Drive): **To Do** and **Content Calendar**. No Documents page and no footage
-folder link: clients never get general Google Drive access. An operator
-viewing the portal also gets a **Documents** page (Tait, 2026-10-15): every
-document for that client, Team only ones marked, and the ones built from
-the voice memo. Migration 019 takes away a client login's read access to
-`social_client_documents` and `social_client_generated_docs`, so it's not
-only hidden.
+One shared file; the slug comes from the URL. Two pages: **To Do** and
+**Content Calendar** (Tait, 2026-10-15: "a super simple view where they
+only see the things they need to do"). No footage folder link and no
+Google Drive for clients. An operator viewing the portal also gets a
+**Documents** page: every document for that client, Team only ones marked,
+and the ones built from the voice memo; migration 019 takes away a client
+login's read access to `social_client_documents` and
+`social_client_generated_docs`.
 
-**To Do** opens with **Your next step**: one card naming the single thing to
-do first (finished videos to approve, then ideas to approve, then videos to
-film) with a button to that list, or, when there's nothing, "Hang tight,
-nothing for you right now. We'll reach out by email when we need more
-content from you or need you to approve a video." Under it, tabs that show
-only when they have something: **All**, **Time sensitive** (the client's own
-next step due within 3 days or late, soonest first, kept out of All),
-**To film** (only videos the client films, grouped by category with a
-filter row, remembered per browser; Tait, 2026-10-02), **Ideas to approve**
-(we-film ideas: Approve idea / Suggest changes), **Finished videos to
-approve**. Videos we're making with nothing for the client to do stay off
-To Do; they're on the Content Calendar. **Content Calendar**
-(each post date shows the video's full title and a colored pill per
-platform, with a "Posts on" key above; 🎥 film dates for client-filmed
-ideas; under the grid, "What posts each day": the month as a list with
-each video's hook and platforms by name). The operator adds documents on
-Clients → Edit; editors and operators see them, clients don't. Every video card starts with its post date, where it's at (in plain
+**To Do** is two tabs and nothing else: **To film** (videos the client
+films, grouped by category with a filter row, remembered per browser;
+Tait, 2026-10-02) and **To review** (we-film ideas to approve or suggest
+changes on, and finished videos to approve, finished first). With nothing
+to do, both are empty: no message, no other cards. It opens on the first
+tab with something in it. The "Finish setting up" card still shows for a
+client who hasn't finished onboarding.
+
+**Content Calendar**: each post date shows the video's full title and a
+colored pill per platform, with a "Posts on" key above; 🎥 film dates for
+client-filmed ideas. Under the grid, **Posting in the next 30 days**: each
+post with where it's at, its hook and platforms. Clicking a video (grid or
+list) opens it read only: post date, platforms, where it is in the process
+(Idea → Filming → Editing → Your review → Ready to post → Posted), the
+hook, a note if it's waiting on them in To Do, and **Watch the video** once
+there's one to watch (from Your review on, or the cut they sent changes
+on; an editor's cut Tait hasn't approved is never shown). Every video card starts with its post date, where it's at (in plain
 words) and a pill per platform it posts on. Then only what's needed:
 client-filmed ideas — film-by date, hook, script, outline, how to film it,
 upload link; we-film ideas — when we film it, hook, script, outline, and
@@ -780,6 +779,15 @@ what the client sees and can click the client's buttons (logged as the
 operator); editing happens only on the operator dashboard.
 
 ### Editor dashboard — `/editor/dashboard.html`
+
+**To Do** is two tabs and nothing else (Tait, 2026-10-15): **To edit**
+(first cuts) and **To make revisions** (sent back with changes), soonest
+edit-by first; empty when there's nothing. The old Show / Client / Due /
+Order filters and the "This month" line are gone from the editor's page
+(the operator's Editors page still has This month). **Calendar** (edit-by
+dates) and **Documents** (each client's brand guidelines and documents,
+Content Research included) stay. An operator sees every editor's queue
+with an editor filter.
 
 Each video card (Tait, 2026-10-07): **Revisions needed** at the top when
 it came back (each line's time as a chip, and **Watch with the comments**),
@@ -801,26 +809,14 @@ the editor confirms instead); each send saves the file as the next
 **version** (`social_add_video_version`: v1, v2, …), and the review window
 has a version picker that plays an earlier cut with the comments left on
 it (comments carry the file in `cut_ref`); **This month** (videos finished =
-first versions, revision rounds = later ones) shows on the editor's page and
-for each editor on the operator's Editors page. Email notifications to
+first versions, revision rounds = later ones) shows for each editor on the
+operator's Editors page. Email notifications to
 editors are next (Tait's call).
-Above the list, filters (Tait, 2026-10-07; remembered per browser):
-**Show** All / Time sensitive (due within 3 days or late, or sent back) /
-Revisions needed, with counts; **Client** (also narrows the Calendar);
-**Due** any date / overdue / today / this week / next week / later (weeks
-end Sunday); **Order** due soonest or latest first. They replace the old
-Time sensitive card.
 
-**To Edit** (a **Time sensitive** card first: edits due within 3 days or
-late, and anything sent back with revisions; then videos currently with
-them: edit-by date, revisions if it came back, editing instructions, the client's brand guidelines Google Doc —
-`social_drive_folder_links.brand_voice`, set on the Clients page — and the
-raw footage and finished video folder links, and the client's documents,
-Team only ones like Content Research included (migration 012); nothing
-else) and
-**Calendar** (edit-by dates) and **Documents** (each of their clients'
-brand guidelines and documents, Content Research included). An operator sees every editor's queue with a
-filter, and can click Finished for them.
+Each card also has the client's brand guidelines Google Doc
+(`social_drive_folder_links.brand_voice`, set on the Clients page) and the
+client's documents, Team only ones included (migration 012). An operator
+can click Finished for any editor.
 
 **Already onboarded** (Clients → Edit, `social_clients.skip_onboarding`,
 migration 015; Tait, 2026-10-07, for clients like Hesedea that he onboarded
@@ -829,7 +825,7 @@ only; once it's made, onboarding is marked done and they land on their
 dashboard's walkthrough. The client portal sends any invited login that
 hasn't made a password (and hasn't finished onboarding) to `/welcome`
 first, so nothing shows before it. The walkthrough includes reviewing a
-finished video when one is waiting: Finished videos to approve → Review
+finished video when one is waiting: To review → Review
 the video → inside the review window, the player and its comment marks, a
 comment at a moment or on the whole video, Send changes or Approve. Steps
 that don't apply (nothing to film, no documents) are left out.

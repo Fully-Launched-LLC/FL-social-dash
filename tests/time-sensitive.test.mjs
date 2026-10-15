@@ -60,16 +60,12 @@ chk("card shows every platform by name", pills.join() === "LinkedIn,Facebook,Ins
 chk("card shows the post date and stage", box.textContent.includes("Posts ") && box.textContent.includes("We're filming it"), box.textContent);
 chk("we-film card shows when we film it", box.textContent.includes("We film this with you by"));
 
-// The client's To Do: its own Time sensitive tab (their own next steps only).
+// The client's To Do: just To film and To review (2026-10-15).
 chk("client page is called To Do", cl.d.querySelector("#view-videos h1").textContent === "To Do" && Array.from(cl.d.querySelectorAll(".nav-item")).some(n => n.textContent.trim() === "To Do"));
 cl.w.closeVideoModal();
 const ctabs = Object.fromEntries(Array.from(cl.d.querySelectorAll("#videoTabs .chip")).map(c => [c.dataset.tab, c.textContent.trim().replace(/\s+(\d+)$/, " ($1)")]));
-chk("client Time sensitive tab after All: only the client's own soon-due step", Object.keys(ctabs)[1] === "urgent" && ctabs.urgent === "Time sensitive (1)", ctabs);
-cl.d.querySelector('#videoTabs [data-tab="urgent"]').click(); await settle();
-const ucards = Array.from(cl.d.querySelectorAll("#listUrgent > .card"));
-chk("it lists the idea they film tomorrow, saying what and by when", ucards.length === 1 && ucards[0].textContent.includes("Client idea") && ucards[0].textContent.includes("Film it · by"), ucards.map(c => c.textContent));
-cl.d.querySelector('#videoTabs [data-tab="all"]').click(); await settle();
-chk("All doesn't repeat the Time sensitive panel", cl.d.querySelector('[data-panel="urgent"]').style.display === "none");
+chk("client To Do: only To film and To review, no Time sensitive", Object.keys(ctabs).join() === "film,review" && !cl.d.getElementById("listUrgent"), ctabs);
+chk("To film has the idea they film; we-film videos aren't on To Do", ctabs.film.startsWith("To film") && cl.d.getElementById("listToFilm").textContent.includes("Client idea") && !cl.d.getElementById("listToFilm").textContent.includes("Film soon"), ctabs);
 
 chk("no page errors", !op.ui.errors.length && !op.ui.alerts.length && !cl.ui.errors.length, [op.ui.errors, op.ui.alerts, cl.ui.errors]);
 console.log(`${counts.pass} passed, ${counts.fail} failed`);

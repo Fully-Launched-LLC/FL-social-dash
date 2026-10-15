@@ -30,37 +30,17 @@
   <section class="view active" id="view-videos">
     <div id="onboardBanner"></div>
     <div class="page-head"><h1>To Do</h1></div>
-    <div id="nextStep"></div>
     <div class="chip-row" id="videoTabs"></div>
 
-    <div data-panel="urgent" style="display:none">
-      <h2 class="panel-title">Time sensitive</h2>
-      <p class="meta" style="margin:8px 0 12px">What needs you in the next 3 days, or is already late, soonest first.</p>
-      <div id="listUrgent"></div>
-    </div>
-
     <div data-panel="film">
-      <h2 class="panel-title">To film</h2>
-      <p class="meta" style="margin:8px 0 12px">Film each one your way: read the script, follow the outline, or just answer its question. Then tap <b>Upload footage</b>, add the clips, and tap <b>Video has been filmed</b>.</p>
+      <p class="meta panel-help" style="margin:8px 0 12px">Film each one your way: read the script, follow the outline, or just answer its question. Then tap <b>Upload footage</b>, add the clips, and tap <b>Video has been filmed</b>.</p>
       <div class="chip-row" id="filmCats" style="display:none"></div>
       <div id="listToFilm"></div>
     </div>
 
-    <div data-panel="ideas" style="display:none">
-      <h2 class="panel-title">Ideas to approve</h2>
-      <p class="meta" style="margin:8px 0 12px">We'll make these. Approve each idea, or tap <b>Suggest changes</b>.</p>
-      <div id="listIdeas"></div>
-    </div>
-
-    <div data-panel="final" style="display:none">
-      <h2 class="panel-title">Finished videos to approve</h2>
-      <p class="meta" style="margin:8px 0 12px">Watch each finished video and check its captions. Then approve it for posting, or ask for changes.</p>
-      <div id="listFinal"></div>
-      <div id="changesWrap" style="display:none;margin-top:22px">
-        <h3 class="panel-title" style="font-size:1rem">Being changed by the editor</h3>
-        <p class="meta" style="margin:6px 0 12px">You sent changes on these. Watch them any time; you can comment again when the new version comes back.</p>
-        <div id="listChanges"></div>
-      </div>
+    <div data-panel="review" style="display:none">
+      <p class="meta panel-help" style="margin:8px 0 12px">Approve each one, or ask for changes.</p>
+      <div id="listReview"></div>
     </div>
   </section>
 
@@ -71,7 +51,7 @@
   </section>
 
   <section class="view" id="view-calendar">
-    <div class="page-head"><h1>Content Calendar</h1><p>Every video on the day it posts, and where it posts<span id="calFilmNote"> (green blocks show when to film it)</span>. Click one to open it.</p></div>
+    <div class="page-head"><h1>Content Calendar</h1><p>Every video on the day it posts<span id="calFilmNote"> (green blocks show when to film it)</span>. Click one to see where it's at, and to watch it once it's ready.</p></div>
     <div class="chip-row" id="calLegend" style="margin-bottom:10px"></div>
     <div class="card"><div class="cal-grid" id="calGrid"></div></div>
     <div class="card"><h2 id="agendaTitle">What posts each day</h2><div id="calAgenda"></div></div>
@@ -106,7 +86,7 @@ let VIDEOS = [];            // from social_videos (videoFromRow shape)
 let HIDDEN_CONCEPTS = 0;    // operator view only: ideas the client can't see (sent back with suggestions)
 let IS_OPERATOR = false;
 const calState = { offset: 0 };
-let activeTab = "all";
+let activeTab = null;      // "film" or "review"; first one with something in it
 // To film's category filter ("" = every category), kept per browser so a
 // filming day stays on its category after a refresh.
 let filmCategory = "";
@@ -114,37 +94,18 @@ try { filmCategory = localStorage.getItem("fs-film-category") || ""; } catch (e)
 
 const filmedBy = v => filmedByOf(v, CLIENT.client_system);
 
-// To Do holds only what the client can act on (client feedback,
-// 2026-10-15: "I have 20 videos to film but I'm not sure which are for me
-// to film"). Videos we're making with nothing for them to do stay off it;
-// they're on the Content Calendar.
+// To Do holds only what the client has to do, in two tabs (Tait,
+// 2026-10-15): To film (videos they film) and To review (ideas we'll make,
+// waiting for their OK, and finished videos to approve). Nothing to do:
+// both are empty and nothing else shows. Everything else is on the
+// Content Calendar.
 const needsFilming = v => filmedBy(v) === "client" && ["concept_pending", "to_film", "filmed"].includes(v.status);
 const ideaToApprove = v => filmedBy(v) === "us" && v.status === "concept_pending";
-const ACTION_TABS = [
-  { key: "film",  label: "To film",                    match: needsFilming,  shownFor: () => false },
-  { key: "ideas", label: "Ideas to approve",           match: ideaToApprove, shownFor: () => false },
-  { key: "final", label: "Finished videos to approve", match: v => v.status === "client_review", shownFor: () => false },
+const toReview = v => ideaToApprove(v) || v.status === "client_review";
+const TABS = [
+  { key: "film",   label: "To film",   match: needsFilming },
+  { key: "review", label: "To review", match: toReview },
 ];
-// Time sensitive: the client's own next step on a video, and by when, if
-// that's overdue or within CLIENT_SOON_DAYS. Its own tab, left out of All
-// (everything in it is also under its kind).
-const CLIENT_SOON_DAYS = 3;
-function clientTask(v) {
-  if (needsFilming(v)) return { task: "Film it", date: v.dueToFilm };
-  if (ideaToApprove(v)) return { task: "Approve the idea", date: v.dueToFilm || v.postDate };
-  if (v.status === "client_review") return { task: "Approve the finished video", date: (calendarEntries({ video: v }).find(e => e.kind === "approve") || {}).date || v.postDate };
-  return null;
-}
-function clientTimeSensitive(v) {
-  const t = clientTask(v);
-  return t && t.date && t.date <= addDaysISO(todayISO(), CLIENT_SOON_DAYS) ? t : null;
-}
-const TABS = [{ key: "all", label: "All", match: v => ACTION_TABS.some(t => t.match(v)), shownFor: () => true },
-  { key: "urgent", label: "Time sensitive", match: v => !!clientTimeSensitive(v), shownFor: () => false, apart: true },
-  ...ACTION_TABS];
-// A tab shows only when it has something in it (All always does, unless
-// there's nothing at all, and then the tabs are hidden).
-function tabsForClient() { return TABS.filter(t => t.shownFor() || videosInTab(t.key).length); }
 function videosInTab(key) { return VIDEOS.filter(TABS.find(t => t.key === key).match); }
 
 // One shared file serves every client — which one comes from the URL
@@ -451,51 +412,18 @@ function renderOperatorBanner() {
       ${HIDDEN_CONCEPTS ? `<br>${HIDDEN_CONCEPTS} idea(s) with suggestions are back with you. Edit and send them again from the operator dashboard.` : ""}</div></div>` : "";
 }
 
-// The one thing to do first, at the top of To Do (client feedback,
-// 2026-10-15: "it's pretty busy and I don't know what to do first").
-// Finished videos first (they're closest to posting), then ideas, then
-// filming. Nothing to do: say so plainly.
-function renderNextStep() {
-  const n = k => videosInTab(k).length, s = c => c === 1 ? "" : "s";
-  const firstFilm = videosInTab("film").map(v => v.dueToFilm).filter(Boolean).sort()[0];
-  const step = n("final") ? { tab: "final", title: `Approve ${n("final")} finished video${s(n("final"))}`, body: "Watch each one and approve it for posting, or ask for changes.", btn: "Review them" }
-    : n("ideas") ? { tab: "ideas", title: `Approve ${n("ideas")} idea${s(n("ideas"))}`, body: "Read each idea and approve it, or suggest changes. We'll make the video.", btn: "See the ideas" }
-    : n("film") ? { tab: "film", title: `Film ${n("film")} video${s(n("film"))}`, body: firstFilm ? `The first one is due <b>${escapeHtml(niceDate(firstFilm))}</b>.` : "Each card has the script and how to film it.", btn: "See what to film" }
-    : null;
-  const el = document.getElementById("nextStep");
-  el.innerHTML = step ? `
-    <div class="card" style="border-color:var(--gold)"><div class="row" style="border:0;padding:0">
-      <div class="left"><span class="meta" style="text-transform:uppercase;font-size:0.72rem">Your next step</span><br><b>${step.title}</b><div class="meta">${step.body}</div></div>
-      <button class="accent" data-next="${step.tab}">${step.btn}</button></div></div>`
-    : `<div class="card"><b>Hang tight, nothing for you right now.</b>
-      <div class="meta">We'll reach out by email when we need more content from you or need you to approve a video.</div></div>`;
-  const b = el.querySelector("[data-next]");
-  if (b) b.onclick = () => { activeTab = b.dataset.next; renderVideoTabs(); };
-}
-
 function renderVideos() {
   const byPostDate = (a, b) => (a.postDate || "9999").localeCompare(b.postDate || "9999")
     || (a.title || "").localeCompare(b.title || "", undefined, { numeric: true });
   const byFilmDate = (a, b) => (a.dueToFilm || "9999").localeCompare(b.dueToFilm || "9999");
-  const fill = (elId, vids, empty) => {
+  const fill = (elId, vids) => {
     const el = document.getElementById(elId);
     el.innerHTML = "";
-    if (!vids.length) { el.innerHTML = `<div class="empty">${empty}</div>`; return; }
     vids.forEach(v => el.appendChild(videoCard(v)));
   };
   renderToFilm(byFilmDate, byPostDate, fill);
-  fill("listIdeas", videosInTab("ideas").sort(byPostDate), "");
-  fill("listFinal", videosInTab("final").sort(byPostDate), "No finished videos waiting. They'll show up here as soon as they're edited.");
-  const changing = VIDEOS.filter(v => ["with_editor", "in_review"].includes(v.status) && canWatch(v)).sort(byPostDate);
-  document.getElementById("changesWrap").style.display = changing.length ? "" : "none";
-  fill("listChanges", changing, "");
-  const urgent = videosInTab("urgent").sort((a, b) => clientTimeSensitive(a).date.localeCompare(clientTimeSensitive(b).date));
-  fill("listUrgent", urgent, "Nothing urgent. You're all caught up.");
-  document.querySelectorAll("#listUrgent > .card").forEach((card, i) => {
-    const t = clientTimeSensitive(urgent[i]), late = t.date < todayISO();
-    card.insertAdjacentHTML("afterbegin", `<div class="badge" style="margin-bottom:8px;border-color:var(--accent);color:var(--accent)">${escapeHtml(t.task)} · ${late ? "late, was due " : t.date === todayISO() ? "today, " : "by "}${escapeHtml(niceDate(t.date))}</div>`);
-  });
-  renderNextStep();
+  // Finished videos first (closest to posting), then ideas.
+  fill("listReview", videosInTab("review").sort((a, b) => (b.status === "client_review") - (a.status === "client_review") || byPostDate(a, b)));
   renderVideoTabs();
 }
 
@@ -509,7 +437,7 @@ function renderToFilm(byFilmDate, byPostDate, fill) {
   const row = document.getElementById("filmCats");
   if (!cats.some(Boolean)) {
     row.style.display = "none";
-    fill("listToFilm", vids, "Nothing to film right now.");
+    fill("listToFilm", vids);
     return;
   }
   if (filmCategory && !cats.includes(filmCategory)) filmCategory = "";
@@ -533,19 +461,15 @@ function renderToFilm(byFilmDate, byPostDate, fill) {
 }
 
 function renderVideoTabs() {
-  const tabs = tabsForClient();
-  if (!tabs.some(t => t.key === activeTab)) activeTab = "all";
-  document.getElementById("videoTabs").innerHTML = tabs.map(t =>
-    `<div class="chip ${t.key === activeTab ? "active" : ""}${t.key === "urgent" && videosInTab(t.key).length ? " urgent" : ""}${videosInTab(t.key).length ? "" : " zero"}" data-tab="${t.key}">${chipLabel(t.label, videosInTab(t.key).length)}</div>`).join("");
+  if (!TABS.some(t => t.key === activeTab)) activeTab = (TABS.find(t => videosInTab(t.key).length) || TABS[0]).key;
+  document.getElementById("videoTabs").innerHTML = TABS.map(t =>
+    `<div class="chip ${t.key === activeTab ? "active" : ""}${videosInTab(t.key).length ? "" : " zero"}" data-tab="${t.key}">${chipLabel(t.label, videosInTab(t.key).length)}</div>`).join("");
   document.querySelectorAll("#videoTabs .chip").forEach(c => c.onclick = () => { activeTab = c.dataset.tab; renderVideoTabs(); });
-  // All: every kind that has something waiting, each under its heading.
-  const all = activeTab === "all";
+  // The tab's short how-to only when there's something in it.
   document.querySelectorAll("[data-panel]").forEach(p => {
-    const apart = (TABS.find(t => t.key === p.dataset.panel) || {}).apart;
-    p.style.display = (all ? !apart && tabs.some(t => t.key === p.dataset.panel) && videosInTab(p.dataset.panel).length : p.dataset.panel === activeTab) ? "" : "none";
-    p.querySelector(".panel-title").style.display = all ? "" : "none";
+    p.style.display = p.dataset.panel === activeTab ? "" : "none";
+    p.querySelector(".panel-help").style.display = videosInTab(p.dataset.panel).length ? "" : "none";
   });
-  document.getElementById("videoTabs").style.display = videosInTab("all").length ? "" : "none";
 }
 
 function renderCalendar() {
@@ -560,30 +484,61 @@ function renderCalendar() {
   document.getElementById("calLegend").innerHTML = used.length ? `<span class="meta" style="margin-right:4px">Posts on:</span>` + platformPills(used, true) : "";
   // Each day: the video's title, then the platforms it goes out on.
   renderMonthCalendar(document.getElementById("calGrid"), byDay, ({ v, kind }) => kind
-    ? `<div class="cal-block cal-item k-film video-card" title="Film by: ${escapeHtml(v.title || "")}" onclick="openClientVideoModal('${v.id}')"><div class="t">${escapeHtml(v.title || "(untitled)")}</div><div class="s">Film by</div></div>`
-    : `<div class="cal-block cal-item k-post video-card ${v.status === "posted" ? "cal-done" : ""}" title="${escapeHtml((v.title || "") + " · " + (v.platform || []).map(p => (PLATFORMS[normPlatform(p)] || { name: p }).name).join(", "))}" onclick="openClientVideoModal('${v.id}')">
+    ? `<div class="cal-block cal-item k-film video-card" title="Film by: ${escapeHtml(v.title || "")}" onclick="openCalendarVideo('${v.id}')"><div class="t">${escapeHtml(v.title || "(untitled)")}</div><div class="s">Film by</div></div>`
+    : `<div class="cal-block cal-item k-post video-card ${v.status === "posted" ? "cal-done" : ""}" title="${escapeHtml((v.title || "") + " · " + (v.platform || []).map(p => (PLATFORMS[normPlatform(p)] || { name: p }).name).join(", "))}" onclick="openCalendarVideo('${v.id}')">
         <div class="t">${v.status === "posted" ? "✓ " : ""}${escapeHtml(v.title || "(untitled)")}</div><div class="s">${v.status === "posted" ? "Posted" : "Posts"}</div>${platformPills(v.platform)}</div>`,
     calState, renderCalendar);
   renderAgenda();
 }
 
-// Under the calendar, the month shown as a list: each post day, what goes
-// out, the hook, and the platforms by name. Easier to read than the grid,
-// especially on a phone.
+// Under the calendar: every post going out in the next 30 days, as a list
+// (Tait, 2026-10-15), whatever month the grid shows.
+const AGENDA_DAYS = 30;
 function renderAgenda() {
-  const now = new Date(), first = new Date(now.getFullYear(), now.getMonth() + (calState.offset || 0), 1);
-  const month = localISODate(first).slice(0, 7);
-  document.getElementById("agendaTitle").textContent = "What posts each day in " + first.toLocaleString(undefined, { month: "long", year: "numeric" });
-  const posts = VIDEOS.filter(v => v.postDate && v.postDate.startsWith(month)).sort((a, b) => a.postDate.localeCompare(b.postDate));
+  const from = todayISO(), to = addDaysISO(from, AGENDA_DAYS);
+  document.getElementById("agendaTitle").textContent = "Posting in the next 30 days";
+  const posts = VIDEOS.filter(v => v.postDate && v.postDate >= from && v.postDate <= to).sort((a, b) => a.postDate.localeCompare(b.postDate));
   const days = {};
   posts.forEach(v => (days[v.postDate] = days[v.postDate] || []).push(v));
   document.getElementById("calAgenda").innerHTML = posts.length ? Object.entries(days).map(([d, vs]) => `
     <div class="agenda-day"><h3>${escapeHtml(new Date(d + "T00:00:00").toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }))}</h3>
-      ${vs.map(v => `<div class="agenda-post video-card" onclick="openClientVideoModal('${v.id}')">
+      ${vs.map(v => `<div class="agenda-post video-card" onclick="openCalendarVideo('${v.id}')">
         <b>${v.status === "posted" ? "✓ " : ""}${escapeHtml(v.title || "(untitled)")}</b>
+        <div class="meta">${escapeHtml(clientStage(v, filmedBy(v)))}</div>
         ${v.hook ? `<div class="hook">“${escapeHtml(v.hook)}”</div>` : ""}
         <div>${platformPills(v.platform, true) || `<span class="meta">No platforms set yet</span>`}</div></div>`).join("")}
-    </div>`).join("") : `<div class="empty">Nothing posts this month.</div>`;
+    </div>`).join("") : `<div class="empty">Nothing posts in the next 30 days.</div>`;
+}
+
+// Where a video is in the process, as steps (the calendar's video popup).
+const PROCESS = ["Idea", "Filming", "Editing", "Your review", "Ready to post", "Posted"];
+function processStep(v) {
+  return { concept_pending: 0, to_film: 1, filmed: 1, ready_to_edit: 2, with_editor: 2, in_review: 2, client_review: 3, ready_to_post: 4, posted: 5 }[v.status] ?? 0;
+}
+function processHtml(v) {
+  const at = processStep(v);
+  return `<ol class="process">${PROCESS.map((s, i) => `<li class="${i < at ? "done" : i === at ? "now" : ""}">${escapeHtml(s)}</li>`).join("")}</ol>`;
+}
+// Read only: where it's at, when it posts, the hook, and the video once
+// there's one for them to watch (after Tait approves it, or the cut they
+// sent changes on). Doing anything happens in To Do.
+const hasFileToWatch = v => ["client_review", "ready_to_post", "posted"].includes(v.status) || canWatch(v);
+function openCalendarVideo(videoId) {
+  const video = VIDEOS.find(v => v.id === videoId);
+  if (!video) return;
+  const todo = needsFilming(video) || toReview(video);
+  const box = openModal(`<h2>${escapeHtml(video.title || "(untitled)")}</h2>
+    ${cardFacts(video, filmedBy(video))}
+    ${processHtml(video)}
+    ${fieldRow("Hook", video.hook)}
+    ${todo ? `<div class="meta" style="margin-top:10px">This one needs you: it's in <b>${needsFilming(video) ? "To film" : "To review"}</b> on your To Do.</div>` : ""}
+    <div class="modal-actions">${hasFileToWatch(video) ? `<button class="primary" data-watch>Watch the video</button>` : ""}<button data-close>Close</button></div>`);
+  box.querySelector("[data-close]").onclick = closeVideoModal;
+  const w = box.querySelector("[data-watch]");
+  if (w) w.onclick = () => canWatch(video) ? openClientWatch(video) : openReviewPlayer(video, {
+    folders: DRIVE_FOLDERS, which: "open", notesBy: ["client"], canNote: false, buttons: [],
+    intro: video.status === "client_review" ? "To approve it or ask for changes, open it from To review on your To Do." : "The finished video.",
+  });
 }
 
 // Operator only: every document for this client, Team only ones marked.
@@ -741,10 +696,8 @@ const inReview = sel => () => {
   return root && !root.classList.contains("hidden") && box.classList.contains("modal-wide") ? box.querySelector(sel) : null;
 };
 const TOUR = [
-  { go: () => { tourGo("videos"); tourTab("all"); }, el: () => document.querySelector('.nav-item[data-view="videos"]'),
-    title: "To Do", html: () => "Everything you need to do is here. Start with <b>Your next step</b> at the top. When there's nothing for you, it says so, and we'll email you when we need you." },
-  { go: () => tourGo("videos"), el: () => document.querySelector('#videoTabs .chip[data-tab="urgent"]'),
-    title: "Time sensitive", html: () => "Anything due in the next 3 days, or already late, shows up here. Check it first whenever you sign in." },
+  { go: () => tourGo("videos"), el: () => document.querySelector('.nav-item[data-view="videos"]'),
+    title: "To Do", html: () => "Only what you need to do, in two lists: <b>To film</b> and <b>To review</b>. When there's nothing for you, they're empty, and we'll email you when we need you." },
   { go: () => { tourGo("videos"); tourTab("film"); }, el: () => tourCard() ? document.querySelector('#videoTabs .chip[data-tab="film"]') : null,
     title: "To film", html: () => "The videos for you to film, grouped by topic. Pick a topic at the top to film a few in one sitting." },
   { go: () => { tourGo("videos"); tourTab("film"); }, el: () => tourCard(),
@@ -753,10 +706,9 @@ const TOUR = [
     title: "Upload footage on each card", html: () => "Every video has its own <b>Upload footage</b> button. Put that video's clips there, in its own card, so our editor gets the right clips for the right video. Then tap <b>Video has been filmed</b>." },
   { go: () => { tourGo("videos"); tourTab("film"); }, el: () => tourUpload(tourCard()) && tourCard(),
     title: "Film it your way", html: () => "You choose how to capture it. Read the <b>script</b>, talk through the <b>outline</b> in your own words, or just answer the <b>question</b> under How to film it. Whatever works best for you." },
-  // Its tab only shows once a video is waiting; until then, the next-step card.
-  { go: () => { tourGo("videos"); tourTab("final"); }, el: () => document.querySelector('#videoTabs .chip[data-tab="final"]') || document.querySelector("#nextStep .card"),
-    title: "Finished videos to approve", html: () => "Once a video is edited, it shows up here for you to review and approve before it posts." + (tourReviewVideo() ? "" : " Next, we'll show you how, on a practice video.") },
-  { go: () => { tourGo("videos"); tourTab("final"); }, el: () => document.querySelector("#listFinal > .card [data-review]"),
+  { go: () => { tourGo("videos"); tourTab("review"); }, el: () => document.querySelector('#videoTabs .chip[data-tab="review"]'),
+    title: "To review", html: () => "Ideas we'll make for you, waiting for your OK, and finished videos to approve before they post." + (tourReviewVideo() ? "" : " Next, we'll show you how to review a video, on a practice one.") },
+  { go: () => { tourGo("videos"); tourTab("review"); }, el: () => document.querySelector("#listReview > .card [data-review]"),
     title: "Review the video", html: () => "Click <b>Review the video</b> to watch the finished edit and tell us what you think." },
   { modal: true, go: tourOpenReview, el: inReview(".rv-stage"),
     title: "Watch it here", html: () => "Play the video right here. Every comment shows as a dot on the bar under the video, with the initials of who left it. Click a dot to jump to that moment." },
@@ -771,13 +723,13 @@ const TOUR = [
   { modal: true, go: tourOpenReview, el: inReview(".rv-version"),
     title: "When it comes back", html: () => "Your editor makes the changes and the new cut comes back to you here as the next version (v2). Until then you can still watch the video from its card. Pick an earlier version to see the comments you left on it, which ones were fixed, and your editor's replies. Then review it again the same way." },
   { go: () => tourGo("calendar"), el: () => document.querySelector('.nav-item[data-view="calendar"]'),
-    title: "Content Calendar", html: () => "Prefer to see it on a calendar? Every video is on the day it posts, and the green blocks show when to film it. Click any one to open it." },
+    title: "Content Calendar", html: () => "Every video on the day it posts, and a list of everything posting in the next 30 days. Click one to see where it's at in the process, and to watch it once it's ready." },
 ];
 function startTour() {
   history.replaceState(null, "", location.pathname + location.hash);
   // Every step outside the review window closes it first.
   const steps = TOUR.map(t => t.modal ? t : { ...t, go: () => { closeVideoModal(); tourReviewOpen = null; return t.go(); } });
-  runTour(steps, { onEnd: () => { closeVideoModal(); tourReviewOpen = null; tourGo("videos"); tourTab("all"); } });
+  runTour(steps, { onEnd: () => { closeVideoModal(); tourReviewOpen = null; tourGo("videos"); activeTab = null; renderVideoTabs(); } });
 }
 
 initAuthGate({ resolveAccess: resolveClientPortalAccess, onReady: startApp });

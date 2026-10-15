@@ -1,6 +1,6 @@
 // Editor onboarding (migration 013): the operator invites an editor from
 // Editors; the editor's first visit asks for a password, then walks them
-// through Time sensitive, when an edit is due, the calendar and the
+// through To Do's two tabs, when an edit is due, the calendar and the
 // documents, then "bookmark this page".
 import { freshDb, makeHarness, checker } from "./harness.mjs";
 
@@ -58,47 +58,28 @@ chk("password saved, and they're marked set up", ed.ui.log.some(l => l.updateUse
 
 const tc = () => ed.d.getElementById("tourCard");
 const seen = [], text = {};
-chk("then the walkthrough starts", !!tc() && tc().textContent.includes("Step 1 of 10"), tc() && tc().textContent);
-for (let k = 0; k < 10; k++) { const h = tc().querySelector("h2").textContent; seen.push(h); text[h] = tc().textContent; tc().querySelector("[data-tour-next]").click(); await settle(); }
-chk("it walks To Edit, Time sensitive, when an edit is due, revisions, the three steps, Calendar, Important documents",
-  seen.join("|") === "To Edit|Time sensitive|Filter and sort|When an edit is due|Revisions|1. Get the raw footage|2. Edit it|3. Upload the finished video|Calendar|Important documents", seen);
+chk("then the walkthrough starts", !!tc() && tc().textContent.includes("Step 1 of 9"), tc() && tc().textContent);
+for (let k = 0; k < 9; k++) { const h = tc().querySelector("h2").textContent; seen.push(h); text[h] = tc().textContent; tc().querySelector("[data-tour-next]").click(); await settle(); }
+chk("it walks To Do, its two tabs, when an edit is due, revisions, the three steps, Calendar, Important documents",
+  seen.join("|") === "To Do|To edit and To make revisions|When an edit is due|Revisions|1. Get the raw footage|2. Edit it|3. Upload the finished video|Calendar|Important documents", seen);
 chk("…explaining revisions with their moments, and where footage and uploads go", /Watch with the comments/.test(text["Revisions"]) && /Open the raw footage/.test(text["1. Get the raw footage"]) && /Open the upload folder/.test(text["3. Upload the finished video"]));
 chk("…explaining the Edit by date and the documents", /Edit by/.test(text["When an edit is due"]) && /Customer Data/.test(text["Important documents"]) && /Content Research/.test(text["Important documents"]));
 chk("then: bookmark this page", tc().textContent.includes("Bookmark this page") && tc().textContent.includes("fl.test"));
 tc().querySelector("[data-tour-done]").click();
-chk("Got it closes it, back on To Edit, ?setup gone", !tc() && ed.d.querySelector(".view.active").id === "view-queue" && !ed.w.location.search.includes("setup"));
+chk("Got it closes it, back on To Do, ?setup gone", !tc() && ed.d.querySelector(".view.active").id === "view-queue" && !ed.w.location.search.includes("setup"));
 
-// The filters.
+// To Do: two tabs, To edit and To make revisions (2026-10-15), no filters.
 const titles = () => Array.from(ed.d.querySelectorAll("#queueList > .card [data-open]")).map(b => b.textContent);
-const chipText = k => ed.d.querySelector(`#showChips [data-show="${k}"]`).textContent.replace(/\s+/g, " ").trim();
-chk("Show: All, Time sensitive and Revisions needed, with counts", chipText("all") === "All 4" && chipText("soon") === "Time sensitive 2" && chipText("revisions") === "Revisions needed 1",
-  ["all", "soon", "revisions"].map(chipText));
-chk("all of them, due soonest first by default", titles().join("|") === "Late one|Due soon|Other client edit|Due later", titles());
-const pick = async (id, v) => { const el = ed.d.getElementById(id); el.value = v; el.dispatchEvent(new ed.w.Event("change")); await settle(); };
-ed.d.querySelector('#showChips [data-show="soon"]').click(); await settle();
-chk("Time sensitive: late, due in 3 days, or sent back (not the one in 10 days)", titles().join("|") === "Late one|Due soon", titles());
-ed.d.querySelector('#showChips [data-show="revisions"]').click(); await settle();
-chk("Revisions needed: only the one sent back", titles().join("|") === "Due soon", titles());
-ed.d.querySelector('#showChips [data-show="all"]').click(); await settle();
-chk("Client: lists each client they edit for", Array.from(ed.d.querySelectorAll("#fClient option")).map(o => o.textContent).join("|") === "All clients|Fully Launched|Other Co");
-await pick("fClient", OC);
-chk("…and shows only that client's videos", titles().join("|") === "Other client edit" && chipText("all") === "All 1", titles());
-await pick("fClient", "");
-await pick("fDue", "late");
-chk("Due: Overdue", titles().join("|") === "Late one", titles());
-await pick("fDue", "");
-await pick("fSort", "late");
-chk("Order: due latest first", titles().join("|") === "Due later|Other client edit|Due soon|Late one", titles());
-chk("the filters are remembered in this browser", JSON.parse(ed.w.localStorage.getItem("fs-editor-filters")).sort === "late");
-await pick("fSort", "soon");
-chk("this week / next week / later split at Sunday", ed.w.eval(`(() => {
-  const end0 = weekEnd(0), end1 = weekEnd(1), v = d => ({ dueToEdit: d, editorBrief: {} });
-  return dueMatches(v(end0), "week") && !dueMatches(v(end0), "next") && dueMatches(v(addDaysISO(end0, 1)), "next")
-    && dueMatches(v(end1), "next") && dueMatches(v(addDaysISO(end1, 1)), "later") && new Date(end0 + "T00:00:00").getDay() === 0 && dueMatches(v(null), "later");
-})()`));
-chk("each video shows its Edit by date", ed.d.querySelectorAll("#queueList .edit-by").length === 4);
-const soon = Array.from(ed.d.querySelectorAll("#queueList > .card")).find(c => c.textContent.includes("Due soon"));
+const tabText = k => ed.d.querySelector(`#edTabs [data-edtab="${k}"]`).textContent.replace(/\s+/g, " ").trim();
+chk("two tabs with counts, and no filters or This month line", tabText("edit") === "To edit 3" && tabText("revisions") === "To make revisions 1"
+  && !ed.d.getElementById("showChips") && !ed.d.getElementById("fClient") && !ed.d.getElementById("monthStat"), ["edit", "revisions"].map(tabText));
+ed.d.querySelector('#edTabs [data-edtab="edit"]').click(); await settle();
+chk("To edit: the first cuts, due soonest first", titles().join("|") === "Late one|Other client edit|Due later", titles());
+chk("each video shows its Edit by date", ed.d.querySelectorAll("#queueList .edit-by").length === 3);
 const later = Array.from(ed.d.querySelectorAll("#queueList > .card")).find(c => c.textContent.includes("Due later"));
+ed.d.querySelector('#edTabs [data-edtab="revisions"]').click(); await settle();
+chk("To make revisions: only the one sent back", titles().join("|") === "Due soon", titles());
+const soon = Array.from(ed.d.querySelectorAll("#queueList > .card")).find(c => c.textContent.includes("Due soon"));
 chk("revisions sit at the top of the card, each with its moment, and Watch with the comments", soon.querySelector(".ed-revisions") === soon.querySelector(".ed-revisions, .ed-steps")
   && Array.from(soon.querySelectorAll(".ed-rev .rv-time")).map(t => t.textContent).join(",") === "0:12,Whole video" && /Make the logo bigger/.test(soon.querySelector(".ed-revisions").textContent)
   && !!Array.from(soon.querySelectorAll(".ed-revisions button")).find(b => b.textContent === "Watch with the comments"));
@@ -119,7 +100,7 @@ chk("once set up, the page just opens", !again.d.getElementById("view-setup").cl
 // An editor added by hand before invites existed (never invited) isn't asked.
 await db.exec(`update social_editors set setup_at = null, invited_at = null where id = '${ED}'`);
 const old = await openPage("editor/dashboard.html", ED, "https://fl.test/editor/dashboard.html");
-chk("an editor added by hand (never invited) just gets their page", !old.d.getElementById("view-setup").classList.contains("active") && old.d.querySelectorAll("#queueList > .card").length === 4);
+chk("an editor added by hand (never invited) just gets their page", !old.d.getElementById("view-setup").classList.contains("active") && old.d.querySelectorAll("#queueList > .card").length === 3);   // To edit; the 4th is under To make revisions
 // The operator can preview the walkthrough, and never gets the password page.
 const prev = await openPage("editor/dashboard.html", OP, "https://fl.test/editor/dashboard.html?tour=1");
 chk("operator: ?tour=1 previews the walkthrough, no password page", !!prev.d.getElementById("tourCard") && !prev.d.getElementById("view-setup").classList.contains("active"));
