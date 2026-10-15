@@ -20,7 +20,6 @@
   <div class="sync-badge" id="operatorBadge" style="display:none">Viewing as operator</div>
   <div class="nav-item active" data-view="queue">To Do</div>
   <div class="nav-item" data-view="calendar">Calendar</div>
-  <div class="nav-item" data-view="documents">Documents</div>
 </nav>
 
 <main class="main">
@@ -33,11 +32,6 @@
     <div class="chip-row" id="editorChips"></div>
     <div class="chip-row" id="edTabs"></div>
     <div id="queueList"></div>
-  </section>
-
-  <section class="view" id="view-documents">
-    <div class="page-head"><h1>Documents</h1><p>Each client's important documents: who their customer is, how they sound, their ideas and our research. Read them before you edit, so every video feels like the client.</p></div>
-    <div id="docsByClient"></div>
   </section>
 
   <!-- First visit from the invite email: create a password, then the walkthrough. -->
@@ -65,7 +59,7 @@
 let ROLE = "editor";
 let VIDEOS = [];             // [{ client, video }] — only videos with the editor
 let EDITOR_BY_ID = {};
-let CLIENTS = {};            // id → { name, driveFolders, documents }
+let CLIENTS = {};            // id → { name, driveFolders }
 let ME = null;               // the signed-in editor's social_editors row (or the operator's)
 let BATCH = {};              // videoId → the comments sent back last round (each with .replies), migration 014/016
 let VERSIONS = {};           // videoId → its saved versions, oldest first (migration 016)
@@ -76,29 +70,23 @@ const calState = { offset: 0 };
 
 async function loadData() {
   let vq = sbClient.from("social_videos").select("*").eq("status", "with_editor").order("due_to_edit", { nullsFirst: false });
-  const [videosRes, clientsRes, foldersRes, editorsRes, docsRes, genRes] = await Promise.all([
+  // Editors read no client documents (migration 021; Tait, 2026-10-15):
+  // just each client's raw footage, finished video and brand guidelines
+  // links, from social_editor_folders().
+  const [videosRes, clientsRes, foldersRes, editorsRes] = await Promise.all([
     vq,
     sbClient.from("social_clients").select("id,name,slug"),
-    sbClient.from("social_drive_folder_links").select("*"),
+    sbClient.rpc("social_editor_folders"),
     sbClient.from("social_editors").select("id,name,active"),
-    sbClient.from("social_client_documents").select("client_id,title,url").order("position"),
-    // Built from the onboarding voice memo (Customer Data, Your Voice);
-    // editors read them for clients they edit for (migration 020).
-    sbClient.from("social_client_generated_docs").select("*").order("kind"),
   ]);
-  const errors = [videosRes, clientsRes, foldersRes, editorsRes, docsRes].filter(r => r.error).map(r => r.error.message);
+  const errors = [videosRes, clientsRes, foldersRes, editorsRes].filter(r => r.error).map(r => r.error.message);
   document.getElementById("loadError").innerHTML = errors.length
     ? `<div class="card"><b style="color:var(--red)">Couldn't load everything:</b> <span class="meta">${errors.map(escapeHtml).join("<br>")}</span></div>` : "";
 
   const folders = {};
   (foldersRes.data || []).forEach(f => { folders[f.client_id] = { footageUploads: f.footage_uploads, finalEdits: f.final_edits, brandVoice: f.brand_voice }; });
   const clients = {};
-  (clientsRes.data || []).forEach(c => { clients[c.id] = { id: c.id, name: c.name, displayName: c.name, driveFolders: folders[c.id] || {}, documents: [], generated: [] }; });
-  // The client's documents, Team only ones (Content Research) included
-  // (migration 012).
-  (docsRes.data || []).forEach(d => { if (clients[d.client_id]) clients[d.client_id].documents.push(d); });
-  // Before migration 020 this read errors for editors; they just don't get these.
-  if (!genRes.error) (genRes.data || []).forEach(d => { if (clients[d.client_id]) clients[d.client_id].generated.push(d); });
+  (clientsRes.data || []).forEach(c => { clients[c.id] = { id: c.id, name: c.name, displayName: c.name, driveFolders: folders[c.id] || {} }; });
   CLIENTS = clients;
   EDITOR_BY_ID = {};
   (editorsRes.data || []).forEach(e => { EDITOR_BY_ID[e.id] = e; });
@@ -332,11 +320,10 @@ function renderQueue() {
 
 // What the editor sees on a video: revisions (if it came back), the
 // instructions, the client's brand guidelines, where to download and
-// upload, and the client's documents (Content Research included). The
+// upload. No client documents (migration 021). The
 // edit-by date is in the card's header.
 function editorCardBody(client, video) {
   const f = client.driveFolders || {}, raw = rawFootageLink(video, f), up = uploadFolder(video, f);
-  const docs = client.documents || [], gen = client.generated || [];
   // Sent back with revisions: only what's needed to fix it (Tait,
   // 2026-10-15): the revisions with Watch with the comments, then the
   // upload. The raw footage and Edit it steps are for the first cut.
@@ -350,7 +337,7 @@ function editorCardBody(client, video) {
         ${raw ? `<div class="ed-btns"><a class="btn primary" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">Open the raw footage</a></div>` : ""}</div></div>
       <div class="ed-step"><span class="ed-num">2</span><div class="ed-body"><b>Edit it</b>
         ${fieldBlock("Editing instructions", editorInstructions(video)) || `<div class="meta">No special instructions for this one.</div>`}
-        ${f.brandVoice || docs.length || gen.length ? `<div class="ed-btns">${f.brandVoice ? `<a class="btn" href="${escapeHtml(f.brandVoice)}" target="_blank" rel="noopener">Brand guidelines</a>` : ""}${docs.map(d => `<a class="btn" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.title)}</a>`).join("")}${gen.map(d => `<button type="button" data-gen="${escapeHtml(d.id)}">${escapeHtml(d.title)}</button>`).join("")}</div>` : ""}</div></div>`}
+        ${f.brandVoice ? `<div class="ed-btns"><a class="btn" href="${escapeHtml(f.brandVoice)}" target="_blank" rel="noopener">Brand guidelines</a></div>` : ""}</div></div>`}
       <div class="ed-step${rev ? " ed-upload" : ""}">${rev ? "" : `<span class="ed-num">3</span>`}<div class="ed-body"><b>${rev ? "Upload the fixed video" : "Upload the finished video"}</b>
         <div class="meta">${up ? (rev
             ? `Put the new version in ${folderName}, named <b>${escapeHtml(video.title || "after the video")}</b> like before, as an <b>MP4 (H.264 video, AAC audio)</b>. Then click <b>${escapeHtml(VIDEO_ACTIONS.mark_delivered.label)}</b>.`
@@ -410,30 +397,7 @@ function renderCalendar() {
     calState, renderCalendar);
 }
 
-// The Brand guidelines row on a Documents page (shell.js has brandRow).
-// Documents: every client they edit for, with that client's documents
-// (Content Research included; migration 012) and brand guidelines.
-function renderDocuments() {
-  // Every client they edit for, brand guidelines first (colors, logo, font;
-  // Tait, 2026-10-15), saying so when there isn't one yet.
-  const list = Object.values(CLIENTS).filter(c => VIDEOS.some(x => x.client.id === c.id) || c.documents.length || (c.generated || []).length || c.driveFolders.brandVoice).sort((a, b) => a.name.localeCompare(b.name));
-  document.getElementById("docsByClient").innerHTML = list.map(c => `<div class="card"><h2>${escapeHtml(c.name)}</h2>
-    ${brandRow(c.driveFolders.brandVoice, "Not added yet. Ask Tait for them.")}
-    ${(c.generated || []).map(d => `<div class="row"><div class="left"><b>${escapeHtml(d.title)}</b><div class="meta">Built from their onboarding voice memo</div></div><button class="primary" data-gen="${escapeHtml(d.id)}">Read</button></div>`).join("")}
-    ${c.documents.map(d => `<div class="row"><div class="left"><b>${escapeHtml(d.title)}</b></div><a class="btn primary" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">Open</a></div>`).join("")}</div>`).join("")
-    || '<div class="card"><div class="empty">Each client\'s documents show up here as soon as you have a video of theirs to edit.</div></div>';
-}
-// "Read" on a document built from the voice memo, wherever it shows (the
-// Documents page or a video card): it opens right here.
-document.addEventListener("click", e => {
-  const b = e.target.closest("[data-gen]");
-  if (!b) return;
-  const d = Object.values(CLIENTS).flatMap(c => c.generated || []).find(x => x.id === b.dataset.gen);
-  if (d) openModal(`<h2>${escapeHtml(d.title)}</h2><div class="doc-body">${docBodyHtml(d)}</div>
-    <div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Close</button></div>`);
-});
-
-function renderAll() { renderEditorChips(); renderEdTabs(); renderQueue(); renderCalendar(); renderDocuments(); }
+function renderAll() { renderEditorChips(); renderEdTabs(); renderQueue(); renderCalendar(); }
 
 // ---------- first visit: password, then the walkthrough ----------
 // An editor who hasn't created a password yet (setup_at, migration 013;
@@ -441,7 +405,7 @@ function renderAll() { renderEditorChips(); renderEdTabs(); renderQueue(); rende
 // password" first. Then, and on ?tour=1 (the operator can preview it),
 // the walkthrough: the two tabs, when an edit is due, revisions (when a
 // video came back), the three steps on a video card (raw footage, edit,
-// upload; Tait, 2026-10-07), the calendar, the documents, then "bookmark
+// upload; Tait, 2026-10-07), the calendar, then "bookmark
 // this page" (Tait, 2026-10-06).
 const EDITOR_TOUR = [
   { go: () => tourView("queue"), el: () => document.querySelector('.nav-item[data-view="queue"]'),
@@ -455,13 +419,11 @@ const EDITOR_TOUR = [
   { go: () => tourEdTab("edit"), el: () => document.querySelector("#queueList .ed-step:nth-child(1)"),
     title: "1. Get the raw footage", html: () => "<b>Open the raw footage</b> takes you straight to this video's clips in Google Drive." },
   { go: () => tourEdTab("edit"), el: () => document.querySelector("#queueList .ed-step:nth-child(2)"),
-    title: "2. Edit it", html: () => "The editing instructions for this video, plus the client's brand guidelines and documents, so it looks and sounds like them." },
+    title: "2. Edit it", html: () => "The editing instructions for this video, plus the client's brand guidelines, so it looks like them." },
   { go: () => tourEdTab("edit"), el: () => document.querySelector("#queueList .ed-step:nth-child(3)"),
     title: "3. Upload the finished video", html: () => "<b>Open the upload folder</b>, put the finished video there named after the video, then click <b>Finished</b>. It goes to us to review." },
   { go: () => tourView("calendar"), el: () => document.querySelector('.nav-item[data-view="calendar"]'),
     title: "Calendar", html: () => "Every edit-by date on a calendar, so you can plan your week. Click a video to open it." },
-  { go: () => tourView("documents"), el: () => document.querySelector('.nav-item[data-view="documents"]'),
-    title: "Important documents", html: () => "Each client's documents, in one place: brand guidelines, <b>Customer Data</b> (who their customer is), their voice, their content ideas and our <b>Content Research</b>. They're also linked on every video. Read them before you edit, so each video feels like the client." },
 ];
 // Switch To Do's tab for a step (to the other one when this one is empty).
 function tourEdTab(key) {

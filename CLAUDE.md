@@ -357,7 +357,13 @@ fully-social-os/
                                of changes per video:
                                client_revision_rounds), 018 (review
                                copies: the private 'review' storage
-                               bucket, social_video_versions.storage_path)
+                               bucket, social_video_versions.storage_path),
+                               019 (documents: operators and editors only),
+                               020 (editors read voice-memo documents;
+                               undone by 021), 021 (editors read no client
+                               documents: social_editor_folders() gives
+                               just raw footage, finished video and brand
+                               guidelines links)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -787,28 +793,31 @@ operator); editing happens only on the operator dashboard.
 The editor portal's work area is navy like its sidebar, with white
 headings and tabs and white cards (`body.navy-work` in shell.css; Tait,
 2026-10-15). The operator dashboard and client portal keep the light work
-area. Every Documents page (the editor's, and the operator's in a client
-portal) starts each client with **Brand guidelines** (their colors, logo
-and font; `brandRow` in shell.js), saying so when there isn't one yet.
-Editors see every document of each client they edit for (Tait,
-2026-10-15): the brand guidelines, every Google Doc on Clients → Edit →
-Documents (Team only ones included, 012) and the documents built from the
-voice memo (migration 020), on the Documents page and on each video card.
+area. The operator's Documents page in a client portal starts each client
+with **Brand guidelines** (their colors, logo and font; `brandRow` in
+shell.js), saying so when there isn't one yet. **Editors see no client
+documents** (Tait, 2026-10-15, later the same day, reversing 020: "i dont
+want editors to be able to see those important documents"; migration
+021). No Documents page, no document buttons on a video card, nothing in
+the walkthrough. The database enforces it: editors can't read
+`social_client_documents`, `social_client_generated_docs` or
+`social_drive_folder_links`; the page gets each client's raw footage,
+finished video and brand guidelines links from `social_editor_folders()`.
+The **Brand guidelines** button stays on each video card.
 
 **To Do** is two tabs and nothing else (Tait, 2026-10-15): **To edit**
 (first cuts) and **To make revisions** (sent back with changes), soonest
 edit-by first; empty when there's nothing. The old Show / Client / Due /
 Order filters and the "This month" line are gone from the editor's page
 (the operator's Editors page still has This month). **Calendar** (edit-by
-dates) and **Documents** (each client's brand guidelines and documents,
-Content Research included) stay. An operator sees every editor's queue
+dates) stays. An operator sees every editor's queue
 with an editor filter.
 
 Each video card (Tait, 2026-10-07): **Revisions needed** at the top when
 it came back (each line's time as a chip, and **Watch with the comments**),
 then three numbered steps: **1. Get the raw footage** (Open the raw footage:
 the video's own folder, else the client's), **2. Edit it** (instructions,
-brand guidelines, documents), **3. Upload the finished video** (Open the
+brand guidelines), **3. Upload the finished video** (Open the
 upload folder: the video's own finished folder when its "exact finished
 file" link is a folder, else the client's finished video folder; then
 Finished). A video sent back with revisions shows only what's needed to
@@ -833,9 +842,8 @@ operator's Editors page. Email notifications to
 editors are next (Tait's call).
 
 Each card also has the client's brand guidelines Google Doc
-(`social_drive_folder_links.brand_voice`, set on the Clients page) and the
-client's documents, Team only ones included (migration 012). An operator
-can click Finished for any editor.
+(`social_drive_folder_links.brand_voice`, set on the Clients page), and no
+other documents (021). An operator can click Finished for any editor.
 
 **Already onboarded** (Clients → Edit, `social_clients.skip_onboarding`,
 migration 015; Tait, 2026-10-07, for clients like Hesedea that he onboarded
@@ -870,7 +878,7 @@ team." / **Click to set up your dashboard**. The button opens
 `/editor/dashboard.html?setup=1` on our own site, which signs them in,
 asks them to create a password (until `social_editors.setup_at` is set,
 migration 013), then runs the walkthrough: To Edit → Time sensitive →
-the Edit by date → Calendar → Documents → bookmark this page (`runTour`
+the Edit by date → Calendar → bookmark this page (`runTour`
 in shell.js, shared with the client portal; the operator previews it
 with `?tour=1`). Editors shows each editor's status (Invited / Set up)
 and **Resend invite**. A client's login can't be made an editor: one
