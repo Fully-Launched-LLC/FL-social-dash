@@ -62,6 +62,12 @@ def main():
     shutil.copy(TEMPLATE_DIR / "logo-white.png", DIST_DIR / "assets" / "logo-white.png")
     print("built dashboards/dist/assets/logo-white.png")
 
+    # Example carousel slides shown in the carousel guide (migration 022).
+    examples = TEMPLATE_DIR / "carousel-examples"
+    if examples.is_dir():
+        shutil.copytree(examples, DIST_DIR / "assets" / "carousel-examples", dirs_exist_ok=True)
+        print("built dashboards/dist/assets/carousel-examples/")
+
 
 if __name__ == "__main__":
     main()
