@@ -1,7 +1,7 @@
 // Editor onboarding (migration 013): the operator invites an editor from
 // Editors; the editor's first visit asks for a password, then walks them
-// through To Do's two tabs, when an edit is due, the calendar and the
-// documents, then "bookmark this page".
+// through To Do's two tabs, when an edit is due, the calendar, then
+// "bookmark this page".
 import { freshDb, makeHarness, checker } from "./harness.mjs";
 
 const db = await freshDb();
@@ -58,12 +58,12 @@ chk("password saved, and they're marked set up", ed.ui.log.some(l => l.updateUse
 
 const tc = () => ed.d.getElementById("tourCard");
 const seen = [], text = {};
-chk("then the walkthrough starts", !!tc() && tc().textContent.includes("Step 1 of 9"), tc() && tc().textContent);
-for (let k = 0; k < 9; k++) { const h = tc().querySelector("h2").textContent; seen.push(h); text[h] = tc().textContent; tc().querySelector("[data-tour-next]").click(); await settle(); }
-chk("it walks To Do, its two tabs, when an edit is due, revisions, the three steps, Calendar, Important documents",
-  seen.join("|") === "To Do|To edit and To make revisions|When an edit is due|Revisions|1. Get the raw footage|2. Edit it|3. Upload the finished video|Calendar|Important documents", seen);
+chk("then the walkthrough starts", !!tc() && tc().textContent.includes("Step 1 of 8"), tc() && tc().textContent);
+for (let k = 0; k < 8; k++) { const h = tc().querySelector("h2").textContent; seen.push(h); text[h] = tc().textContent; tc().querySelector("[data-tour-next]").click(); await settle(); }
+chk("it walks To Do, its two tabs, when an edit is due, revisions, the three steps, Calendar (no documents step)",
+  seen.join("|") === "To Do|To edit and To make revisions|When an edit is due|Revisions|1. Get the raw footage|2. Edit it|3. Upload the finished video|Calendar", seen);
 chk("…explaining revisions with their moments, and where footage and uploads go", /Watch with the comments/.test(text["Revisions"]) && /Open the raw footage/.test(text["1. Get the raw footage"]) && /Open the upload folder/.test(text["3. Upload the finished video"]));
-chk("…explaining the Edit by date and the documents", /Edit by/.test(text["When an edit is due"]) && /Customer Data/.test(text["Important documents"]) && /Content Research/.test(text["Important documents"]));
+chk("…explaining the Edit by date, and never mentioning documents", /Edit by/.test(text["When an edit is due"]) && !Object.values(text).some(t => /documents|Customer Data|Content Research/.test(t)));
 chk("then: bookmark this page", tc().textContent.includes("Bookmark this page") && tc().textContent.includes("fl.test"));
 tc().querySelector("[data-tour-done]").click();
 chk("Got it closes it, back on To Do, ?setup gone", !tc() && ed.d.querySelector(".view.active").id === "view-queue" && !ed.w.location.search.includes("setup"));
@@ -91,11 +91,10 @@ chk("…its upload goes to the video's own finished folder, then Finished", step
   && !!Array.from(soon.querySelectorAll(".ed-step button")).find(b => /Finished/.test(b.textContent)));
 // A first cut: all three steps.
 chk("first cut, step 1: the client's raw footage folder", stepLink(later, 1)?.textContent === "Open the raw footage" && stepLink(later, 1).href === "https://drive.google.com/drive/folders/rawfootage01");
-chk("step 2: Edit it, with brand guidelines and documents", /Edit it/.test(later.querySelector(".ed-step:nth-child(2)").textContent) && /Brand guidelines/.test(later.querySelector(".ed-step:nth-child(2)").textContent) && /Customer Data/.test(later.querySelector(".ed-step:nth-child(2)").textContent));
+chk("step 2: Edit it, with brand guidelines and no documents", /Edit it/.test(later.querySelector(".ed-step:nth-child(2)").textContent) && /Brand guidelines/.test(later.querySelector(".ed-step:nth-child(2)").textContent) && !/Customer Data|Content Research/.test(later.textContent));
 chk("step 3: the client's finished video folder, then Finished", stepLink(later, 3)?.href === "https://drive.google.com/drive/folders/finaledits01" && !!Array.from(later.querySelectorAll(".ed-step:nth-child(3) button")).find(b => /Finished/.test(b.textContent)));
 chk("no revisions box without revisions", !later.querySelector(".ed-revisions"));
-const docs = ed.d.getElementById("docsByClient").textContent;
-chk("Documents: the client's brand guidelines and documents, Content Research included", docs.includes("Fully Launched") && docs.includes("Brand guidelines") && docs.includes("Customer Data") && docs.includes("Content Research"), docs);
+chk("no Documents page for editors (Tait, 2026-10-15)", !ed.d.getElementById("docsByClient") && !ed.d.querySelector('.nav-item[data-view="documents"]'));
 
 // Coming back later: no password page, no walkthrough.
 const again = await openPage("editor/dashboard.html", ED, "https://fl.test/editor/dashboard.html");

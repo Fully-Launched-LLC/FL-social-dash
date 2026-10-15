@@ -8,7 +8,7 @@ import { readFileSync } from "fs";
 
 import { fileURLToPath } from "url";
 export const REPO = fileURLToPath(new URL("../", import.meta.url));
-const MIGRATIONS = ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "008_client_onboarding.sql", "009_voice_memo_by_text.sql", "010_onboarding_uploads.sql", "011_client_questions.sql", "012_team_only_documents.sql", "013_editor_onboarding.sql", "014_video_review.sql", "015_skip_onboarding.sql", "016_editor_tools.sql", "017_revision_rounds.sql", "018_review_copies.sql", "019_documents_operator_only.sql", "020_editors_read_generated_docs.sql"];
+const MIGRATIONS = ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "008_client_onboarding.sql", "009_voice_memo_by_text.sql", "010_onboarding_uploads.sql", "011_client_questions.sql", "012_team_only_documents.sql", "013_editor_onboarding.sql", "014_video_review.sql", "015_skip_onboarding.sql", "016_editor_tools.sql", "017_revision_rounds.sql", "018_review_copies.sql", "019_documents_operator_only.sql", "020_editors_read_generated_docs.sql", "021_editors_no_documents.sql"];
 
 export async function freshDb() {
   const passthrough = v => v;
@@ -107,8 +107,10 @@ export function makeHarness(db) {
           const r = await as(uid, `select * from ${q(fn)}(${names.map((n, i) => `${n} => $${i + 1}`).join(",")})`, names.map(n => args[n]));
           log.push({ rpc: fn, error: r.error && r.error.message });
           if (r.error) return { data: null, error: r.error };
-          // Like PostgREST: a function returning a plain value (not a row)
-          // comes back as that value.
+          // Like PostgREST: a function returning a set of rows comes back as
+          // a list; one returning a plain value (not a row) as that value.
+          const set = await db.query("select bool_or(proretset) as s from pg_proc where proname = $1", [fn]);
+          if (set.rows[0] && set.rows[0].s) return { data: r.data, error: null };
           const row = r.data[0], keys = row ? Object.keys(row) : [];
           return { data: keys.length === 1 && keys[0] === fn ? row[fn] : row, error: null };
         } finally { inflight--; }
