@@ -666,7 +666,7 @@ back one piece at a time:
    that (or on the planned post date, if later).
 4. Tait picks an editor and sends it. The editor downloads the raw footage,
    edits from the instructions, uploads to the finished video folder named
-   after the video, and taps "Finished — send to operator".
+   after the video, and taps "Finished — send to Tait" (Tait is the operator, so editors see "Tait", 2026-10-15).
 5. Tait watches it: "Revisions needed" (a box whose text shows in the
    editor's "Revisions needed" section, stored in `editor_brief.revisions`
    so the client portal never shows it) or "Approve & add captions"
