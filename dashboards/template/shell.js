@@ -1333,13 +1333,26 @@ function docBodyHtml(d) { return mdToHtml(String(d.body_md || "").replace(/^\s*#
 // Tiny Markdown → HTML for the generated documents: headings, lists,
 // bold, italics, quotes, rules. Escapes everything first.
 function mdToHtml(md) {
-  const inline = s => escapeHtml(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<i>$2</i>");
+  // [label](https://…) links open in a new tab; nothing else is a link.
+  const inline = s => escapeHtml(s).replace(/\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>').replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<i>$2</i>");
   const out = [];
   let list = null;
   const close = () => { if (list) { out.push(`</${list}>`); list = null; } };
+  // ![caption](/assets/… or https://…) on its own line: an image; images on
+  // lines next to each other sit side by side.
+  let gallery = false;
+  const closeGallery = () => { if (gallery) { out.push("</div>"); gallery = false; } };
   String(md || "").split("\n").forEach(line => {
     const t = line.trimEnd();
     let m;
+    let im;
+    if ((im = t.trim().match(/^!\[([^\]]*)\]\(((?:\/assets\/|https:\/\/)[^)\s]+)\)$/))) {
+      close();
+      if (!gallery) { out.push('<div class="md-gallery">'); gallery = true; }
+      out.push(`<figure><a href="${escapeHtml(im[2])}" target="_blank" rel="noopener"><img src="${escapeHtml(im[2])}" alt="${escapeHtml(im[1])}" loading="lazy"></a>${im[1] ? `<figcaption>${escapeHtml(im[1])}</figcaption>` : ""}</figure>`);
+      return;
+    }
+    closeGallery();
     if (!t.trim()) { close(); return; }
     if ((m = t.match(/^(#{1,4})\s+(.*)$/))) { close(); const n = Math.min(m[1].length + 1, 4); out.push(`<h${n}>${inline(m[2])}</h${n}>`); return; }
     if (/^---+$/.test(t.trim())) { close(); out.push("<hr>"); return; }
@@ -1350,6 +1363,7 @@ function mdToHtml(md) {
     out.push(`<p>${inline(t.trim())}</p>`);
   });
   close();
+  closeGallery();
   return out.join("");
 }
 
