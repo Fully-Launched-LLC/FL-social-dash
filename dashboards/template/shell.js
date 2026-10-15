@@ -362,7 +362,7 @@ const VIDEO_ACTIONS = {
   request_concept_changes: { role: "client", from: ["concept_pending"], to: "concept_pending", label: "Suggest changes", needsNote: true, notePrompt: "What would you change about this idea?" },
   approve_final:           { role: "client", from: ["client_review"], to: "ready_to_post", label: "Approve for posting" },
   request_revisions:       { role: "client", from: ["client_review"], to: "with_editor",   label: "Request changes to the video", needsNote: true, notePrompt: "What should change in the video?", destructive: true },
-  mark_delivered:          { role: "editor", rpc: "social_editor_mark_delivered", from: ["with_editor"], to: "in_review", label: "Finished — send to operator" },
+  mark_delivered:          { role: "editor", rpc: "social_editor_mark_delivered", from: ["with_editor"], to: "in_review", label: "Finished — send to Tait" },
 };
 
 // A video's category (its industry), from the start of its title:

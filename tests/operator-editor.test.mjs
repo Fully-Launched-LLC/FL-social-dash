@@ -49,7 +49,7 @@ p.d.getElementById("efYes").click(); await settle();
 const rv = (await db.query("select v.storage_path, s.client_id, s.id from social_video_versions v join social_videos s on s.id = v.video_id where s.title='Morgan edits this'")).rows[0];
 chk("the review copy is uploaded to review/<client>/<video>/ and saved on the version", rv && rv.storage_path.startsWith(rv.client_id + "/" + rv.id + "/") && rv.storage_path.endsWith("cut.mp4")
   && p.ui.log.some(l => l.upload && l.upload.bucket === "review" && l.upload.path === rv.storage_path), [rv, p.ui.log.filter(l => l.upload)]);
-chk("sent confirmation shown", p.d.getElementById("videoModalBox").textContent.includes("Sent to the operator"));
+chk("sent confirmation shown", p.d.getElementById("videoModalBox").textContent.includes("Sent to Tait"));
 p.d.getElementById("efDone").click(); await settle();
 let r = (await db.query("select status, final_cut_url from social_videos where title='Morgan edits this'")).rows[0];
 chk("operator finished Morgan's video", r.status === "in_review" && r.final_cut_url === null, r);
