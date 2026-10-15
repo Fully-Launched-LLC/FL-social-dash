@@ -790,6 +790,10 @@ headings and tabs and white cards (`body.navy-work` in shell.css; Tait,
 area. Every Documents page (the editor's, and the operator's in a client
 portal) starts each client with **Brand guidelines** (their colors, logo
 and font; `brandRow` in shell.js), saying so when there isn't one yet.
+Editors see every document of each client they edit for (Tait,
+2026-10-15): the brand guidelines, every Google Doc on Clients → Edit →
+Documents (Team only ones included, 012) and the documents built from the
+voice memo (migration 020), on the Documents page and on each video card.
 
 **To Do** is two tabs and nothing else (Tait, 2026-10-15): **To edit**
 (first cuts) and **To make revisions** (sent back with changes), soonest

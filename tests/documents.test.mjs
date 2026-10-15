@@ -101,10 +101,20 @@ const ED = "00000000-0000-0000-0000-00000000000e";
 await db.exec(`insert into auth.users (id) values ('${ED}');
   insert into social_editors (id,name,email) values ('${ED}','Ed','ed@x');
   update social_editors set setup_at = now(); -- they made their password (migration 013)
-  insert into social_videos (client_id,title,status,editor_id) values ('${FL}','Edit me','with_editor','${ED}');`);
+  insert into social_videos (client_id,title,status,editor_id) values ('${FL}','Edit me','with_editor','${ED}');
+  insert into social_client_generated_docs (client_id, kind, title, body_md) values ('${FL}','customer_data','FL: Customer Data (voice memo)','# FL: Customer Data\n\nThey hate chasing invoices.');
+  insert into social_clients (id,name,slug,client_system) values ('aaaaaaaa-0000-0000-0000-000000000099','Not Theirs','not-theirs','self-serve');
+  insert into social_client_generated_docs (client_id, kind, title, body_md) values ('aaaaaaaa-0000-0000-0000-000000000099','customer_data','Not Theirs: Customer Data','# x');`);
 const ed = await openPage("editor/dashboard.html", ED, "https://fl.test/editor/dashboard.html");
-const edLinks = Array.from(ed.d.querySelectorAll("#queueList a.btn")).map(a => a.textContent);
-chk("the editor sees the client's documents on the video, Content Research included", edLinks.includes("Customer Data (2026)") && edLinks.includes("Content Research"), edLinks);
+const edLinks = Array.from(ed.d.querySelectorAll("#queueList a.btn, #queueList button")).map(a => a.textContent);
+chk("the editor sees every document on the video: Google Docs (Team only too) and the ones built from the voice memo", edLinks.includes("Customer Data (2026)") && edLinks.includes("Content Research") && edLinks.includes("FL: Customer Data (voice memo)"), edLinks);
+const edDocs = ed.d.getElementById("docsByClient").textContent;
+chk("…and on Documents: brand guidelines, the Google Docs and the voice-memo documents", /Brand guidelines/.test(edDocs) && edDocs.includes("Customer Data (2026)") && edDocs.includes("Content Research") && edDocs.includes("FL: Customer Data (voice memo)"), edDocs);
+chk("…never another client's (database rule, 020)", !edDocs.includes("Not Theirs") && (await readAs(ED, "social_client_generated_docs")) === 1);
+Array.from(ed.d.querySelectorAll("#docsByClient [data-gen]"))[0].click(); await settle();
+chk("Read opens the voice-memo document right there", ed.d.getElementById("videoModalBox").textContent.includes("They hate chasing invoices"));
+ed.w.closeVideoModal();
+chk("a client's login still reads none of them", (await readAs(CL, "social_client_generated_docs")) === 0);
 await db.exec("delete from social_videos");
 
 
