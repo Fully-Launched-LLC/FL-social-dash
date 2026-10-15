@@ -1333,7 +1333,7 @@ function docBodyHtml(d) { return mdToHtml(String(d.body_md || "").replace(/^\s*#
 // Tiny Markdown → HTML for the generated documents: headings, lists,
 // bold, italics, quotes, rules. Escapes everything first.
 function mdToHtml(md) {
-  const inline = s => escapeHtml(s).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<i>$2</i>");
+  const inline = s => escapeHtml(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<i>$2</i>");
   const out = [];
   let list = null;
   const close = () => { if (list) { out.push(`</${list}>`); list = null; } };
@@ -1454,4 +1454,77 @@ function runTour(TOUR, { onEnd } = {}) {
 function brandRow(url, missing) {
   return `<div class="row"><div class="left"><b>Brand guidelines</b><div class="meta">${url ? "Their colors, logo and font" : escapeHtml(missing)}</div></div>
     ${url ? `<a class="btn primary" href="${escapeHtml(url)}" target="_blank" rel="noopener">Open</a>` : ""}</div>`;
+}
+
+
+// ---------- Carousels (migration 022; Tait, 2026-10-15) ----------
+// Operators write the copy and review on a client portal's Carousels page;
+// editors build them on the editor portal's Carousels page and upload the
+// slides (the private 'carousels' bucket: <client id>/<carousel id>/<file>).
+const CAROUSEL_STATUS = { idea: "Idea", with_editor: "With editor", to_review: "To review", changes: "Sent back", approved: "Approved", posted: "Posted" };
+const CAROUSEL_ORDER = ["to_review", "with_editor", "changes", "idea", "approved", "posted"];
+
+// One slide's copy: line breaks kept, *words* in gold italic (the accent).
+function carouselTextHtml(text) {
+  return escapeHtml(text || "").replace(/\*([^*\n]+)\*/g, `<i class="gold-i">$1</i>`).replace(/\n/g, "<br>");
+}
+// What the Copy button copies: the words, without the accent stars.
+const carouselPlain = text => String(text || "").replace(/\*([^*\n]+)\*/g, "$1");
+
+// Every slide: its copy (with a Copy button) and the photo note.
+function carouselSlidesHtml(c) {
+  const slides = Array.isArray(c.slides) ? c.slides : [];
+  return `<div class="car-slides">${slides.map((s, i) => `
+    <div class="car-slide">
+      <div class="car-slide-head"><b>Slide ${i + 1}</b><button type="button" class="car-copy" data-copy="${escapeHtml(carouselPlain(s.text))}">Copy</button></div>
+      <div class="car-text">${carouselTextHtml(s.text)}</div>
+      ${s.photo ? `<div class="car-photo"><b>Photo:</b> ${escapeHtml(s.photo)}</div>` : ""}
+    </div>`).join("")}</div>`;
+}
+function carouselFactsHtml(c) {
+  const f = (label, v) => v ? `<div class="modal-field"><b>${escapeHtml(label)}</b><div>${escapeHtml(v)}</div></div>` : "";
+  return f("Format", c.format) + f("Category", c.category) + f("Answers", c.answers) + f("Perspective", c.perspective) + f("Call to action (caption only)", c.cta);
+}
+function carouselSourcesHtml(c) {
+  const src = Array.isArray(c.sources) ? c.sources : [];
+  return src.length ? `<div class="car-section"><b class="car-label">Sources for every fact</b><div>${src.map(x => `<a href="${escapeHtml(x.url)}" target="_blank" rel="noopener">${escapeHtml(x.label || x.url)}</a>`).join(" · ")}</div></div>` : "";
+}
+// Copy buttons anywhere inside root.
+function wireCarouselCopy(root) {
+  root.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied ✓"; setTimeout(() => { b.textContent = "Copy"; }, 1500); }
+    catch (e) { b.textContent = "Select and copy by hand"; }
+  });
+}
+// The uploaded slides for some carousels, each with a signed link (1 hour).
+// → { carouselId: [{ id, storage_path, file_name, position, url }] }
+async function loadCarouselUploads(ids) {
+  const out = {};
+  if (!ids.length) return out;
+  const { data } = await sbClient.from("social_carousel_uploads").select("*").in("carousel_id", ids).order("position").order("created_at");
+  const rows = data || [];
+  const paths = rows.map(r => r.storage_path);
+  let signed = [];
+  if (paths.length) {
+    const res = await sbClient.storage.from("carousels").createSignedUrls(paths, 3600);
+    signed = (res && res.data) || [];
+  }
+  const urlFor = p => (signed.find(x => x.path === p) || {}).signedUrl || "";
+  rows.forEach(r => { (out[r.carousel_id] = out[r.carousel_id] || []).push({ ...r, url: urlFor(r.storage_path) }); });
+  return out;
+}
+// The uploaded slides as a strip of thumbnails; click one to see it big.
+function carouselGalleryHtml(uploads, removable) {
+  if (!uploads || !uploads.length) return `<div class="empty">No slides uploaded yet.</div>`;
+  return `<div class="car-gallery">${uploads.map((u, i) => `
+    <figure class="car-thumb">
+      <a href="${escapeHtml(u.url)}" target="_blank" rel="noopener"><img src="${escapeHtml(u.url)}" alt="Slide ${i + 1}" loading="lazy"></a>
+      <figcaption>${i + 1}${removable ? ` <button type="button" class="car-remove" data-remove="${escapeHtml(u.id)}" title="Remove this slide">×</button>` : ""}</figcaption>
+    </figure>`).join("")}</div>`;
+}
+// The style guide, in a pop-up.
+function openCarouselGuide(md) {
+  openModal(`<h2>Carousel guide</h2><div class="doc-body">${md ? mdToHtml(String(md).replace(/^\s*#\s+[^\n]*\n/, "")) : `<p class="meta">No guide yet.</p>`}</div>
+    <div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Close</button></div>`);
+  document.getElementById("videoModalBox").classList.add("modal-wide");
 }

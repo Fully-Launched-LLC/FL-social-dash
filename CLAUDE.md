@@ -363,7 +363,12 @@ fully-social-os/
                                undone by 021), 021 (editors read no client
                                documents: social_editor_folders() gives
                                just raw footage, finished video and brand
-                               guidelines links)
+                               guidelines links),
+                               022 (carousels: social_carousels,
+                               social_carousel_guides,
+                               social_carousel_uploads, the private
+                               'carousels' bucket,
+                               social_editor_submit_carousel)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -856,6 +861,28 @@ finished video when one is waiting: To review → Review
 the video → inside the review window, the player and its comment marks, a
 comment at a moment or on the whole video, Send changes or Approve. Steps
 that don't apply (nothing to film, no documents) are left out.
+
+### Carousels (migration 022; Tait, 2026-10-15)
+
+Instagram carousels modeled on @wefoundrs (founder stories in black and
+white, navy and gold). **Operators:** a client portal's **Carousels** page
+(operators only, like Documents) holds the editor's style guide
+(`social_carousel_guides.body_md`, Markdown, Read / Edit) and every
+carousel: format, category, the Content Research question it answers,
+perspective, CTA (caption only), slides (`[{text, photo}]`, *stars* mark
+the gold italic accent), caption, sources for every fact. Tait edits the
+copy, picks an editor and clicks **Save and send to the editor**; reviews
+the uploaded slides (**Approve** or **Send back with the note**); then
+**Mark posted**. Status: idea → with_editor → to_review → approved →
+posted, with changes ↔ to_review. **Editors:** a **Carousels** page (and a
+walkthrough step) with only their carousels: each slide's words with a Copy
+button (copies without the stars), the photo note, the guide, **Upload
+slides** (images into `carousels/<client id>/<carousel id>/`, in file-name
+order; × removes one) and **Send to Tait for review**
+(`social_editor_submit_carousel`, needs at least one slide). Editors read
+no client documents here either. Clients see none of it. The Fully
+Launched copy (30 carousels) and guide were loaded by SQL, not kept in this
+public repo.
 
 ## Adding a client
 

@@ -20,6 +20,7 @@
   <div class="nav-item active" data-view="videos">To Do</div>
   <div class="nav-item" data-view="calendar">Content Calendar</div>
   <div class="nav-item" data-view="documents" id="docsNav" style="display:none">Documents</div>
+  <div class="nav-item" data-view="carousels" id="carouselsNav" style="display:none">Carousels</div>
 </nav>
 
 <main class="main">
@@ -48,6 +49,16 @@
   <section class="view" id="view-documents">
     <div class="page-head"><h1>Documents</h1><p>Only you can see this page. The client's portal has no Documents page, and their login can't read these (migration 019).</p></div>
     <div class="card"><div id="docsList"></div></div>
+  </section>
+
+  <!-- Operators only (Tait, 2026-10-15): the carousel copy, the editor's
+       guide, and reviewing what editors upload (migration 022). -->
+  <section class="view" id="view-carousels">
+    <div class="page-head"><h1>Carousels</h1><p>Only you can see this page. Editors see the carousels you give them, with the guide, on their own Carousels page.</p></div>
+    <div class="card"><div class="row"><div class="left"><b>Carousel guide</b><div class="meta">The style, the photos and the steps. Editors read it on every carousel.</div></div>
+      <div><button class="primary" id="carGuideRead">Read</button> <button id="carGuideEdit">Edit</button></div></div></div>
+    <div class="chip-row" id="carTabs"></div>
+    <div class="card"><div id="carList"></div></div>
   </section>
 
   <section class="view" id="view-calendar">
@@ -542,6 +553,135 @@ function openCalendarVideo(videoId) {
   });
 }
 
+// ---------- Carousels (operators only; migration 022) ----------
+let CAROUSELS = [], CAR_GUIDE = "", CAR_EDITORS = [], CAR_UPLOADS = {}, carTab = "all";
+
+async function loadCarousels() {
+  const [res, guide, eds] = await Promise.all([
+    sbClient.from("social_carousels").select("*").eq("client_id", CLIENT.id).order("position"),
+    sbClient.from("social_carousel_guides").select("body_md").eq("client_id", CLIENT.id).maybeSingle(),
+    sbClient.from("social_editors").select("id,name,active").order("name"),
+  ]);
+  if (res.error) {
+    document.getElementById("carList").innerHTML = `<div class="empty">Couldn't load the carousels: ${escapeHtml(res.error.message)}</div>`;
+    return;
+  }
+  CAROUSELS = res.data || [];
+  CAR_GUIDE = (guide.data && guide.data.body_md) || "";
+  CAR_EDITORS = (eds.data || []).filter(e => e.active);
+  CAR_UPLOADS = await loadCarouselUploads(CAROUSELS.filter(c => c.status !== "idea").map(c => c.id));
+  renderCarousels();
+}
+
+function renderCarousels() {
+  const count = k => CAROUSELS.filter(c => c.status === k).length;
+  const tabs = [["all", "All", CAROUSELS.length]].concat(CAROUSEL_ORDER.map(k => [k, CAROUSEL_STATUS[k], count(k)]));
+  document.getElementById("carTabs").innerHTML = tabs.map(([k, label, n]) =>
+    `<button class="chip${carTab === k ? " active" : ""}${!n ? " zero" : ""}${k === "to_review" && n ? " urgent" : ""}" data-cartab="${k}">${chipLabel(label, n)}</button>`).join("");
+  document.querySelectorAll("[data-cartab]").forEach(b => b.onclick = () => { carTab = b.dataset.cartab; renderCarousels(); });
+  const editorName = id => (CAR_EDITORS.find(e => e.id === id) || {}).name;
+  const list = CAROUSELS.filter(c => carTab === "all" || c.status === carTab);
+  document.getElementById("carList").innerHTML = list.map(c => `
+    <div class="row" data-car="${escapeHtml(c.id)}" style="cursor:pointer">
+      <div class="left"><b>${c.position ? c.position + ". " : ""}${escapeHtml(c.title)}</b>
+        <div class="meta">${[c.format, c.category, editorName(c.editor_id)].filter(Boolean).map(escapeHtml).join(" · ")}</div></div>
+      <div>${statusDot(c.status, CAROUSEL_STATUS, c.status === "to_review")} <button data-car-open="${escapeHtml(c.id)}">Open</button></div>
+    </div>`).join("") || `<div class="empty">${CAROUSELS.length ? "None here." : "No carousels yet."}</div>`;
+  document.querySelectorAll("#carList [data-car]").forEach(r => r.onclick = () => openCarousel(r.dataset.car));
+}
+
+document.getElementById("carGuideRead").onclick = () => openCarouselGuide(CAR_GUIDE);
+document.getElementById("carGuideEdit").onclick = () => {
+  const box = openModal(`<h2>Edit the carousel guide</h2>
+    <p class="meta">Markdown: # headings, - lists, **bold**, *italic*. Editors see it on their Carousels page.</p>
+    <textarea id="cgBody" rows="24" style="width:100%">${escapeHtml(CAR_GUIDE)}</textarea>
+    <div class="modal-actions"><button class="primary" id="cgSave">Save</button><button onclick="closeVideoModal()">Cancel</button></div>`);
+  box.classList.add("modal-wide");
+  box.querySelector("#cgSave").onclick = async e => {
+    e.target.disabled = true;
+    const body = box.querySelector("#cgBody").value;
+    const { error } = await sbClient.from("social_carousel_guides").upsert({ client_id: CLIENT.id, body_md: body }, { onConflict: "client_id" });
+    if (error) { e.target.disabled = false; alert("Couldn't save: " + error.message); return; }
+    CAR_GUIDE = body;
+    closeVideoModal();
+  };
+};
+
+// One carousel: review what the editor sent, edit the copy, give it to an editor.
+function openCarousel(id) {
+  const c = CAROUSELS.find(x => x.id === id);
+  if (!c) return;
+  const slides = Array.isArray(c.slides) ? c.slides.map(s => ({ text: s.text || "", photo: s.photo || "" })) : [];
+  const ups = CAR_UPLOADS[c.id] || [];
+  const field = (key, label) => `<label class="modal-field"><b>${label}</b><input type="text" data-f="${key}" value="${escapeHtml(c[key] || "")}" style="width:100%"></label>`;
+  const editorOpts = `<option value="">No editor yet</option>` + CAR_EDITORS.map(e => `<option value="${escapeHtml(e.id)}"${e.id === c.editor_id ? " selected" : ""}>${escapeHtml(e.name)}</option>`).join("");
+  const review = c.status === "to_review" ? `
+    <div class="card"><h2>The editor sent this for review</h2>${carouselGalleryHtml(ups, false)}
+      <label class="modal-field"><b>Changes to make (if you send it back)</b><textarea id="carNote" rows="3" style="width:100%">${escapeHtml(c.review_note || "")}</textarea></label>
+      <div class="modal-actions"><button class="accent" id="carApprove">Approve</button><button id="carBack">Send back with the note</button></div></div>`
+    : ups.length ? `<div class="car-section"><b class="car-label">Uploaded slides</b>${carouselGalleryHtml(ups, false)}</div>` : "";
+  const box = openModal(`
+    <h2>${c.position ? c.position + ". " : ""}${escapeHtml(c.title)}</h2>
+    <div class="modal-meta">${statusDot(c.status, CAROUSEL_STATUS)}${c.status === "changes" && c.review_note ? ` · sent back: ${escapeHtml(c.review_note)}` : ""}</div>
+    ${review}
+    <div class="car-section"><b class="car-label">Preview</b>${carouselSlidesHtml(c)}</div>
+    <h3>Edit the copy</h3>
+    ${field("title", "Title")}${field("format", "Format")}${field("category", "Category")}${field("answers", "Answers (from Content Research)")}${field("perspective", "Perspective")}${field("cta", "Call to action (caption only)")}
+    <div class="car-section"><b class="car-label">Slides</b><p class="meta">Put *stars* around the words that go in gold italic.</p><div id="carSlideEdit"></div><button type="button" id="carAddSlide">+ Add a slide</button></div>
+    <label class="modal-field"><b>Caption</b><textarea data-f="caption" rows="5" style="width:100%">${escapeHtml(c.caption || "")}</textarea></label>
+    <label class="modal-field"><b>Notes for the editor</b><textarea data-f="notes" rows="2" style="width:100%">${escapeHtml(c.notes || "")}</textarea></label>
+    ${carouselSourcesHtml(c)}
+    <label class="modal-field"><b>Editor</b><select id="carEditor" style="width:100%">${editorOpts}</select></label>
+    <div class="modal-actions">
+      <button class="primary" id="carSave">Save</button>
+      ${["idea", "changes"].includes(c.status) ? `<button id="carSend">Save and send to the editor</button>` : ""}
+      ${c.status === "approved" ? `<button id="carPosted">Mark posted</button>` : ""}
+      <button onclick="closeVideoModal()">Close</button>
+    </div>`);
+  box.classList.add("modal-wide");
+  wireCarouselCopy(box);
+  const drawSlides = () => {
+    box.querySelector("#carSlideEdit").innerHTML = slides.map((s, i) => `
+      <div class="car-edit-slide"><div class="car-slide-head"><b>Slide ${i + 1}</b><button type="button" data-del-slide="${i}">Remove</button></div>
+        <textarea data-slide="${i}" data-k="text" rows="4" placeholder="What the slide says">${escapeHtml(s.text)}</textarea>
+        <textarea data-slide="${i}" data-k="photo" rows="2" placeholder="The photo: what it shows and where to find it">${escapeHtml(s.photo)}</textarea></div>`).join("");
+    box.querySelectorAll("[data-slide]").forEach(t => t.oninput = () => { slides[t.dataset.slide][t.dataset.k] = t.value; });
+    box.querySelectorAll("[data-del-slide]").forEach(b => b.onclick = () => { slides.splice(Number(b.dataset.delSlide), 1); drawSlides(); });
+  };
+  drawSlides();
+  box.querySelector("#carAddSlide").onclick = () => { slides.push({ text: "", photo: "" }); drawSlides(); };
+  const values = () => {
+    const v = { slides: slides.filter(s => s.text.trim() || s.photo.trim()), editor_id: box.querySelector("#carEditor").value || null };
+    box.querySelectorAll("[data-f]").forEach(el => { v[el.dataset.f] = el.value; });
+    return v;
+  };
+  const save = async (extra, btn) => {
+    if (btn) btn.disabled = true;
+    const { data, error } = await sbClient.from("social_carousels").update({ ...values(), ...extra }).eq("id", c.id).select("*");
+    if (error || !data || !data.length) { if (btn) btn.disabled = false; alert("Couldn't save: " + ((error && error.message) || "not found")); return false; }
+    Object.assign(c, data[0]);
+    closeVideoModal();
+    renderCarousels();
+    return true;
+  };
+  box.querySelector("#carSave").onclick = e => save({}, e.target);
+  const send = box.querySelector("#carSend");
+  if (send) send.onclick = e => {
+    if (!box.querySelector("#carEditor").value) { alert("Pick an editor first."); return; }
+    save({ status: "with_editor", review_note: c.status === "changes" ? c.review_note : null }, e.target);
+  };
+  const posted = box.querySelector("#carPosted");
+  if (posted) posted.onclick = e => save({ status: "posted" }, e.target);
+  const approve = box.querySelector("#carApprove");
+  if (approve) approve.onclick = e => save({ status: "approved", approved_at: new Date().toISOString(), review_note: null }, e.target);
+  const back = box.querySelector("#carBack");
+  if (back) back.onclick = e => {
+    const note = box.querySelector("#carNote").value.trim();
+    if (!note) { alert("Write what to change first."); return; }
+    save({ status: "changes", review_note: note }, e.target);
+  };
+}
+
 // Operator only: every document for this client, Team only ones marked.
 function renderDocuments() {
   const gen = GEN_DOCS.map(d => `
@@ -626,6 +766,8 @@ async function startApp(user, access) {
     GEN_DOCS = gen || [];
     document.getElementById("docsNav").style.display = "";
     renderDocuments();
+    document.getElementById("carouselsNav").style.display = "";
+    loadCarousels();
   }
   // Invited but no password yet: the password page first. Nothing here
   // shows until they've made one. (Not for clients who finished the older
