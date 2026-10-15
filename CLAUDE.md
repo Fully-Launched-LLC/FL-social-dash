@@ -426,7 +426,11 @@ videos by views in the client's niche through Apify (the `apify` server in
 `.mcp.json`; Tait signs in once with `/mcp`) and files them in
 `clients/<slug>/research/outliers.md` and its Google Doc, which lives in
 Drive's private **Operator Only (do not share)** folder and never goes on
-the client's Documents page. It learns per client from Tait's feedback. The other skills in the table are not in this
+the client's Documents page. It learns per client from Tait's feedback.
+After ranking it watches the openings of the top 10 with the `watch` skill
+(claude-watch, installed per Mac at `~/.claude/skills/watch`, needs
+ffmpeg, yt-dlp and a Groq key in `~/.config/watch/.env`; not in this repo)
+to record each video's real format and opening line. The other skills in the table are not in this
 repo — where they live is an open question. `calendar-planner` in
 particular was written to update the old per-client `config.json` files,
 which no longer exist; it needs repointing at Supabase or retiring.

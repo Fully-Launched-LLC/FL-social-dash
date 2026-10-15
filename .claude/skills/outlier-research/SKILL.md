@@ -49,6 +49,7 @@ folder, and is **never** added to the client's Documents page
 - [ ] 3. Scrape Instagram reels
 - [ ] 4. Scrape TikTok
 - [ ] 5. Merge, dedupe, drop "not my lane", rank, top 10
+- [ ] 5b. Watch the top 10 with /watch (format and opening line)
 - [ ] 6. Write the run into outliers.md, then the Google Doc
 - [ ] 7. Ask what was off, and write it down
 ```
@@ -125,6 +126,30 @@ If a platform came back empty, carry on and note it in the run.
 **Only list what the scrapers returned.** A missing count is "n/a", never
 a guess.
 
+### 5b. Watch the top 10
+
+Apify finds the videos; the `watch` skill (`/watch`, installed on Tait's
+Mac at `~/.claude/skills/watch`, not in this repo) looks at them. For each
+of the 10, watch only the opening, which is where the hook and the format
+are:
+
+```bash
+python3 ~/.claude/skills/watch/scripts/watch.py "<post URL>" --intent "hook and format" --end 15 --max-frames 8 --no-hook-microscope
+```
+
+Read its frames and transcript, then record two things per video:
+- **Format**, from what you saw (same labels as step 3), marked "(watched)".
+- **Opening line**, the first sentence said on camera, word for word from
+  the transcript (or the on-screen text if nothing is said). Never reword it.
+
+If Instagram blocks the download, run it again on the reel's `videoUrl` from
+the Apify results (a direct file link). If a video still won't play, keep
+its "(from the cover)" label and say so. If `/watch` isn't set up (`python3
+~/.claude/skills/watch/scripts/setup.py --check` fails), skip this step,
+keep the cover labels and tell Tait in one line. Delete the work folders
+when done. Watching 10 openings costs roughly 60K tokens and a fraction of
+a cent of Groq transcription.
+
 ### 6. Write it down
 
 Add the run to the top of **Runs** in `private/outliers.md`, in this shape:
@@ -134,7 +159,8 @@ Add the run to the top of **Runs** in `private/outliers.md`, in this shape:
 
 *Searched #etsyseller #etsyshop #smallbusiness and "etsy tips" · Instagram 28, TikTok 30 · 3 dropped (not my lane)*
 
-1. **2.4M views** · TikTok · @creator · [Watch](https://...)
+1. **2.4M views** · TikTok · Green screen (watched) · @creator · [Watch](https://...)
+   Opens with: "The first sentence they say, word for word"
    Caption, trimmed to about 120 characters, as written
 2. ...
 ```

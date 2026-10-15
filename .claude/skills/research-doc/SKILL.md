@@ -38,9 +38,13 @@ subreddit, upvotes and comments, the link. Group them by theme. These feed
 hooks ("why can't anyone find my Etsy shop?").
 
 **2. Niche outliers (Instagram, TikTok).** Run the `outlier-research`
-skill's steps 3 to 5 for the client's niche (or each category, for a
-client with several): top 10 by views. The full list goes in the private
-outlier doc as usual; the Research doc gets the top 5 per platform.
+skill's steps 3 to 5b (Apify finds them, `/watch` watches them) for the niche Tait gives for this
+client (if he didn't give one, the client's niche, or each category, for a
+client with several): the top 10 by views across both platforms. Each of
+the 10 carries its format and opening line from `outlier-research` step 5b
+("(watched)"), or a cover-image label "(from the cover)" if it couldn't be
+watched. The full list goes in the private outlier doc as
+usual, and the Research doc gets all 10, with their formats.
 
 **2b. Trending formats on Instagram (in the niche).** Which *formats* are
 winning right now, not just which videos. From the Instagram reels pull in
@@ -121,7 +125,9 @@ this order, each starting with *Pulled YYYY-MM-DD*:
    What it looks like here: <one line, observed>
 
 ## Outliers in the niche
-1. **2.4M views** · TikTok · @creator · <caption trimmed> · [Watch](https://...)
+*<the niche Tait gave> · pulled YYYY-MM-DD · top 10 by views, Instagram and TikTok*
+1. **2.4M views** · TikTok · Green screen (watched) · @creator · [Watch](https://...)
+   Opens with: "<first sentence, word for word>" · <caption trimmed>
 
 ## Competitor outliers
 ### <Competitor>
