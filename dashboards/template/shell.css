@@ -584,3 +584,10 @@ button.big { padding:14px 40px; font-size:16px; }
 .rv-asked-tick { display:inline-block; width:1.2em; }
 /* "Upload a review copy" under the player (operators). */
 .rv-copy { display:flex; flex-direction:column; gap:8px; align-items:flex-start; margin:10px 0 4px; }
+
+/* Where a video is in the process (client calendar popup, 2026-10-15). */
+.process { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 12px 0 6px; }
+.process li { font-size: 0.78rem; padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; color: var(--sub); }
+.process li.done { color: var(--ink); }
+.process li.done::before { content: "✓ "; }
+.process li.now { border-color: var(--accent); color: var(--accent); font-weight: 600; }

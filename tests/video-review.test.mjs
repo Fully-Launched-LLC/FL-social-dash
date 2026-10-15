@@ -91,7 +91,7 @@ const fetchDrive = (url) => {
   return { ok: true, status: 200, json: async () => ({ files }) };
 };
 const p = await openPage("clients/portal.html", CL, "https://fl.test/clients/hesedea", { fetch: fetchDrive });
-const card = Array.from(p.d.querySelectorAll("#listFinal .card")).find(c => c.textContent.includes("Mark's introduction"));
+const card = Array.from(p.d.querySelectorAll("#listReview .card")).find(c => c.textContent.includes("Mark's introduction"));
 chk("the final card: Review the video, no Request changes box", !!card && Array.from(card.querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Review the video|Approve for posting");
 Array.from(card.querySelectorAll("button")).find(b => b.textContent === "Review the video").click(); await settle();
 const box = p.d.getElementById("videoModalBox");
@@ -151,7 +151,7 @@ chk("no page errors", !p.ui.errors.length && !p.ui.alerts.length, [p.ui.errors, 
 await db.exec(`update social_videos set final_cut_url='https://drive.google.com/file/d/exactfile0001/view' where id='${V2}'; delete from social_settings;`);
 const p2 = await openPage("clients/portal.html", CL, "https://fl.test/clients/hesedea", { fetch: fetchDrive });
 drive.length = 0;
-Array.from(p2.d.querySelectorAll("#listFinal button")).find(b => b.textContent === "Review the video").click(); await settle();
+Array.from(p2.d.querySelectorAll("#listReview button")).find(b => b.textContent === "Review the video").click(); await settle();
 const b2 = p2.d.getElementById("videoModalBox");
 chk("no key: Drive's own player for the exact file, typed times", b2.querySelector("iframe.rv-frame")?.getAttribute("src") === "https://drive.google.com/file/d/exactfile0001/preview"
   && b2.classList.contains("rv-typed-mode") && !drive.length);

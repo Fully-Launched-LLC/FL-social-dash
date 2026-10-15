@@ -32,7 +32,7 @@ const button = (root, re) => Array.from(root.querySelectorAll("button, label")).
 
 // The client: plays the review copy, not Drive.
 let p = await openPage("clients/portal.html", CL, "https://fl.test/clients/grad-gig", { fetch: fetchDrive });
-const card = Array.from(p.d.querySelectorAll("#listFinal .card")).find(c => c.textContent.includes("With a copy"));
+const card = Array.from(p.d.querySelectorAll("#listReview .card")).find(c => c.textContent.includes("With a copy"));
 button(card, /^Review the video$/).click(); await settle();
 let box = p.d.getElementById("videoModalBox");
 let src = box.querySelector("video.rv-video")?.getAttribute("src");
@@ -47,7 +47,8 @@ chk("comments on it are tied to the cut", (await db.query(`select cut_ref from s
 // Once sent, Watch the video plays the same copy.
 await as(CL, "select status from social_client_video_action(p_video_id => $1, p_action => 'request_revisions', p_note => 'Whole video  Love it')", [V]);
 p = await openPage("clients/portal.html", CL, "https://fl.test/clients/grad-gig", { fetch: fetchDrive });
-Array.from(p.d.querySelectorAll("#listChanges .card button")).find(b => b.textContent === "Watch the video").click(); await settle();
+p.w.openCalendarVideo(V); await settle();   // off To Do now; watched from the calendar
+Array.from(p.d.querySelectorAll("#videoModalBox button")).find(b => b.textContent === "Watch the video").click(); await settle();
 src = p.d.querySelector("#videoModalBox video.rv-video")?.getAttribute("src");
 chk("while it's with the editor, Watch the video plays the review copy too", src === `https://signed/${A}/${V}/1-cut.mp4`, src);
 chk("no page errors (client)", !p.ui.errors.length && !p.ui.alerts.length, [p.ui.errors, p.ui.alerts]);

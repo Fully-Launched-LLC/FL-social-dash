@@ -62,8 +62,10 @@ chk("the thank-you says they can still watch it", /Watch the video/.test(p.d.get
 // While it's with the editor: watch it, read only, the changes they sent.
 p = await openPage("clients/portal.html", CL, "https://fl.test/clients/grad-gig", { fetch: fetchDrive });
 await db.exec(`update social_video_comments set cut_ref='cutv1' where video_id='${V}'`);
-let c = card(p);
-chk("with the editor: the card has Watch the video, not Review", !!button(c, /^Watch the video$/) && !button(c, /^Review the video$/));
+chk("with the editor: it's off their To Do", !card(p));
+p.w.openCalendarVideo(V); await settle();
+let c = p.d.getElementById("videoModalBox");
+chk("…its calendar popup says Editing and has Watch the video", c.querySelector(".process .now")?.textContent === "Editing" && !!button(c, /^Watch the video$/));
 button(c, /^Watch the video$/).click(); await settle();
 box = p.d.getElementById("videoModalBox");
 chk("…it plays the cut they reviewed, with the 2 changes they sent", box.querySelector("video.rv-video")?.getAttribute("src")?.includes("/files/cutv1?") && box.querySelectorAll(".rv-note").length === 2, box.querySelector("video.rv-video")?.getAttribute("src"));
@@ -76,7 +78,8 @@ await db.exec(`insert into social_video_versions (video_id, version, file_id, fi
 const done1 = await as(ED, "select status from social_editor_mark_delivered($1)", [V]);
 chk("the editor's fix of round 1 goes to Tait, not the client", !done1.error && (await rounds()).status === "in_review", done1);
 p = await openPage("clients/portal.html", CL, "https://fl.test/clients/grad-gig", { fetch: fetchDrive });
-button(card(p), /^Watch the video$/).click(); await settle();
+p.w.openCalendarVideo(V); await settle();
+button(p.d.getElementById("videoModalBox"), /^Watch the video$/).click(); await settle();
 box = p.d.getElementById("videoModalBox");
 chk("…while Tait checks it, the client still sees the cut they reviewed (not the new one), no version picker", box.querySelector("video.rv-video")?.getAttribute("src")?.includes("/files/cutv1?") && !box.querySelector(".rv-version"));
 // Tait's review shows the client's changes and which the editor ticked.

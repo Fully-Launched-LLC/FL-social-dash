@@ -33,7 +33,7 @@ chk("…saved on the client", (await db.query(`select skip_onboarding from socia
 // Before a password: the dashboard sends them to the password page and shows nothing.
 const early = await openPage("clients/portal.html", CL, "https://fl.test/clients/hesedea");
 chk("no password yet: the dashboard sends them to the password page", early.ui.errors.some(e => /navigation/i.test(e)));
-chk("…and shows none of their videos", !early.d.querySelector("#listFinal .card") && !early.d.querySelector("#listAll .card"));
+chk("…and shows none of their videos", !early.d.querySelector("#listReview .card") && !early.d.querySelector("#listAll .card"));
 
 // The invite link: password page only, then straight to the dashboard.
 const w = await openPage("welcome.html", CL, "https://fl.test/welcome");
@@ -49,7 +49,7 @@ chk("…then it heads to the dashboard", w.ui.errors.some(e => /navigation/i.tes
 
 // The dashboard and its walkthrough, review steps included.
 const tp = await openPage("clients/portal.html", CL, "https://fl.test/clients/hesedea?tour=1");
-chk("with a password, the dashboard opens (no 'Finish setting up' banner)", !!tp.d.querySelector("#listFinal .card") && !tp.d.getElementById("onboardBanner").textContent.trim());
+chk("with a password, the dashboard opens (no 'Finish setting up' banner)", !!tp.d.querySelector("#listReview .card") && !tp.d.getElementById("onboardBanner").textContent.trim());
 const tc = () => tp.d.getElementById("tourCard");
 const modalOpen = () => !tp.d.getElementById("videoModalRoot")?.classList.contains("hidden");
 const spot = () => tp.d.getElementById("tourSpot");
@@ -59,8 +59,8 @@ for (let k = 0; k < 20 && tc() && tc().querySelector("[data-tour-next]"); k++) {
   seen.push(h); text[h] = tc().textContent; review[h] = modalOpen();
   tc().querySelector("[data-tour-next]").click(); await settle();
 }
-chk("the walkthrough: To Do, finished videos, Review the video, then inside the review window, then the calendar (no filming or documents steps for them)",
-  seen.join("|") === "To Do|Time sensitive|Finished videos to approve|Review the video|Watch it here|Read the feedback|Comment on any moment|Send changes, or approve|Content Calendar", seen);
+chk("the walkthrough: To Do, To review, Review the video, then inside the review window, then the calendar (no filming or documents steps for them)",
+  seen.join("|") === "To Do|To review|Review the video|Watch it here|Read the feedback|Comment on any moment|Send changes, or approve|Content Calendar", seen);
 chk("the review steps happen inside the real review window, and it closes after", review["Watch it here"] && review["Comment on any moment"] && review["Send changes, or approve"]
   && !review["Review the video"] && !review["Content Calendar"], review);
 chk("it explains comments at a moment and on the whole video", /pinned to that exact second/.test(text["Comment on any moment"]) && /Whole video/.test(text["Comment on any moment"]));

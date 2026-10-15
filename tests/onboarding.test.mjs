@@ -139,7 +139,7 @@ const ncRow = Array.from(op.d.querySelectorAll("#allClientsList .row")).find(r =
 chk("Clients list shows onboarding progress", ncRow.textContent.includes("Onboarding done") && Array.from(ncRow.querySelectorAll("button")).some(b => b.textContent === "Resend invite"), ncRow.textContent);
 Array.from(ncRow.querySelectorAll("button")).find(b => b.textContent === "Onboarding").click(); await settle();
 const box = op.d.getElementById("videoModalBox").textContent;
-chk("Onboarding view: brand files, voice memo player, footage and Drive link, transcript, send-documents, preview", box.includes("Brand files (2)") && !!op.d.querySelector('#videoModalBox a[href^="https://signed/' + NC + '/brand/"]') && !!op.d.querySelector('#videoModalBox audio[src^="https://signed/' + NC + '/voice-memo/"]') && box.includes("Download the voice memo") && box.includes("https://drive.google.com/drive/folders/abc") && box.includes("1 file uploaded") && !!op.d.getElementById("obSendDocs")
+chk("Onboarding view: brand files, voice memo player, footage and Drive link, transcript, preview", box.includes("Brand files (2)") && !!op.d.querySelector('#videoModalBox a[href^="https://signed/' + NC + '/brand/"]') && !!op.d.querySelector('#videoModalBox audio[src^="https://signed/' + NC + '/voice-memo/"]') && box.includes("Download the voice memo") && box.includes("https://drive.google.com/drive/folders/abc") && box.includes("1 file uploaded") && !op.d.getElementById("obSendDocs")
   && op.d.getElementById("obTranscript").value === "we never have time" && !!op.d.querySelector('#videoModalBox a[href="/welcome?client=newco"]'), box.slice(0, 300));
 op.w.closeVideoModal();
 // Pasting a transcript and building: too short is caught, a real one goes to the document service.
@@ -148,9 +148,7 @@ const opB = await openPage("operator/dashboard.html", OP, "https://fl.test/opera
 });
 opB.w.confirm = () => true;
 opB.w.openOnboarding(NC); await settle();
-opB.d.getElementById("obSendDocs").click(); await settle();
-const sendCall = opB.ui.log.find(l => l.fetch && /send-documents/.test(String(l.fetch.url || l.fetch)));
-chk("Email them their documents calls /api/send-documents for that client", !!sendCall && JSON.stringify(sendCall).includes(NC), opB.ui.log.filter(l => l.fetch));
+chk("no Email them their documents button (no Drive links to clients, 2026-10-15)", !opB.d.getElementById("obSendDocs"));
 opB.w.closeVideoModal();
 opB.ui.log.length = 0;
 opB.w.openOnboarding(OTHER); await settle();
@@ -179,7 +177,7 @@ chk("no email service yet: the link is there to copy", opI.d.getElementById("vid
 await db.exec(`update social_client_onboarding set completed_at=null where client_id='${NC}'`);
 const cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/newco");
 chk("unfinished onboarding: a Continue card on To Do", cl.d.getElementById("onboardBanner").textContent.includes("Finish setting up") && cl.d.querySelector('#onboardBanner a[href="/welcome"]'));
-chk("no Documents page in the client portal (clients don't get Drive access, 2026-10-15)", !cl.d.getElementById("docsList") && !Array.from(cl.d.querySelectorAll(".nav-item")).some(n => n.textContent.includes("Documents")));
+chk("no Documents page in the client portal (operators only, 2026-10-15)", cl.d.getElementById("docsNav").style.display === "none" && !cl.d.querySelector("#docsList .row"));
 
 // Straight from onboarding: the walkthrough, then "bookmark this page".
 // One video they film themselves, with its own footage folder.
@@ -188,7 +186,7 @@ await db.exec(`insert into social_videos (client_id,title,hook,outline,body,film
 const tp = await openPage("clients/portal.html", CL, "https://fl.test/clients/newco?tour=1");
 const tc = () => tp.d.getElementById("tourCard");
 const ringed = () => { const s = tp.d.getElementById("tourSpot"); return s && s.style.display !== "none"; };
-chk("the portal opens with a walkthrough, starting at To Do", !!tc() && tc().querySelector("h2").textContent === "To Do" && tc().textContent.includes("Step 1 of 13") && /Your next step/.test(tc().textContent) && ringed(), tc() && tc().textContent);
+chk("the portal opens with a walkthrough, starting at To Do", !!tc() && tc().querySelector("h2").textContent === "To Do" && tc().textContent.includes("Step 1 of 13") && /To film.*To review/.test(tc().textContent) && ringed(), tc() && tc().textContent);
 chk("…and drops ?tour=1 from the address, so a reload doesn't repeat it", !tp.w.location.search.includes("tour"));
 const seen = [], text = {}, onPage = {};
 const practice = {};
@@ -200,8 +198,8 @@ for (let k = 0; k < 13; k++) {
   onPage[h] = tp.d.querySelector(".view.active").id + (h === "To film" ? ":" + tp.d.querySelector("#videoTabs .chip.active").dataset.tab : "");
   tc().querySelector("[data-tour-next]").click(); await settle();
 }
-chk("it walks To Do, To film (Time sensitive only when something is due), a card, Upload footage, film it your way, Finished videos to approve, the review steps, Content Calendar (no Documents, no footage folder)",
-  seen.join("|") === "To Do|To film|Each card is one video|Upload footage on each card|Film it your way|Finished videos to approve|Watch it here|Read the feedback|Comment on any moment|Change your comments|Send changes, or approve|When it comes back|Content Calendar", seen);
+chk("it walks To Do, To film, a card, Upload footage, film it your way, To review, the review steps, Content Calendar (no Documents, no footage folder)",
+  seen.join("|") === "To Do|To film|Each card is one video|Upload footage on each card|Film it your way|To review|Watch it here|Read the feedback|Comment on any moment|Change your comments|Send changes, or approve|When it comes back|Content Calendar", seen);
 const pw = practice["Watch it here"] || {};
 chk("no finished video yet: the review steps run in a practice window (pretend player, two sample comments with marks, a reply, delete buttons, versions)",
   pw.title === "Practice: review a video" && pw.screen && pw.comments === 2 && pw.marks === 1 && pw.reply && pw.del === 2 && pw.version, practice);

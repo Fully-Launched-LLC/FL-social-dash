@@ -36,8 +36,11 @@ chk("saved in order; the empty row is ignored", docs.map(d => d.title + "@" + d.
 // The client's portal has no Documents page and no links to them.
 let cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
 const navs = Array.from(cl.d.querySelectorAll(".nav-item")).map(n => n.textContent.trim());
-const noDocs = () => !cl.d.getElementById("docsList") && !cl.d.querySelector('a[href^="https://docs.google.com"]');
-chk("no Documents page or document links for the client", !navs.includes("Documents") && noDocs(), navs);
+chk("no Documents page or document links for the client", (!navs.includes("Documents") || cl.d.getElementById("docsNav").style.display === "none") && !cl.d.querySelector("#docsList .row") && !cl.d.querySelector('a[href^="https://docs.google.com"]'), navs);
+// The operator viewing the same portal sees every document, on Documents.
+let opPortal = await openPage("clients/portal.html", OP, "https://fl.test/clients/test-fully-launched");
+const opDocs = () => Array.from(opPortal.d.querySelectorAll("#docsList .row")).map(r => r.querySelector("b").textContent);
+chk("operator in the portal: Documents shown, listing both documents", opPortal.d.getElementById("docsNav").style.display !== "none" && opDocs().join() === "Brand Voice,Customer Data", opDocs());
 
 // Remove one, rename the other.
 op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
@@ -62,6 +65,19 @@ chk("Team only is saved per document", docs.map(d => d.title + ":" + d.team_only
 op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
 await openEdit();
 chk("…and loads back into the form", rows()[1].querySelector('[data-doc="team"]').checked && !rows()[0].querySelector('[data-doc="team"]').checked);
+opPortal = await openPage("clients/portal.html", OP, "https://fl.test/clients/test-fully-launched");
+// Not just hidden: a client's login can't read the documents at all (019).
+const readAs = async (uid, table) => {
+  await db.exec("begin");
+  await db.query(`select set_config('role', 'authenticated', true)`);
+  await db.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ sub: uid })]);
+  const n = (await db.query(`select count(*)::int n from ${table}`)).rows[0].n;
+  await db.exec("rollback");
+  return n;
+};
+chk("a client's login reads no documents (database rule, 019)", (await readAs(CL, "social_client_documents")) === 0 && (await readAs(CL, "social_client_generated_docs")) === 0);
+chk("…while the operator's reads them all", (await readAs(OP, "social_client_documents")) === 2);
+chk("operator in the portal sees Team only documents too, marked", opDocs().join() === "Customer Data (2026),Content Research" && opPortal.d.getElementById("docsList").textContent.includes("Team only"), opDocs());
 
 const ED = "00000000-0000-0000-0000-00000000000e";
 await db.exec(`insert into auth.users (id) values ('${ED}');

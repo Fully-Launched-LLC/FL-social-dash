@@ -83,7 +83,7 @@ chk("Revisions needed lists each comment with a Fixed tick, and 0 of 2 fixed", b
 const tick = box().querySelector(`[data-fix="${C1}"]`);
 tick.checked = true; tick.dispatchEvent(new ed.w.Event("change")); await settle();
 chk("ticking saves it and the count goes to 1 of 2", !!(await one(`select resolved_at from social_video_comments where id='${C1}'`)).resolved_at && box().textContent.includes("1 of 2 fixed"));
-chk("this month: 1 video finished, 1 revision round (from their versions)", /This month: 1 video finished · 1 revision round/.test(ed.d.getElementById("monthStat").textContent), ed.d.getElementById("monthStat").textContent);
+chk("no This month line on the editor's own page (2026-10-15)", !ed.d.getElementById("monthStat"));
 
 // Watch with the comments: replies, and a reply from the editor.
 box().querySelector("[data-notes]").click(); await settle();
@@ -120,7 +120,7 @@ chk("no page errors (editor)", !ed.ui.errors.length && !ed2.ui.errors.length && 
 // ── Versions in the review window (the client's) ──
 await db.exec(`insert into social_video_comments (video_id,cut_ref,at_seconds,body,author_role,author_name,author_id,closed_at) values ('${V2}','cutv1000002',3,'Old note on v1','client','Mark','${CL}',now() - interval '2 days')`);
 const cp = await openPage("clients/portal.html", CL, "https://fl.test/clients/hesedea", { fetch: fetchDrive });
-Array.from(cp.d.querySelectorAll("#listFinal .card")).find(c => c.textContent.includes("Second video")).querySelector("[data-review]").click(); await settle();
+Array.from(cp.d.querySelectorAll("#listReview .card")).find(c => c.textContent.includes("Second video")).querySelector("[data-review]").click(); await settle();
 const cb = () => cp.d.getElementById("videoModalBox");
 const sel = cb().querySelector(".rv-version");
 chk("the review window has a version picker, on v2 (latest)", !!sel && sel.value === "2" && Array.from(sel.options).map(o => o.textContent.slice(0, 2)).join(",") === "v2,v1");
