@@ -77,6 +77,22 @@ const readAs = async (uid, table) => {
 };
 chk("a client's login reads no documents (database rule, 019)", (await readAs(CL, "social_client_documents")) === 0 && (await readAs(CL, "social_client_generated_docs")) === 0);
 chk("…while the operator's reads them all", (await readAs(OP, "social_client_documents")) === 2);
+// The folder links hold document links too (brand guidelines, important
+// documents...): the client reads none of that row, only its two footage
+// folders through social_client_footage_folders() (019).
+await db.exec(`insert into social_drive_folder_links (client_id, footage_uploads, final_edits, brand_voice, important_documents, customer_data)
+  values ('${FL}','https://drive/raw','https://drive/final','https://docs.google.com/brand','https://drive/important','https://docs.google.com/cd')
+  on conflict (client_id) do update set footage_uploads=excluded.footage_uploads, final_edits=excluded.final_edits, brand_voice=excluded.brand_voice, important_documents=excluded.important_documents, customer_data=excluded.customer_data`);
+chk("a client's login reads no folder-link row (no brand guidelines or document folder links)", (await readAs(CL, "social_drive_folder_links")) === 0);
+await db.exec("begin");
+await db.query(`select set_config('role', 'authenticated', true)`);
+await db.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ sub: CL })]);
+const ff = (await db.query("select * from social_client_footage_folders()")).rows;
+await db.exec("rollback");
+chk("…only its two footage folders, and nothing else", ff.length === 1 && Object.keys(ff[0]).join() === "footage_uploads,final_edits" && ff[0].footage_uploads === "https://drive/raw" && ff[0].final_edits === "https://drive/final", ff);
+chk("…while the operator still reads the whole row", (await readAs(OP, "social_drive_folder_links")) === 1);
+const clientPage = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
+chk("the client's page never loads a document link", !/docs\.google\.com|drive\/important/.test(clientPage.d.body.innerHTML) && !clientPage.ui.log.some(l => l.table === "social_drive_folder_links" || l.table === "social_client_documents" || l.table === "social_client_generated_docs"), clientPage.ui.log.filter(l => l.table).map(l => l.table));
 chk("operator in the portal sees Team only documents too, marked", opDocs().join() === "Customer Data (2026),Content Research" && opPortal.d.getElementById("docsList").textContent.includes("Team only"), opDocs());
 
 const ED = "00000000-0000-0000-0000-00000000000e";
