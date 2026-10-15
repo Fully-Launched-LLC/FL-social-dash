@@ -58,10 +58,10 @@ chk("password saved, and they're marked set up", ed.ui.log.some(l => l.updateUse
 
 const tc = () => ed.d.getElementById("tourCard");
 const seen = [], text = {};
-chk("then the walkthrough starts", !!tc() && tc().textContent.includes("Step 1 of 8"), tc() && tc().textContent);
-for (let k = 0; k < 8; k++) { const h = tc().querySelector("h2").textContent; seen.push(h); text[h] = tc().textContent; tc().querySelector("[data-tour-next]").click(); await settle(); }
-chk("it walks To Do, its two tabs, when an edit is due, revisions, the three steps, Calendar (no documents step)",
-  seen.join("|") === "To Do|To edit and To make revisions|When an edit is due|Revisions|1. Get the raw footage|2. Edit it|3. Upload the finished video|Calendar", seen);
+chk("then the walkthrough starts", !!tc() && tc().textContent.includes("Step 1 of 9"), tc() && tc().textContent);
+for (let k = 0; k < 9; k++) { const h = tc().querySelector("h2").textContent; seen.push(h); text[h] = tc().textContent; tc().querySelector("[data-tour-next]").click(); await settle(); }
+chk("it walks To Do, its two tabs, when an edit is due, revisions, the three steps, Calendar, Carousels (no documents step)",
+  seen.join("|") === "To Do|To edit and To make revisions|When an edit is due|Revisions|1. Get the raw footage|2. Edit it|3. Upload the finished video|Calendar|Carousels", seen);
 chk("…explaining revisions with their moments, and where footage and uploads go", /Watch with the comments/.test(text["Revisions"]) && /Open the raw footage/.test(text["1. Get the raw footage"]) && /Open the upload folder/.test(text["3. Upload the finished video"]));
 chk("…explaining the Edit by date, and never mentioning documents", /Edit by/.test(text["When an edit is due"]) && !Object.values(text).some(t => /documents|Customer Data|Content Research/.test(t)));
 chk("then: bookmark this page", tc().textContent.includes("Bookmark this page") && tc().textContent.includes("fl.test"));

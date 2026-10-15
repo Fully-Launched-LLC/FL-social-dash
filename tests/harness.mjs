@@ -8,7 +8,7 @@ import { readFileSync } from "fs";
 
 import { fileURLToPath } from "url";
 export const REPO = fileURLToPath(new URL("../", import.meta.url));
-const MIGRATIONS = ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "008_client_onboarding.sql", "009_voice_memo_by_text.sql", "010_onboarding_uploads.sql", "011_client_questions.sql", "012_team_only_documents.sql", "013_editor_onboarding.sql", "014_video_review.sql", "015_skip_onboarding.sql", "016_editor_tools.sql", "017_revision_rounds.sql", "018_review_copies.sql", "019_documents_operator_only.sql", "020_editors_read_generated_docs.sql", "021_editors_no_documents.sql"];
+const MIGRATIONS = ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "008_client_onboarding.sql", "009_voice_memo_by_text.sql", "010_onboarding_uploads.sql", "011_client_questions.sql", "012_team_only_documents.sql", "013_editor_onboarding.sql", "014_video_review.sql", "015_skip_onboarding.sql", "016_editor_tools.sql", "017_revision_rounds.sql", "018_review_copies.sql", "019_documents_operator_only.sql", "020_editors_read_generated_docs.sql", "021_editors_no_documents.sql", "022_carousels.sql"];
 
 export async function freshDb() {
   const passthrough = v => v;
@@ -50,7 +50,7 @@ export function makeHarness(db) {
     return p;
   }
 
-  const JSONB = new Set(["editor_brief"]);
+  const JSONB = new Set(["editor_brief", "slides", "sources"]);
   function makeClient(uid, log) {
     const q = ident => '"' + ident + '"';
     function builder(table) {
@@ -128,6 +128,7 @@ export function makeHarness(db) {
         upload: async (path, file, o) => { log.push({ upload: { bucket, path, type: o && o.contentType, size: file && file.size } }); return { data: { path }, error: null }; },
         createSignedUrl: async path => ({ data: { signedUrl: "https://signed/" + path }, error: null }),
         createSignedUrls: async paths => ({ data: paths.map(path => ({ path, signedUrl: "https://signed/" + path })), error: null }),
+        remove: async paths => { log.push({ remove: { bucket, paths } }); return { data: paths.map(name => ({ name })), error: null }; },
       }) },
     };
   }

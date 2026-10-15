@@ -623,3 +623,24 @@ body.navy-work .main .card {
   color-scheme:light; color:var(--ink); border-color:transparent;
 }
 body.navy-work .main .chip-row { box-shadow:none; }
+
+/* ---------- Carousels (migration 022) ---------- */
+.gold-i { color:var(--gold); font-style:italic; font-family:"Libre Baskerville", Georgia, serif; }
+.doc-body code { font-family:ui-monospace, Menlo, monospace; font-size:.92em; padding:1px 6px; border-radius:6px; border:1px solid var(--border); }
+.car-slides { display:grid; gap:10px; margin:12px 0; }
+.car-slide { border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
+.car-slide-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px; }
+.car-slide-head b { font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--sub); }
+.car-copy { padding:4px 10px; font-size:12px; }
+.car-text { font-size:15px; line-height:1.5; }
+.car-photo { font-size:13px; color:var(--sub); margin-top:8px; }
+.car-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:10px; margin:10px 0; }
+.car-thumb { margin:0; }
+.car-thumb img { width:100%; aspect-ratio:4/5; object-fit:cover; border-radius:8px; border:1px solid var(--border); display:block; }
+.car-thumb figcaption { font-size:12px; color:var(--sub); display:flex; justify-content:space-between; align-items:center; margin-top:4px; }
+.car-remove { padding:0 8px; font-size:14px; line-height:1.4; }
+.car-note { border-left:3px solid var(--gold); padding:8px 12px; margin:10px 0; }
+.car-edit-slide { border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:10px; display:grid; gap:6px; }
+.car-section { margin:0 0 16px; }
+.car-label { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--sub); margin-bottom:6px; }
+.car-edit-slide textarea { width:100%; }

@@ -20,6 +20,7 @@
   <div class="sync-badge" id="operatorBadge" style="display:none">Viewing as operator</div>
   <div class="nav-item active" data-view="queue">To Do</div>
   <div class="nav-item" data-view="calendar">Calendar</div>
+  <div class="nav-item" data-view="carousels">Carousels</div>
 </nav>
 
 <main class="main">
@@ -32,6 +33,15 @@
     <div class="chip-row" id="editorChips"></div>
     <div class="chip-row" id="edTabs"></div>
     <div id="queueList"></div>
+  </section>
+
+  <!-- Carousels Tait gives them (migration 022): the copy, the guide, and
+       where they upload the finished slides. -->
+  <section class="view" id="view-carousels">
+    <div class="page-head"><h1>Carousels</h1><p>Each carousel Tait gives you: the words for every slide, what photo to find, and where to upload the finished slides.</p></div>
+    <div class="card"><div class="row"><div class="left"><b>Carousel guide</b><div class="meta">How they should look, where to find the photos, and the steps. Read it before your first one.</div></div>
+      <button class="primary" id="carGuideRead">Read the guide</button></div></div>
+    <div id="carCards"></div>
   </section>
 
   <!-- First visit from the invite email: create a password, then the walkthrough. -->
@@ -397,7 +407,101 @@ function renderCalendar() {
     calState, renderCalendar);
 }
 
-function renderAll() { renderEditorChips(); renderEdTabs(); renderQueue(); renderCalendar(); }
+function renderAll() { renderEditorChips(); renderEdTabs(); renderQueue(); renderCalendar(); if (CAR_LOADED) renderCarousels(); }
+
+// ---------- Carousels (migration 022) ----------
+// An editor reads only the carousels assigned to them (RLS); the operator
+// sees every assigned one, narrowed by the editor filter.
+let CAROUSELS = [], CAR_GUIDES = {}, CAR_UPLOADS = {}, CAR_LOADED = false;
+async function loadCarousels() {
+  const [res, guides] = await Promise.all([
+    sbClient.from("social_carousels").select("*").not("editor_id", "is", null).order("position"),
+    sbClient.from("social_carousel_guides").select("client_id,body_md"),
+  ]);
+  if (res.error) { document.getElementById("carCards").innerHTML = `<div class="card"><div class="empty">Couldn't load carousels: ${escapeHtml(res.error.message)}</div></div>`; return; }
+  CAROUSELS = (res.data || []).filter(c => c.status !== "idea");
+  CAR_GUIDES = {};
+  (guides.data || []).forEach(g => { CAR_GUIDES[g.client_id] = g.body_md; });
+  CAR_UPLOADS = await loadCarouselUploads(CAROUSELS.map(c => c.id));
+  CAR_LOADED = true;
+  renderCarousels();
+}
+// With them first (sent back, then new), then waiting on Tait, then done.
+const CAR_EDITOR_ORDER = ["changes", "with_editor", "to_review", "approved", "posted"];
+function renderCarousels() {
+  const mine = ROLE === "operator" && editorFilter !== "all" ? CAROUSELS.filter(c => c.editor_id === editorFilter) : CAROUSELS;
+  const list = mine.slice().sort((a, b) => CAR_EDITOR_ORDER.indexOf(a.status) - CAR_EDITOR_ORDER.indexOf(b.status) || a.position - b.position);
+  const el = document.getElementById("carCards");
+  el.innerHTML = list.map(c => {
+    const editable = ["with_editor", "changes"].includes(c.status);
+    const client = (CLIENTS[c.client_id] || {}).name || "";
+    const ups = CAR_UPLOADS[c.id] || [];
+    return `<div class="card" data-carcard="${escapeHtml(c.id)}">
+      <div class="row" style="padding-top:0"><div class="left"><b>${escapeHtml(c.title)}</b><div class="meta">${[client, c.format, c.category, ROLE === "operator" ? (EDITOR_BY_ID[c.editor_id] || {}).name : ""].filter(Boolean).map(escapeHtml).join(" · ")}</div></div>
+        ${statusDot(c.status, CAROUSEL_STATUS, c.status === "changes")}</div>
+      ${c.status === "changes" && c.review_note ? `<div class="car-note"><b>Tait sent it back:</b> ${escapeHtml(c.review_note)}</div>` : ""}
+      ${c.status === "to_review" ? `<p class="meta">With Tait for review. It comes back here if he wants changes.</p>` : ""}
+      ${c.notes ? `<div class="car-note"><b>Note:</b> ${escapeHtml(c.notes)}</div>` : ""}
+      ${carouselSlidesHtml(c)}
+      <div class="car-section"><b class="car-label">Your slides</b>${carouselGalleryHtml(ups, editable)}</div>
+      <div class="modal-actions" style="justify-content:flex-start">
+        ${editable ? `<label class="btn">Upload slides<input type="file" accept="image/*" multiple data-upload="${escapeHtml(c.id)}" style="display:none"></label>
+        <button class="accent" data-submit="${escapeHtml(c.id)}"${ups.length ? "" : " disabled"}>Send to Tait for review</button>` : ""}
+        <button data-guide="${escapeHtml(c.client_id)}">Guide</button>
+        <span class="meta" data-upmsg="${escapeHtml(c.id)}"></span></div>
+    </div>`;
+  }).join("") || `<div class="card"><div class="empty">No carousels for you yet. When Tait gives you one, it shows up here.</div></div>`;
+  wireCarouselCopy(el);
+  el.querySelectorAll("[data-guide]").forEach(b => b.onclick = () => openCarouselGuide(CAR_GUIDES[b.dataset.guide]));
+  el.querySelectorAll("[data-upload]").forEach(inp => inp.onchange = () => uploadCarouselSlides(inp.dataset.upload, Array.from(inp.files || [])));
+  el.querySelectorAll("[data-remove]").forEach(b => b.onclick = () => removeCarouselSlide(b.dataset.remove));
+  el.querySelectorAll("[data-submit]").forEach(b => b.onclick = () => submitCarousel(b.dataset.submit, b));
+}
+document.getElementById("carGuideRead").onclick = () => {
+  const first = CAROUSELS[0];
+  openCarouselGuide(first ? CAR_GUIDES[first.client_id] : Object.values(CAR_GUIDES)[0]);
+};
+// The picked images go in file-name order (01.png, 02.png, …), after any
+// already uploaded.
+async function uploadCarouselSlides(id, files) {
+  const c = CAROUSELS.find(x => x.id === id);
+  if (!c || !files.length) return;
+  const msg = document.querySelector(`[data-upmsg="${id}"]`);
+  files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  const start = (CAR_UPLOADS[id] || []).length;
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    if (msg) msg.textContent = `Uploading ${i + 1} of ${files.length}…`;
+    try {
+      const path = `${c.client_id}/${c.id}/${Date.now()}-${i}-${safeName(f.name)}`;
+      await uploadToBucket("carousels", path, f);
+      const { error } = await sbClient.from("social_carousel_uploads").insert({ carousel_id: c.id, storage_path: path, file_name: f.name, position: start + i });
+      if (error) throw error;
+    } catch (e) {
+      alert(`Couldn't upload ${f.name}: ${e.message || e}`);
+      break;
+    }
+  }
+  Object.assign(CAR_UPLOADS, await loadCarouselUploads([id]));
+  renderCarousels();
+}
+async function removeCarouselSlide(uploadId) {
+  const u = Object.values(CAR_UPLOADS).flat().find(x => x.id === uploadId);
+  if (!u) return;
+  const { error } = await sbClient.from("social_carousel_uploads").delete().eq("id", uploadId);
+  if (error) { alert("Couldn't remove it: " + error.message); return; }
+  await sbClient.storage.from("carousels").remove([u.storage_path]);
+  CAR_UPLOADS[u.carousel_id] = (CAR_UPLOADS[u.carousel_id] || []).filter(x => x.id !== uploadId);
+  renderCarousels();
+}
+async function submitCarousel(id, btn) {
+  btn.disabled = true;
+  const { data, error } = await sbClient.rpc("social_editor_submit_carousel", { p_carousel_id: id });
+  if (error) { btn.disabled = false; alert(error.message); return; }
+  const c = CAROUSELS.find(x => x.id === id);
+  if (c && data) Object.assign(c, data);
+  renderCarousels();
+}
 
 // ---------- first visit: password, then the walkthrough ----------
 // An editor who hasn't created a password yet (setup_at, migration 013;
@@ -424,6 +528,8 @@ const EDITOR_TOUR = [
     title: "3. Upload the finished video", html: () => "<b>Open the upload folder</b>, put the finished video there named after the video, then click <b>Finished</b>. It goes to us to review." },
   { go: () => tourView("calendar"), el: () => document.querySelector('.nav-item[data-view="calendar"]'),
     title: "Calendar", html: () => "Every edit-by date on a calendar, so you can plan your week. Click a video to open it." },
+  { go: () => tourView("carousels"), el: () => document.querySelector('.nav-item[data-view="carousels"]'),
+    title: "Carousels", html: () => "Carousels Tait gives you: the words for every slide, which photo to find, and the <b>guide</b> for how they should look. Upload the finished slides here and send them to Tait." },
 ];
 // Switch To Do's tab for a step (to the other one when this one is empty).
 function tourEdTab(key) {
@@ -472,6 +578,7 @@ function showPasswordSetup() {
     view.classList.remove("active"); view.innerHTML = "";
     initRouter("queue");
     await loadData();
+    await loadCarousels();
     startEditorTour();
   };
 }
@@ -511,6 +618,7 @@ initAuthGate({
     if (needsPassword) return showPasswordSetup();
     initRouter("queue");
     await loadData();
+    await loadCarousels();
     if (q.get("tour") === "1" || (ROLE === "editor" && q.get("setup") === "1")) startEditorTour();
   },
 });
