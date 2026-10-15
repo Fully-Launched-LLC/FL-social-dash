@@ -1,5 +1,6 @@
 // Client documents: the operator adds, orders and removes them on
-// Clients → Edit; the client sees them on their portal's Documents page.
+// Clients → Edit; editors see them on each video. Clients don't: no
+// Documents page in their portal (no Drive access, 2026-10-15).
 import { freshDb, makeHarness, checker } from "./harness.mjs";
 
 const db = await freshDb();
@@ -32,12 +33,11 @@ op.d.getElementById("cpSave").click(); await settle();
 let docs = (await db.query("select title, url, position from social_client_documents order by position")).rows;
 chk("saved in order; the empty row is ignored", docs.map(d => d.title + "@" + d.position).join() === "Brand Voice@0,Customer Data@1", docs);
 
-// Client sees them on Documents, under Content Calendar.
+// The client's portal has no Documents page and no links to them.
 let cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
 const navs = Array.from(cl.d.querySelectorAll(".nav-item")).map(n => n.textContent.trim());
-chk("Documents sits right under Content Calendar", navs.indexOf("Documents") === navs.indexOf("Content Calendar") + 1, navs);
-const links = () => Array.from(cl.d.querySelectorAll("#docsList .row")).map(r => r.querySelector("b").textContent + "→" + r.querySelector("a").href);
-chk("client sees both documents with Open links", links().join() === "Brand Voice→https://docs.google.com/voice,Customer Data→https://docs.google.com/customers", links());
+const noDocs = () => !cl.d.getElementById("docsList") && !cl.d.querySelector('a[href^="https://docs.google.com"]');
+chk("no Documents page or document links for the client", !navs.includes("Documents") && noDocs(), navs);
 
 // Remove one, rename the other.
 op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
@@ -48,8 +48,7 @@ rows()[0].querySelector('[data-doc="title"]').value = "Customer Data (2026)";
 op.d.getElementById("cpSave").click(); await settle();
 docs = (await db.query("select title from social_client_documents")).rows;
 chk("removed and renamed", docs.map(d => d.title).join() === "Customer Data (2026)", docs);
-cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
-chk("client sees the update", links().join() === "Customer Data (2026)→https://docs.google.com/customers", links());
+
 
 // Team only (migration 012): Content Research is for Tait and the editors.
 op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
@@ -63,8 +62,7 @@ chk("Team only is saved per document", docs.map(d => d.title + ":" + d.team_only
 op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
 await openEdit();
 chk("…and loads back into the form", rows()[1].querySelector('[data-doc="team"]').checked && !rows()[0].querySelector('[data-doc="team"]').checked);
-cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
-chk("the client never sees a Team only document", links().join() === "Customer Data (2026)→https://docs.google.com/customers", links());
+
 const ED = "00000000-0000-0000-0000-00000000000e";
 await db.exec(`insert into auth.users (id) values ('${ED}');
   insert into social_editors (id,name,email) values ('${ED}','Ed','ed@x');
@@ -75,10 +73,6 @@ const edLinks = Array.from(ed.d.querySelectorAll("#queueList a.btn")).map(a => a
 chk("the editor sees the client's documents on the video, Content Research included", edLinks.includes("Customer Data (2026)") && edLinks.includes("Content Research"), edLinks);
 await db.exec("delete from social_videos");
 
-// Empty state.
-await db.exec("delete from social_client_documents");
-cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
-chk("empty state", cl.d.getElementById("docsList").textContent.includes("No documents yet"));
 
 chk("no page errors", !op.ui.errors.length && !cl.ui.errors.length, [op.ui.errors, cl.ui.errors]);
 console.log(`${counts.pass} passed, ${counts.fail} failed`);

@@ -19,8 +19,6 @@
   <div class="sync-badge" id="operatorBadge" style="display:none">Viewing as operator</div>
   <div class="nav-item active" data-view="videos">To Do</div>
   <div class="nav-item" data-view="calendar">Content Calendar</div>
-  <div class="nav-item" data-view="documents">Documents</div>
-  <a class="nav-item" id="footageNav" href="#" target="_blank" rel="noopener" style="text-decoration:none;display:none">My footage folder ↗</a>
 </nav>
 
 <main class="main">
@@ -30,17 +28,9 @@
 
   <section class="view active" id="view-videos">
     <div id="onboardBanner"></div>
-    <div class="page-head"><h1>To Do</h1><p id="videosSubhead"></p></div>
-    <div class="card" id="footageCard" style="display:none">
-      <div class="row" style="border:none;padding:0">
-        <div class="left"><b>Your footage folder</b>
-          <div class="meta">Every clip for your videos lives here — what you upload and what we film.</div></div>
-        <a class="btn primary" id="footageCardLink" href="#" target="_blank" rel="noopener">Open folder</a>
-      </div>
-    </div>
+    <div class="page-head"><h1>To Do</h1></div>
+    <div id="nextStep"></div>
     <div class="chip-row" id="videoTabs"></div>
-
-    <div class="empty" id="allEmpty" style="display:none">Nothing needs you right now — stay tuned for your finished edits.</div>
 
     <div data-panel="urgent" style="display:none">
       <h2 class="panel-title">Time sensitive</h2>
@@ -50,9 +40,15 @@
 
     <div data-panel="film">
       <h2 class="panel-title">To film</h2>
-      <p class="meta" style="margin:8px 0 12px">Every video that still needs filming. If you're filming it, use its script, its outline or just answer its question, tap <b>Upload footage</b> on its card to add the clips, then tap <b>Video has been filmed</b>. If we're filming it, approve the idea or tap <b>Suggest changes</b>. Each card says who films it.</p>
+      <p class="meta" style="margin:8px 0 12px">Film each one your way: read the script, follow the outline, or just answer its question. Then tap <b>Upload footage</b>, add the clips, and tap <b>Video has been filmed</b>.</p>
       <div class="chip-row" id="filmCats" style="display:none"></div>
       <div id="listToFilm"></div>
+    </div>
+
+    <div data-panel="ideas" style="display:none">
+      <h2 class="panel-title">Ideas to approve</h2>
+      <p class="meta" style="margin:8px 0 12px">We'll make these. Approve each idea, or tap <b>Suggest changes</b>.</p>
+      <div id="listIdeas"></div>
     </div>
 
     <div data-panel="final" style="display:none">
@@ -65,11 +61,6 @@
         <div id="listChanges"></div>
       </div>
     </div>
-  </section>
-
-  <section class="view" id="view-documents">
-    <div class="page-head"><h1>Documents</h1><p>Your most important documents, in one place. Each opens in Google Drive.</p></div>
-    <div class="card"><div id="docsList"></div></div>
   </section>
 
   <section class="view" id="view-calendar">
@@ -101,8 +92,6 @@
 
 let CLIENT = null;          // the social_clients row
 let DRIVE_FOLDERS = {};     // from social_drive_folder_links
-let DOCUMENTS = [];         // from social_client_documents, in order
-let GEN_DOCS = [];          // built from their onboarding voice memo (social_client_generated_docs)
 let ONBOARDING = null;      // their social_client_onboarding row, if any
 let VIDEOS = [];            // from social_videos (videoFromRow shape)
 let HIDDEN_CONCEPTS = 0;    // operator view only: ideas the client can't see (sent back with suggestions)
@@ -115,27 +104,25 @@ let filmCategory = "";
 try { filmCategory = localStorage.getItem("fs-film-category") || ""; } catch (e) {}
 
 const filmedBy = v => filmedByOf(v, CLIENT.client_system);
-const clientFilms = () => CLIENT.client_system !== "concierge";   // the client's default
 
-// "All" gathers everything the client should see, grouped by kind.
-// To film is every video that still needs filming, whoever films it
-// (Tait's call, 2026-10-01): client-filmed ones to film, and ours, with
-// Approve the idea / Suggest changes on the card while it's still an idea.
-const needsFilming = v => ["concept_pending", "to_film"].includes(v.status) || (filmedBy(v) === "client" && v.status === "filmed");
+// To Do holds only what the client can act on (client feedback,
+// 2026-10-15: "I have 20 videos to film but I'm not sure which are for me
+// to film"). Videos we're making with nothing for them to do stay off it;
+// they're on the Content Calendar.
+const needsFilming = v => filmedBy(v) === "client" && ["concept_pending", "to_film", "filmed"].includes(v.status);
+const ideaToApprove = v => filmedBy(v) === "us" && v.status === "concept_pending";
 const ACTION_TABS = [
-  { key: "film",  label: "To film",                    match: needsFilming, shownFor: () => true },
-  { key: "final", label: "Finished videos to approve", match: v => v.status === "client_review", shownFor: () => true },
+  { key: "film",  label: "To film",                    match: needsFilming,  shownFor: () => false },
+  { key: "ideas", label: "Ideas to approve",           match: ideaToApprove, shownFor: () => false },
+  { key: "final", label: "Finished videos to approve", match: v => v.status === "client_review", shownFor: () => false },
 ];
 // Time sensitive: the client's own next step on a video, and by when, if
 // that's overdue or within CLIENT_SOON_DAYS. Its own tab, left out of All
 // (everything in it is also under its kind).
 const CLIENT_SOON_DAYS = 3;
 function clientTask(v) {
-  if (needsFilming(v)) {
-    if (filmedBy(v) === "client") return { task: "Film it", date: v.dueToFilm };
-    if (v.status === "concept_pending") return { task: "Approve the idea", date: v.dueToFilm || v.postDate };
-    return null;   // we're filming it: nothing for the client to do
-  }
+  if (needsFilming(v)) return { task: "Film it", date: v.dueToFilm };
+  if (ideaToApprove(v)) return { task: "Approve the idea", date: v.dueToFilm || v.postDate };
   if (v.status === "client_review") return { task: "Approve the finished video", date: (calendarEntries({ video: v }).find(e => e.kind === "approve") || {}).date || v.postDate };
   return null;
 }
@@ -144,10 +131,10 @@ function clientTimeSensitive(v) {
   return t && t.date && t.date <= addDaysISO(todayISO(), CLIENT_SOON_DAYS) ? t : null;
 }
 const TABS = [{ key: "all", label: "All", match: v => ACTION_TABS.some(t => t.match(v)), shownFor: () => true },
-  { key: "urgent", label: "Time sensitive", match: v => !!clientTimeSensitive(v), shownFor: () => true, apart: true },
+  { key: "urgent", label: "Time sensitive", match: v => !!clientTimeSensitive(v), shownFor: () => false, apart: true },
   ...ACTION_TABS];
-// A tab shows when it fits how this client usually works, or when it has
-// something in it (a one-off video filmed the other way).
+// A tab shows only when it has something in it (All always does, unless
+// there's nothing at all, and then the tabs are hidden).
 function tabsForClient() { return TABS.filter(t => t.shownFor() || videosInTab(t.key).length); }
 function videosInTab(key) { return VIDEOS.filter(TABS.find(t => t.key === key).match); }
 
@@ -455,10 +442,29 @@ function renderOperatorBanner() {
       ${HIDDEN_CONCEPTS ? `<br>${HIDDEN_CONCEPTS} idea(s) with suggestions are back with you. Edit and send them again from the operator dashboard.` : ""}</div></div>` : "";
 }
 
+// The one thing to do first, at the top of To Do (client feedback,
+// 2026-10-15: "it's pretty busy and I don't know what to do first").
+// Finished videos first (they're closest to posting), then ideas, then
+// filming. Nothing to do: say so plainly.
+function renderNextStep() {
+  const n = k => videosInTab(k).length, s = c => c === 1 ? "" : "s";
+  const firstFilm = videosInTab("film").map(v => v.dueToFilm).filter(Boolean).sort()[0];
+  const step = n("final") ? { tab: "final", title: `Approve ${n("final")} finished video${s(n("final"))}`, body: "Watch each one and approve it for posting, or ask for changes.", btn: "Review them" }
+    : n("ideas") ? { tab: "ideas", title: `Approve ${n("ideas")} idea${s(n("ideas"))}`, body: "Read each idea and approve it, or suggest changes. We'll make the video.", btn: "See the ideas" }
+    : n("film") ? { tab: "film", title: `Film ${n("film")} video${s(n("film"))}`, body: firstFilm ? `The first one is due <b>${escapeHtml(niceDate(firstFilm))}</b>.` : "Each card has the script and how to film it.", btn: "See what to film" }
+    : null;
+  const el = document.getElementById("nextStep");
+  el.innerHTML = step ? `
+    <div class="card" style="border-color:var(--gold)"><div class="row" style="border:0;padding:0">
+      <div class="left"><span class="meta" style="text-transform:uppercase;font-size:0.72rem">Your next step</span><br><b>${step.title}</b><div class="meta">${step.body}</div></div>
+      <button class="accent" data-next="${step.tab}">${step.btn}</button></div></div>`
+    : `<div class="card"><b>Hang tight, nothing for you right now.</b>
+      <div class="meta">We'll reach out by email when we need more content from you or need you to approve a video.</div></div>`;
+  const b = el.querySelector("[data-next]");
+  if (b) b.onclick = () => { activeTab = b.dataset.next; renderVideoTabs(); };
+}
+
 function renderVideos() {
-  document.getElementById("videosSubhead").textContent = clientFilms()
-    ? "Film your videos, then approve the finished edits for posting."
-    : "Approve ideas, then approve the finished edits for posting. We handle the filming.";
   const byPostDate = (a, b) => (a.postDate || "9999").localeCompare(b.postDate || "9999")
     || (a.title || "").localeCompare(b.title || "", undefined, { numeric: true });
   const byFilmDate = (a, b) => (a.dueToFilm || "9999").localeCompare(b.dueToFilm || "9999");
@@ -469,6 +475,7 @@ function renderVideos() {
     vids.forEach(v => el.appendChild(videoCard(v)));
   };
   renderToFilm(byFilmDate, byPostDate, fill);
+  fill("listIdeas", videosInTab("ideas").sort(byPostDate), "");
   fill("listFinal", videosInTab("final").sort(byPostDate), "No finished videos waiting. They'll show up here as soon as they're edited.");
   const changing = VIDEOS.filter(v => ["with_editor", "in_review"].includes(v.status) && canWatch(v)).sort(byPostDate);
   document.getElementById("changesWrap").style.display = changing.length ? "" : "none";
@@ -479,6 +486,7 @@ function renderVideos() {
     const t = clientTimeSensitive(urgent[i]), late = t.date < todayISO();
     card.insertAdjacentHTML("afterbegin", `<div class="badge" style="margin-bottom:8px;border-color:var(--accent);color:var(--accent)">${escapeHtml(t.task)} · ${late ? "late, was due " : t.date === todayISO() ? "today, " : "by "}${escapeHtml(niceDate(t.date))}</div>`);
   });
+  renderNextStep();
   renderVideoTabs();
 }
 
@@ -492,7 +500,7 @@ function renderToFilm(byFilmDate, byPostDate, fill) {
   const row = document.getElementById("filmCats");
   if (!cats.some(Boolean)) {
     row.style.display = "none";
-    fill("listToFilm", vids, "Nothing to film right now. Stay tuned for your finished edits.");
+    fill("listToFilm", vids, "Nothing to film right now.");
     return;
   }
   if (filmCategory && !cats.includes(filmCategory)) filmCategory = "";
@@ -528,7 +536,7 @@ function renderVideoTabs() {
     p.style.display = (all ? !apart && tabs.some(t => t.key === p.dataset.panel) && videosInTab(p.dataset.panel).length : p.dataset.panel === activeTab) ? "" : "none";
     p.querySelector(".panel-title").style.display = all ? "" : "none";
   });
-  document.getElementById("allEmpty").style.display = all && !videosInTab("all").length ? "" : "none";
+  document.getElementById("videoTabs").style.display = videosInTab("all").length ? "" : "none";
 }
 
 function renderCalendar() {
@@ -569,21 +577,6 @@ function renderAgenda() {
     </div>`).join("") : `<div class="empty">Nothing posts this month.</div>`;
 }
 
-function renderDocuments() {
-  const gen = GEN_DOCS.map(d => `
-    <div class="row"><div class="left"><b>${escapeHtml(d.title)}</b><div class="meta">Built from your onboarding voice memo</div></div>
-      <button class="primary" data-gen="${escapeHtml(d.id)}">Read</button></div>`).join("");
-  const drive = DOCUMENTS.map(d => `
-    <div class="row"><div class="left"><b>${escapeHtml(d.title)}</b></div>
-      <a class="btn primary" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">Open</a></div>`).join("");
-  document.getElementById("docsList").innerHTML = gen + drive
-    || `<div class="empty">No documents yet.${IS_OPERATOR ? " Add them on the operator dashboard: Clients → Edit → Documents." : ""}</div>`;
-  document.querySelectorAll("#docsList [data-gen]").forEach(b => b.onclick = () => {
-    const d = GEN_DOCS.find(x => x.id === b.dataset.gen);
-    openModal(`<h2>${escapeHtml(d.title)}</h2><div class="doc-body">${docBodyHtml(d)}</div>
-      <div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Close</button></div>`);
-  });
-}
 // A client who hasn't finished onboarding gets a way back into it.
 function renderOnboardBanner() {
   const o = ONBOARDING;
@@ -628,22 +621,13 @@ async function startApp(user, access) {
   document.getElementById("brandName").textContent = CLIENT.name;
   document.getElementById("operatorBadge").style.display = IS_OPERATOR ? "block" : "none";
 
+  // Folder links are still read for each video's Upload footage button and
+  // the review player; the client never gets a general Drive folder link.
   const { data: folderRow } = await sbClient.from("social_drive_folder_links").select("*").eq("client_id", CLIENT.id).maybeSingle();
   DRIVE_FOLDERS = folderRow ? { footageUploads: folderRow.footage_uploads, finalEdits: folderRow.final_edits } : {};
-  if (DRIVE_FOLDERS.footageUploads) {
-    ["footageNav", "footageCardLink"].forEach(id => { document.getElementById(id).href = DRIVE_FOLDERS.footageUploads; });
-    document.getElementById("footageNav").style.display = "";
-    document.getElementById("footageCard").style.display = "";
-  }
 
-  const [{ data: docs }, gen, ob] = await Promise.all([
-    sbClient.from("social_client_documents").select("*").eq("client_id", CLIENT.id).order("position"),
-    sbClient.from("social_client_generated_docs").select("*").eq("client_id", CLIENT.id).order("kind"),
-    sbClient.from("social_client_onboarding").select("*").eq("client_id", CLIENT.id).maybeSingle(),
-  ]);
-  DOCUMENTS = docs || [];
-  GEN_DOCS = (gen && gen.data) || [];
-  ONBOARDING = (ob && ob.data) || null;
+  const { data: ob } = await sbClient.from("social_client_onboarding").select("*").eq("client_id", CLIENT.id).maybeSingle();
+  ONBOARDING = ob || null;
   // Invited but no password yet: the password page first. Nothing here
   // shows until they've made one. (Not for clients who finished the older
   // onboarding before the password step existed.)
@@ -651,7 +635,6 @@ async function startApp(user, access) {
     location.replace("/welcome");
     return;
   }
-  renderDocuments();
   renderOnboardBanner();
 
   initRouter("videos");
@@ -669,10 +652,11 @@ async function startApp(user, access) {
 // nothing is waiting): the player and its comment marks, reading the
 // feedback and replies, a comment at a moment or on the whole video,
 // deleting a comment, Send changes or Approve, and versions when it comes
-// back (Tait, 2026-10-07 and 10-09) → Content Calendar → Documents (what
-// each one is), then "bookmark this page" (Tait, 2026-10-06). The footage
+// back (Tait, 2026-10-07 and 10-09) → Content Calendar, then "bookmark this
+// page" (Tait, 2026-10-06). No Documents step: clients don't get Drive
+// access (2026-10-15). The footage
 // folder is left out on purpose: each video's clips go in through its own
-// card. Steps that don't apply (nothing to film, no documents) are left
+// card. Steps that don't apply (nothing to film, nothing to review) are left
 // out.
 const tourGo = view => { const n = document.querySelector(`.nav-item[data-view="${view}"]`); if (n && !n.classList.contains("active")) n.click(); };
 const tourTab = key => { if (activeTab !== key) { activeTab = key; renderVideoTabs(); } };
@@ -681,17 +665,6 @@ const tourTab = key => { if (activeTab !== key) { activeTab = key; renderVideoTa
 // steps only show on one they film.
 const tourUpload = c => c && [...c.querySelectorAll("a.btn")].find(a => a.textContent === "Upload footage");
 const tourCard = () => { const cards = [...document.querySelectorAll("#listToFilm > .card")]; return cards.find(tourUpload) || cards[0]; };
-// What each document is, by its name (Tait's words).
-function docSummaries() {
-  const about = [
-    [/customer/i, "a summary of your target customer: who they are, what they struggle with and what they want."],
-    [/identity|voice/i, "who you are and what you do: your story, your offer and how you talk."],
-    [/idea/i, "your ideas, organized into videos."],
-  ];
-  const names = DOCUMENTS.map(d => d.title).concat(GEN_DOCS.map(d => d.title));
-  const rows = names.map(n => { const m = about.find(([re]) => re.test(n)); return m ? `<li><b>${escapeHtml(n.replace(/\s*\(.*\)\s*$/, ""))}</b>: ${m[1]}</li>` : ""; }).join("");
-  return rows ? `<ul class="tour-list">${rows}</ul>` : "";
-}
 // The review steps open the review window on the first finished video
 // waiting for them (once), and point at its parts. With none waiting (a new
 // client), they open a practice window instead: a pretend video with two
@@ -732,18 +705,19 @@ const inReview = sel => () => {
 };
 const TOUR = [
   { go: () => { tourGo("videos"); tourTab("all"); }, el: () => document.querySelector('.nav-item[data-view="videos"]'),
-    title: "To Do", html: () => "This is where everything you need to do is found: videos to film, ideas to approve, and finished videos to approve before they post." },
+    title: "To Do", html: () => "Everything you need to do is here. Start with <b>Your next step</b> at the top. When there's nothing for you, it says so, and we'll email you when we need you." },
   { go: () => tourGo("videos"), el: () => document.querySelector('#videoTabs .chip[data-tab="urgent"]'),
     title: "Time sensitive", html: () => "Anything due in the next 3 days, or already late, shows up here. Check it first whenever you sign in." },
   { go: () => { tourGo("videos"); tourTab("film"); }, el: () => tourCard() ? document.querySelector('#videoTabs .chip[data-tab="film"]') : null,
-    title: "To film", html: () => "Every video that still needs filming, grouped by topic. Pick a topic at the top to film a few in one sitting." },
+    title: "To film", html: () => "The videos for you to film, grouped by topic. Pick a topic at the top to film a few in one sitting." },
   { go: () => { tourGo("videos"); tourTab("film"); }, el: () => tourCard(),
     title: "Each card is one video", html: () => "Click a video's title to open it. Inside you'll find:<ul class=\"tour-list\"><li><b>Hook</b>: the first line, the one that makes people stop scrolling.</li><li><b>Outline</b>: the main points, in order.</li><li><b>Script</b>: the whole thing, word for word.</li></ul>" },
   { go: () => { tourGo("videos"); tourTab("film"); }, el: () => tourUpload(tourCard()),
     title: "Upload footage on each card", html: () => "Every video has its own <b>Upload footage</b> button. Put that video's clips there, in its own card, so our editor gets the right clips for the right video. Then tap <b>Video has been filmed</b>." },
   { go: () => { tourGo("videos"); tourTab("film"); }, el: () => tourUpload(tourCard()) && tourCard(),
     title: "Film it your way", html: () => "You choose how to capture it. Read the <b>script</b>, talk through the <b>outline</b> in your own words, or just answer the <b>question</b> under How to film it. Whatever works best for you." },
-  { go: () => { tourGo("videos"); tourTab("final"); }, el: () => document.querySelector('#videoTabs .chip[data-tab="final"]'),
+  // Its tab only shows once a video is waiting; until then, the next-step card.
+  { go: () => { tourGo("videos"); tourTab("final"); }, el: () => document.querySelector('#videoTabs .chip[data-tab="final"]') || document.querySelector("#nextStep .card"),
     title: "Finished videos to approve", html: () => "Once a video is edited, it shows up here for you to review and approve before it posts." + (tourReviewVideo() ? "" : " Next, we'll show you how, on a practice video.") },
   { go: () => { tourGo("videos"); tourTab("final"); }, el: () => document.querySelector("#listFinal > .card [data-review]"),
     title: "Review the video", html: () => "Click <b>Review the video</b> to watch the finished edit and tell us what you think." },
@@ -761,8 +735,6 @@ const TOUR = [
     title: "When it comes back", html: () => "Your editor makes the changes and the new cut comes back to you here as the next version (v2). Until then you can still watch the video from its card. Pick an earlier version to see the comments you left on it, which ones were fixed, and your editor's replies. Then review it again the same way." },
   { go: () => tourGo("calendar"), el: () => document.querySelector('.nav-item[data-view="calendar"]'),
     title: "Content Calendar", html: () => "Prefer to see it on a calendar? Every video is on the day it posts, and the green blocks show when to film it. Click any one to open it." },
-  { go: () => tourGo("documents"), el: () => DOCUMENTS.length || GEN_DOCS.length ? document.querySelector('.nav-item[data-view="documents"]') : null,
-    title: "Documents", html: () => "Your most important documents, in one place." + docSummaries() },
 ];
 function startTour() {
   history.replaceState(null, "", location.pathname + location.hash);

@@ -739,30 +739,28 @@ are raised (white offset shadows). On phones the sidebar becomes a top bar.
 
 ### Client portal — `/clients/<slug>`
 
-One shared file; the slug comes from the URL. **To Do** (a "Your
-footage folder" card, then tabs: **All** — the default, every action the
-client has to take, grouped under headings; **Time sensitive** — the
-client's own next step on each video (film it, approve the idea, approve the
-finished video) when it's late or due within 3 days, soonest first, kept out
-of All; **To film** — every video that still needs filming, whoever films
-it (Tait's call, 2026-10-01): client-filmed ones, and we-film ones (with
-Approve idea / Suggest changes while still an idea, then "We're filming it"
-with no buttons), grouped by category (the "<Category> · <ID> · " start of
-a title, `videoCategory` in shell.js; Fully Launched: AI Systems, Social
-Media, Websites, E-commerce) with a filter row to film one category in a
-sitting (Tait, 2026-10-02), remembered per browser; a client without
-categories gets the plain list; Finished videos to approve), **Content Calendar**
+One shared file; the slug comes from the URL. Two pages only (client
+feedback, 2026-10-15: too busy, unclear what to do first, no need for
+Drive): **To Do** and **Content Calendar**. No Documents page and no footage
+folder link: clients never get general Google Drive access.
+
+**To Do** opens with **Your next step**: one card naming the single thing to
+do first (finished videos to approve, then ideas to approve, then videos to
+film) with a button to that list, or, when there's nothing, "Hang tight,
+nothing for you right now. We'll reach out by email when we need more
+content from you or need you to approve a video." Under it, tabs that show
+only when they have something: **All**, **Time sensitive** (the client's own
+next step due within 3 days or late, soonest first, kept out of All),
+**To film** (only videos the client films, grouped by category with a
+filter row, remembered per browser; Tait, 2026-10-02), **Ideas to approve**
+(we-film ideas: Approve idea / Suggest changes), **Finished videos to
+approve**. Videos we're making with nothing for the client to do stay off
+To Do; they're on the Content Calendar. **Content Calendar**
 (each post date shows the video's full title and a colored pill per
 platform, with a "Posts on" key above; 🎥 film dates for client-filmed
 ideas; under the grid, "What posts each day": the month as a list with
-each video's hook and platforms by name), **Documents**
-(the client's important Google Drive docs — `social_client_documents`,
-added on the operator's Clients → Edit; clients read only their own, and
-never **Team only** ones (`team_only`, migration 012, a checkbox per
-document; Content Research is team only, Tait 2026-10-06), which the
-documents email leaves out too) and **My footage
-folder ↗** (the client's Drive folder — what they upload and what we
-film). Every video card starts with its post date, where it's at (in plain
+each video's hook and platforms by name). The operator still adds documents
+on Clients → Edit; editors see them, clients don't. Every video card starts with its post date, where it's at (in plain
 words) and a pill per platform it posts on. Then only what's needed:
 client-filmed ideas — film-by date, hook, script, outline, how to film it,
 upload link; we-film ideas — when we film it, hook, script, outline, and
