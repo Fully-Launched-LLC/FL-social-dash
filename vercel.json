@@ -32,6 +32,9 @@
     },
     "api/invite-editor.js": {
       "maxDuration": 30
+    },
+    "api/notify-review.js": {
+      "maxDuration": 30
     }
   }
 }
