@@ -27,6 +27,7 @@ function world(o) {
     if (u.includes("/rest/v1/social_client_onboarding") && method === "GET") return json(o.onboarding && (!u.includes("invited_email=") || u.includes("invited_email=eq." + encodeURIComponent(o.onboarding.invited_email))) ? [o.onboarding] : []);
     if (u.includes("/rest/v1/social_client_documents") && method === "GET") return json(o.docLinks || []);
     if (u.includes("/rest/v1/social_editors") && method === "GET") return json((o.editors || []).filter(e => u.includes(e.id) || u.includes(encodeURIComponent(e.email))));
+    if (u.includes("/rest/v1/social_videos") && method === "GET") return json(o.reviewVideos || []);
     if (u.includes("/rest/v1/social_client_generated_docs") && method === "GET" && o.builtDocs) return json(o.builtDocs);
     if (u.includes("/rest/v1/")) return json(null, 201);
     if (u.includes("/auth/v1/admin/generate_link")) return o.generateLink(JSON.parse(init.body), json);
@@ -49,6 +50,7 @@ const invite = require("../api/invite.js");
 const build = require("../api/build-documents.js");
 const inviteEditor = require("../api/invite-editor.js");
 const forgot = require("../api/forgot-password.js");
+const notifyReview = require("../api/notify-review.js");
 const C1 = "11111111-1111-1111-1111-111111111111", C2 = "22222222-2222-2222-2222-222222222222";
 const base = {
   users: { opTok: { id: "op1", email: "tait@x" }, clTok: { id: "cl1", email: "pat@x" }, edTok: { id: "ed1", email: "ed@x" } },
@@ -213,6 +215,31 @@ chk("invite-editor: a client's login can't become an editor (and nothing is save
   c = fw({ resend: (b, json) => b.from.includes("other.test") ? json({ message: "The other.test domain is not verified." }, 403) : json({ id: "x" }) });
   r = await call(forgot, null, { email: "op@fl.test" });
   chk("forgot: an unverified sender → falls back to the Fully Launched default", r.status === 200 && sent(c).at(-1).from === "Fully Launched <hello@fullylaunched.com>", sent(c).map(x => x.from));
+}
+
+// ── notify-review: "You have N videos ready to review" ──
+{
+  setEnv({ RESEND_API_KEY: "re_1" });
+  const vids = [{ title: "Grad Gig Local", post_date: "2026-10-19" }, { title: "Student vs. Contractor", post_date: "2026-10-21" }, { title: "How to Sign up", post_date: "2026-10-23" }];
+  let c = world({ ...base, reviewVideos: vids }); let r = await call(notifyReview, null, { clientId: C1 });
+  chk("notify-review: not signed in → 401", r.status === 401);
+  r = await call(notifyReview, "clTok", { clientId: C1 });
+  chk("notify-review: a client can't send it → 403", r.status === 403);
+  r = await call(notifyReview, "opTok", { clientId: C2 });
+  chk("notify-review: no contact email → 400", r.status === 400 && /contact email/.test(r.body.error), r.body);
+  c = world({ ...base, reviewVideos: [] }); r = await call(notifyReview, "opTok", { clientId: C1 });
+  chk("notify-review: nothing waiting → 400, no email", r.status === 400 && /no videos/.test(r.body.error) && !c.some(x => x.url.startsWith("https://api.resend.com")), r.body);
+  c = world({ ...base, reviewVideos: vids }); r = await call(notifyReview, "opTok", { clientId: C1 });
+  const q = c.find(x => x.url.includes("/rest/v1/social_videos"));
+  chk("notify-review: only this client's client_review videos", q && q.url.includes("status=eq.client_review") && q.url.includes("client_id=eq." + C1), q && q.url);
+  const m = JSON.parse(c.find(x => x.url.startsWith("https://api.resend.com")).body);
+  chk("notify-review: sent to the contact, says 3", r.status === 200 && r.body.sent === true && r.body.count === 3 && m.to[0] === "pat@newco.test" && m.subject === "You have 3 videos ready to review", [r.body, m.subject]);
+  chk("notify-review: branded, greets by first name, lists each video with its day, one button to the portal", m.html.includes("/assets/logo-white.png") && m.html.includes("background:#04101f") && m.html.includes("Hi Pat,") && m.html.includes("ready to review in your Fully Social portal") && m.html.includes("Grad Gig Local") && m.html.includes("Mon, Oct 19") && m.html.includes('href="https://social.fullylaunched.com/clients/newco"') && m.html.includes(">Review them<"), m.html.length);
+  chk("notify-review: plain-text version too", m.text.includes("Hi Pat,") && m.text.includes("- How to Sign up (posts Fri, Oct 23)") && m.text.includes("Review them: https://social.fullylaunched.com/clients/newco"), m.text);
+  const one = require("../api/_email.js").reviewReadyEmail({ contactName: "", videos: [vids[0]], portal: "https://p", slug: "x" });
+  chk("notify-review: one video → '1 video', no name → 'Hi there,'", one.subject === "You have 1 video ready to review" && one.html.includes("Hi there,"));
+  c = world({ ...base, reviewVideos: vids, resend: (b, json) => json({ message: "Rate limited" }, 429) }); r = await call(notifyReview, "opTok", { clientId: C1 });
+  chk("notify-review: the email fails → says so", r.status === 502 && /didn't send/.test(r.body.error), r.body);
 }
 
 console.log(`${counts.pass} passed, ${counts.fail} failed`);

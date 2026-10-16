@@ -83,6 +83,27 @@ function resetPasswordEmail({ link, portal }) {
   return { subject, html, text };
 }
 
+// "Videos ready to review" (Tait, 2026-10-16): sent by the operator from
+// the Clients page when the client has finished videos waiting on them.
+// Lists each video with its post date, one button to their portal.
+function reviewReadyEmail({ contactName, videos, portal, slug }) {
+  const first = firstName(contactName);
+  const hi = first ? `Hi ${first},` : "Hi there,";
+  const n = videos.length;
+  const what = n === 1 ? "1 video" : `${n} videos`;
+  const subject = `You have ${what} ready to review`;
+  const link = portal + "/clients/" + encodeURIComponent(slug);
+  const when = d => d ? new Date(d + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }) : "";
+  const list = videos.map(v => `<tr><td style="padding:3px 32px;${BODY}">&bull; ${esc(v.title)}${v.post_date ? ` <span style="color:rgba(255,255,255,.6)">(posts ${esc(when(v.post_date))})</span>` : ""}</td></tr>`).join("");
+  const html = frame({ portal, title: subject, rows: `
+        <tr><td style="padding:10px 32px 10px;${BODY};font-size:16px">${esc(hi)}<br><br>You have ${esc(what)} ready to review in your Fully Social portal.</td></tr>
+        ${list}
+        <tr><td style="padding:14px 32px 6px;${SMALL}">Watch each one, then approve it or leave a note on the moment you'd like changed.</td></tr>
+        <tr><td style="padding:12px 32px 28px">${button(link, "Review them")}</td></tr>` });
+  const text = `${hi}\n\nYou have ${what} ready to review in your Fully Social portal.\n\n${videos.map(v => "- " + v.title + (v.post_date ? " (posts " + when(v.post_date) + ")" : "")).join("\n")}\n\nWatch each one, then approve it or leave a note on the moment you'd like changed.\n\nReview them: ${link}`;
+  return { subject, html, text };
+}
+
 // Send one email through Resend, from EMAIL_FROM (or the default). If
 // EMAIL_FROM is on a domain Resend hasn't verified (e.g. a typo), try once
 // more from the default sender and say so.
@@ -105,4 +126,4 @@ async function sendEmail({ to, subject, html, text, from: fromOverride }) {
   return mail.ok ? { ok: true, ...(warning ? { warning } : {}) } : { ok: false, message: m.message || String(mail.status) };
 }
 
-module.exports = { inviteEmail, editorInviteEmail, resetPasswordEmail, sendEmail, DEFAULT_FROM };
+module.exports = { inviteEmail, editorInviteEmail, resetPasswordEmail, reviewReadyEmail, sendEmail, DEFAULT_FROM };

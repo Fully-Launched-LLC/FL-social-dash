@@ -380,7 +380,10 @@ fully-social-os/
                                social_editors row, "Welcome to the Fully
                                Launched editor dashboard" email),
                                build-documents.js (documents from a pasted
-                               transcript); _lib.js, _email.js
+                               transcript), notify-review.js ("You have N
+                               videos ready to review" email to the client,
+                               from Clients → "Email: N to review");
+                               _lib.js, _email.js
   ONBOARDING-SETUP.md          the steps only Tait can do to turn onboarding on
     config.example.js          template for supabase/config.js (gitignored —
                                the real Supabase URL/anon key, local dev only)

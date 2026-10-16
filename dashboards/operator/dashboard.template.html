@@ -877,6 +877,7 @@ function renderAllClients() {
     const f = c.driveFolders;
     const missing = [!f.footageUploads && "raw footage folder", !f.finalEdits && "finished video folder", !f.brandVoice && "brand guidelines"].filter(Boolean);
     const count = VIDEOS.filter(x => x.client.id === c.id && x.video.status !== "rejected").length;
+    const toReview = VIDEOS.filter(x => x.client.id === c.id && x.video.status === "client_review").length;
     return `<div class="row"><div class="left"><b>${escapeHtml(c.name)}</b>
       <div class="meta">/clients/${escapeHtml(c.slug)} · ${escapeHtml(WHO_FILMS[c.clientSystem] || c.clientSystem)} · ${count} video(s)</div>
       ${missing.length ? `<div class="meta" style="color:var(--red)">Missing: ${missing.join(", ")}</div>` : ""}
@@ -887,6 +888,7 @@ function renderAllClients() {
       <div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn primary" style="font-size:0.75rem;padding:4px 9px" href="/clients/${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Open portal</a>
       <button style="font-size:0.75rem;padding:4px 9px" onclick="openOnboarding('${c.id}')">Onboarding</button>
       ${INVITES_ENABLED ? `<button style="font-size:0.75rem;padding:4px 9px" onclick="inviteClient('${c.id}', this)">${c.onboarding && c.onboarding.invited_at ? "Resend invite" : "Invite to portal"}</button>` : ""}
+      ${toReview ? `<button style="font-size:0.75rem;padding:4px 9px" onclick="notifyReview('${c.id}', ${toReview}, this)">Email: ${toReview} to review</button>` : ""}
       <button style="font-size:0.75rem;padding:4px 9px" onclick="openClientPanel('${c.id}')">Edit</button></div></div>`;
   }).join("");
 }
@@ -1061,6 +1063,27 @@ async function sendInvite(clientId) {
     openModal(`<h2>The invite didn't go out</h2><p style="line-height:1.55">${escapeHtml(out.error || "Something went wrong.")}</p>
       <div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Got it</button></div>`);
   }
+}
+
+// "You have N videos ready to review" (api/notify-review.js): emails the
+// client's contact a list of the videos waiting on their approval.
+async function notifyReview(clientId, n, btn) {
+  const c = CLIENT_BY_ID[clientId];
+  if (!c) return;
+  if (!c.contactEmail) { alert(`Add ${c.name}'s contact email first (Edit).`); return; }
+  if (!confirm(`Email ${c.contactEmail} that ${n} video${n === 1 ? " is" : "s are"} ready to review?`)) return;
+  if (btn) btn.disabled = true;
+  let out;
+  try {
+    const { data } = await sbClient.auth.getSession();
+    const res = await fetch("/api/notify-review", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + ((data && data.session && data.session.access_token) || "") }, body: JSON.stringify({ clientId }) });
+    out = await res.json().catch(() => ({ error: "No response from the email service." }));
+    if (!res.ok && !out.error) out.error = "The email service answered " + res.status + ".";
+  } catch (e) { out = { error: "Couldn't reach the email service: " + (e.message || e) }; }
+  if (btn) btn.disabled = false;
+  openModal(out.sent
+    ? `<h2>Email sent</h2><p style="line-height:1.55">${escapeHtml(c.name)} got "You have ${out.count} video${out.count === 1 ? "" : "s"} ready to review" at <b>${escapeHtml(out.email)}</b>.</p>${out.warning ? `<p class="meta">${escapeHtml(out.warning)}</p>` : ""}<div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Got it</button></div>`
+    : `<h2>The email didn't go out</h2><p style="line-height:1.55">${escapeHtml(out.error || "Something went wrong.")}</p><div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Got it</button></div>`);
 }
 
 // ---------- Editors ----------
