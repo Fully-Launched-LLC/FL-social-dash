@@ -2,7 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#04101f" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="apple-mobile-web-app-title" content="Fully Social" />
+<link rel="apple-touch-icon" href="/assets/app-icon.png" />
+<link rel="icon" type="image/png" href="/assets/app-icon.png" />
 <title>Fully Launched — Operator</title>
 <style>/*__SHELL_CSS__*/</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -18,11 +25,13 @@
   <div class="brand"><img src="/assets/logo-white.png" alt="Fully Launched"></div>
   <div class="sync-badge" id="authUserBadge"></div>
   <div class="nav-group">Workspace</div>
+  <div class="nav-list">
   <div class="nav-item active" data-view="todo" data-label="To Do">To Do<span class="n" id="navTodoN" hidden></span></div>
-  <div class="nav-item" data-view="calendar" data-label="Content Calendar">Content Calendar</div>
+  <div class="nav-item" data-view="calendar" data-label="Content Calendar"><span><span class="nl-long">Content </span>Calendar</span></div>
   <div class="nav-item" data-view="clients" data-label="Clients">Clients<span class="n" id="navClientsN" hidden></span></div>
   <div class="nav-item" data-view="editors" data-label="Editors">Editors</div>
   <a class="nav-item" href="/editor/dashboard.html" target="_blank" rel="noopener" style="text-decoration:none">Editor portal ↗</a>
+  </div>
 </nav>
 
 <main class="main">

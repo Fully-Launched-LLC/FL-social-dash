@@ -61,6 +61,9 @@ def main():
     (DIST_DIR / "assets").mkdir(parents=True, exist_ok=True)
     shutil.copy(TEMPLATE_DIR / "logo-white.png", DIST_DIR / "assets" / "logo-white.png")
     print("built dashboards/dist/assets/logo-white.png")
+    # The home-screen icon, when a page is saved to a phone's home screen.
+    shutil.copy(TEMPLATE_DIR / "app-icon.png", DIST_DIR / "assets" / "app-icon.png")
+    print("built dashboards/dist/assets/app-icon.png")
 
     # Example carousel slides shown in the carousel guide (migration 022).
     examples = TEMPLATE_DIR / "carousel-examples"
