@@ -659,15 +659,18 @@ body.navy-work .main .chip-row { box-shadow:none; }
 @media (max-width:760px) {
   body { font-size:15px; }
   #appShell { flex-direction:column; }
-  /* The header: logo left, who's signed in (and Sign out) right. */
+  /* The header: logo (and the client's name) left, Sign out right. The
+     email and "Viewing as operator" are hidden here; the page's own
+     banner says who's looking. */
   .sidebar { width:100%; flex:0 0 auto; height:auto; position:sticky; top:0; z-index:900; overflow:visible;
     border-right:none; border-bottom:1px solid var(--border);
     display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top)) 16px 10px; }
   .brand { flex-direction:row; align-items:center; padding:0; gap:8px; min-width:0; }
   .brand img { width:112px; }
   .brand .brand-sub { font-size:0.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .sync-badge { padding:0; margin-left:auto; font-size:11px; text-align:right; min-height:0; max-width:52%; overflow-wrap:anywhere; }
-  .sync-badge ~ .sync-badge { margin-left:8px; }
+  .sync-badge { padding:0; margin-left:auto; font-size:0; min-height:0; flex:none; }
+  .sync-badge a { font-size:13px; color:rgba(255,255,255,.8) !important; padding:8px 0; }
+  #operatorBadge { display:none !important; }
   .nav-group { display:none; }
   /* The bottom tab bar. */
   .nav-list { position:fixed; left:0; right:0; bottom:0; z-index:900; display:flex; gap:4px;
@@ -779,5 +782,5 @@ html.rv-locked { overflow:hidden; }
 .rv-dwrap.rv-fake-full { position:fixed; inset:0; z-index:3000; background:#000; display:flex;
   padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
 .rv-dwrap.rv-fake-full .rv-frame { width:100%; height:100%; max-height:none; aspect-ratio:auto; border-radius:0; margin:0; }
-.rv-dwrap.rv-fake-full .rv-dclose { display:block; position:absolute; top:calc(12px + env(safe-area-inset-top)); right:12px; z-index:2;
+.rv-dwrap.rv-fake-full .rv-dclose { display:block; position:absolute; top:calc(12px + env(safe-area-inset-top)); left:12px; z-index:2;
   background:rgba(4,16,31,.85); color:#fff; border:1px solid rgba(255,255,255,.4); border-radius:999px; padding:10px 16px; min-height:0; }
