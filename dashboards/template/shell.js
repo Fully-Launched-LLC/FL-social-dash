@@ -35,10 +35,19 @@ function addDaysISO(iso, days) {
 const CAL_MONTH_MAX = 4;
 // The phone layout's width; keep in step with the @media (max-width:760px)
 // rules in shell.css.
-const isPhone = () => !!(window.matchMedia && window.matchMedia("(max-width: 760px)").matches);
+const isPhone = () => !!(typeof window !== "undefined" && window.matchMedia && window.matchMedia("(max-width: 760px)").matches);
+// A calendar redraws when the screen crosses that width (a phone turned
+// sideways, a window resized), so it's a list or a grid as it should be.
+let CAL_REDRAW = null;
+if (typeof window !== "undefined" && window.matchMedia) {
+  const mq = window.matchMedia("(max-width: 760px)");
+  const redraw = () => { if (CAL_REDRAW) CAL_REDRAW(); };
+  if (mq.addEventListener) mq.addEventListener("change", redraw); else if (mq.addListener) mq.addListener(redraw);
+}
 function renderMonthCalendar(container, byDay, chipHtml, state, rerender) {
   const now = new Date(), today = todayISO(), week = state.view === "week";
   const phoneMonth = !week && isPhone();
+  CAL_REDRAW = rerender;
   const thisSunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
   const weekStart = new Date(thisSunday.getFullYear(), thisSunday.getMonth(), thisSunday.getDate() + 7 * (state.weekOffset || 0));
   // In week view, offset follows the week's month (the client's day-by-day
