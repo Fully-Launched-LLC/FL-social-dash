@@ -304,14 +304,10 @@ input[type=date]::-webkit-calendar-picker-indicator { filter:invert(1); cursor:p
 .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 @media (max-width:760px) {
   .grid-2 { grid-template-columns:1fr; }
-  #appShell { flex-direction:column; }
-  .sidebar { width:100%; flex:0 0 auto; height:auto; position:static; border-right:none; border-bottom:1px solid var(--border);
-    display:flex; flex-wrap:wrap; align-items:center; gap:4px; padding:12px 16px; }
-  .brand { width:100%; padding:0 0 4px; } .brand img { width:120px; }
-  .sync-badge { width:100%; padding:0 0 6px; }
-  .main { padding:20px 16px 60px; }
   .modal-dates { grid-template-columns:1fr; }
 }
+/* The tab links; on a phone, the bottom tab bar (see "Phone layout"). */
+.nav-list { display:block; }
 
 .hidden { display:none !important; }
 
@@ -651,3 +647,137 @@ body.navy-work .main .chip-row { box-shadow:none; }
 .doc-body a { color:inherit; text-decoration:underline; }
 .md-gallery.md-embeds { grid-template-columns:repeat(auto-fill, minmax(326px, 1fr)); }
 .md-ig { width:100%; min-width:326px; height:640px; border:1px solid var(--border); border-radius:12px; background:#fff; }
+
+/* ---------- Phone layout (Tait, 2026-10-16) ----------
+   "Simple and easy to go in on your phone and review everything." Under
+   760px wide: a slim navy header with the logo, the tabs as a bar along the
+   bottom like an app, tabs and client pills that scroll sideways instead of
+   piling up, video lists as stacked cards, popups that fill the screen, big
+   enough buttons to tap, and 16px text in every field (smaller makes an
+   iPhone zoom in when you tap one). Keep the width in step with isPhone()
+   in shell.js. */
+@media (max-width:760px) {
+  body { font-size:15px; }
+  #appShell { flex-direction:column; }
+  /* The header: logo left, who's signed in (and Sign out) right. */
+  .sidebar { width:100%; flex:0 0 auto; height:auto; position:sticky; top:0; z-index:900; overflow:visible;
+    border-right:none; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top)) 16px 10px; }
+  .brand { flex-direction:row; align-items:center; padding:0; gap:8px; min-width:0; }
+  .brand img { width:112px; }
+  .brand .brand-sub { font-size:0.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sync-badge { padding:0; margin-left:auto; font-size:11px; text-align:right; min-height:0; max-width:52%; overflow-wrap:anywhere; }
+  .sync-badge ~ .sync-badge { margin-left:8px; }
+  .nav-group { display:none; }
+  /* The bottom tab bar. */
+  .nav-list { position:fixed; left:0; right:0; bottom:0; z-index:900; display:flex; gap:4px;
+    background:#04101f; border-top:1px solid rgba(255,255,255,.14);
+    padding:6px 6px calc(6px + env(safe-area-inset-bottom)); }
+  .nav-list .nav-item { flex:1 1 0; min-width:0; margin:0; min-height:50px; padding:6px 4px; border:0; border-radius:12px;
+    box-shadow:none; background:transparent; color:rgba(255,255,255,.7); font-size:12.5px; font-weight:600; line-height:1.2;
+    flex-direction:column; justify-content:center; gap:3px; text-align:center; transform:none !important; }
+  .nav-list .nav-item.active { background:#ffffff; color:#04101f; box-shadow:none; }
+  .nav-list .nav-item .n { height:17px; min-width:20px; font-size:10px; padding:0 5px; }
+  .nl-long { display:none; }
+  .main { padding:16px 16px calc(96px + env(safe-area-inset-bottom)); }
+  .hide-phone { display:none !important; }
+
+  /* Page tops. */
+  .topbar { padding-bottom:12px; margin-bottom:16px; }
+  .crumbs { display:none; }
+  .page-head { margin-bottom:14px; }
+  .page-head h1 { font-size:24px; }
+  .page-head p { font-size:14px; }
+  .page-actions { width:100%; }
+  .page-actions > button, .page-actions > .btn { flex:1 1 auto; }
+  /* Tabs and the client switch: one row that scrolls sideways. */
+  .chip-row, .seg { flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; overscroll-behavior-x:contain; }
+  .chip-row::-webkit-scrollbar, .seg::-webkit-scrollbar { display:none; }
+  .chip-row { margin-bottom:16px; }
+  .chip { padding:10px 13px; flex:0 0 auto; }
+  .seg { margin:0; width:100%; border-radius:14px; }
+  .seg .chip { padding:8px 14px; }
+
+  /* Bigger taps, and no zoom-in when a field is tapped. */
+  button, .btn { min-height:42px; padding:10px 16px; font-size:14px; }
+  .nav-list .nav-item, .chip, .cal-block, .cal-more, .rv-mark, .rv-time, .car-remove, .tour-card button { min-height:0; }
+  textarea, input[type=text], input[type=email], input[type=password], input[type=date], input[type=number], input[type=search], input[type=url], select { font-size:16px; }
+  .row select, .vrow select, .rv-version, .ed-filter select { font-size:16px; }
+  .card { padding:16px; border-radius:14px; }
+  .row .left { min-width:0; flex:1 1 100%; }
+
+  /* Video lists: each video a card, top to bottom: the title, then when
+     it posts beside its status, the platforms, then its buttons. */
+  .vtable { overflow:visible; margin:0 -16px -16px; }
+  .vhead { display:none; }
+  .vrow { min-width:0; grid-template-columns:minmax(0,1fr) auto; gap:8px 12px; padding:14px 16px; }
+  .vrow > :nth-child(1) { grid-row:1; grid-column:1 / -1; }
+  .vrow > :nth-child(2) { grid-row:2; grid-column:1; }
+  .vrow > :nth-child(3) { grid-row:3; grid-column:1 / -1; }
+  .vrow > :nth-child(4) { grid-row:2; grid-column:2; justify-self:end; }
+  .vrow > .acts { grid-row:4; grid-column:1 / -1; justify-content:flex-start; }
+  .vrow > .note-line { grid-row:5; margin-top:0; }
+  .vrow > :nth-child(3):empty { display:none; }
+  .vrow .title { font-size:15px; }
+  .vrow .acts .btn, .vrow .acts button { padding:9px 14px; font-size:13.5px; min-height:40px; border-radius:10px; }
+  .vtable .vrow .acts select { min-height:40px; }
+
+  /* Popups fill the screen, with the ✕ always in reach. The page behind
+     them doesn't scroll. */
+  .modal-backdrop { padding:0; background:var(--card); }
+  .modal-box { max-width:none; min-height:100%; border:0; border-radius:0; box-shadow:none;
+    padding:calc(16px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
+  .modal-close { position:fixed; top:calc(10px + env(safe-area-inset-top)); right:12px; z-index:1100; width:40px; height:40px;
+    border-radius:999px; font-size:1.05rem; color:var(--ink); background:var(--card); box-shadow:0 2px 10px rgba(4,16,31,.18); }
+  .modal-box h2 { margin-right:48px; font-size:1.2rem; }
+  .modal-actions > button, .modal-actions > .btn { flex:1 1 auto; }
+  .modal-links .btn { flex:1 1 auto; text-align:center; }
+
+  /* The review window: the video first, as big as fits, then comments. */
+  .rv { gap:14px; }
+  .rv-frame { max-height:none; border-radius:10px; }
+  .rv-tall .rv-frame, .rv-tall .rv-video { height:min(72vh, 640px); }
+  .rv-ctrls { gap:6px; font-size:0.85rem; }
+  .rv-ctrls button { min-height:36px; padding:6px 10px; font-size:0.85rem; }
+  .rv-ctrls .rv-full { border-color:#ffffff; font-weight:700; }
+  .rv-track { height:34px; }
+  .rv-rail, .rv-fill { top:15px; } .rv-head-dot { top:10px; width:14px; height:14px; margin-left:-7px; }
+  .rv-side { border-radius:12px; }
+  .rv-compose textarea { font-size:16px; }
+  .rv-compose-row { flex-wrap:wrap; }
+  .rv-add { width:100%; }
+
+  /* The calendar: the month as a list of days (renderMonthCalendar). */
+  .cal-head { gap:10px; }
+  .cal-title { font-size:1.3rem; width:100%; }
+  .cal-grid.phone-list { grid-template-columns:1fr; gap:10px; }
+  .cal-lday { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:10px; }
+  .cal-lday.today { border-color:var(--ink); }
+  .cal-lhead { font-size:0.8rem; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.04em; margin:2px 2px 8px; }
+  .cal-lday.today .cal-lhead { color:var(--ink); }
+  .cal-lday .cal-block { padding:10px 12px; font-size:0.9rem; }
+  .cal-lday .cal-block .s { font-size:0.75rem; }
+  .cal-lday .cal-block .t { -webkit-line-clamp:3; }
+
+  /* Wide galleries fit the screen. */
+  .md-gallery.md-embeds { grid-template-columns:1fr; }
+  .md-ig { min-width:0; }
+  .tour-card:not(.tour-bookmark) { bottom:calc(84px + env(safe-area-inset-bottom)) !important; }
+}
+/* No page scroll behind an open popup (phones), or behind a full-screen
+   video (anywhere). */
+@media (max-width:760px) { html:has(.modal-backdrop:not(.hidden)) { overflow:hidden; } }
+html.rv-locked { overflow:hidden; }
+
+/* Google's player at full screen. .rv-fake-full is the iPhone version: the
+   frame covers the screen (see showDrivePlayer). */
+.rv-dwrap { position:relative; }
+.rv-dfull { margin-top:8px; width:100%; font-weight:700; }
+.rv-dclose { display:none; }
+.rv-dwrap:fullscreen, .rv-dwrap:-webkit-full-screen { background:#000; display:flex; }
+.rv-dwrap:fullscreen .rv-frame, .rv-dwrap:-webkit-full-screen .rv-frame { width:100%; height:100%; max-height:none; aspect-ratio:auto; border-radius:0; }
+.rv-dwrap.rv-fake-full { position:fixed; inset:0; z-index:3000; background:#000; display:flex;
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
+.rv-dwrap.rv-fake-full .rv-frame { width:100%; height:100%; max-height:none; aspect-ratio:auto; border-radius:0; margin:0; }
+.rv-dwrap.rv-fake-full .rv-dclose { display:block; position:absolute; top:calc(12px + env(safe-area-inset-top)); right:12px; z-index:2;
+  background:rgba(4,16,31,.85); color:#fff; border:1px solid rgba(255,255,255,.4); border-radius:999px; padding:10px 16px; min-height:0; }

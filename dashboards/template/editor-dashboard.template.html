@@ -2,7 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#04101f" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="apple-mobile-web-app-title" content="Fully Social" />
+<link rel="apple-touch-icon" href="/assets/app-icon.png" />
+<link rel="icon" type="image/png" href="/assets/app-icon.png" />
 <title>Fully Launched — Editor</title>
 <style>/*__SHELL_CSS__*/</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -18,9 +25,11 @@
   <div class="brand"><img src="/assets/logo-white.png" alt="Fully Launched"></div>
   <div class="sync-badge" id="authUserBadge"></div>
   <div class="sync-badge" id="operatorBadge" style="display:none">Viewing as operator</div>
+  <div class="nav-list">
   <div class="nav-item active" data-view="queue">To Do</div>
   <div class="nav-item" data-view="calendar">Calendar</div>
   <div class="nav-item" data-view="carousels">Carousels</div>
+  </div>
 </nav>
 
 <main class="main">

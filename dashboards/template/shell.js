@@ -33,8 +33,12 @@ function addDaysISO(iso, days) {
 // Month/Week switch change them and call rerender(). A busy day in the
 // month shows its first few entries and "+N more", which opens its week.
 const CAL_MONTH_MAX = 4;
+// The phone layout's width; keep in step with the @media (max-width:760px)
+// rules in shell.css.
+const isPhone = () => !!(window.matchMedia && window.matchMedia("(max-width: 760px)").matches);
 function renderMonthCalendar(container, byDay, chipHtml, state, rerender) {
   const now = new Date(), today = todayISO(), week = state.view === "week";
+  const phoneMonth = !week && isPhone();
   const thisSunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
   const weekStart = new Date(thisSunday.getFullYear(), thisSunday.getMonth(), thisSunday.getDate() + 7 * (state.weekOffset || 0));
   // In week view, offset follows the week's month (the client's day-by-day
@@ -58,6 +62,14 @@ function renderMonthCalendar(container, byDay, chipHtml, state, rerender) {
       return `<div class="cal-wcol"><div class="cal-dayhead ${iso === today ? "today" : ""}">${d.toLocaleDateString(undefined, { weekday: "short" })} <b>${d.getDate()}</b></div>
         <div class="cal-wbody">${items.map(chipHtml).join("") || '<div class="cal-none">Nothing</div>'}</div></div>`;
     }).join("");
+  } else if (phoneMonth) {
+    // On a phone, seven columns are too narrow to read: the month is a
+    // list of the days that have something on them (Tait, 2026-10-16).
+    const busy = days.filter(d => (byDay[localISODate(d)] || []).length);
+    html += busy.map(d => {
+      const iso = localISODate(d);
+      return `<div class="cal-lday ${iso === today ? "today" : ""}"><div class="cal-lhead">${escapeHtml(d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }))}${iso === today ? " · Today" : ""}</div>${byDay[iso].map(chipHtml).join("")}</div>`;
+    }).join("") || `<div class="cal-none">Nothing this month.</div>`;
   } else {
     html += ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => `<div class="cal-dow">${d}</div>`).join("");
     for (let i = 0; i < first.getDay(); i++) html += `<div></div>`;
@@ -70,6 +82,7 @@ function renderMonthCalendar(container, byDay, chipHtml, state, rerender) {
   }
   container.innerHTML = html;
   container.classList.toggle("week", week);
+  container.classList.toggle("phone-list", phoneMonth);
   // Weeks from this one to the week holding iso.
   const weeksTo = iso => { const d = new Date(iso + "T00:00:00"); return Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay()) - thisSunday) / 604800000); };
   container.querySelectorAll("[data-cal]").forEach(b => b.onclick = () => {
@@ -816,9 +829,25 @@ async function openReviewPlayer(video, opts) {
   function showDrivePlayer(file, why) {
     vid = null; setTyped(true);
     const link = file ? `https://drive.google.com/file/d/${file.id}/view` : (finishedVideoLink(video, opts.folders) || {}).url;
-    stage.innerHTML = (file ? `<iframe class="rv-frame" src="https://drive.google.com/file/d/${encodeURIComponent(file.id)}/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>` : "")
+    stage.innerHTML = (file ? `<div class="rv-dwrap"><iframe class="rv-frame" src="https://drive.google.com/file/d/${encodeURIComponent(file.id)}/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>
+        <button type="button" class="rv-dclose" aria-label="Close full screen">✕ Close</button></div>
+        <button type="button" class="rv-dfull">⤢ Full screen</button>` : "")
       + `<div class="meta" style="margin-top:8px">${why ? escapeHtml(why) + " " : ""}Pause it, then type the time you're on next to your comment.</div>`
       + (link ? `<a class="btn" style="margin-top:8px" href="${escapeHtml(link)}" target="_blank" rel="noopener">${file ? "Open it in Google Drive" : "Open the video in Google Drive"}</a>` : "");
+    // Full screen for Google's player (Tait, 2026-10-16: "easy to hit full
+    // screen" on a phone). The browser's own full screen where it allows
+    // one; an iPhone doesn't for anything but its own video player, so
+    // there the frame fills the screen instead, with a Close button.
+    const wrap = stage.querySelector(".rv-dwrap");
+    if (!wrap) return;
+    const fake = on => { wrap.classList.toggle("rv-fake-full", on); document.documentElement.classList.toggle("rv-locked", on); };
+    stage.querySelector(".rv-dfull").onclick = () => {
+      const go = wrap.requestFullscreen || wrap.webkitRequestFullscreen;
+      const p = go ? go.call(wrap) : null;
+      if (!go) fake(true);
+      else if (p && p.catch) p.catch(() => fake(true));
+    };
+    wrap.querySelector(".rv-dclose").onclick = () => fake(false);
   }
   function showOwnPlayer(file, key, src) {
     stage.innerHTML = playerHtml(`<video class="rv-video" playsinline preload="metadata"></video>`) + `
@@ -1107,6 +1136,7 @@ function ensureModalRoot() {
   return root;
 }
 function closeVideoModal() {
+  document.documentElement.classList.remove("rv-locked");
   const root = document.getElementById("videoModalRoot");
   if (root) root.querySelectorAll("video").forEach(v => { if (!v.paused) v.pause(); });
   if (root) root.classList.add("hidden");
