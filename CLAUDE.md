@@ -83,7 +83,8 @@ last.
 
 6. **Posting is manual.** A human with the login posts. Nothing in this repo
    publishes to a platform, schedules a post via an API, or automates
-   publishing in any way.
+   publishing in any way. (Tait confirmed this again on 2026-10-16: no
+   auto-posting.)
 
 ## The business model — two systems, one pipeline
 
