@@ -726,6 +726,67 @@ Someone extremely successful in one of our four categories: hook with how succes
 - **CTA:** Free guide: how to build a social media system
 - **Source:** Tait's LinkedIn posts 2 and 6
 
+**S6. Posting when you feel motivated never works**
+- **Hook:** "You ever know you need to post, but have no idea what to post?"
+- **Category · Format · Perspective:** Social Media · POV or skit · ① Make it simple
+- **Framework:** question opener + contrast and reversal
+- **Seed:** "all of a sudden you get motivation one day to post, but it never does anything because you're not consistent."
+- **Idea:** I1
+- **The idea:** Act out the cycle every busy owner knows: no time, no idea what to post, one burst of motivation, nothing happens, back to the business. The fix is consistency.
+- **Outline:**
+  - The feeling: you know you should post, no idea what
+  - Days go by running the business
+  - One day, motivation hits and you post
+  - Nothing happens, so you stop
+  - Why: you weren't consistent, and a system fixes that
+- **Script (POV or skit, about 35 seconds; on-screen text in [brackets], acted, then Tait to camera):**
+  You ever know you need to post, but have no idea what to post?
+  Watch what happens next, because every business owner does this.
+  [Day 1: "I should really post something."] Closes the app. Back to work.
+  [Day 12: still nothing.] Because running the business comes first.
+  [Day 19: motivation hits.] Three videos in one night. Posted.
+  Sounds great, right? It wasn't.
+  [Day 20: 14 views.] So you stop. Back to the business. Until next month.
+  Can you guess why it never does anything?
+  You weren't consistent.
+  As a business owner, you don't have time to run content and run your business.
+  So you need a system that posts while you run the business.
+- **Loops:** opens "what happens when you only post when you feel like it?" · rehooks: "Watch what happens next", "Sounds great, right? It wasn't", "Can you guess why it never does anything?" · closes with "So you need a system that posts while you run the business"
+- **Ask on camera:** "What happens when a business owner only posts when they feel motivated?"
+- **CTA:** Free social media audit
+- **Source:** Tait's 2026-10-19 message (ideas.md I1); hook from Customer Data: "I don't know what to post." and "usually the problem is consistency" [Tait, voice memo]
+- **Needs from you:** "14 views" on Day 20 is a stand-in for the skit, not a real result. Keep it as acting, or swap in a real number from an owner you know.
+
+**S7. What do I post? Answer the questions they're already asking**
+- **Hook:** "I see this question all the time: what do I post as a business owner?"
+- **Category · Format · Perspective:** Social Media · Green screen · ② Service media
+- **Framework:** question opener + guided question
+- **Seed:** "Find questions your customers are asking and answer them with your content."
+- **Idea:** I2
+- **The idea:** Green screen over real questions business owners asked on Reddit: each one is a video. Your goal with content is the same as your business, solve your customers' needs.
+- **Outline:**
+  - The question everyone asks: what do I post?
+  - Your goal is to solve your customers' needs; nothing changes with content
+  - On screen: real questions customers asked (Reddit)
+  - Each question is a video
+  - That's service media
+- **Script (Green screen, about 40 seconds; behind Tait: screenshots of the Reddit questions):**
+  I see this question all the time: what do I post as a business owner?
+  The answer's right behind me. You'll see why in a second.
+  Your goal as a business is to solve your customers' needs.
+  Nothing changes with content.
+  But where do you find what they need? No one talks about this, but...
+  They're already asking. Look. "Why can't people find my Etsy shop?" That's a video.
+  "New listings getting zero views." That's another one.
+  You see the pattern, right?
+  Find questions your customers are asking and answer them with your content.
+  That's service media. So what do you post? Whatever your customers are already asking.
+- **Loops:** opens "what do I post?" · rehooks: "You'll see why in a second", "No one talks about this, but", "You see the pattern, right?" · closes with "So what do you post? Whatever your customers are already asking"
+- **Ask on camera:** "When a business owner asks you what to post, what do you tell them now?"
+- **CTA:** Free guide: how to build a social media system
+- **Source:** Tait's 2026-10-19 message (ideas.md I2); the on-screen questions are from Tait's Reddit memo (customer-data.md: "why the hell can't people find my Etsy shop?", "new EE listings are getting zero views")
+- **Needs from you:** Close to S1 and S3 (both already on the board). Keep all three, or drop one.
+
 ---
 
 ## Websites
