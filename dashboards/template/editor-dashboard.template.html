@@ -238,6 +238,31 @@ async function sendFinished(videoId, btn, t) {
     <div class="modal-actions" style="border:none;padding:0"><button class="primary" id="efDone">Got it</button></div>`);
   box.querySelector("#efDone").onclick = closeVideoModal;
 }
+// Sent back, but the comments don't ask for any changes (Tait, 2026-10-19:
+// Luke left a comment on Grad Gig's How to Sign up, no edits): send the
+// same cut back to Tait without uploading a new file. No new version is
+// saved; Tait reviews the last one again.
+function noChangesButton(videoId) {
+  const b = document.createElement("button");
+  b.textContent = "No changes needed: send to Tait";
+  b.onclick = () => {
+    const x = VIDEOS.find(y => y.video.id === videoId);
+    if (!x) return;
+    const t = x.video.title || "this video", versions = VERSIONS[videoId] || [], last = versions[versions.length - 1];
+    const box = openModal(`<h2>Send it back with no changes?</h2>
+      <p style="line-height:1.55;margin:8px 0 18px">Use this when the comments on <b>${escapeHtml(t)}</b> don't ask for any changes. Tait gets ${last ? `<b>v${last.version}</b>, the same cut,` : "the same cut"} back to review. Nothing to upload.</p>
+      <div class="modal-actions"><button class="primary" id="ncYes">Send it to Tait</button><button id="ncNo">Cancel</button></div>`);
+    box.querySelector("#ncNo").onclick = closeVideoModal;
+    box.querySelector("#ncYes").onclick = e => { e.target.disabled = true; sendFinished(videoId, b, t); };
+  };
+  return b;
+}
+function finishButtons(video) {
+  const frag = document.createDocumentFragment();
+  frag.appendChild(finishButton(video.id));
+  if (hasRevisions(video)) frag.appendChild(noChangesButton(video.id));
+  return frag;
+}
 function finishButton(videoId) {
   const b = document.createElement("button");
   b.className = "primary"; b.textContent = VIDEO_ACTIONS.mark_delivered.label;
@@ -355,7 +380,7 @@ function appendVideoCard(list, { client, video }) {
       </div>
       ${editorCardBody(client, video)}
     `;
-    card.querySelector(".actions").appendChild(finishButton(video.id));
+    card.querySelector(".actions").appendChild(finishButtons(video));
     wireNotesButton(card);
     card.querySelector("[data-open]").onclick = () => openEditorVideoModal(video.id);
     list.appendChild(card);
@@ -384,7 +409,7 @@ function editorCardBody(client, video) {
         ${f.brandVoice ? `<div class="ed-btns"><a class="btn" href="${escapeHtml(f.brandVoice)}" target="_blank" rel="noopener">Brand guidelines</a></div>` : ""}</div></div>`}
       <div class="ed-step${rev ? " ed-upload" : ""}">${rev ? "" : `<span class="ed-num">3</span>`}<div class="ed-body"><b>${rev ? "Upload the fixed video" : "Upload the finished video"}</b>
         <div class="meta">${up ? (rev
-            ? `Put the new version in ${folderName}, named <b>${escapeHtml(video.title || "after the video")}</b> like before, as an <b>MP4 (H.264 video, AAC audio)</b>. Then click <b>${escapeHtml(VIDEO_ACTIONS.mark_delivered.label)}</b>.`
+            ? `Put the new version in ${folderName}, named <b>${escapeHtml(video.title || "after the video")}</b> like before, as an <b>MP4 (H.264 video, AAC audio)</b>. Then click <b>${escapeHtml(VIDEO_ACTIONS.mark_delivered.label)}</b>. If the comments don't ask for any changes, click <b>No changes needed</b> instead: nothing to upload.`
             : `Put it in ${folderName} and name the file <b>${escapeHtml(video.title || "after the video")}</b>. Export it as an <b>MP4 (H.264 video, AAC audio)</b> so the sound plays in every browser. Then click <b>${escapeHtml(VIDEO_ACTIONS.mark_delivered.label)}</b>.`)
           : `<b style="color:var(--red)">This client has no finished video folder yet.</b> Ask Tait to add one before you finish this.`}</div>
         <div class="ed-btns actions">${up ? `<a class="btn" href="${escapeHtml(up.url)}" target="_blank" rel="noopener">Open the upload folder</a>` : ""}</div></div></div>
@@ -429,7 +454,7 @@ function openEditorVideoModal(videoId) {
   const box = openModal(`<h2>${escapeHtml(x.video.title || "(untitled)")}</h2>
     <div class="meta" style="margin-bottom:10px">${escapeHtml(x.client.name)}${x.video.dueToEdit ? " · edit by " + escapeHtml(x.video.dueToEdit) : ""}</div>
     ${editorCardBody(x.client, x.video)}`);
-  box.querySelector(".actions").appendChild(finishButton(videoId));
+  box.querySelector(".actions").appendChild(finishButtons(x.video));
   wireNotesButton(box);
 }
 

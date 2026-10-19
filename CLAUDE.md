@@ -867,7 +867,10 @@ file" link is a folder, else the client's finished video folder; then
 Finished). A video sent back with revisions shows only what's needed to
 fix it (Tait, 2026-10-15): the **Revisions needed** box with **Watch with
 the comments**, then **Upload the fixed video** with Finished; the raw
-footage and Edit it steps are for first cuts. The walkthrough points at
+footage and Edit it steps are for first cuts. When the comments don't ask for any
+changes (Tait, 2026-10-19: Luke left only a comment on Grad Gig's How to
+Sign up), **No changes needed: send to Tait** sends the same cut back to
+Edit review with nothing to upload and no new version (`noChangesButton`). The walkthrough points at
 revisions and each step.
 Editor tools (migration 016, Tait 2026-10-07): each comment a video was
 sent back with has a **Fixed** tick (`social_resolve_comment`; "x of y
