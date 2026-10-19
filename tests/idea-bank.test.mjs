@@ -46,7 +46,7 @@ chk("moved: hidden from the client, dates cleared and kept", r.status === "conce
 await op.w.moveToIdeaBank([await idOf(W1), await idOf(W2), await idOf("We film this one")]); await settle();
 chk("we-film idea remembers it was To film", (await row("We film this one")).editor_brief.ideaBank.from === "to_film");
 chk("bank lists all four, nav count 4", bankIds().length === 4 && op.d.getElementById("navBankN").textContent === "4");
-chk("category filter tabs", op.d.querySelectorAll("#bankTabs .chip").length >= 3);
+chk("no category filter on Content Ideas", !op.d.getElementById("bankTabs") && !op.d.querySelector("#view-ideabank [data-bank-cat]"));
 chk("banked ideas are off To Do and the calendar", ![A1, W1, "We film this one"].some(t => todoText().includes(t) || calTitles().includes(t)), calTitles());
 chk("sent-back idea stays in Sent back, not the bank", op.d.querySelector('[data-stage="sentBack"]').textContent.includes("Sent back idea")
   && !op.d.getElementById("bankList").textContent.includes("Sent back idea"));
@@ -54,11 +54,6 @@ chk("sent-back idea stays in Sent back, not the bank", op.d.querySelector('[data
 let cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
 let clTitles = cl.w.eval("VIDEOS").map(v => v.title);
 chk("client can't see banked ideas (RLS)", clTitles.length === 0, clTitles);
-
-// Category filter.
-op.d.querySelector('#bankTabs [data-bank-cat="Websites"]').click(); await settle();
-chk("category filter shows just that category", bankIds().length === 2);
-op.d.querySelector('#bankTabs [data-bank-cat=""]').click(); await settle();
 
 // Drag W1 onto Sent to client (a real drag: dragstart on the card, drop on the column).
 const drag = async (id, col) => {

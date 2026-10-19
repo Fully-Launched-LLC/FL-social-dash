@@ -91,7 +91,6 @@
         <button class="accent" onclick="openBulkAdd(null, true)">Add ideas with Claude</button>
       </div>
     </div>
-    <div class="chip-row" id="bankTabs"></div>
     <div class="board" id="ideaBoard">
       <div class="board-col" data-col="bank"><div class="board-head"><b>Ideas</b> <span class="c" id="bankColN"></span><small>The client can't see these.</small></div><div class="board-list" id="bankList"></div></div>
       <div class="board-col" data-col="sent"><div class="board-head"><b>Sent to client</b> <span class="c" id="sentColN"></span><small>In their portal, waiting to be filmed.</small></div><div class="board-list" id="sentList"></div></div>
@@ -427,7 +426,6 @@ async function deleteVideo(id) {
 const inIdeaBank = x => !!(x.video.editorBrief || {}).ideaBank;
 const canBank = x => !inIdeaBank(x) && ["concept_pending", "to_film"].includes(x.video.status);
 function workVideos() { return filteredVideos().filter(x => !inIdeaBank(x)); }
-let bankCategory = "";   // "" = every category
 // The format an idea is paired with (from the outlier research), e.g.
 // "Talking head · pain opener + payoff". Operator only, like the rest of
 // editor_brief.
@@ -485,15 +483,8 @@ function renderIdeaBank() {
   const total = VIDEOS.filter(inIdeaBank).length, navN = document.getElementById("navBankN");
   navN.hidden = !total; navN.textContent = total;
   const bank = filteredVideos().filter(inIdeaBank), sent = filteredVideos().filter(isSentIdea);
-
-  const cats = [...new Set(bank.concat(sent).map(x => videoCategory(x.video)))].sort((a, b) => categoryRank(a).localeCompare(categoryRank(b)));
-  if (bankCategory && !cats.includes(bankCategory)) bankCategory = "";
-  const inCat = x => !bankCategory || videoCategory(x.video) === bankCategory;
-  const tabs = document.getElementById("bankTabs");
-  tabs.style.display = cats.length > 1 ? "" : "none";
-  tabs.innerHTML = [`<div class="chip ${bankCategory ? "" : "active"}" data-bank-cat="">${chipLabel("All", bank.length)}</div>`]
-    .concat(cats.map(c => `<div class="chip ${bankCategory === c ? "active" : ""}" data-bank-cat="${escapeHtml(c)}">${chipLabel(c || "Other", bank.filter(x => videoCategory(x.video) === c).length)}</div>`)).join("");
-  tabs.querySelectorAll("[data-bank-cat]").forEach(el => el.onclick = () => { bankCategory = el.dataset.bankCat; renderIdeaBank(); });
+  // Every idea, no category filter (Tait, 2026-10-19: categories are
+  // Fully Launched's only; the To film filters elsewhere stay).
 
   const order = (a, b) => a.client.name.localeCompare(b.client.name) || categoryRank(videoCategory(a.video)).localeCompare(categoryRank(videoCategory(b.video)))
     || (a.video.title || "").localeCompare(b.video.title || "", undefined, { numeric: true });
@@ -511,7 +502,7 @@ function renderIdeaBank() {
   const fill = (id, items, inBank, empty) => {
     document.getElementById(id).innerHTML = items.length ? items.sort(order).map(x => card(x, inBank)).join("") : `<div class="empty">${empty}</div>`;
   };
-  const b = bank.filter(inCat), s = sent.filter(inCat);
+  const b = bank, s = sent;
   document.getElementById("bankColN").textContent = b.length;
   document.getElementById("sentColN").textContent = s.length;
   fill("bankList", b, true, total ? "No ideas here. Add some with Claude." : "No ideas yet. Add ideas with Claude, or open an idea and choose Move back to Ideas.");

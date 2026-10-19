@@ -723,7 +723,7 @@ portal ↗**. A client filter across the top narrows every page.
 
 **Content Ideas** (no migration; Tait, 2026-10-19: "ideas are on one
 side and send to the client on the other"). Two columns, per client (the
-top client filter), with a category filter: **Ideas** (banked: the client
+top client filter), every idea at once, no category filter: **Ideas** (banked: the client
 can't see them) and **Sent to client** (Ideas and To film the client can
 see, not filmed yet). Drag a card across to send it, or back to take it
 off their portal; each card also has a Send / Back button (phones can't
