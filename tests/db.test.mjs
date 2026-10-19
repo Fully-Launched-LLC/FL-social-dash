@@ -20,11 +20,11 @@ await db.exec(`
   alter default privileges in schema public grant all on sequences to anon, authenticated;
   alter default privileges in schema public grant execute on functions to anon, authenticated;
 `);
-for (const f of ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "017_revision_rounds.sql"]) {
+for (const f of ["001_social_os_schema.sql", "002_social_videos_overview_body.sql", "003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "017_revision_rounds.sql", "024_operator_only_edits.sql"]) {
   await db.exec(readFileSync(MIG + f, "utf8"));
 }
 // Re-running every migration, in order, is safe (006 replaces 003's client function again).
-for (const f of ["003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "017_revision_rounds.sql"]) {
+for (const f of ["003_social_videos_write_path.sql", "004_social_videos_final_cut_url.sql", "005_social_videos_on_screen_caption.sql", "006_client_journey.sql", "007_client_documents.sql", "017_revision_rounds.sql", "024_operator_only_edits.sql"]) {
   await db.exec(readFileSync(MIG + f, "utf8"));
 }
 
@@ -152,7 +152,14 @@ check("inactive editor can't deliver", /active editor/.test((await as(U.edOff, `
 await as(U.op, `update social_videos set status='client_review' where id=$1`, [v3]);
 await db.query(`update social_videos set caption='Old caption', on_screen_caption='Old on-screen' where id=$1`, [v3]);
 const fa = await as(U.cl, `select status, caption, on_screen_caption from social_client_video_action($1,'approve_final',null,$2,$3)`, [v3, "New caption", "  "]);
-check("client final approve with caption edit (blank on-screen = unchanged)", fa.rows?.[0].status === "ready_to_post" && fa.rows[0].caption === "New caption" && fa.rows[0].on_screen_caption === "Old on-screen", fa);
+check("client final approve can't change the captions (024: only the operator edits words)", fa.rows?.[0].status === "ready_to_post" && fa.rows[0].caption === "Old caption" && fa.rows[0].on_screen_caption === "Old on-screen", fa);
+// Only the operator edits a video's words: no direct writes for clients or editors.
+for (const [who, uid] of [["client", U.cl], ["editor", U.ed]]) {
+  const before = (await db.query(`select hook, body, outline, caption from social_videos where id=$1`, [v3])).rows[0];
+  const upd = await as(uid, `update social_videos set hook='hacked', body='hacked', outline='hacked', caption='hacked' where id=$1`, [v3]);
+  const after = (await db.query(`select hook, body, outline, caption from social_videos where id=$1`, [v3])).rows[0];
+  check(`${who} can't edit hook, script, outline or caption directly`, JSON.stringify(before) === JSON.stringify(after), upd);
+}
 
 // ── documents ──
 await db.exec(`insert into social_client_documents (client_id, title, url, position) values
