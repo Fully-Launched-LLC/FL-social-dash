@@ -822,7 +822,12 @@ upload link; we-film ideas — when we film it, hook, script, outline, and
 (read-only). Every client button calls
 `social_client_video_action`. An operator opening a portal sees exactly
 what the client sees and can click the client's buttons (logged as the
-operator); editing happens only on the operator dashboard.
+operator). Operators can also edit a video's words there (Tait,
+2026-10-19): clicking a video opens it as text boxes (title, hook,
+script, outline, how to film it, on-screen caption, caption, note,
+platforms; empty ones too, to add something new), and each card and
+calendar popup has **Edit** (`openOperatorEdit`). A client login never
+gets these. Dates, status and the editor stay on the operator dashboard.
 
 ### Editor dashboard — `/editor/dashboard.html`
 

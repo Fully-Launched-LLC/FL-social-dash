@@ -408,15 +408,63 @@ function videoCard(video) {
   card.innerHTML = `<b class="video-card" style="display:inline-block;margin-bottom:8px;font-family:var(--font-serif);font-weight:400;font-size:1.05rem" data-open>${escapeHtml(video.title || "(untitled)")}</b>` + clientCardBody(video);
   card.querySelector("[data-open]").onclick = () => openClientVideoModal(video.id);
   wireActions(card, video);
+  if (IS_OPERATOR) {
+    card.querySelector(".actions").insertAdjacentHTML("beforeend", `<button data-op-edit>Edit</button>`);
+    card.querySelector("[data-op-edit]").onclick = () => openOperatorEdit(video.id);
+  }
   return card;
 }
 
+// Operators edit a video's words right here (Tait, 2026-10-19: "I want all
+// of this information to be editable"): clicking a video opens it as text
+// boxes, every one shown, even empty, so something new can be added. A
+// direct update (operator RLS); the client never gets this.
+const OP_EDIT_FIELDS = [
+  ["title", "Title", 1], ["hook", "Hook", 2], ["body", "Script", 8], ["outline", "Outline", 5],
+  ["filmingDirection", "How to film it", 3], ["onScreenCaption", "On-screen caption", 2],
+  ["caption", "Caption", 4], ["note", "Note (the client and the editor see it)", 2],
+];
+function openOperatorEdit(videoId) {
+  const video = VIDEOS.find(v => v.id === videoId);
+  if (!video) return;
+  const rows = (val, min) => Math.max(min, String(val || "").split("\n").length + 1);
+  const box = openModal(`<h2>Edit: ${escapeHtml(video.title || "(untitled)")}</h2>
+    <div class="meta" style="margin-bottom:10px">Only you see this. The client sees the card with your changes once you save.</div>
+    ${OP_EDIT_FIELDS.map(([k, label, min]) => `${lbl(label)}<textarea data-op-f="${k}" rows="${rows(video[k], min)}" style="width:100%;font:inherit;font-size:0.92rem;line-height:1.5">${escapeHtml(video[k] || "")}</textarea>`).join("")}
+    ${lbl("Platforms (comma-separated)")}<input type="text" data-op-f="platform" value="${escapeHtml((video.platform || []).join(", "))}" style="width:100%">
+    <div class="auth-error" id="opEditErr"></div>
+    <div class="modal-actions"><button class="primary" id="opEditSave">Save changes</button><button id="opEditView">See what the client sees</button><button onclick="closeVideoModal()">Cancel</button></div>`);
+  box.querySelectorAll("textarea").forEach(t => t.addEventListener("input", () => { t.rows = rows(t.value, 2); }));
+  box.querySelector("#opEditView").onclick = () => openClientVideoModal(videoId, true);
+  const save = box.querySelector("#opEditSave");
+  save.onclick = async () => {
+    const err = box.querySelector("#opEditErr"), fields = {};
+    OP_EDIT_FIELDS.forEach(([k]) => { fields[k] = box.querySelector(`[data-op-f="${k}"]`).value.trim(); });
+    fields.platform = box.querySelector('[data-op-f="platform"]').value.split(",").map(p => p.trim().toLowerCase()).filter(Boolean);
+    if (!fields.title) { err.textContent = "Give it a title first."; return; }
+    save.disabled = true; save.textContent = "Saving…";
+    const { data, error } = await sbClient.from("social_videos").update(videoFieldsToRow(fields)).eq("id", videoId).select("id");
+    if (error || !data || !data.length) { err.textContent = "Couldn't save: " + (error ? error.message : "that video wasn't found."); save.disabled = false; save.textContent = "Save changes"; return; }
+    await loadVideos();
+    openClientVideoModal(videoId, true);
+    const msg = document.querySelector("#videoModalBox h2");
+    if (msg) msg.insertAdjacentHTML("afterend", `<div class="meta" style="margin:-4px 0 8px">✓ Saved</div>`);
+  };
+}
+
 // Same content as the card, for the calendar and a clicked title.
-function openClientVideoModal(videoId) {
+// An operator clicking a video gets it as text boxes to edit (asClient:
+// the card as the client sees it, from the Edit window).
+function openClientVideoModal(videoId, asClient) {
+  if (IS_OPERATOR && !asClient) { openOperatorEdit(videoId); return; }
   const video = VIDEOS.find(v => v.id === videoId);
   if (!video) return;
   const box = openModal(`<h2>${escapeHtml(video.title || "(untitled)")}</h2>${clientCardBody(video)}`);
   wireActions(box, video);
+  if (IS_OPERATOR) {
+    box.querySelector(".actions").insertAdjacentHTML("beforeend", `<button data-op-edit>Edit</button>`);
+    box.querySelector("[data-op-edit]").onclick = () => openOperatorEdit(videoId);
+  }
 }
 
 // ---------- pages ----------
@@ -549,8 +597,9 @@ function openCalendarVideo(videoId) {
     ${processHtml(video)}
     ${fieldRow("Hook", video.hook)}
     ${todo ? `<div class="meta" style="margin-top:10px">This one needs you: it's in <b>${needsFilming(video) ? "To film" : "To review"}</b> on your To Do.</div>` : ""}
-    <div class="modal-actions">${hasFileToWatch(video) ? `<button class="primary" data-watch>Watch the video</button>` : ""}<button data-close>Close</button></div>`);
+    <div class="modal-actions">${hasFileToWatch(video) ? `<button class="primary" data-watch>Watch the video</button>` : ""}${IS_OPERATOR ? `<button data-op-edit>Edit</button>` : ""}<button data-close>Close</button></div>`);
   box.querySelector("[data-close]").onclick = closeVideoModal;
+  if (IS_OPERATOR) box.querySelector("[data-op-edit]").onclick = () => openOperatorEdit(videoId);
   const w = box.querySelector("[data-watch]");
   if (w) w.onclick = () => canWatch(video) ? openClientWatch(video) : openReviewPlayer(video, {
     folders: DRIVE_FOLDERS, which: "open", notesBy: ["client"], canNote: false, buttons: [],
