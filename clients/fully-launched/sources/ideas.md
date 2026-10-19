@@ -10,5 +10,5 @@ from (`Idea: I<n>`) and pairs it with an outlier format from Research.
   - Content idea: S6
 - I2 (2026-10-19 message): "What do I post as a business owner?" Tait's answer: "Hey, your goal is to solve your customers' needs. Nothing changes with content. Find questions your customers are asking and answer them with your content. Serve your customers. It should be service media."
   - Answers (Customer Data): "something that I see often is people asking, like, what do I post?" [Tait, Reddit memo]
-  - Close to S1 ("What do I post?" The simple answer) and S3 (Social media should be service media); new here: find the questions customers are already asking and answer them.
+  - Close to S1 ("What do I post?" The simple answer) and S3 (Social media should be service media); new here: find the questions customers are already asking and answer them. Tait keeps all three (2026-10-19).
   - Content idea: S7
