@@ -370,7 +370,10 @@ fully-social-os/
                                social_carousel_uploads, the private
                                'carousels' bucket,
                                social_editor_submit_carousel), 023
-                               (social_carousels.due_to_edit)
+                               (social_carousels.due_to_edit), 024
+                               (only the operator edits a video's
+                               words: approve_final no longer takes
+                               the client's caption edits)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
