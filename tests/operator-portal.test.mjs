@@ -75,7 +75,8 @@ for (const [t, label, note, want] of steps) {
 }
 chk("request changes sends concept back to owner", (await row("Change me")).concept_approved_at === null);
 
-chk("no Edit button in the portal, even for the operator", !Array.from(p.d.querySelectorAll("#view-videos button")).some(b => b.textContent.includes("Edit")));
+// Tait, 2026-10-19: operators edit a video's words from the portal (portal-edit.test.mjs).
+chk("the operator gets an Edit button on each card", Array.from(p.d.querySelectorAll("#view-videos .card")).filter(c => c.querySelector("[data-open]")).every(c => c.querySelector("[data-op-edit]")));
 
 chk("no alerts or page errors (FL)", !p.ui.alerts.length && !p.ui.errors.length, [p.ui.alerts, p.ui.errors]);
 
@@ -83,7 +84,7 @@ chk("no alerts or page errors (FL)", !p.ui.alerts.length && !p.ui.errors.length,
 p = await open("dad-co");
 chk("concierge: approve final shows", !!btn(card(p, "Dad final"), "Approve for posting"));
 chk("concierge (we film): no filmed button", !btn(card(p, "Dad final"), "Video has been filmed"));
-chk("concierge: final card has only Review / Approve", Array.from(card(p, "Dad final").querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Review the video|Approve for posting");
+chk("concierge: final card has only Review / Approve (plus the operator's Edit)", Array.from(card(p, "Dad final").querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Review the video|Approve for posting|Edit");
 
 const log = (await db.query("select action, changed_by_role from social_status_audit_log where action <> 'created'")).rows;
 chk("audit log: all by operator, none as client", log.length >= 5 && log.every(r => r.changed_by_role === "operator" && r.action === "direct_update"), log);
