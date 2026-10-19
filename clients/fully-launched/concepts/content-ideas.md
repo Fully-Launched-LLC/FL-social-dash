@@ -785,7 +785,7 @@ Someone extremely successful in one of our four categories: hook with how succes
 - **Ask on camera:** "When a business owner asks you what to post, what do you tell them now?"
 - **CTA:** Free guide: how to build a social media system
 - **Source:** Tait's 2026-10-19 message (ideas.md I2); the on-screen questions are from Tait's Reddit memo (customer-data.md: "why the hell can't people find my Etsy shop?", "new EE listings are getting zero views")
-- **Needs from you:** Close to S1 and S3 (both already on the board). Keep all three, or drop one.
+- **Note:** close to S1 and S3; Tait keeps all three (2026-10-19).
 
 ---
 
