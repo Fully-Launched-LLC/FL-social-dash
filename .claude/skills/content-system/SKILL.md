@@ -85,11 +85,13 @@ and the short list of everything marked **[pending]**, **[To confirm]** or
 **Needs from you**. Wait for his OK or his fixes. Nothing becomes content
 before this.
 
-**10. Content ideas** → skill `content-engine`. Ideas with hook, outline,
-script (length set by the format) and the question to ask, each built from
-the client's own story or solution, a customer pain or dream, and a proven
-framework. Tait picks; the picks go on the calendar (dates by the client's
-cadence, see `content-engine`) through "Add ideas with Claude".
+**10. Content ideas** → skill `content-engine`. Tait sends a voice memo of
+his own ideas; each one is saved word for word in the ideas database
+(`sources/ideas.md`), then paired with the outlier format from Research that
+fits it best and written up with hook, outline, script (length set by the
+format) and the question to ask. They go onto the client's **Content
+Ideas** board (operator only); Tait edits them there and drags the ones he
+wants filmed to **Sent to client**.
 
 **After filming and posting:** the feedback loop (Apify reading the
 client's own post views every 30 days) isn't built yet; Tait decided to set

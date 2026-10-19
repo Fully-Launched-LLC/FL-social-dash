@@ -96,7 +96,7 @@ let GEN_DOCS = [];          // operator only: built from the onboarding voice me
 let ONBOARDING = null;      // their social_client_onboarding row, if any
 let VIDEOS = [];            // from social_videos (videoFromRow shape)
 let HIDDEN_CONCEPTS = 0;    // operator view only: ideas the client can't see (sent back with suggestions)
-let BANKED_IDEAS = 0;       // operator view only: ideas still in the Idea Bank
+let BANKED_IDEAS = 0;       // operator view only: ideas in Content Ideas, not sent yet
 let IS_OPERATOR = false;
 const calState = { offset: 0 };
 let activeTab = null;      // "film" or "review"; first one with something in it
@@ -137,7 +137,7 @@ async function loadVideos() {
   // An operator's login can read ideas the client sent back with
   // suggestions (gate 1 cleared); the client's can't (RLS). Hide them here
   // too, so this page shows exactly what the client sees.
-  // Ideas in the operator's Idea Bank (editor_brief.ideaBank) are hidden the same way.
+  // Ideas not sent yet from Content Ideas (editor_brief.ideaBank) are hidden the same way.
   const hidden = vids.filter(v => v.status === "concept_pending" && !v.conceptApprovedAt);
   BANKED_IDEAS = hidden.filter(v => v.editorBrief.ideaBank).length;
   HIDDEN_CONCEPTS = hidden.length - BANKED_IDEAS;
@@ -426,7 +426,7 @@ function renderOperatorBanner() {
       <div class="meta">This is exactly what the client sees, plus a Documents page only you can see. You can click their buttons for them. It's recorded as you, not the client.
       To edit a video, use the <a href="/operator/dashboard.html" style="color:inherit;text-decoration:underline">operator dashboard</a>.
       ${HIDDEN_CONCEPTS ? `<br>${HIDDEN_CONCEPTS} idea(s) with suggestions are back with you. Edit and send them again from the operator dashboard.` : ""}
-      ${BANKED_IDEAS ? `<br>${BANKED_IDEAS} idea(s) are in your Idea Bank and not sent yet.` : ""}</div></div>` : "";
+      ${BANKED_IDEAS ? `<br>${BANKED_IDEAS} idea(s) are in your Content Ideas and not sent yet.` : ""}</div></div>` : "";
 }
 
 function renderVideos() {

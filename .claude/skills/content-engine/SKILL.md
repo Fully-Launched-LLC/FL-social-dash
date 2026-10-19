@@ -1,6 +1,6 @@
 ---
 name: content-engine
-description: Turn a client's three documents (Identity, Customer Data, Research) and Tait's viral script library into content ideas - each one the client's own story or solution, hooked on a real customer pain, dream, fear or goal, and packaged in a proven framework - written as Hook, Outline, Script (length set by the format) and a Question to ask from behind the camera. Checks every idea, saves them to the Content Ideas doc, and puts Tait's picks on the calendar. Use as step 10 of the content system, or when Tait asks for content ideas, scripts or a month of content for a client. Builds on tasteful-content.
+description: Pair Tait's own ideas (the ideas database, from his voice memos) with outlier formats from Research, using a client's documents (Identity, Customer Data, Research) and Tait's viral script library into content ideas - each one the client's own story or solution, hooked on a real customer pain, dream, fear or goal, and packaged in a proven framework - written as Hook, Outline, Script (length set by the format) and a Question to ask from behind the camera. Checks every idea, saves them to the Content Ideas doc, and puts them on the client's Content Ideas board, where Tait edits them and drags the ones he wants to the client. Use as step 10 of the content system, or when Tait asks for content ideas, scripts or a month of content for a client. Builds on tasteful-content.
 ---
 
 # content-engine
@@ -15,12 +15,23 @@ This skill adds frameworks, scripts, story ideas and the calendar.
 
 | Ingredient | Where it comes from | Rule |
 |---|---|---|
-| **Substance**: what they say | Identity (`offer.md`, `story-bank.md`, `voice.md`, `positioning.md`) and the transcripts | the client's own story, solution, opinion or result, with a **Seed** quote |
+| **Substance**: what they say | **The ideas database** (`sources/ideas.md`: Tait's own ideas, word for word from his voice memos), backed by Identity (`offer.md`, `story-bank.md`, `voice.md`, `positioning.md`) and the transcripts | one of Tait's ideas answering a real customer problem, with its **Seed** quote. Never an AI-made or AI-researched idea |
 | **Hook**: why the viewer cares | Customer Data (the hooks at the top; pains, dreams, fears, practical goals) and Research (what customers are asking) | the customer's own words where possible |
-| **Packaging**: how it's built | Research ("The 10 frameworks for <client>", formats that work) and `library/viral-scripts/frameworks.md` | one named hook formula + one framework |
+| **Packaging**: how it's built | The **outlier formats** in Research (outlier videos, trending and viral formats, "The 10 frameworks for <client>") and `library/viral-scripts/frameworks.md` | the outlier format that fits the idea best, one named hook formula + one framework. The format goes on the card |
 
 If any ingredient is missing for an idea, it isn't an idea yet: either
 leave it out or keep it with **Needs from you**.
+
+## The ideas database (Tait, 2026-10-19)
+
+Ideas come from Tait, not from AI or research. When he sends a voice memo
+of ideas for a client, save the transcript in `sources/` as usual, then
+add each idea to `clients/<slug>/sources/ideas.md`, word for word, one
+entry each: `- I<n> (YYYY-MM-DD voice memo): "<his words>"`, plus the
+customer problem it answers from Customer Data if he names one. Never
+reword, merge or invent ideas there. Research only decides the format
+each idea is paired with. Each content idea then names its idea (`Idea:
+I<n>`) next to its Seed.
 
 ## Read first
 
@@ -156,27 +167,29 @@ python3 .claude/skills/content-engine/scripts/check_ideas.py clients/<slug> --id
    next free IDs) and mirror them into the Content Ideas Google Doc
    (`tasteful-content`'s mirroring steps: `gdoc_sync.py`, then format only
    the new lines).
-2. **Gate 1 is Tait's:** he picks which go on the calendar. Nothing reaches
-   the dashboard before he does.
-3. **Dates:** the client's cadence from `brain.md` (Fully Launched: 5
-   category videos Monday to Friday, 4 documentation videos Tuesday,
-   Thursday, Saturday and Sunday, 1 YouTube video a month). Spread
-   categories evenly, every week at least one of each where there are
-   enough; ready ideas (no Needs from you) first. Film by = post date minus
-   14 days, edit by = post date minus 7. Never move a video that's already
-   past `concept_pending` without asking.
+2. **Gate 1 is Tait's, on the board:** every new idea goes into the
+   client's **Content Ideas** board (operator dashboard → Content Ideas,
+   the left column, which the client can't see) with its format on the
+   card. Tait clicks a card to edit its hook, script, outline and the
+   rest, and drags the ones he wants filmed to **Sent to client**. Nothing
+   reaches the client before he does.
+3. **No dates:** ideas go in without dates. When the client films one,
+   the footage sets them (edit in 7 days, post in 14); Tait adds dates in
+   Edit if he wants them sooner.
 4. **Titles:** `<Category> · <ID> · <title>` for clients with categories
-   (the dashboard groups To film by it), else `<ID> · <title>`.
+   (the dashboard groups by it), else `<ID> · <title>`.
 5. **On the dashboard:** the JSON for "Add ideas with Claude" (keys in
    `BULK_PROMPT`, `dashboards/operator/dashboard.template.html`): `title`,
    `platform`, `hook`, `body` (the script), `outline` (the bullets, one
-   string), `filmingDirection` ("<format>, vertical (or horizontal for
-   YouTube). Question to ask from behind the camera: \"<question>\""),
-   `editorInstructions` ("<format> · <framework name> · CTA: <cta>" plus any
-   on-screen text), `filmedBy`, `dueToFilm`, `dueToEdit`, `postDate`. Tait
-   pastes it (operator dashboard → Add ideas with Claude), or Claude adds
-   it in his signed-in Chrome if he asks. Either way it lands in the
-   client's portal at once.
+   string), `format` ("<outlier format> · <hook formula + framework>",
+   e.g. "Talking head · pain opener + payoff"), `filmingDirection`
+   ("<format>, vertical (or horizontal for YouTube). Question to ask from
+   behind the camera: \"<question>\""), `editorInstructions` ("<format> ·
+   <framework name> · CTA: <cta>" plus any on-screen text), `filmedBy`.
+   Tait pastes it from Content Ideas → Add ideas with Claude (the "Put
+   them in Content Ideas" box is ticked there), or Claude adds them in his
+   signed-in Chrome if he asks: insert them banked (`editor_brief.ideaBank
+   = {from: "concept_pending"}`, gate 1 not stamped).
 
 ## Done means
 
@@ -185,4 +198,6 @@ python3 .claude/skills/content-engine/scripts/check_ideas.py clients/<slug> --id
 - [ ] Script length matches its format; story ideas leave the story to the
   camera
 - [ ] `content-ideas.md` and the Google Doc match
-- [ ] Tait picked before anything went on the calendar
+- [ ] Every idea starts from one of Tait's ideas in `sources/ideas.md`
+- [ ] Every card has its format
+- [ ] New ideas went into Content Ideas, not to the client

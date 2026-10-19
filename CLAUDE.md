@@ -712,25 +712,35 @@ then by post date) →
 platform's color, plus ✅ approve-by, ✂️ edit-due and 🎬 film-by deadlines
 until they're met; overdue ones turn red; filter by platform and by kind.
 Approve by is 3 days before posting, `APPROVE_DAYS_BEFORE_POST` in
-shell.js. Also "Add ideas with Claude" and "+ New idea", as on To Do) → **Idea Bank** (Tait,
-2026-10-19: ideas the client hasn't seen yet, so a month of ideas isn't
-sent at once; see below) → **Clients** (name, portal
+shell.js. Also "Add ideas with Claude" and "+ New idea", as on To Do) → **Content Ideas** (Tait,
+2026-10-19: a two-column board, ideas the client hasn't seen and ideas
+sent to them; see below) → **Clients** (name, portal
 address, who films, raw footage folder, finished video folder) → **Editor
 portal ↗**. A client filter across the top narrows every page.
 
-**Idea Bank** (no migration): a banked idea is an Idea (`concept_pending`)
-with gate 1 cleared, so the client's RLS already hides it, plus
-`editor_brief.ideaBank = { from, postDate, dueToFilm, dueToEdit }` (where it
-was and its old dates; dates are cleared while banked), which keeps it apart
-from ideas sent back with suggestions. Banked ideas are off To Do, the
-calendar and the client's portal (`workVideos()` / `inIdeaBank` in the
-operator page). The page lists them per client (the top client filter) and
-category, with a category filter; tick rows, then **Send N to the client**
-(optional film-by date for all of them): gate 1 is stamped through
-`social_operator_approve_concept`, the marker removed, and a we-film idea
-that was To film goes back there. **Move to Idea Bank** is on the card of
-any Idea or To film video; "Add ideas with Claude" has a "Put them in the
-Idea Bank" box (ticked when opened from the Idea Bank page).
+**Content Ideas** (no migration; Tait, 2026-10-19: "ideas are on one
+side and send to the client on the other"). Two columns, per client (the
+top client filter), with a category filter: **Ideas** (banked: the client
+can't see them) and **Sent to client** (Ideas and To film the client can
+see, not filmed yet). Drag a card across to send it, or back to take it
+off their portal; each card also has a Send / Back button (phones can't
+drag). Clicking a card opens the Edit form, whose idea text (hook, script,
+outline, how to film, captions, note) and format come first. Each card
+shows its **format** (`editor_brief.format`, e.g. "Talking head · pain
+opener + payoff", from the outlier research; the Format field in Edit,
+`format` in Add ideas with Claude). A banked idea is an Idea
+(`concept_pending`) with gate 1 cleared, so the client's RLS already hides
+it, plus `editor_brief.ideaBank = { from, postDate, dueToFilm, dueToEdit }`
+(where it was and its old dates; dates are cleared while banked), which
+keeps it apart from ideas sent back with suggestions. Banked ideas are off
+To Do, the calendar and the client's portal (`workVideos()` / `inIdeaBank`).
+Sending stamps gate 1 through `social_operator_approve_concept`, removes
+the marker, and puts a we-film idea that was To film back there. **Move
+back to Ideas** is on the card of any Idea or To film video; "Add ideas
+with Claude" has a "Put them in Content Ideas" box (ticked when opened
+from Content Ideas). Where the ideas come from: `content-engine` (Tait's
+own ideas from his voice memos, `sources/ideas.md`, each paired with an
+outlier format).
 
 **Raw footage per video:** a video can have its own Drive folder
 (`editor_brief.rawFootageUrl`, the "Raw footage folder for this video" field
