@@ -6,16 +6,21 @@
 <title>Fully Launched — Operator</title>
 <style>/*__SHELL_CSS__*/</style>
 <style>
-/* Idea Bank: tick rows, then send the picked ones */
-.bank-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; position:sticky; top:0; z-index:5; }
-.bank-row { display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:start; padding:12px 8px; border-bottom:1px solid var(--border); cursor:pointer; border-radius:8px; }
-.bank-row:last-child { border-bottom:none; }
-.bank-row.picked { background:rgba(4,16,31,.06); }
-.bank-row input { width:auto; margin-top:3px; }
-.bank-row .sub { color:var(--sub); font-size:0.8rem; margin-top:2px; }
-.bank-hook { font-size:0.86rem; margin-top:6px; line-height:1.45; }
-.bank-send-list { max-height:220px; overflow:auto; margin:0 0 12px; padding-left:18px; font-size:0.88rem; line-height:1.5; }
-@media (max-width:640px) { .bank-row { grid-template-columns:auto 1fr; } .bank-row > div:last-child { grid-column:2; } }
+/* Content Ideas: two columns, drag a card across to send it */
+.board { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+.board-col { background:rgba(4,16,31,.04); border:1px solid var(--line-2); border-radius:16px; padding:12px; min-height:240px; transition:background .15s, border-color .15s; }
+.board-col.drop { background:rgba(4,16,31,.10); border-color:var(--ink); }
+.board-head { padding:4px 6px 12px; }
+.board-head .c { font-size:0.78rem; color:var(--sub); }
+.board-head small { display:block; color:var(--sub); font-size:0.78rem; margin-top:2px; }
+.idea-card { background:var(--card); border:1px solid var(--line-2); border-radius:12px; padding:12px 14px; margin-bottom:10px; cursor:pointer; }
+.idea-card:hover { border-color:var(--ink); }
+.idea-card.dragging { opacity:.4; }
+.idea-card .sub { color:var(--sub); font-size:0.78rem; margin-top:2px; }
+.idea-format { display:inline-block; font-size:0.72rem; font-weight:600; border:1px solid var(--line-2); border-radius:999px; padding:2px 9px; margin-bottom:6px; }
+.idea-hook { font-size:0.86rem; margin-top:6px; line-height:1.45; }
+.idea-acts { margin-top:10px; }
+@media (max-width:760px) { .board { grid-template-columns:1fr; } }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
@@ -32,7 +37,7 @@
   <div class="nav-group">Workspace</div>
   <div class="nav-item active" data-view="todo" data-label="To Do">To Do<span class="n" id="navTodoN" hidden></span></div>
   <div class="nav-item" data-view="calendar" data-label="Content Calendar">Content Calendar</div>
-  <div class="nav-item" data-view="ideabank" data-label="Idea Bank">Idea Bank<span class="n" id="navBankN" hidden></span></div>
+  <div class="nav-item" data-view="ideabank" data-label="Content Ideas">Content Ideas<span class="n" id="navBankN" hidden></span></div>
   <div class="nav-item" data-view="clients" data-label="Clients">Clients<span class="n" id="navClientsN" hidden></span></div>
   <div class="nav-item" data-view="editors" data-label="Editors">Editors</div>
   <a class="nav-item" href="/editor/dashboard.html" target="_blank" rel="noopener" style="text-decoration:none">Editor portal ↗</a>
@@ -80,14 +85,16 @@
 
   <section class="view" id="view-ideabank">
     <div class="page-head">
-      <div><h1>Idea Bank</h1><p>Ideas the client hasn't seen yet. Tick the ones you want filmed now and send just those; the rest wait here.</p></div>
+      <div><h1>Content Ideas</h1><p>Each idea with the format it's paired with. Click a card to edit its hook, script, outline and the rest. Drag it to Sent to client to send it; drag it back to take it off their portal.</p></div>
       <div class="page-actions">
         <button class="accent" onclick="openBulkAdd(null, true)">Add ideas with Claude</button>
       </div>
     </div>
     <div class="chip-row" id="bankTabs"></div>
-    <div class="card bank-bar" id="bankBar"></div>
-    <div id="bankList"></div>
+    <div class="board" id="ideaBoard">
+      <div class="board-col" data-col="bank"><div class="board-head"><b>Ideas</b> <span class="c" id="bankColN"></span><small>The client can't see these.</small></div><div class="board-list" id="bankList"></div></div>
+      <div class="board-col" data-col="sent"><div class="board-head"><b>Sent to client</b> <span class="c" id="sentColN"></span><small>In their portal, waiting to be filmed.</small></div><div class="board-list" id="sentList"></div></div>
+    </div>
   </section>
 
   <section class="view" id="view-editors">
@@ -408,7 +415,7 @@ async function deleteVideo(id) {
   await loadLiveData();
 }
 
-// ---------- Idea Bank ----------
+// ---------- Content Ideas (the bank) ----------
 // Ideas the client hasn't seen yet, so Tait sends a few at a time instead
 // of a whole month at once (Tait, 2026-10-19, for Fully Launched's 42). A
 // banked idea is an Idea with gate 1 cleared, so the client's RLS already
@@ -419,14 +426,19 @@ async function deleteVideo(id) {
 const inIdeaBank = x => !!(x.video.editorBrief || {}).ideaBank;
 const canBank = x => !inIdeaBank(x) && ["concept_pending", "to_film"].includes(x.video.status);
 function workVideos() { return filteredVideos().filter(x => !inIdeaBank(x)); }
-const BANK_SELECTED = new Set();
 let bankCategory = "";   // "" = every category
+// The format an idea is paired with (from the outlier research), e.g.
+// "Talking head · pain opener + payoff". Operator only, like the rest of
+// editor_brief.
+const ideaFormat = v => (v.editorBrief || {}).format || "";
 
-async function moveToIdeaBank(ids) {
+// Back to Ideas: off the client's portal and the calendar, dates cleared
+// (kept in ideaBank) until it's sent again. Dragging skips the question.
+async function moveToIdeaBank(ids, quiet) {
   const xs = ids.map(findVideo).filter(x => x && canBank(x));
   if (!xs.length) return;
   const what = xs.length === 1 ? `"${xs[0].video.title || "this idea"}"` : `${xs.length} ideas`;
-  if (!confirm(`Move ${what} to the Idea Bank? It comes off ${xs[0].client.name}'s portal and the calendar, and its dates are cleared, until you send it again.`)) return;
+  if (!quiet && !confirm(`Move ${what} back to Ideas? It comes off ${xs[0].client.name}'s portal and the calendar, and its dates are cleared, until you send it again.`)) return;
   const failed = [];
   for (const x of xs) {
     const v = x.video;
@@ -442,119 +454,101 @@ async function moveToIdeaBank(ids) {
 }
 
 // Sending: stamps gate 1 the usual way (social_operator_approve_concept),
-// then drops the bank marker, sets the film-by date if one was picked, and
-// puts a we-film idea that was already approved back at To film.
-async function sendOneFromBank(x, filmBy) {
+// then drops the bank marker and puts a we-film idea that was already
+// approved back at To film.
+async function sendOneFromBank(x) {
   const v = x.video, from = (v.editorBrief.ideaBank || {}).from;
   const r = await runVideoAction("approve_concept_owner", v.id);
   if (r.error) return r.error;
   const editorBrief = Object.assign({}, v.editorBrief);
   delete editorBrief.ideaBank;
   const patch = { editorBrief };
-  if (filmBy) patch.dueToFilm = filmBy;
   if (from === "to_film") patch.status = "to_film";
   const { error } = await sbClient.from("social_videos").update(videoFieldsToRow(patch)).eq("id", v.id);
   return error ? error.message : null;
 }
-function openSendFromBank(ids) {
-  const xs = ids.map(findVideo).filter(x => x && inIdeaBank(x)).sort(byPostDate);
-  if (!xs.length) return;
-  const names = [...new Set(xs.map(x => x.client.name))].join(" and ");
-  const n = xs.length, label = `Send ${n} idea${n === 1 ? "" : "s"} to the client`;
-  const box = openModal(`
-    <h2>Send ${n} idea${n === 1 ? "" : "s"} to ${escapeHtml(names)}</h2>
-    <p class="meta" style="margin:0 0 12px">They show up in the client's portal right away. Everything else stays in the Idea Bank.</p>
-    <ul class="bank-send-list">${xs.map(x => `<li>${escapeHtml(x.video.title || "(untitled)")}</li>`).join("")}</ul>
-    ${dateField("filmBy", "Film by (optional, the same date for all of them)", "")}
-    <p class="meta" style="margin:4px 0 12px">Post dates get set when the footage comes in (or add them with Edit).</p>
-    <div class="auth-error" id="sbError"></div>
-    <div class="modal-actions"><button class="primary" id="sbSend">${escapeHtml(label)}</button><button onclick="closeVideoModal()">Cancel</button></div>`);
-  const btn = box.querySelector("#sbSend");
-  btn.onclick = async () => {
-    const filmBy = box.querySelector('[data-f="filmBy"]').value || null;
-    btn.disabled = true;
-    const failed = [];
-    for (let i = 0; i < xs.length; i++) {
-      btn.textContent = `Sending ${i + 1} of ${n}…`;
-      const err = await sendOneFromBank(xs[i], filmBy);
-      if (err) failed.push(`${xs[i].video.title}: ${err}`);
-      else BANK_SELECTED.delete(xs[i].video.id);
-    }
-    await loadLiveData();
-    if (failed.length) { box.querySelector("#sbError").textContent = "Some didn't send: " + failed.join("; "); btn.textContent = "Done"; return; }
-    closeVideoModal();
-  };
+async function sendIdea(id) {
+  const x = findVideo(id);
+  if (!x || !inIdeaBank(x)) return;
+  const err = await sendOneFromBank(x);
+  if (err) alert("Couldn't send it: " + err);
+  closeVideoModal();
+  await loadLiveData();
 }
 
+// Content Ideas (Tait, 2026-10-19): two columns. Ideas (banked) on the
+// left, Sent to client (Ideas and To film the client can see) on the right.
+// Drag a card across to send it, or back to take it off their portal.
+const isSentIdea = x => canBank(x) && !(x.video.status === "concept_pending" && !x.video.conceptApprovedAt);
 function renderIdeaBank() {
   const total = VIDEOS.filter(inIdeaBank).length, navN = document.getElementById("navBankN");
   navN.hidden = !total; navN.textContent = total;
-  const all = filteredVideos().filter(inIdeaBank);
-  const ids = new Set(all.map(x => x.video.id));
-  [...BANK_SELECTED].forEach(id => { if (!ids.has(id)) BANK_SELECTED.delete(id); });
+  const bank = filteredVideos().filter(inIdeaBank), sent = filteredVideos().filter(isSentIdea);
 
-  const cats = [...new Set(all.map(x => videoCategory(x.video)))].sort((a, b) => categoryRank(a).localeCompare(categoryRank(b)));
+  const cats = [...new Set(bank.concat(sent).map(x => videoCategory(x.video)))].sort((a, b) => categoryRank(a).localeCompare(categoryRank(b)));
   if (bankCategory && !cats.includes(bankCategory)) bankCategory = "";
-  const catLabel = c => c || "Other";
+  const inCat = x => !bankCategory || videoCategory(x.video) === bankCategory;
   const tabs = document.getElementById("bankTabs");
   tabs.style.display = cats.length > 1 ? "" : "none";
-  tabs.innerHTML = [`<div class="chip ${bankCategory ? "" : "active"}" data-bank-cat="">${chipLabel("All", all.length)}</div>`]
-    .concat(cats.map(c => `<div class="chip ${bankCategory === c ? "active" : ""}" data-bank-cat="${escapeHtml(c)}">${chipLabel(catLabel(c), all.filter(x => videoCategory(x.video) === c).length)}</div>`)).join("");
+  tabs.innerHTML = [`<div class="chip ${bankCategory ? "" : "active"}" data-bank-cat="">${chipLabel("All", bank.length)}</div>`]
+    .concat(cats.map(c => `<div class="chip ${bankCategory === c ? "active" : ""}" data-bank-cat="${escapeHtml(c)}">${chipLabel(c || "Other", bank.filter(x => videoCategory(x.video) === c).length)}</div>`)).join("");
   tabs.querySelectorAll("[data-bank-cat]").forEach(el => el.onclick = () => { bankCategory = el.dataset.bankCat; renderIdeaBank(); });
 
-  const shown = all.filter(x => !bankCategory || videoCategory(x.video) === bankCategory)
-    .sort((a, b) => a.client.name.localeCompare(b.client.name) || categoryRank(videoCategory(a.video)).localeCompare(categoryRank(videoCategory(b.video)))
-      || (a.video.title || "").localeCompare(b.video.title || "", undefined, { numeric: true }));
-  const n = BANK_SELECTED.size, allShownPicked = shown.length && shown.every(x => BANK_SELECTED.has(x.video.id));
-  const bar = document.getElementById("bankBar");
-  bar.style.display = all.length ? "" : "none";
-  bar.innerHTML = `<b>${n} picked</b>
-    ${shown.length ? smallBtn(allShownPicked ? "Unpick these" : `Pick all ${shown.length} shown`, "bankPickShown()") : ""}
-    ${n ? smallBtn("Clear", "BANK_SELECTED.clear();renderIdeaBank()") : ""}
-    <span style="flex:1"></span>
-    <button class="primary" ${n ? "" : "disabled"} onclick="openSendFromBank([...BANK_SELECTED])">Send ${n || ""} to the client</button>`;
-
-  const list = document.getElementById("bankList");
-  if (!all.length) {
-    list.innerHTML = `<div class="card"><div class="empty">${total ? "Nothing in the Idea Bank for this client." : "The Idea Bank is empty."} Add ideas with Claude and tick "Put them in the Idea Bank", or open an idea and choose Move to Idea Bank.</div></div>`;
-    return;
-  }
-  const rowHtml = x => {
-    const v = x.video, cat = videoCategory(v), picked = BANK_SELECTED.has(v.id);
-    const sub = [globalClientFilter === "all" ? x.client.name : "", cat, FILMED_BY_LABEL[filmedByX(x)]].filter(Boolean).join(" · ");
-    return `<div class="bank-row${picked ? " picked" : ""}" data-bank-id="${v.id}">
-      <input type="checkbox" ${picked ? "checked" : ""} aria-label="Pick ${escapeHtml(v.title || "")}">
-      <div class="bank-main"><b class="video-card" onclick="openOperatorVideoModal('${v.id}')">${escapeHtml(v.title || "(untitled)")}</b>
-        <div class="sub">${escapeHtml(sub)}</div>
-        ${v.hook ? `<div class="bank-hook">${escapeHtml(v.hook)}</div>` : ""}</div>
-      <div>${platformPills(v.platform)}</div>
+  const order = (a, b) => a.client.name.localeCompare(b.client.name) || categoryRank(videoCategory(a.video)).localeCompare(categoryRank(videoCategory(b.video)))
+    || (a.video.title || "").localeCompare(b.video.title || "", undefined, { numeric: true });
+  const card = (x, inBank) => {
+    const v = x.video, fmt = ideaFormat(v);
+    const sub = [globalClientFilter === "all" ? x.client.name : "", FILMED_BY_LABEL[filmedByX(x)]].filter(Boolean).join(" · ");
+    return `<div class="idea-card" draggable="true" data-card-id="${v.id}">
+      ${fmt ? `<div class="idea-format">${escapeHtml(fmt)}</div>` : ""}
+      <b>${escapeHtml(v.title || "(untitled)")}</b>
+      <div class="sub">${escapeHtml(sub)}</div>
+      ${v.hook ? `<div class="idea-hook">${escapeHtml(v.hook)}</div>` : ""}
+      <div class="idea-acts">${inBank ? smallBtn("Send to client →", `sendIdea('${v.id}')`, "primary") : smallBtn("← Back to Ideas", `moveToIdeaBank(['${v.id}'], true)`)}</div>
     </div>`;
   };
-  // One card per client, then per category inside it.
-  const groups = [];
-  shown.forEach(x => {
-    const key = x.client.id + "|" + videoCategory(x.video);
-    let g = groups.find(g => g.key === key);
-    if (!g) groups.push(g = { key, client: x.client, cat: videoCategory(x.video), items: [] });
-    g.items.push(x);
+  const fill = (id, items, inBank, empty) => {
+    document.getElementById(id).innerHTML = items.length ? items.sort(order).map(x => card(x, inBank)).join("") : `<div class="empty">${empty}</div>`;
+  };
+  const b = bank.filter(inCat), s = sent.filter(inCat);
+  document.getElementById("bankColN").textContent = b.length;
+  document.getElementById("sentColN").textContent = s.length;
+  fill("bankList", b, true, total ? "No ideas here. Add some with Claude." : "No ideas yet. Add ideas with Claude, or open an idea and choose Move back to Ideas.");
+  fill("sentList", s, false, "Nothing sent. Drag an idea here to send it to the client.");
+}
+// Drag and drop between the two columns. Clicking a card (not its button)
+// opens the Edit form: hook, script, outline, how to film, captions, format.
+(() => {
+  const board = document.getElementById("ideaBoard");
+  board.addEventListener("click", e => {
+    const c = e.target.closest("[data-card-id]");
+    if (c && !e.target.closest("button, a")) openVideoForm(c.dataset.cardId);
   });
-  list.innerHTML = groups.map(g => `<div class="card"><h2>${escapeHtml([globalClientFilter === "all" ? g.client.name : "", catLabel(g.cat)].filter(Boolean).join(" · "))} <span>${g.items.length} idea${g.items.length === 1 ? "" : "s"}</span></h2>
-    ${g.items.map(rowHtml).join("")}</div>`).join("");
-}
-function bankPickShown() {
-  const shown = [...document.querySelectorAll("#bankList [data-bank-id]")].map(el => el.dataset.bankId);
-  const all = shown.every(id => BANK_SELECTED.has(id));
-  shown.forEach(id => all ? BANK_SELECTED.delete(id) : BANK_SELECTED.add(id));
-  renderIdeaBank();
-}
-// Clicking a row (anywhere but its title) picks it.
-document.getElementById("bankList").addEventListener("click", e => {
-  const row = e.target.closest("[data-bank-id]");
-  if (!row || e.target.closest(".video-card")) return;
-  const id = row.dataset.bankId;
-  BANK_SELECTED.has(id) ? BANK_SELECTED.delete(id) : BANK_SELECTED.add(id);
-  renderIdeaBank();
-});
+  board.addEventListener("dragstart", e => {
+    const c = e.target.closest("[data-card-id]");
+    if (!c) return;
+    e.dataTransfer.setData("text/plain", c.dataset.cardId);
+    e.dataTransfer.effectAllowed = "move";
+    c.classList.add("dragging");
+  });
+  board.addEventListener("dragend", e => {
+    const c = e.target.closest("[data-card-id]");
+    if (c) c.classList.remove("dragging");
+    board.querySelectorAll(".board-col").forEach(col => col.classList.remove("drop"));
+  });
+  board.querySelectorAll(".board-col").forEach(col => {
+    col.addEventListener("dragover", e => { e.preventDefault(); col.classList.add("drop"); });
+    col.addEventListener("dragleave", e => { if (!col.contains(e.relatedTarget)) col.classList.remove("drop"); });
+    col.addEventListener("drop", async e => {
+      e.preventDefault();
+      col.classList.remove("drop");
+      const x = findVideo(e.dataTransfer.getData("text/plain"));
+      if (!x) return;
+      if (col.dataset.col === "sent" && inIdeaBank(x)) await sendIdea(x.video.id);
+      else if (col.dataset.col === "bank" && isSentIdea(x)) await moveToIdeaBank([x.video.id], true);
+    });
+  });
+})();
 
 // ---------- shared row + modal ----------
 // One video as a table row: Video · Posts · Platforms · Status · Actions.
@@ -671,8 +665,8 @@ function openOperatorVideoModal(id) {
   if (!x) return;
   const abandoned = x.video.status === "rejected", banked = inIdeaBank(x);
   const actions = (abandoned ? smallBtn("Restore", `restoreVideo('${id}')`, "primary")
-      : banked ? smallBtn("Send to client", `closeVideoModal();openSendFromBank(['${id}'])`, "primary")
-      : operatorActionsHtml(x, true) + (canBank(x) ? smallBtn("Move to Idea Bank", `moveToIdeaBank(['${id}'])`) : "")) +
+      : banked ? smallBtn("Send to client", `sendIdea('${id}')`, "primary")
+      : operatorActionsHtml(x, true) + (canBank(x) ? smallBtn("Move back to Ideas", `moveToIdeaBank(['${id}'])`) : "")) +
     smallBtn("Edit", `closeVideoModal();openVideoForm('${id}')`) +
     `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/clients/${encodeURIComponent(x.client.slug)}" target="_blank" rel="noopener">Open portal</a>` +
     (x.video.editorId && x.video.status === "with_editor" ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/editor/dashboard.html?editor=${encodeURIComponent(x.video.editorId)}" target="_blank" rel="noopener">Open editor portal</a>` : "") +
@@ -680,7 +674,7 @@ function openOperatorVideoModal(id) {
   openVideoModal(x.client, x.video, { actionsHtml: actions });
   if (x.video.status === "concept_pending" && !x.video.conceptApprovedAt) {
     const meta = document.querySelector("#videoModalBox .modal-meta");
-    if (meta) meta.insertAdjacentHTML("beforeend", ` <span class="badge" style="background:var(--card2);color:var(--sub)">${banked ? "In the Idea Bank — the client can't see it yet" : "Not visible to client — send it again"}</span>`);
+    if (meta) meta.insertAdjacentHTML("beforeend", ` <span class="badge" style="background:var(--card2);color:var(--sub)">${banked ? "In Content Ideas — the client can't see it yet" : "Not visible to client — send it again"}</span>`);
   }
 }
 
@@ -713,6 +707,16 @@ function openVideoForm(id, presetClientId) {
     <h2>${x ? "Edit video" : "New idea"}</h2>
     ${clientField}
     ${textField("title", "Title", v.title)}
+    <h3 style="font-size:0.85rem;margin:6px 0 8px;color:var(--sub)">The idea (the client sees this)</h3>
+    ${textField("hook", "Hook", v.hook, 2)}
+    ${textField("body", "Script", v.body, 8)}
+    ${textField("outline", "Outline (bullet points of what to cover, in order)", v.outline, 6)}
+    ${textField("filmingDirection", "How to film it", v.filmingDirection, 3)}
+    ${textField("onScreenCaption", "On-screen caption", v.onScreenCaption, 2)}
+    ${textField("caption", "Caption", v.caption, 3)}
+    ${textField("note", "Note (shown to the client and the editor)", v.note, 2)}
+    ${textField("format", "Format (from the outlier research, e.g. Talking head · pain opener)", eb.format)}
+    <h3 style="font-size:0.85rem;margin:14px 0 8px;color:var(--sub)">Dates and who films it</h3>
     <div class="grid-2">
       <div>${textField("platform", "Platforms (comma-separated)", (v.platform || []).join(", "))}</div>
       ${statusField}
@@ -730,14 +734,6 @@ function openVideoForm(id, presetClientId) {
       <option value="client" ${v.filmedBy === "client" ? "selected" : ""}>The client films it — they upload footage and tap "Video has been filmed"</option>
       <option value="us" ${v.filmedBy === "us" ? "selected" : ""}>We film it / already have the footage — the client approves the idea</option>
     </select>
-    <h3 style="font-size:0.85rem;margin:14px 0 8px;color:var(--sub)">The idea (the client sees this)</h3>
-    ${textField("hook", "Hook", v.hook, 2)}
-    ${textField("body", "Script", v.body, 4)}
-    ${textField("outline", "Outline (bullet points of what to cover, in order)", v.outline, 4)}
-    ${textField("filmingDirection", "How to film it", v.filmingDirection, 3)}
-    ${textField("onScreenCaption", "On-screen caption", v.onScreenCaption, 2)}
-    ${textField("caption", "Caption", v.caption, 3)}
-    ${textField("note", "Note (shown to the client and the editor)", v.note, 2)}
     <h3 style="font-size:0.85rem;margin:14px 0 8px;color:var(--sub)">For the editor (the client never sees this)</h3>
     ${textField("editorInstructions", "Editing instructions", editorInstructions(v), 4)}
     ${textField("rawFootageUrl", "Raw footage folder for this video (Google Drive link; leave empty to use the client's raw footage folder)", eb.rawFootageUrl)}
@@ -763,7 +759,7 @@ function openVideoForm(id, presetClientId) {
     box.querySelectorAll("[data-f]").forEach(el => {
       const k = el.dataset.f, val = el.value.trim();
       if (k === "platform") fields.platform = val.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
-      else if (!["editorInstructions", "revisions", "rawFootageUrl"].includes(k)) fields[k] = val;
+      else if (!["editorInstructions", "revisions", "rawFootageUrl", "format"].includes(k)) fields[k] = val;
     });
     // One instructions field replaces the old separate brief fields.
     // Keeps what else is stored there (e.g. where an abandoned idea came from).
@@ -771,6 +767,7 @@ function openVideoForm(id, presetClientId) {
       instructions: box.querySelector('[data-f="editorInstructions"]').value.trim() || null,
       revisions: box.querySelector('[data-f="revisions"]').value.trim() || null,
       rawFootageUrl: box.querySelector('[data-f="rawFootageUrl"]').value.trim() || null,
+      format: box.querySelector('[data-f="format"]').value.trim() || null,
     });
     OLD_BRIEF_FIELDS.forEach(([k]) => delete fields.editorBrief[k]); // folded into instructions above
     if (fields.editorBrief.rawFootageUrl && !/^https?:\/\//i.test(fields.editorBrief.rawFootageUrl)) { err.textContent = "The raw footage folder has to be a link starting with https://"; return; }
@@ -804,6 +801,7 @@ const BULK_PROMPT = `Turn the content plan we just made into a JSON array I can 
 - "body": the full script
 - "outline": a bullet-point list (one string, one "- " line per point) of everything the video covers, in order — for when the client would rather talk through points than read the script
 - "filmingDirection": plain-language instructions for the client on how to film it
+- "format": the format it's paired with, from the outlier research (e.g. "Talking head · pain opener + payoff")
 - "editorInstructions": how the editor should cut it
 - "filmedBy": "client" if the client films it, "us" if we film it or already have the footage (leave out to use the client's usual)
 - "caption": the post caption
@@ -842,7 +840,7 @@ function parseBulk(text) {
       overview: o.overview || null, outline: Array.isArray(o.outline) ? o.outline.map(p => "- " + p).join("\n") : (o.outline || null),
       hook: o.hook || null, body: o.body || o.script || null,
       filmingDirection: o.filmingDirection || o.filmingInstructions || o.filming_instructions || null,
-      editorBrief: { instructions: o.editorInstructions || o.editor_instructions || null },
+      editorBrief: { instructions: o.editorInstructions || o.editor_instructions || null, format: o.format || null },
       caption: o.caption || null, ...dates,
       filmedBy: ["client", "us"].includes(o.filmedBy) ? o.filmedBy : null,
     });
@@ -860,7 +858,7 @@ function openBulkAdd(presetClientId, toBank) {
     <button id="bkCopyPrompt" style="margin-bottom:10px">Copy the prompt to give Claude</button>
     ${lbl("Paste Claude's JSON here")}<textarea id="bkText" rows="12" style="width:100%;margin-bottom:10px;font-family:monospace;font-size:0.8rem" placeholder='[{"title": "...", "hook": "...", "filmingDirection": "...", "dueToFilm": "2026-10-06", "postDate": "2026-10-14"}]'></textarea>
     <label style="display:flex;gap:8px;align-items:flex-start;margin:0 0 10px;font-size:0.9rem"><input type="checkbox" id="bkToBank" ${toBank ? "checked" : ""} style="width:auto;margin-top:3px">
-      <span>Put them in the Idea Bank: the client doesn't see them until you pick some and send them</span></label>
+      <span>Put them in Content Ideas: the client doesn't see them until you send them</span></label>
     <div id="bkPreview" class="meta" style="margin-bottom:10px"></div>
     <div class="auth-error" id="bkError"></div>
     <div style="display:flex;gap:8px"><button class="primary" id="bkSave" disabled>Add ideas</button><button onclick="closeVideoModal()">Cancel</button></div>
@@ -884,7 +882,7 @@ function openBulkAdd(presetClientId, toBank) {
   save.onclick = async () => {
     const clientId = box.querySelector("#bkClient").value;
     save.disabled = true; save.textContent = "Adding…";
-    // Banked: no gate-1 stamp, and its dates wait in editor_brief.ideaBank (see Idea Bank).
+    // Banked: no gate-1 stamp, and its dates wait in editor_brief.ideaBank (see Content Ideas).
     const bank = box.querySelector("#bkToBank").checked;
     const rows = parsed.rows.map(r => bank
       ? Object.assign(videoFieldsToRow(Object.assign({ clientId }, r, { dueToFilm: null, dueToEdit: null, postDate: null,
@@ -895,7 +893,7 @@ function openBulkAdd(presetClientId, toBank) {
     closeVideoModal();
     globalClientFilter = clientId;
     await loadLiveData();
-    alert(bank ? `Added ${data.length} idea(s) to the Idea Bank. ${CLIENT_BY_ID[clientId].name} won't see them until you send them.`
+    alert(bank ? `Added ${data.length} idea(s) to Content Ideas. ${CLIENT_BY_ID[clientId].name} won't see them until you send them.`
       : `Added ${data.length} idea(s). They're on the calendar and in ${CLIENT_BY_ID[clientId].name}'s portal now.`);
   };
 }
@@ -1063,7 +1061,7 @@ function renderAllClients() {
     const banked = VIDEOS.filter(x => x.client.id === c.id && inIdeaBank(x)).length;
     const toReview = VIDEOS.filter(x => x.client.id === c.id && x.video.status === "client_review").length;
     return `<div class="row"><div class="left"><b>${escapeHtml(c.name)}</b>
-      <div class="meta">/clients/${escapeHtml(c.slug)} · ${escapeHtml(WHO_FILMS[c.clientSystem] || c.clientSystem)} · ${count} video(s)${banked ? ` · ${banked} in the Idea Bank` : ""}</div>
+      <div class="meta">/clients/${escapeHtml(c.slug)} · ${escapeHtml(WHO_FILMS[c.clientSystem] || c.clientSystem)} · ${count} video(s)${banked ? ` · ${banked} in Content Ideas` : ""}</div>
       ${missing.length ? `<div class="meta" style="color:var(--red)">Missing: ${missing.join(", ")}</div>` : ""}
       <div class="meta">${c.contactName || c.contactEmail || c.contactPhone
         ? "Contact: " + [c.contactName, c.contactEmail, c.contactPhone].filter(Boolean).map(escapeHtml).join(" · ")
