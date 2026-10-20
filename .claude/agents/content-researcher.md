@@ -33,8 +33,8 @@ When asked for a client's similar accounts:
    - **Same format**: founder or business accounts using formats that would
      suit this client (e.g. a founder talking to camera)
    - **Aspirational**: big accounts in the space whose style is worth copying
-3. Check every account with real data (Apify: Instagram/TikTok profile and
-   recent posts). Use creator profiles rather than hashtags, because hashtag
+3. Check every account with real data (Apify: Instagram profile and recent
+   posts; no TikTok, per Tait). Use creator profiles rather than hashtags, because hashtag
    scrapes return low-engagement noise. Record: followers, typical views,
    their best recent videos (outliers = several times their usual views),
    what's working, and why it fits this client.
