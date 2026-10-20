@@ -20,8 +20,8 @@
       "id": "account-manager",
       "name": "Account Manager",
       "color": "#E86AA6",
-      "status": "later",
-      "agent": null,
+      "status": "training",
+      "agent": "account-manager.md",
       "job": "Interviews clients (voice-memo questions or a sheet for Tait), asks follow-ups, and writes the ICP, brand guidelines and voice docs."
     },
     {
@@ -60,24 +60,24 @@
       "id": "content-editor",
       "name": "Content Editor",
       "color": "#F15523",
-      "status": "later",
-      "agent": null,
+      "status": "training",
+      "agent": "content-editor.md",
       "job": "Edits footage in Remotion from the client's Style Profile, using only graphics Tait approved, and pitches new ones."
     },
     {
       "id": "content-reviewer",
       "name": "Content Reviewer",
       "color": "#FF6B6B",
-      "status": "later",
-      "agent": null,
+      "status": "training",
+      "agent": "content-reviewer.md",
       "job": "Motion Director: says no. Checks every graphic against the graphics standard (evidence, not effects; no scam tells) and every edit frame by frame, and sends timestamped fixes to the Editor until it passes."
     },
     {
       "id": "content-poster",
       "name": "Content Poster",
       "color": "#7CC4FF",
-      "status": "later",
-      "agent": null,
+      "status": "training",
+      "agent": "content-poster.md",
       "job": "Prepares captions, tags, platforms and post times. A person posts."
     }
   ],
