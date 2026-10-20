@@ -57,3 +57,52 @@ Sources: @joshuablatch reels DesDQp_q01I ("make your Claude edits look unique",
 - Which series to start with?
 - How much of the Kallaway diagram style vs. the Blatch editorial style? (The
   proposal: Blatch as the default look, Kallaway for explainers.)
+
+---
+
+# Part 2: formats, hooks and topics (DRAFT, Step 1, 2026-10-20)
+
+Researcher's study of the remix references (Instagram, 63 reels, top 2 watched
+frame by frame, 60 comments read) + Grad Gig's own customer data
+(`sources/customer-data.md`). For Tait to approve. The Strategist plans from this.
+
+## The formats that broke out `[research]`
+| # | Format | Proof | How it works | Grad Gig remix |
+|---|---|---|---|---|
+| F1 | **"Day X of [money goal]" series** | @maclanepowerwashing "Day 20 of scaling to $25,000": **11.8M**; Day 9: 5.8M; Day 2/30: 2.5M (account's usual: 2–50k) | Line 1 names the day and the goal; a **running money counter** stays on screen ($14,301/$25,000) and jumps at the end; one job per episode, start to finish; "see you tomorrow for Day 21" | "Day X of following a Wheaton student to $[goal] this semester." The counter is the Liquid Glass Graph effect in Grad Gig orange. Needs a willing student and real numbers from Luke. |
+| F2 | **Storytime over job footage** | @allsidespressurewashing "A competitor showed up at my job trying to get me fired": **3.6M**; "An HOA board member tried to stop this job": 204k (usual ~30k) | A conflict headline as line 1 ("X tried to Y"), "This is what happened," then a first-person story told over continuous, satisfying work footage, with centred captions. Ends on a small win/moral. | A student narrates a real gig story over footage of the gig: "A Wheaton mom called at 9pm because…", "The job was 'too small' for every company in town." Footage = the gig itself (shovelling, moving, yard). |
+| F3 | **Before → after transformation** | @danseasonalservices mulch job: **1.3M** on 382 followers (10 s, no talking); top comment elsewhere: "Pls show videos that show finished product" (63 likes) | Ugly start, fast work, clean finish, short. | 8–15 s gig transformations: a leaf-buried yard, a basement of boxes, a snowed-in driveway → done. End on the cleaned result for 2 s. |
+| F4 | **Wholesome older customer** | @danseasonalservices "An elderly client texted me asking what I wanted from McDonald's" (his customers are 60+) | A small human moment between a young worker and an older customer. | Real moments between students and Wheaton's older homeowners (with permission). Directly targets the older-homeowner customer. |
+| F5 | **Founder talking to camera** | @nickfriedman1 (College HUNKS co-founder): 60–70k ("Send this to your co-founder") | Short, direct founder opinion. | Luke on camera answering customer questions, using the decided look C/A. |
+
+## What viewers say `[research]`
+From comments on the biggest videos:
+- They **root for young workers**: "Love to see young people working to make some money!", "Great job, young man."
+- They **debate price**: "How much do you charge", "You have to start charging more!!"
+- They **want the result**: "Why do you not show before and after shots?" (29 likes); "Pls show videos that show finished product" (63).
+- They ask to **hire / work**: "Are you hiring?"
+
+## Hook shapes that work here `[research → for Grad Gig]`
+1. **Day + goal:** "Day 3 of following a Wheaton student to $5,000 this semester."
+2. **Conflict line:** "[Someone] said this job was too small." / "Every company in town said no."
+3. **Number + age/identity:** "This Wheaton College sophomore made $[X] doing [gig] this fall." (from the "15-year-old built a 6-figure business" shape)
+4. **Customer's own question** (from customer-data.md, `[client's words]`): "'Is this job too small?'", "'Are they actually Wheaton students?'", "'Can we have the same student back next time?'", "'I don't know who else to call.'"
+
+## Topic bank: customer pains × formats `[client's words] × [research]`
+Concept seeds for the Strategist, not final ideas.
+| Pain (Luke's words) | Format | Seed |
+|---|---|---|
+| "leaves in the yard… shouldn't be up on a ladder… nobody to call" | F3 + F4 | Before→after of an older homeowner's yard, ending with them on the porch |
+| "The basement is still full of boxes… three months" | F3 | Basement boxes → organised, 12 s |
+| "Is this job too small?" | F2 / F5 | "Every company said this job was too small. Here's who said yes." |
+| "Students are flaky" (false belief) | F1 | Day-X series showing a student who shows up every time |
+| "Are they actually Wheaton students?" | F5 | Luke: "Yes. Here's how we check." (.edu email, monitored, rated after every gig; never claim background checks) |
+| "Can we have the same student back next time?" | F4 | The family who started with tutoring and now has "a team of students they trust" |
+| "a kid in tears over the homework. Dinner not started" | F2 | Story of a tutoring gig that changed a family's evenings |
+| "how much does it cost?" | F5 + effect | Luke breaks down a real price (Over-the-shoulder zoom: "A company: $X → A student: $Y"). Needs Luke's real numbers. |
+
+## Before any of this is filmed
+- **Real numbers only** (earnings, prices, goals) from Luke. Never invented.
+- **Permission** from every student and customer on camera.
+- **No background-check claims** (brain.md).
+- Grad Gig needs **gig footage**: students filming short clips on real jobs. Raise this with Luke (the Account Manager can draft the ask).
