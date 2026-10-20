@@ -106,3 +106,14 @@ Concept seeds for the Strategist, not final ideas.
 - **Permission** from every student and customer on camera.
 - **No background-check claims** (brain.md).
 - Grad Gig needs **gig footage**: students filming short clips on real jobs. Raise this with Luke (the Account Manager can draft the ask).
+
+## UPDATE (Tait, 2026-10-20): Luke only, no students or customers on camera
+Almost all Grad Gig content is **Luke talking to camera**. The formats change:
+| # | Was | Now (Luke only) |
+|---|---|---|
+| F1 | Day X following a student | **Luke's own series:** "Day X of [a real Grad Gig goal, e.g. families helped or students hired]" with the orange counter graphic. Needs a real goal from Luke. |
+| F2 | Storytime over gig footage | **Luke tells the story to camera**, and look C's motion graphics carry the visuals (split screen, diagrams, numbers). The main format. |
+| F3 | Before → after footage | **Dropped** unless customers send photos (then before/after photos as graphics). |
+| F4 | Moments with older customers | **Luke tells those moments** as stories ("A Wheaton grandma called because…"). |
+| F5 | Founder to camera | **Stays, and is the core** of everything above. |
+Permissions and gig footage are no longer needed. Real numbers from Luke still are.
