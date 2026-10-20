@@ -34,3 +34,15 @@ differ from CLAUDE.md's core principles, they apply only to the team's work.
 9. **Posting is prep only for now.** The Poster writes captions, tags,
    platforms and times; a human posts.
 10. **Tait starts the work** from Claude Code. Nothing runs on a schedule yet.
+11. **Every client has its own motion graphics library**
+    (`clients/<slug>/graphics/INDEX.md`). The Editor uses only graphics Tait has
+    approved there, plus the shared effects library adapted to the client's
+    brand. It may pitch new graphics, but nothing is built or used before Tait
+    approves (pitch → approve → 2–3 directions → build → final OK).
+12. **Tait's feedback comes with a why, and the team learns from it.** Every
+    note goes in the client's `team-room/feedback-log.md`; the employee involved
+    proposes a rule (for this client, or for every client) and Tait approves it.
+13. **Brand options, not a single answer.** For every new client, the team
+    pulls the brand from the logo and website, then shows Tait 2–3 rendered
+    look options (colours, fonts, caption style) on the client's own footage.
+    Tait picks; the pick goes in `clients/<slug>/brand.md`.
