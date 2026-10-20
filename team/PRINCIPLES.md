@@ -29,8 +29,9 @@ differ from CLAUDE.md's core principles, they apply only to the team's work.
 5. **The team works like an office, not a line.** Every employee reads the
    client's team room (`clients/<slug>/team-room/`) before working and can
    question or send back anyone's work. The Team Lead keeps it moving.
-6. **Tait approves twice**: the month's ideas, and every finished video.
-   Nothing reaches a client without his OK.
+6. **Tait's gates:** he approves the ideas, the final written card, and every
+   edit; the client reviews before posting and their edits go through Tait.
+   Nothing reaches a client without his OK (see `team-lead/playbook.md`).
 7. **The team learns only with Tait's approval.** After his feedback, an
    employee proposes a rule in its `rule-proposals.md`. The rule moves into
    `rules.md` only once he says yes.
