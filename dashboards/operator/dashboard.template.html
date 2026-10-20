@@ -22,9 +22,30 @@
 .idea-hook { font-size:0.86rem; margin-top:6px; line-height:1.45; }
 .idea-acts { margin-top:10px; }
 @media (max-width:760px) { .board { grid-template-columns:1fr; } }
+/* Fully AI Social: the AI team as a night-sky graph, its picked member, then the team room */
+.ai-stage { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:14px; margin-bottom:14px; }
+@media (max-width:900px) { .ai-stage { grid-template-columns:minmax(0,1fr); } }
+.ai-sky { position:relative; height:min(70vh,640px); min-height:420px; border-radius:16px; overflow:hidden; background:radial-gradient(120% 90% at 50% 40%, #0b1a2e, #04101f 70%); }
+.ai-sky canvas { position:absolute; inset:0; width:100%; height:100%; cursor:grab; touch-action:none; }
+.ai-legend { position:absolute; right:12px; bottom:10px; display:flex; flex-wrap:wrap; gap:6px 12px; font-size:0.72rem; color:#8a97ad; pointer-events:none; }
+.ai-legend span { display:inline-flex; align-items:center; gap:5px; }
+.ai-legend i { width:9px; height:9px; border-radius:50%; border:2px solid #b8c1d6; display:inline-block; }
+.ai-legend i.dim { border-color:#4b5870; }
+.ai-legend i.sq { border:none; border-radius:0; width:8px; height:8px; background:#fff; }
+.ai-panel { margin:0; display:flex; flex-direction:column; gap:10px; }
+.ai-panel h2 { display:flex; align-items:center; gap:8px; margin:0; }
+.ai-panel h2 i { width:12px; height:12px; border-radius:50%; display:inline-block; }
+.ai-msg { display:grid; grid-template-columns:170px minmax(0,1fr); gap:4px 16px; padding:12px 0; border-top:1px solid var(--line-2); }
+.ai-msg:first-child { border-top:none; }
+.ai-msg .who { font-size:0.8rem; color:var(--sub); }
+.ai-msg .who b { color:var(--ink); display:flex; align-items:center; gap:6px; }
+.ai-msg .who b i { width:8px; height:8px; border-radius:50%; display:inline-block; }
+.ai-msg .file { display:block; font-size:0.75rem; color:var(--sub); margin-top:4px; font-family:monospace; }
+@media (max-width:640px) { .ai-msg { grid-template-columns:minmax(0,1fr); } }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="/supabase/config.js"></script>
 </head>
 <body>
@@ -41,6 +62,7 @@
   <div class="nav-item" data-view="ideabank" data-label="Content Ideas">Content Ideas<span class="n" id="navBankN" hidden></span></div>
   <div class="nav-item" data-view="clients" data-label="Clients">Clients<span class="n" id="navClientsN" hidden></span></div>
   <div class="nav-item" data-view="editors" data-label="Editors">Editors</div>
+  <div class="nav-item" data-view="aiteam" data-label="Fully AI Social">Fully AI Social</div>
   <a class="nav-item" href="/editor/dashboard.html" target="_blank" rel="noopener" style="text-decoration:none">Editor portal ↗</a>
 </nav>
 
@@ -110,6 +132,20 @@
       <div class="auth-error" id="edErr"></div>
     </div>
     <div class="card"><div id="editorsList"></div></div>
+  </section>
+
+  <section class="view" id="view-aiteam">
+    <div class="page-head">
+      <div><h1>Fully AI Social</h1><p>Your AI content team. Click anyone to see their job. Below: what they've said to each other in each client's team room.</p></div>
+      <div class="page-actions"><button class="accent" id="aiAddBtn">Add team-room update from Claude</button></div>
+    </div>
+    <div class="ai-stage">
+      <div class="ai-sky" id="aiSky"><canvas id="aiGraph" aria-label="Network graph of the AI content team"></canvas>
+        <div class="ai-legend"><span><i class="sq"></i>you</span><span><i style="border-color:#7CFFA0"></i>working</span><span><i></i>being trained</span><span><i class="dim"></i>not started</span></div>
+      </div>
+      <div class="card ai-panel" id="aiPanel"></div>
+    </div>
+    <div class="card"><h2 id="aiRoomTitle">Team room</h2><div id="aiFeed"></div></div>
   </section>
 
   <section class="view" id="view-clients">
@@ -206,6 +242,7 @@ async function loadLiveData() {
   });
   if (globalClientFilter !== "all" && !CLIENT_BY_ID[globalClientFilter]) globalClientFilter = "all";
   await loadFixCounts();
+  await loadAiMessages();
   renderAll();
 }
 // For videos with an editor or at Edit review: how many of the comments
@@ -1402,6 +1439,173 @@ async function openOnboarding(clientId) {
   };
 }
 
+// ---------- Fully AI Social (migration 025) ----------
+// The AI content team (Tait, 2026-10-20). Who's on it comes from
+// team/team.json, baked in by build.py (no client data). What they've said
+// to each other comes from social_ai_team_messages, pasted in from Claude.
+const AI_TEAM = /*__AI_TEAM__*/null;
+let AI_MESSAGES = [], AI_MSG_ERROR = null, aiSelected = "content-researcher", aiGraph = null;
+const AI_STATUS = { live: "Working now", training: "Being trained", later: "Not started yet" };
+const AI_UPDATE_PROMPT = `Turn the new lines in this client's team room (clients/<slug>/team-room/thread.md) into JSON for the Fully AI Social tab: an array of {"from": "<employee or Tait>", "to": "<who it was for>", "message": "<what was said, one or two sentences>", "file": "<the file it points at, or empty>", "at": "YYYY-MM-DD"}. Only lines I haven't added yet. Output only the JSON.`;
+
+async function loadAiMessages() {
+  const r = await sbClient.from("social_ai_team_messages").select("*").order("said_at", { ascending: false });
+  AI_MSG_ERROR = r.error ? r.error.message : null;
+  AI_MESSAGES = r.data || [];
+}
+function aiMember(name) {
+  const n = String(name || "").trim().toLowerCase();
+  if (!AI_TEAM) return null;
+  return [...AI_TEAM.people, ...AI_TEAM.employees].find(m => m.name.toLowerCase() === n || m.id === n) || null;
+}
+function aiColor(name) { const m = aiMember(name); return (m && m.color) || "#ffffff"; }
+function aiVisibleMessages() {
+  return AI_MESSAGES.filter(m => globalClientFilter === "all" || !m.client_id || m.client_id === globalClientFilter);
+}
+function renderAiTeam() {
+  if (!AI_TEAM) return;
+  const client = CLIENT_BY_ID[globalClientFilter];
+  document.getElementById("aiRoomTitle").textContent = client ? `${client.name} team room` : "Team room, all clients";
+  const msgs = aiVisibleMessages();
+  document.getElementById("aiFeed").innerHTML = AI_MSG_ERROR
+    ? `<div class="empty">The team room needs migration 025 (social_ai_team_messages) run in Supabase.<br><span class="meta">${escapeHtml(AI_MSG_ERROR)}</span></div>`
+    : !msgs.length ? `<div class="empty">Nothing in the team room yet. Ask Claude for a team-room update and paste it with "Add team-room update from Claude".</div>`
+    : msgs.map(m => `<div class="ai-msg"><div class="who"><b><i style="background:${aiColor(m.from_agent)}"></i>${escapeHtml(m.from_agent)}</b>
+        ${m.to_agent ? `to ${escapeHtml(m.to_agent)}<br>` : ""}${escapeHtml(niceDate(String(m.said_at).slice(0, 10)))}${!client && m.client_id && CLIENT_BY_ID[m.client_id] ? ` · ${escapeHtml(CLIENT_BY_ID[m.client_id].name)}` : ""}</div>
+        <div>${escapeHtml(m.message)}${m.file ? `<span class="file">${escapeHtml(m.file)}</span>` : ""}</div></div>`).join("");
+  renderAiPanel();
+  initAiGraph();
+}
+function renderAiPanel() {
+  const m = [...AI_TEAM.people, ...AI_TEAM.employees].find(x => x.id === aiSelected);
+  if (!m) return;
+  const said = aiVisibleMessages().filter(x => aiMember(x.from_agent) === m).length;
+  document.getElementById("aiPanel").innerHTML = m.job === undefined
+    ? `<h2>${escapeHtml(m.name)}</h2><div class="meta">${escapeHtml(m.sub || "")}</div><p style="margin:0">You approve the month's ideas and every finished video. Every note you give, with your why, becomes a rule the team learns.</p>`
+    : `<h2><i style="background:${m.color}"></i>${escapeHtml(m.name)}</h2>
+       <span class="badge" style="width:fit-content">${AI_STATUS[m.status] || m.status}</span>
+       <p style="margin:0;line-height:1.5">${escapeHtml(m.job)}</p>
+       <div class="meta">${said ? `${said} message${said > 1 ? "s" : ""} in this team room.` : "Nothing in this team room yet."}</div>
+       ${m.agent ? `<div class="meta">Runs in Claude Code: .claude/agents/${escapeHtml(m.agent)}</div>` : ""}`;
+}
+function initAiGraph() {
+  if (typeof d3 === "undefined") return;
+  const canvas = document.getElementById("aiGraph");
+  const ctx = canvas.getContext && canvas.getContext("2d");
+  if (!ctx) return;   // no graph without d3 or a canvas (tests); the panel and feed still work
+  if (aiGraph) { aiGraph.refresh(); return; }
+  const nodes = [...AI_TEAM.people.map(p => ({ ...p, kind: "person", r: 9 })), ...AI_TEAM.employees.map(e => ({ ...e, kind: "agent", r: 16 }))];
+  const links = AI_TEAM.handoffs.map(([s, t]) => ({ source: s, target: t }));
+  const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+  byId.tait.fx = 0; byId.tait.fy = 0;
+  let W = 0, H = 0, DPR = 1, tf = d3.zoomIdentity, hover = null, live = new Set();
+  const stars = Array.from({ length: 110 }, () => ({ x: Math.random(), y: Math.random(), r: Math.random() * 1.1 + 0.2, a: Math.random() * 0.45 + 0.1 }));
+  const sim = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d => d.id).distance(150).strength(0.25))
+    .force("charge", d3.forceManyBody().strength(-900))
+    .force("collide", d3.forceCollide().radius(d => d.r + 40))
+    .force("x", d3.forceX(0).strength(0.03)).force("y", d3.forceY(0).strength(0.04));
+  const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
+  function refresh() {
+    // A hand-off glows when the team room has a message between those two.
+    live = new Set();
+    aiVisibleMessages().forEach(m => {
+      const from = aiMember(m.from_agent); if (!from) return;
+      String(m.to_agent || "").split(/,|\//).forEach(t => { const to = aiMember(t) || (/team/i.test(t) ? null : null); if (to) { live.add(from.id + ">" + to.id); live.add(to.id + ">" + from.id); } });
+    });
+  }
+  function size() { const b = canvas.parentElement.getBoundingClientRect(); W = b.width; H = b.height; DPR = window.devicePixelRatio || 1; canvas.width = W * DPR; canvas.height = H * DPR; }
+  function toGraph(ev) { const b = canvas.getBoundingClientRect(); const [x, y] = tf.invert([ev.clientX - b.left - W / 2, ev.clientY - b.top - H / 2]); return { x, y }; }
+  function pick(ev) { const p = toGraph(ev); return nodes.find(n => Math.hypot(n.x - p.x, n.y - p.y) < n.r + 14) || null; }
+  function text(s, x, y, size, color, weight) { ctx.font = `${weight} ${size}px "Hanken Grotesk", system-ui, sans-serif`; ctx.textAlign = "center"; ctx.fillStyle = color; ctx.fillText(s, x, y); }
+  function draw() {
+    if (!W || !document.getElementById("view-aiteam").classList.contains("active")) return;
+    const t = performance.now() / 1000;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, W, H);
+    stars.forEach(s => { ctx.beginPath(); ctx.fillStyle = `rgba(210,218,240,${s.a})`; ctx.arc(s.x * W, s.y * H, s.r, 0, 7); ctx.fill(); });
+    ctx.save(); ctx.translate(W / 2 + tf.x, H / 2 + tf.y); ctx.scale(tf.k, tf.k);
+    const near = hover ? new Set([hover, ...links.filter(l => l.source.id === hover || l.target.id === hover).flatMap(l => [l.source.id, l.target.id])]) : null;
+    const al = id => !near || near.has(id) ? 1 : 0.12;
+    links.forEach(l => {
+      const on = live.has(l.source.id + ">" + l.target.id), a = Math.min(al(l.source.id), al(l.target.id));
+      const cx = (l.source.x + l.target.x) / 2 - (l.target.y - l.source.y) * 0.12, cy = (l.source.y + l.target.y) / 2 + (l.target.x - l.source.x) * 0.12;
+      ctx.beginPath(); ctx.moveTo(l.source.x, l.source.y); ctx.quadraticCurveTo(cx, cy, l.target.x, l.target.y);
+      ctx.strokeStyle = `rgba(205,214,235,${(on ? 0.35 : 0.12) * a})`; ctx.lineWidth = on ? 1.4 : 0.9; ctx.stroke();
+      if (on) for (let k = 0; k < 2; k++) {
+        const u = (t * 0.18 + k * 0.5) % 1;
+        const x = (1 - u) ** 2 * l.source.x + 2 * (1 - u) * u * cx + u * u * l.target.x, y = (1 - u) ** 2 * l.source.y + 2 * (1 - u) * u * cy + u * u * l.target.y;
+        ctx.beginPath(); ctx.fillStyle = l.source.color || "#fff"; ctx.globalAlpha = a; ctx.arc(x, y, 3, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+      }
+    });
+    nodes.forEach(n => {
+      ctx.globalAlpha = al(n.id);
+      if (n.kind === "person") {
+        ctx.fillStyle = "#fff"; ctx.fillRect(n.x - n.r, n.y - n.r, n.r * 2, n.r * 2);
+        text(n.name, n.x, n.y + n.r + 18, 14, "#fff", 800); text(n.sub, n.x, n.y + n.r + 32, 10.5, "#8a97ad", 400);
+      } else {
+        const g = n.status === "live" ? 1 : n.status === "training" ? 0.55 : 0.22;
+        const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 3); grad.addColorStop(0, rgba(n.color, 0.35 * g)); grad.addColorStop(1, rgba(n.color, 0));
+        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 3, 0, 7); ctx.fill();
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, 7); ctx.fillStyle = rgba(n.color, 0.16); ctx.fill();
+        ctx.strokeStyle = rgba(n.color, n.status === "later" ? 0.45 : 1); ctx.lineWidth = n.id === aiSelected ? 3.5 : 2; ctx.stroke();
+        text(n.name, n.x, n.y + n.r + 18, 13, "#eef1f8", 700); text(AI_STATUS[n.status].toLowerCase(), n.x, n.y + n.r + 32, 10.5, "#8a97ad", 400);
+      }
+      ctx.globalAlpha = 1;
+    });
+    ctx.restore();
+  }
+  const zoom = d3.zoom().scaleExtent([0.4, 3]).filter(ev => ev.type === "wheel" || !pick(ev)).on("zoom", ev => { tf = ev.transform; draw(); });
+  d3.select(canvas).call(zoom).call(d3.drag().container(canvas).subject(ev => pick(ev.sourceEvent))
+    .on("start", ev => { sim.alphaTarget(0.25).restart(); ev.subject.fx = ev.subject.x; ev.subject.fy = ev.subject.y; })
+    .on("drag", ev => { const p = toGraph(ev.sourceEvent); ev.subject.fx = p.x; ev.subject.fy = p.y; })
+    .on("end", ev => { sim.alphaTarget(0); if (ev.subject.id !== "tait") { ev.subject.fx = null; ev.subject.fy = null; } }));
+  canvas.addEventListener("pointermove", ev => { const n = pick(ev); hover = n ? n.id : null; canvas.style.cursor = n ? "pointer" : ""; });
+  canvas.addEventListener("click", ev => { const n = pick(ev); if (n) { aiSelected = n.id; renderAiPanel(); } });
+  new ResizeObserver(() => { size(); draw(); }).observe(canvas.parentElement);
+  size(); refresh();
+  (function loop() { draw(); requestAnimationFrame(loop); })();
+  aiGraph = { refresh };
+}
+function openAiUpdate() {
+  const selected = globalClientFilter !== "all" ? globalClientFilter : (CLIENTS[0] && CLIENTS[0].id) || "";
+  const box = openModal(`
+    <h2>Add team-room update from Claude</h2>
+    <p class="meta" style="margin:0 0 12px">Ask Claude for a team-room update (the button copies the request), then paste its JSON here.</p>
+    ${lbl("Team room")}<select id="aiClient" style="width:100%;margin-bottom:10px">${CLIENTS.map(c => `<option value="${c.id}" ${c.id === selected ? "selected" : ""}>${escapeHtml(c.name)}</option>`).join("")}<option value="">The whole team (no one client)</option></select>
+    <button id="aiCopyPrompt" style="margin-bottom:10px">Copy the request to give Claude</button>
+    ${lbl("Paste Claude's JSON here")}<textarea id="aiText" rows="10" style="width:100%;margin-bottom:10px;font-family:monospace;font-size:0.8rem" placeholder='[{"from": "Content Researcher", "to": "Tait", "message": "...", "file": "...", "at": "2026-10-20"}]'></textarea>
+    <div id="aiPreview" class="meta" style="margin-bottom:10px"></div>
+    <div class="auth-error" id="aiError"></div>
+    <div style="display:flex;gap:8px"><button class="primary" id="aiSave" disabled>Add to the team room</button><button onclick="closeVideoModal()">Cancel</button></div>`);
+  const text = box.querySelector("#aiText"), preview = box.querySelector("#aiPreview"), save = box.querySelector("#aiSave"), err = box.querySelector("#aiError");
+  box.querySelector("#aiCopyPrompt").onclick = async e => {
+    try { await navigator.clipboard.writeText(AI_UPDATE_PROMPT); e.target.textContent = "Copied ✓ — paste it to Claude"; }
+    catch (x) { text.value = AI_UPDATE_PROMPT; e.target.textContent = "Couldn't copy — the request is in the box below"; }
+  };
+  let rows = [];
+  text.addEventListener("input", () => {
+    err.textContent = ""; rows = [];
+    if (!text.value.trim()) { preview.innerHTML = ""; save.disabled = true; return; }
+    let data;
+    try { data = JSON.parse(text.value.trim().replace(/^```(json)?|```$/g, "")); } catch (e) { err.textContent = "That isn't valid JSON. Paste exactly what Claude gave you."; save.disabled = true; return; }
+    if (!Array.isArray(data)) data = [data];
+    rows = data.filter(m => m && m.from && m.message).map(m => ({ from_agent: String(m.from), to_agent: String(m.to || ""), message: String(m.message), file: m.file ? String(m.file) : null, said_at: /^\d{4}-\d{2}-\d{2}/.test(m.at || "") ? m.at : new Date().toISOString() }));
+    preview.innerHTML = rows.length ? `<b>${rows.length} message(s) ready</b>` : "";
+    if (!rows.length) err.textContent = "Each message needs at least a from and a message.";
+    save.disabled = !rows.length;
+  });
+  save.onclick = async () => {
+    const clientId = box.querySelector("#aiClient").value || null;
+    save.disabled = true; save.textContent = "Adding…";
+    const { error } = await sbClient.from("social_ai_team_messages").insert(rows.map(r => Object.assign({ client_id: clientId }, r)));
+    if (error) { err.textContent = error.message; save.disabled = false; save.textContent = "Add to the team room"; return; }
+    closeVideoModal();
+    if (clientId) globalClientFilter = clientId;
+    await loadLiveData();
+  };
+}
+document.getElementById("aiAddBtn").onclick = () => openAiUpdate();
+
 // A click anywhere on a video's row opens its card, except on its own controls.
 document.getElementById("view-todo").addEventListener("click", e => {
   const row = e.target.closest(".vrow[data-id]");
@@ -1411,7 +1615,7 @@ document.getElementById("view-todo").addEventListener("click", e => {
 function renderAll() {
   const cn = document.getElementById("navClientsN"); cn.hidden = !CLIENTS.length; cn.textContent = CLIENTS.length;
   renderGlobalClientFilter();
-  renderTodo(); renderCalendar(); renderIdeaBank(); renderAllClients(); renderEditors();
+  renderTodo(); renderCalendar(); renderIdeaBank(); renderAllClients(); renderEditors(); renderAiTeam();
 }
 
 // Only a social_operators login gets past the gate — never an editor or

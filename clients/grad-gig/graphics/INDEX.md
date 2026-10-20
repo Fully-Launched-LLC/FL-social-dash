@@ -16,10 +16,15 @@ brand). Graphic code lives in `editor/src/clients/grad-gig/` (private).
 5. **Approved.** It moves to the table below and can be used in any Grad Gig
    video from then on.
 
+Every graphic must pass `team/content-editor/graphics-standard.md`
+("Evidence, not effects": it points at something real, no scam tells) before
+Tait sees it.
+
 ## Approved (usable)
-| # | Graphic | Component | What it's for | Approved |
-|---|---|---|---|---|
-| | _none yet_ | | | |
+Lifecycle: **New → Current → Watch → Retired** (Tait makes the call; retired = never again).
+| # | Graphic | Component | What it's for | Points at (real thing) | Approved | Uses | Stage |
+|---|---|---|---|---|---|---|---|
+| | _none yet_ | | | | | | |
 
 ## Pitched (waiting for Tait)
 | Date | Video @ time | Line | Idea | Why nothing approved fits | Tait's call |

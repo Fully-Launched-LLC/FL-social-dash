@@ -373,7 +373,9 @@ fully-social-os/
                                (social_carousels.due_to_edit), 024
                                (only the operator edits a video's
                                words: approve_final no longer takes
-                               the client's caption edits)
+                               the client's caption edits), 025
+                               (social_ai_team_messages: the AI team's
+                               team room, operators only; Fully AI Social)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -728,7 +730,7 @@ Approve by is 3 days before posting, `APPROVE_DAYS_BEFORE_POST` in
 shell.js. Also "Add ideas with Claude" and "+ New idea", as on To Do) → **Content Ideas** (Tait,
 2026-10-19: a two-column board, ideas the client hasn't seen and ideas
 sent to them; see below) → **Clients** (name, portal
-address, who films, raw footage folder, finished video folder) → **Editor
+address, who films, raw footage folder, finished video folder) → **Fully AI Social** (the AI content team, below) → **Editor
 portal ↗**. A client filter across the top narrows every page.
 
 **Content Ideas** (no migration; Tait, 2026-10-19: "ideas are on one
@@ -913,6 +915,26 @@ finished video when one is waiting: To review → Review
 the video → inside the review window, the player and its comment marks, a
 comment at a moment or on the whole video, Send changes or Approve. Steps
 that don't apply (nothing to film, no documents) are left out.
+
+### Fully AI Social (migration 025; Tait, 2026-10-20)
+
+A sidebar tab on the operator dashboard for the AI content team (see
+`team/README.md`). Top: the team as a night-sky network graph (d3 from
+jsDelivr, canvas): Tait in the centre, each AI employee a coloured ring
+(working / being trained / not started), hand-offs as curved lines that
+carry moving dots when the team room has a message between those two;
+drag, scroll to zoom, click someone for their job in the side panel. Who's
+on the team comes from `team/team.json` (public: names, jobs, statuses,
+hand-offs), baked in by build.py, which fails if an employee points at a
+missing `.claude/agents/` file; none of Tait's private training (rules, idea
+banks, team rooms) is baked in. Bottom: the client's team room (the top
+client filter narrows it), from `social_ai_team_messages`. The employees run
+in Claude Code and keep their work in the gitignored
+`clients/<slug>/team-room/`; **Add team-room update from Claude** takes
+Claude's JSON (`[{from, to, message, file, at}]`) and saves it to the chosen
+client's team room (or the whole team). Operators only: clients and editors
+can't read or write it. Without migration 025 the feed says to run it; the
+graph still shows.
 
 ### Carousels (migration 022; Tait, 2026-10-15)
 

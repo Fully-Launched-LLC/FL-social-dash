@@ -1,0 +1,146 @@
+{
+  "_about": "The AI content team as the operator dashboard's Fully AI Social tab shows it. build.py bakes this into the page (no client data). One entry per employee; 'agent' is its file in .claude/agents/. status: live (working), training (being trained), later (not started). Update when an employee's status changes.",
+  "people": [
+    {
+      "id": "tait",
+      "name": "Tait",
+      "sub": "the idea, the camera, the decision"
+    }
+  ],
+  "employees": [
+    {
+      "id": "team-lead",
+      "name": "Team Lead",
+      "color": "#C9CCE0",
+      "status": "training",
+      "agent": "team-lead.md",
+      "job": "Runs the team room: decides who works next, settles disagreements, and brings Tait in only at the approval gates."
+    },
+    {
+      "id": "account-manager",
+      "name": "Account Manager",
+      "color": "#E86AA6",
+      "status": "later",
+      "agent": null,
+      "job": "Interviews clients (voice-memo questions or a sheet for Tait), asks follow-ups, and writes the ICP, brand guidelines and voice docs."
+    },
+    {
+      "id": "content-researcher",
+      "name": "Content Researcher",
+      "color": "#9B7BFF",
+      "status": "live",
+      "agent": "content-researcher.md",
+      "job": "Finds what works in the client's niche: topics (customer questions) and formats (outlier ways to package a video). Instagram first."
+    },
+    {
+      "id": "content-strategist",
+      "name": "Content Strategist",
+      "color": "#4FC3F7",
+      "status": "training",
+      "agent": "content-strategist.md",
+      "job": "Pairs real customer pains with proven formats and plans the month, weighing Tait's ideas equally with research."
+    },
+    {
+      "id": "content-writer",
+      "name": "Content Writer",
+      "color": "#3FD07F",
+      "status": "training",
+      "agent": "content-writer.md",
+      "job": "Writes each video card: hook, script, outline and interview question, with placeholders for anything the client fills in on camera."
+    },
+    {
+      "id": "content-expert",
+      "name": "Content Expert",
+      "color": "#F2C14E",
+      "status": "training",
+      "agent": "content-expert.md",
+      "job": "Tait's taste: scores every idea and card 1-10 (Film it / Fix it / Kill it), sends weak work back, writes filming instructions."
+    },
+    {
+      "id": "content-editor",
+      "name": "Content Editor",
+      "color": "#F15523",
+      "status": "later",
+      "agent": null,
+      "job": "Edits footage in Remotion from the client's Style Profile, using only graphics Tait approved, and pitches new ones."
+    },
+    {
+      "id": "content-reviewer",
+      "name": "Content Reviewer",
+      "color": "#FF6B6B",
+      "status": "later",
+      "agent": null,
+      "job": "Motion Director: says no. Checks every graphic against the graphics standard (evidence, not effects; no scam tells) and every edit frame by frame, and sends timestamped fixes to the Editor until it passes."
+    },
+    {
+      "id": "content-poster",
+      "name": "Content Poster",
+      "color": "#7CC4FF",
+      "status": "later",
+      "agent": null,
+      "job": "Prepares captions, tags, platforms and post times. A person posts."
+    }
+  ],
+  "handoffs": [
+    [
+      "account-manager",
+      "content-strategist"
+    ],
+    [
+      "content-researcher",
+      "content-strategist"
+    ],
+    [
+      "content-strategist",
+      "content-writer"
+    ],
+    [
+      "content-writer",
+      "content-expert"
+    ],
+    [
+      "content-strategist",
+      "content-expert"
+    ],
+    [
+      "content-expert",
+      "tait"
+    ],
+    [
+      "tait",
+      "content-editor"
+    ],
+    [
+      "content-researcher",
+      "content-editor"
+    ],
+    [
+      "content-editor",
+      "content-reviewer"
+    ],
+    [
+      "content-reviewer",
+      "tait"
+    ],
+    [
+      "tait",
+      "content-poster"
+    ],
+    [
+      "team-lead",
+      "tait"
+    ],
+    [
+      "team-lead",
+      "content-strategist"
+    ],
+    [
+      "team-lead",
+      "content-researcher"
+    ],
+    [
+      "team-lead",
+      "content-editor"
+    ]
+  ]
+}

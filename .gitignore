@@ -16,5 +16,6 @@ clients/*/research/private/
 team/*
 !team/README.md
 !team/PRINCIPLES.md
+!team/team.json
 clients/*/idea-bank/
 clients/*/team-room/

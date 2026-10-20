@@ -15,6 +15,7 @@ clients or videos never needs a rebuild.
 
 Usage: python3 dashboards/build.py
 """
+import json
 import shutil
 from pathlib import Path
 
@@ -28,10 +29,26 @@ SHELL_JS = (TEMPLATE_DIR / "shell.js").read_text()
 AUTH_JS = (TEMPLATE_DIR / "auth.js").read_text()
 
 
+def ai_team():
+    """The AI content team for the operator's Fully AI Social tab, from
+    team/team.json (public: names, jobs, statuses, hand-offs; no client data
+    and none of Tait's private training). Every employee marked with an agent
+    file must have one in .claude/agents/, so the page never shows a team
+    member that doesn't exist."""
+    team = json.loads((ROOT.parent / "team" / "team.json").read_text())
+    agents_dir = ROOT.parent / ".claude" / "agents"
+    for e in team["employees"]:
+        if e.get("agent") and not (agents_dir / e["agent"]).is_file():
+            raise SystemExit(f"team/team.json: {e['name']} points at .claude/agents/{e['agent']}, which doesn't exist")
+    team.pop("_about", None)
+    return team
+
+
 def inline_shell(html):
     html = html.replace("/*__SHELL_CSS__*/", SHELL_CSS)
     html = html.replace("/*__SHELL_JS__*/", SHELL_JS)
     html = html.replace("/*__AUTH_JS__*/", AUTH_JS)
+    html = html.replace("/*__AI_TEAM__*/null", json.dumps(ai_team()))
     return html
 
 
