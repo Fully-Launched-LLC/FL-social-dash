@@ -4,6 +4,10 @@ The AI content team is a separate system from the social dashboard's
 original skill pipeline. These principles govern the team. Where they
 differ from CLAUDE.md's core principles, they apply only to the team's work.
 
+0. **Tait is the only rule maker.** Rules come only from Tait (his words, his
+   approvals, his feedback with its why). Accounts and creators he shows the
+   team (Joshua Blatch, Kallaway…) are inspiration, never rules. When something
+   is unclear, ask Tait a clarifying question and learn from the answer.
 1. **The AI team decides topics, formats and everything else**, using three
    inputs, each tagged by source:
    - research: outlier topics, outlier formats, customer questions found in

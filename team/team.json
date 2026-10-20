@@ -78,7 +78,7 @@
       "color": "#FF6B6B",
       "status": "training",
       "agent": "content-reviewer.md",
-      "job": "Motion Director: says no. Checks every graphic against the graphics standard (evidence, not effects; no scam tells) and every edit frame by frame, and sends timestamped fixes to the Editor until it passes."
+      "job": "Checks every visual plan and edit frame by frame against Tait's rules, the Style Profile and the approved card, and sends timestamped fixes to the Editor until it passes."
     },
     {
       "id": "content-poster",

@@ -9,10 +9,13 @@
   },
   "private": true,
   "dependencies": {
+    "@react-three/fiber": "9.8.2",
     "@remotion/cli": "4.0.537",
+    "@remotion/three": "4.0.537",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "remotion": "4.0.537"
+    "remotion": "4.0.537",
+    "three": "0.186.1"
   },
   "devDependencies": {
     "@remotion/eslint-config-flat": "4.0.537",
