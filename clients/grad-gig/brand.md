@@ -1,7 +1,7 @@
 # Grad Gig: brand (for video)
 
 Source: the logo Tait sent (2026-10-20) and gradgig.co's own stylesheet.
-Status: **Tait choosing between options A/B/C**, samples in
+Status: **DECIDED by Tait, 2026-10-20** (see bottom). Samples in
 ~/Documents/content-team-prompts/brand-options/grad-gig/ (rendered by
 `editor/src/BrandOptions.tsx` on a real Grad Gig frame).
 
@@ -30,4 +30,8 @@ Tait's file: ~/Desktop/Untitled design (1).png. The shirt in the footage has it 
 - **B · Editorial (Blatch):** serif headline with an italic orange word, mono section label, bold caption with a highlighted word (yellow in the sample, Blatch's colour; could be orange), plus a quiet serif word under it.
 - **C · Explainer (Kallaway):** split screen on Grad Gig ink, glowing orange step icons and numbers, footage in a rounded card.
 
-Chosen: _waiting for Tait_
+## Chosen (Tait, 2026-10-20)
+- **Main look: C · Explainer (Kallaway)**, Tait's favourite: split screen on Grad Gig ink #252422, glowing orange icons/numbers, footage in a rounded card.
+- **Second look: A · Brand classic**: Futura headline + italic Baskerville accent, Nunito Sans captions with an orange highlight box, cream gradgig.co tag. For moments that stay on full-screen footage.
+- **B is out.**
+- **Every accent is Grad Gig orange #F15523**: highlights, keyword boxes, glows, icons, numbers, graph lines, effect colours. No yellow (Blatch's colour) and no other accent colours.

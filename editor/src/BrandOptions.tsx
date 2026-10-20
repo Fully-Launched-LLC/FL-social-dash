@@ -139,7 +139,7 @@ const OptionB: React.FC = () => (
     <div style={{ position: "absolute", top: 1220, width: "100%", textAlign: "center" }}>
       <div style={{ fontFamily: SANS, fontWeight: 900, fontSize: 66, color: "white", letterSpacing: 1 }}>
         I BUILT IT IN{" "}
-        <span style={{ background: "#FFE14D", color: GG.ink, padding: "0 12px" }}>WHEATON</span>
+        <span style={{ background: GG.orange, color: "white", padding: "0 12px" }}>WHEATON</span>
       </div>
       <div style={{ fontFamily: SERIF, fontSize: 56, color: "rgba(255,252,241,0.92)", marginTop: 26 }}>
         neighbors

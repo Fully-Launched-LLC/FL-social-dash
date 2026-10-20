@@ -1,6 +1,6 @@
 # Grad Gig: Style Profile (DRAFT v0.1)
 
-Status: **draft, part 1 (the look)**, from the Content Researcher's study of Tait's
+Status: **the look is DECIDED (Tait, 2026-10-20): option C main, A second, everything Grad Gig orange #F15523; see brand.md.** Part 1 (the look), from the Content Researcher's study of Tait's
 two look references, 2026-10-20. Part 2 (topics, formats, hooks from the remix
 references) comes in Step 1. Tait approves before the Editor uses it.
 Agreed by: Content Strategist ☐ · Content Editor ☐ · Tait ☐
