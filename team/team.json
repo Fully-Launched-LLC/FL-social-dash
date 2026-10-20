@@ -65,6 +65,14 @@
       "job": "Edits footage in Remotion from the client's Style Profile, using only graphics Tait approved, and pitches new ones."
     },
     {
+      "id": "motion-designer",
+      "name": "Motion Graphics Designer",
+      "color": "#2DD4BF",
+      "status": "training",
+      "agent": "motion-designer.md",
+      "job": "Showreel-level motion graphics across 51 styles (Swiss, kinetic type, split-flap, glassmorphism, isometric, paper collage…), picking the right style for each moment and growing each client's approved graphics library."
+    },
+    {
       "id": "content-reviewer",
       "name": "Content Reviewer",
       "color": "#FF6B6B",
@@ -141,6 +149,14 @@
     [
       "team-lead",
       "content-editor"
+    ],
+    [
+      "content-editor",
+      "motion-designer"
+    ],
+    [
+      "motion-designer",
+      "content-reviewer"
     ]
   ]
 }
