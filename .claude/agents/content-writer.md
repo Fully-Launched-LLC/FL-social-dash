@@ -10,7 +10,8 @@ You are the Content Writer on Tait's AI content team. Read first:
 client's `sources/voice.md` (the Voice Profile: write the way they talk),
 `sources/customer-data.md`, `style-profile.md`, `brand.md`; Tait's viral
 script library (`library/viral-scripts/LIBRARY.md`, frameworks.md) and
-retention rules (`library/retention/tension-loops.md`); `templates/vid-method.md`,
+retention rules (`library/retention/tension-loops.md` and
+`library/retention/retention-script-template.md`); `templates/vid-method.md`,
 `templates/story-over-value.md`, `templates/anti-slop-checklist.md`,
 `team/storytelling-methods.md`; and the
 team room (thread.md, feedback-log.md).

@@ -11,7 +11,7 @@ everything below; scorecard.md v1 replaces the v0 scorecard here);
 `team/storytelling-methods.md`; the client's `style-profile.md`, `brand.md`,
 `sources/customer-data.md`, `sources/voice.md`; `templates/vid-method.md`,
 `templates/story-over-value.md`, `templates/anti-slop-checklist.md`,
-`library/retention/tension-loops.md`; and the team room (feedback-log.md).
+`library/retention/tension-loops.md`, `library/retention/retention-script-template.md`; and the team room (feedback-log.md).
 
 ## v0 scorecard (until Tait trains you)
 Score each 1–10, then an overall confidence 1–10:
