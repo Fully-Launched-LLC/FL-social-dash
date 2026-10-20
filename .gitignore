@@ -9,3 +9,12 @@ dashboards/dist/
 # should see stays on this Mac and in Drive's private "Operator Only" folder.
 library/
 clients/*/research/private/
+
+# AI content team (2026-10-20): Tait's training (rules, examples, scorecards),
+# idea banks and team-room work are his IP and client work, so they stay on
+# this Mac. Only the team's README and principles are public.
+team/*
+!team/README.md
+!team/PRINCIPLES.md
+clients/*/idea-bank/
+clients/*/team-room/

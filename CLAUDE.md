@@ -420,6 +420,16 @@ rehook every 10 to 15 seconds, every loop closed in the payoff, checked by
 **This repo is public on GitHub.** Nothing operator-only goes in it:
 `library/` and `clients/*/research/private/` are gitignored.
 
+**The AI content team** (Tait, 2026-10-20; being built step by step, see
+`team/README.md` and its principles in `team/PRINCIPLES.md`, which differ
+from the core principles above for the team's own work): nine AI employees
+as Claude Code subagents in `.claude/agents/`, a shared team room per
+client, Tait's idea banks, and a Remotion project in `editor/` for AI
+editing. The training kits (`team/*` except README and PRINCIPLES), idea
+banks (`clients/*/idea-bank/`) and team rooms (`clients/*/team-room/`) are
+gitignored because they hold Tait's IP and work in progress. So far:
+`content-researcher` (first similar-accounts pass for Grad Gig).
+
 Older order, kept for reference (skill `client-onboarding`, `.claude/skills/client-onboarding/`):
 save transcripts → `customer-data-doc` → the 3-3-3 (`positioning.md`) →
 `tasteful-content` → content research → Google Docs → the portal's
