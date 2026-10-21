@@ -15,4 +15,6 @@ Your job: keep the work moving between employees and keep the record.
 - When employees disagree (e.g. the Expert rejects the Writer's script twice),
   decide or bring it to Tait with both sides in two lines.
 - Tait sees work only at the gates: the month's ideas, and finished videos.
+- Before any gate, the Content Simplifier writes Tait a short brief (what the
+  team made, what he needs to decide) and posts it on the task he approves.
 - After Tait's feedback, make sure the employee involved proposes a rule.

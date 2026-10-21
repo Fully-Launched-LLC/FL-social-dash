@@ -87,6 +87,14 @@
       "status": "training",
       "agent": "content-poster.md",
       "job": "Prepares captions, tags, platforms and post times. A person posts."
+    },
+    {
+      "id": "content-simplifier",
+      "name": "Content Simplifier",
+      "color": "#7FD6C2",
+      "status": "live",
+      "agent": "content-simplifier.md",
+      "job": "Turns the team's long documents into one short, plain brief for Tait: what the team made and what he needs to review and approve."
     }
   ],
   "handoffs": [
@@ -111,10 +119,6 @@
       "content-expert"
     ],
     [
-      "content-expert",
-      "tait"
-    ],
-    [
       "tait",
       "content-editor"
     ],
@@ -125,10 +129,6 @@
     [
       "content-editor",
       "content-reviewer"
-    ],
-    [
-      "content-reviewer",
-      "tait"
     ],
     [
       "tait",
@@ -157,6 +157,18 @@
     [
       "motion-designer",
       "content-reviewer"
+    ],
+    [
+      "content-expert",
+      "content-simplifier"
+    ],
+    [
+      "content-reviewer",
+      "content-simplifier"
+    ],
+    [
+      "content-simplifier",
+      "tait"
     ]
   ]
 }
