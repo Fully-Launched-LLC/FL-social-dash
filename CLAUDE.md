@@ -373,9 +373,7 @@ fully-social-os/
                                (social_carousels.due_to_edit), 024
                                (only the operator edits a video's
                                words: approve_final no longer takes
-                               the client's caption edits), 025
-                               (social_ai_team_messages: the AI team's
-                               team room, operators only; Fully AI Social), 026
+                               the client's caption edits), 026
                                (unified pipeline: social_ideas,
                                social_monthly_plans, 'scripting' and
                                'script_review' card statuses, the 5
@@ -1033,25 +1031,19 @@ the video → inside the review window, the player and its comment marks, a
 comment at a moment or on the whole video, Send changes or Approve. Steps
 that don't apply (nothing to film, no documents) are left out.
 
-### Fully AI Social (migration 025; Tait, 2026-10-20)
+### Agent room (Unify Phase 8, Tait 2026-10-21; migrations 026 + 031)
 
-A sidebar tab on the operator dashboard for the AI content team (see
-`team/README.md`). Top: the team as a night-sky network graph (d3 from
-jsDelivr, canvas): Tait in the centre, each AI employee a coloured ring
-(working / being trained / not started), hand-offs as curved lines that
-carry moving dots when the team room has a message between those two;
-drag, scroll to zoom, click someone for their job in the side panel. Who's
-on the team comes from `team/team.json` (public: names, jobs, statuses,
-hand-offs), baked in by build.py, which fails if an employee points at a
-missing `.claude/agents/` file; none of Tait's private training (rules, idea
-banks, team rooms) is baked in. Bottom: the client's team room (the top
-client filter narrows it), from `social_ai_team_messages`. The employees run
-in Claude Code and keep their work in the gitignored
-`clients/<slug>/team-room/`; **Add team-room update from Claude** takes
-Claude's JSON (`[{from, to, message, file, at}]`) and saves it to the chosen
-client's team room (or the whole team). Operators only: clients and editors
-can't read or write it. Without migration 025 the feed says to run it; the
-graph still shows.
+A sidebar tab on the operator dashboard (it replaced Fully AI Social and its
+hand-pasted team-room feed; migration 025 was dropped). One card per AI
+employee, filled from Paperclip by the bridge on Tait's Mac every couple of
+minutes (`social_agent_status`): Working / Idle / Stuck / Paused, what it's
+doing now (client, task, Paperclip task id), what it's stuck on, what it
+needs from Tait (e.g. his Claude usage limit, Apify credit), its last line
+of work and when it last ran; stuck and needs-you first, with a count on the
+tab. **Try again**, **Pause** and **Resume** insert `social_agent_requests`,
+which the bridge carries out in Paperclip. The job line on each card comes
+from `team/team.json`, baked in by build.py. When the data is over 10
+minutes old the page says to start `bridge/start.sh`. Operators only.
 
 ### Carousels (migration 022; Tait, 2026-10-15)
 

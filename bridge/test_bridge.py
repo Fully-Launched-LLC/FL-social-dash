@@ -1,7 +1,7 @@
 """Tests for the bridge's decisions (no network): python3 bridge/test_bridge.py"""
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from bridge import plan_jobs, plan_style_jobs, questions_from_text, timeline, plan_dates, match_client, idea_title, months_ahead, plan_script_jobs, script_signature, card_folder_name, plan_edit_jobs, edit_signature, desk_message
+from bridge import plan_jobs, plan_style_jobs, questions_from_text, timeline, plan_dates, match_client, idea_title, months_ahead, plan_script_jobs, script_signature, card_folder_name, plan_edit_jobs, edit_signature, desk_message, agent_rows, needs_from_error
 import datetime as dt
 
 SINCE = "2026-10-21T12:00:00+00:00"
@@ -124,6 +124,19 @@ check("client's round -> revise", [v["id"] for v in plan_edit_jobs([w3], {"a"}, 
 check("sent to the AI Editor from the dashboard -> start", [v["id"] for v in plan_edit_jobs([w], {"a"}, set(), {})["revise"]] == ["e2"])
 m = desk_message({"plan": [], "doc": ["d"], "script": ["s1", "s2"], "video": ["v"], "post": []}, {"s2"})
 check("desk notice groups everything", m.startswith("On your desk: 1 document, 2 scripts, 1 video to review (1 new)."), m)
+
+# ── agent room (Phase 8) ──
+ags = [{"id": "e", "name": "Content Editor", "status": "running", "title": "Editor"}, {"id": "r", "name": "Content Researcher", "status": "idle"},
+       {"id": "w", "name": "Content Writer", "status": "idle"}, {"id": "p", "name": "Content Poster", "status": "paused"}]
+iss = [{"id": "1", "identifier": "FUL-40", "title": "Grad Gig: edit the video: Leaf rules", "status": "in_progress", "assigneeAgentId": "e", "updatedAt": "2"},
+       {"id": "2", "identifier": "FUL-41", "title": "New Co: weekly research", "status": "todo", "assigneeAgentId": "r", "updatedAt": "1"}]
+runs = {"r": {"status": "failed", "error": "Claude run failed: You've hit your session limit"}}
+rows = {r["agent"]: r for r in agent_rows(ags, iss, runs, [{"id": "gg", "name": "Grad Gig"}], {"e": "Rendering v2"})}
+check("working agent: its task, client, task id, last line", rows["Content Editor"]["status"] == "working" and rows["Content Editor"]["working_on"].endswith("Leaf rules") and rows["Content Editor"]["client_id"] == "gg" and rows["Content Editor"]["paperclip_task"] == "FUL-40" and rows["Content Editor"]["last_line"] == "Rendering v2")
+check("failed run: stuck, and what Tait can do", rows["Content Researcher"]["status"] == "stuck" and "session limit" in rows["Content Researcher"]["stuck_on"] and "usage limit" in rows["Content Researcher"]["needs_from_tait"])
+check("idle and paused", rows["Content Writer"]["status"] == "idle" and rows["Content Poster"]["status"] == "paused" and rows["Content Poster"]["paused"] is True)
+check("Apify out of credit is something Tait can fix", "Apify" in (needs_from_error("Apify: monthly usage limit exceeded, add credit") or ""))
+check("an unknown error needs no action from Tait", needs_from_error("TypeError: x") is None)
 
 print("all passed" if not fails else f"{fails} failed")
 sys.exit(1 if fails else 0)

@@ -30,7 +30,7 @@ AUTH_JS = (TEMPLATE_DIR / "auth.js").read_text()
 
 
 def ai_team():
-    """The AI content team for the operator's Fully AI Social tab, from
+    """The AI content team for the operator's Agent room tab, from
     team/team.json (public: names, jobs, statuses, hand-offs; no client data
     and none of Tait's private training). Every employee marked with an agent
     file must have one in .claude/agents/, so the page never shows a team

@@ -709,6 +709,110 @@ def notify_clients(sb, st):
     return log
 
 
+# ── the Agent room (Phase 8) ────────────────────────────────────────────
+def needs_from_error(err):
+    e = (err or "").lower()
+    if "apify" in e and ("credit" in e or "limit" in e or "quota" in e):
+        return "Apify is out of credit: add some at console.apify.com, then press Try again."
+    if "session limit" in e or "usage limit" in e or "rate limit" in e:
+        return "Your Claude usage limit was hit. Wait for it to reset (or add usage credits), then press Try again."
+    if "not logged in" in e or "authenticate" in e or "401" in e:
+        return "A connection needs you to log in again (ask Claude in a terminal which one), then press Try again."
+    return None
+
+
+def agent_rows(agents, issues, last_runs, clients, last_lines=None):
+    """Paperclip -> one social_agent_status row per agent (pure, tested)."""
+    last_lines = last_lines or {}
+    rows = []
+    for a in agents:
+        mine = [i for i in issues if i.get("assigneeAgentId") == a["id"]]
+        active = sorted([i for i in mine if i.get("status") in ("in_progress", "in_review")], key=lambda i: i.get("updatedAt") or "", reverse=True)
+        blocked = [i for i in mine if i.get("status") == "blocked"]
+        run = last_runs.get(a["id"]) or {}
+        err = run.get("error") if run.get("status") in ("failed", "error", "timed_out") else None
+        status = "paused" if a.get("status") == "paused" else "stuck" if (a.get("status") == "error" or err) else "working" if (a.get("status") == "running" or active) else "idle"
+        cur = (active or blocked or [None])[0]
+        client = None
+        if cur:
+            for c in clients:
+                if (cur.get("title") or "").lower().startswith(c["name"].lower()):
+                    client = c["id"]
+        stuck_on = (err or ("Paperclip shows an error" if a.get("status") == "error" else None))
+        if not stuck_on and blocked and not active:
+            stuck_on = f"Waiting: {blocked[0].get('title')}"
+        rows.append({"agent": a["name"], "role": a.get("title"), "status": status, "working_on": cur.get("title") if cur else None,
+                     "client_id": client, "paperclip_task": cur.get("identifier") if cur else None,
+                     "stuck_on": (stuck_on or None) and stuck_on[:240], "needs_from_tait": needs_from_error(err) if err else None,
+                     "paused": a.get("status") == "paused", "last_line": last_lines.get(a["id"]),
+                     "last_run_at": run.get("finishedAt") or run.get("createdAt")})
+    return rows
+
+
+def sync_agents(sb):
+    """Fill the dashboard's Agent room from Paperclip, and do what Tait asked
+    there (Try again / Pause / Resume)."""
+    log = []
+    try:
+        agents = paperclip("GET", f"/companies/{COMPANY}/agents")
+    except Exception:
+        return log   # Paperclip isn't running; the room says it's out of date
+    agents = agents.get("agents", agents) if isinstance(agents, dict) else agents
+    byname = {a["name"]: a for a in agents}
+    try:
+        reqs = sb.select("social_agent_requests", "select=*&done_at=is.null&order=requested_at")
+    except RuntimeError:
+        reqs = []
+    for r in reqs:
+        a = byname.get(r["agent"])
+        result = "No agent by that name"
+        if a:
+            try:
+                if r["action"] == "pause":
+                    paperclip("POST", f"/agents/{a['id']}/pause", {}); result = "Paused"
+                elif r["action"] == "resume":
+                    paperclip("POST", f"/agents/{a['id']}/resume", {}); result = "Resumed"
+                else:
+                    if a.get("status") in ("error", "paused"):
+                        paperclip("POST", f"/agents/{a['id']}/resume", {})
+                    paperclip("POST", f"/agents/{a['id']}/wakeup", {"source": "on_demand", "reason": "Tait pressed Try again in the Agent room"})
+                    result = "Restarted"
+            except Exception as e:
+                result = f"Didn't work: {e}"
+        sb.update("social_agent_requests", {"id": r["id"]}, {"done_at": now(), "result": result})
+        log.append(f"agent room: {r['agent']} {r['action']} -> {result}")
+    if reqs:
+        agents = paperclip("GET", f"/companies/{COMPANY}/agents")
+        agents = agents.get("agents", agents) if isinstance(agents, dict) else agents
+    issues = paperclip("GET", f"/companies/{COMPANY}/issues?limit=200")
+    issues = issues.get("issues", issues) if isinstance(issues, dict) else issues
+    runs, lines = {}, {}
+    for a in agents:
+        try:
+            rr = paperclip("GET", f"/companies/{COMPANY}/heartbeat-runs?agentId={a['id']}&limit=1")
+            rr = rr.get("runs", rr) if isinstance(rr, dict) else rr
+            runs[a["id"]] = rr[0] if rr else {}
+        except Exception:
+            runs[a["id"]] = {}
+        latest = sorted([i for i in issues if i.get("assigneeAgentId") == a["id"]], key=lambda i: i.get("updatedAt") or "", reverse=True)[:1]
+        if latest:
+            try:
+                cs = paperclip("GET", f"/issues/{latest[0]['id']}/comments")
+                cs = cs.get("comments", cs) if isinstance(cs, dict) else cs
+                mine = [c for c in cs if c.get("authorAgentId") == a["id"]]
+                if mine:
+                    body = sorted(mine, key=lambda c: c.get("createdAt") or "")[-1].get("body") or ""
+                    first = re.sub(r"[*#`_>]", "", body).strip().splitlines()[0] if body.strip() else ""
+                    lines[a["id"]] = first[:200]
+            except Exception:
+                pass
+    clients = sb.select("social_clients", "select=id,name")
+    for row in agent_rows(agents, issues, runs, clients, lines):
+        row["updated_at"] = now()
+        sb.insert("social_agent_status", row, upsert_on="agent")
+    return log
+
+
 def check(sb, verbose=True):
     st = load_state()
     clients = sb.select("social_clients", "select=id,name,slug,created_at,skip_onboarding,onboarding_questions")
@@ -830,6 +934,10 @@ def check(sb, verbose=True):
         first = v["id"] not in edits
         log.append(f"edit{'' if first else ' revise'}: {c['name']}: {v['title']} -> {ask_for_edit(sb, c, v, revise=not first, notes=edit_notes(sb, v))}")
         edits[v["id"]] = edit_signature(v, oc.get(v["id"], 0))
+    try:
+        log += sync_agents(sb)
+    except Exception as e:
+        log.append(f"agent room: {e}")
     for fn in (notify_tait, notify_clients):
         try:
             log += fn(sb, st)
