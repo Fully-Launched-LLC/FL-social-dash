@@ -38,8 +38,8 @@ let p = await open("test-fully-launched");
 chk("gate-1 concept still hidden from portal", !card(p, "Hidden concept"));
 
 const steps = [
-  ["Approve me", "Approve idea", null, "to_film"],
-  ["Change me", "Suggest changes", "Shorter hook", "concept_pending"],
+  ["Approve me", "Approve", null, "to_film"],
+  ["Change me", "Request changes", "Shorter hook", "scripting"],
   ["Film me", "Video has been filmed", null, "ready_to_edit"],
   ["Final ok", "Approve for posting", null, "ready_to_post"],
   ["Final redo", "Review the video", "0:30  Louder music", "with_editor"],
@@ -73,7 +73,7 @@ for (const [t, label, note, want] of steps) {
   chk(`${t}: now ${want}`, r.status === want, r);
   if (note) chk(`${t}: note saved`, r.note === note, r.note);
 }
-chk("request changes sends concept back to owner", (await row("Change me")).concept_approved_at === null);
+chk("request changes sends the card back to Scripting (030)", (await row("Change me")).concept_approved_at === null);
 
 // Tait, 2026-10-19: operators edit a video's words from the portal (portal-edit.test.mjs).
 chk("the operator gets an Edit button on each card", Array.from(p.d.querySelectorAll("#view-videos .card")).filter(c => c.querySelector("[data-open]")).every(c => c.querySelector("[data-op-edit]")));

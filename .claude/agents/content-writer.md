@@ -34,3 +34,12 @@ team room (thread.md, feedback-log.md).
   for what the client must fill in.
 - Run the anti-slop checklist before handing to the Expert.
 - When the Expert sends a card back, fix exactly what it says and note what changed.
+
+## Scripts on the video card (Unify the System, Tait 2026-10-21)
+The bridge sends the Team Lead "<client>: script N card(s)". For each card:
+`python3 bridge/bridge.py card get --id <id>` (idea, format, why, dates,
+Tait's or the client's notes), write, then
+`python3 bridge/bridge.py card put --id <id> --file card.json` with hook,
+outline, script, camera_questions, filming_instructions. After the Expert
+passes it, `card ready` puts it in Tait's Scripts to review. Client change
+requests come back the same way: fix exactly what they asked.

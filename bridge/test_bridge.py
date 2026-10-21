@@ -1,7 +1,7 @@
 """Tests for the bridge's decisions (no network): python3 bridge/test_bridge.py"""
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from bridge import plan_jobs, plan_style_jobs, questions_from_text, timeline, plan_dates, match_client, idea_title, months_ahead
+from bridge import plan_jobs, plan_style_jobs, questions_from_text, timeline, plan_dates, match_client, idea_title, months_ahead, plan_script_jobs, script_signature, card_folder_name
 import datetime as dt
 
 SINCE = "2026-10-21T12:00:00+00:00"
@@ -91,6 +91,19 @@ c, body = match_client("just an idea with no client", cl)
 check("no client named -> ask", c is None and body == "just an idea with no client")
 check("idea title is the first sentence", idea_title("Snow rules for seniors. More detail here.") == "Snow rules for seniors.")
 check("plans are for next month", months_ahead(dt.date(2026, 10, 21)) == "2026-11-01" and months_ahead(dt.date(2026, 12, 10)) == "2027-01-01")
+
+# ── scripts (Phase 6) ──
+v1 = {"id": "v1", "client_id": "a", "status": "scripting", "note": None, "editor_brief": {}}
+v2 = {"id": "v2", "client_id": "a", "status": "script_review", "note": None, "editor_brief": {}}
+j = plan_script_jobs([v1, v2], {})
+check("new Scripting cards go to the Writer, grouped by client", list(j) == ["a"] and [v["id"] for v in j["a"]] == ["v1"])
+j = plan_script_jobs([v1], {"v1": script_signature(v1)})
+check("asked once", j == {})
+back = dict(v1, editor_brief={"scriptNotes": [{"note": "punchier"}]})
+check("Tait's send-back asks again", list(plan_script_jobs([back], {"v1": script_signature(v1)})) == ["a"])
+client = dict(v1, note="change the ending")
+check("client's requested changes ask again", list(plan_script_jobs([client], {"v1": script_signature(v1)})) == ["a"])
+check("card folder name like Tait's", card_folder_name(20, {"title": 'Snow: rules?', "post_date": "2026-11-14"}) == "20. Snow rules (posts Nov 14)")
 
 print("all passed" if not fails else f"{fails} failed")
 sys.exit(1 if fails else 0)

@@ -813,6 +813,24 @@ plan" makes a draft plan the bridge picks up. Automatic plans start with
 December 2026 (installed after the 10th). The older board below is the
 **Unsent cards** tab.
 
+**Scripting and the client's card** (Unify Phase 6, Tait 2026-10-21;
+migration 030): approving a monthly plan (or **Make a card** on one idea)
+makes a video card in `scripting` with the idea's format and why, post date
+P, film by P−10, edit by P−7 and `editor_brief.scriptDue` P−13. The bridge
+gives the Team Lead "script N cards": Writer (`bridge.py card get/put`) →
+Expert → Simplifier → `card ready` → My desk → Scripts to review. Approve
+script = gate 1: the client sees the whole card (hook, script, outline,
+**camera questions**: answered by a client who films, asked by the
+videographer otherwise). The client **Approves** or **Requests changes**
+(back to `scripting` with their note, the Writer revises, Tait approves,
+the client sees the new version). Footage is **uploaded on the card** by the
+client or the videographer (often Tait, through the client's portal) into
+the private `footage` bucket; the bridge moves each clip into the card's
+Google Drive folder (`01 Footage Uploads/NN. Title (posts Mon D)`, found
+with Google Drive for desktop) and deletes the temporary copy. Video has
+been filmed: on time keeps the post date and the edit is due P−7; late
+falls back to 7 + 7. To Do has a Scripting stage.
+
 **Content Ideas** (no migration; Tait, 2026-10-19: "ideas are on one
 side and send to the client on the other"). Two columns, per client (the
 top client filter), every idea at once, no category filter: **Ideas** (banked: the client

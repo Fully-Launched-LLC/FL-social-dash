@@ -31,6 +31,7 @@ dashboards first with `python3 dashboards/build.py` if templates changed).
 | `onboarding-team.test.mjs` | Unify Phase 3 (migration 027): the Onboarding panel's recordings and transcript status, uploading a call recording, Copy to send for the questions, and pasting a transcript so the team builds the documents (clients can't read recordings). Bridge logic: `python3 bridge/test_bridge.py`. |
 | `style-guide.test.mjs` | Unify Phase 4 (migration 028): the Library (music and sound effects by folder, search, play the preview, Favourite / Never use) and moodboards (the house moodboard and each client's: drop images/videos, add a link or note, note an item, remove it). Clients can't read either. |
 | `ideas-db.test.mjs` | Unify Phase 5 (migrations 026 + 029): the Content Idea Database page: list and filter by client, source, status and search; add an idea with a link, a special-request date and a screenshot; edit, reject/restore, delete; Ask the team for next month's plan (a draft plan the bridge picks up); the older unsent cards on their own tab. |
+| `scripting.test.mjs` | Unify Phase 6 (migration 030): approving a plan makes a card per approved idea in Scripting (film P-10, edit P-7, script P-13), Make a card from one idea, To Do's Scripting stage, the client's whole card (camera questions), Approve / Request changes, uploading footage on the card (the 'footage' bucket) and Video has been filmed keeping the post date. |
 | `harness.mjs` | Shared setup for the flow test. |
 
 `serve_local.py` serves `dashboards/dist` on http://localhost:5173 with the

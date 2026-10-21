@@ -79,12 +79,16 @@
 // client's buttons write through social_client_video_action — the
 // database checks each move (see supabase/migrations/006_client_journey.sql).
 //
-// Two kinds of video (social_videos.filmed_by):
-//   client — the client films it: "Suggest changes", or upload the footage
-//            and "Video has been filmed" (straight to editing; the edit is
-//            due in 7 days, the post goes out 7 after that).
-//   us     — Tait films it or already has the footage: the client approves
-//            the idea or suggests changes, and never uploads anything.
+// Two kinds of video (social_videos.filmed_by), Tait 2026-10-21 (030):
+//   client — the client films it themselves.
+//   us     — a videographer (often Tait) films it.
+// Either way the client sees the whole card once Tait approves its script
+// (hook, script, outline, questions to ask on camera), can Approve it or
+// Request changes (back to the Writer, then Tait, then here again), and
+// footage is uploaded right on the card (by the client or the videographer,
+// through this portal), then "Video has been filmed". Uploads land in the
+// private 'footage' bucket; the bridge on Tait's Mac moves them to the
+// card's Google Drive folder. The edit is due 7 days before the post date.
 // Then every finished video comes back here to approve for posting (with
 // the captions, which the client can edit) or to send back with changes.
 
@@ -95,6 +99,7 @@ let BRAND_URL = null;       // operator only: their brand guidelines (social_dri
 let GEN_DOCS = [];          // operator only: built from the onboarding voice memo
 let ONBOARDING = null;      // their social_client_onboarding row, if any
 let VIDEOS = [];            // from social_videos (videoFromRow shape)
+let CLIPS = {};             // video id -> its uploaded footage (social_footage, 026)
 let HIDDEN_CONCEPTS = 0;    // operator view only: ideas the client can't see (sent back with suggestions)
 let BANKED_IDEAS = 0;       // operator view only: ideas in Content Ideas, not sent yet
 let IS_OPERATOR = false;
@@ -141,7 +146,11 @@ async function loadVideos() {
   const hidden = vids.filter(v => v.status === "concept_pending" && !v.conceptApprovedAt);
   BANKED_IDEAS = hidden.filter(v => v.editorBrief.ideaBank).length;
   HIDDEN_CONCEPTS = hidden.length - BANKED_IDEAS;
-  VIDEOS = vids.filter(v => !(v.status === "concept_pending" && !v.conceptApprovedAt));
+  VIDEOS = vids.filter(v => !(v.status === "concept_pending" && !v.conceptApprovedAt) && !["scripting", "script_review"].includes(v.status));
+  const ids = VIDEOS.map(v => v.id);
+  const clips = ids.length ? await sbClient.from("social_footage").select("*").eq("kind", "raw").in("video_id", ids) : { data: [] };
+  CLIPS = {};
+  (clips.error ? [] : clips.data || []).forEach(f => { (CLIPS[f.video_id] = CLIPS[f.video_id] || []).push(f); });
   renderAll();
 }
 
@@ -151,7 +160,8 @@ function renderAll() { renderOperatorBanner(); renderVideos(); renderCalendar();
 // An operator sees the client's own buttons too, for clients who'd rather
 // tell Tait than click. Those run as the operator's direct update (see
 // runAsOperator), so the audit log never shows them as the client's action.
-function actionsFor(v) { return videoActionsFor(v, "client", CLIENT.client_system); }
+// A videographer's card only takes footage once it's approved (030).
+function actionsFor(v) { return videoActionsFor(v, "client", CLIENT.client_system).filter(k => !(k === "submit_footage" && v.status === "concept_pending" && filmedBy(v) === "us")); }
 
 // The operator's version of a client action: same move as the transition
 // table in 006, written directly (operators have full access). The status
@@ -183,10 +193,11 @@ function thanksFor(actionKey, video) {
   return {
     submit_footage: ["Thanks for submitting your video!",
       `Our editor has it now. In about <b>7 days</b> you'll get the finished video right here to approve for posting.${posts}`],
-    approve_concept: ["Idea approved!",
-      "Stay tuned — we'll film and edit it, then you'll get the finished video right here to check out and approve before it posts."],
-    request_concept_changes: ["Thanks for the suggestions!",
-      "We'll rework this idea and send it back to you."],
+    approve_concept: filmedBy(video) === "client" ? ["Approved!",
+      `Film it${video.dueToFilm ? ` by <b>${escapeHtml(niceDate(video.dueToFilm))}</b>` : ""}, then upload the clips on this card and tap <b>Video has been filmed</b>.`]
+      : ["Approved!", "We'll film it with you, then you'll get the finished video right here to check out and approve before it posts."],
+    request_concept_changes: ["Thanks, we've got your changes!",
+      "We'll rework this card and send it back to you."],
     approve_final: ["Approved for posting!", `Nothing else to do.${posts}`],
     request_revisions: ["Got it — changes are on the way.",
       "We'll make those changes and send the video back here for you to approve. You can still watch it any time from its card (<b>Watch the video</b>)."],
@@ -265,6 +276,7 @@ function clientCardBody(video) {
   const weFilmIt = isIdea && fb === "us";
   const final = video.status === "client_review";
   const raw = rawFootageLink(video, DRIVE_FOLDERS);
+  const clips = CLIPS[video.id] || [];
   return `
     ${cardFacts(video, fb)}
     ${clientFilmsIt && video.dueToFilm ? `<div class="meta" style="margin-bottom:6px">Film by <b>${escapeHtml(niceDate(video.dueToFilm))}</b></div>` : ""}
@@ -272,14 +284,15 @@ function clientCardBody(video) {
     ${isIdea ? fieldRow("Hook", video.hook) : ""}
     ${isIdea ? fieldRow("Script", video.body) : ""}
     ${isIdea ? fieldRow("Outline", video.outline) : ""}
+    ${isIdea ? fieldRow(clientFilmsIt ? "Questions to answer on camera" : "Questions to ask on camera", video.cameraQuestions) : ""}
     ${clientFilmsIt ? fieldRow("How to film it", video.filmingDirection) : ""}
     ${weFilmIt ? fieldRow("How we'll make it", video.filmingDirection) : ""}
-    ${clientFilmsIt && raw ? `<div class="meta" style="margin-top:10px">${raw.own ? "Upload your clips for this video to its footage folder." : `Upload your clips to your footage folder, with file names starting with <b>${escapeHtml(video.title || "the video title")}</b>.`}</div>` : ""}
+    ${isIdea ? `<div class="clip-list" style="margin-top:10px">${clips.length ? `<div class="meta"><b>Footage on this card (${clips.length})</b></div>${clips.map(c => `<div class="meta">✓ ${escapeHtml(c.name)}</div>`).join("")}` : `<div class="meta">${weFilmIt ? "The videographer uploads the clips here." : "When it's filmed, upload the clips here."}</div>`}<div class="meta upload-msg"></div></div>` : ""}
     ${final ? fieldRow("On-screen caption", video.onScreenCaption) + fieldRow("Caption", video.caption) : ""}
     <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
       ${final ? `<button class="primary" data-review>Review the video</button>` : ""}
       ${canWatch(video) ? `<button data-watch>Watch the video</button>` : ""}
-      ${clientFilmsIt && raw ? `<a class="btn" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">Upload footage</a>` : ""}
+      ${isIdea && video.status !== "concept_pending" || isIdea && clientFilmsIt ? `<label class="btn">Upload footage<input type="file" data-upload accept="video/*,audio/*,image/*" multiple hidden></label>` : ""}
     </div>
     <div class="note-box" style="display:none;margin-top:12px">
       ${lbl("")}<textarea rows="3" style="font:inherit;font-size:0.92rem"></textarea>
@@ -296,6 +309,8 @@ function wireActions(root, video) {
   if (review) review.onclick = () => openClientReview(video);
   const watch = root.querySelector("[data-watch]");
   if (watch) watch.onclick = () => openClientWatch(video);
+  const up = root.querySelector("[data-upload]");
+  if (up) up.onchange = e => uploadClips(root, video, e.target.files || []);
   actionsFor(video).forEach(key => {
     const a = VIDEO_ACTIONS[key];
     // Changes are notes on the video itself (Review the video), not one
@@ -307,18 +322,36 @@ function wireActions(root, video) {
     b.onclick = () => {
       if (a.needsNote) return openNoteBox(root, noteBox, video, key);
       if (key === "submit_footage") return confirmStep("Is your footage uploaded?",
-        `Make sure every clip for <b>${escapeHtml(video.title || "this video")}</b> is in your footage folder before you send it to our editor.`,
+        `Make sure every clip for <b>${escapeHtml(video.title || "this video")}</b> is uploaded on this card (${(CLIPS[video.id] || []).length} so far) before you send it to our editor.`,
         "Yes — send it to the editor", () => doAction(key, video.id, b));
       doAction(key, video.id, b);
     };
     actions.appendChild(b);
   });
 }
+// Footage dropped on a card (030): into the private 'footage' bucket, one
+// row per clip in social_footage. The bridge on Tait's Mac moves each file
+// into the card's Google Drive folder.
+async function uploadClips(root, video, files) {
+  const msg = root.querySelector(".upload-msg"), list = Array.from(files);
+  for (let i = 0; i < list.length; i++) {
+    const f = list[i];
+    try {
+      const path = await uploadToBucket("footage", `${CLIENT.id}/${video.id}/${Date.now()}-${f.name.replace(/[^\w.\-]+/g, "_")}`, f,
+        pct => { if (msg) msg.textContent = `Uploading ${i + 1} of ${list.length}… ${pct}%`; });
+      const { error } = await sbClient.from("social_footage").insert({ client_id: CLIENT.id, video_id: video.id, kind: "raw", name: f.name, storage_path: path,
+        uploaded_by_role: IS_OPERATOR ? "operator" : "client" });
+      if (error) throw error;
+    } catch (e) { if (msg) msg.textContent = `${f.name} didn't upload: ${e.message || e}`; return; }
+  }
+  await loadVideos();
+  showMessage("Uploaded!", `${list.length} clip${list.length === 1 ? "" : "s"} on <b>${escapeHtml(video.title || "this video")}</b>. When every clip is up, tap <b>Video has been filmed</b>.`);
+}
 function openNoteBox(root, noteBox, video, key) {
   const a = VIDEO_ACTIONS[key];
   noteBox.querySelector("label").textContent = a.notePrompt;
   const text = noteBox.querySelector("textarea"), send = noteBox.querySelector("[data-send]");
-  send.textContent = key === "request_revisions" ? "Send changes" : "Send suggestions";
+  send.textContent = "Send changes";
   noteBox.style.display = "";
   text.focus();
   noteBox.querySelector("[data-cancel]").onclick = () => { noteBox.style.display = "none"; };
@@ -421,7 +454,7 @@ function videoCard(video) {
 // direct update (operator RLS); the client never gets this.
 const OP_EDIT_FIELDS = [
   ["title", "Title", 1], ["hook", "Hook", 2], ["body", "Script", 8], ["outline", "Outline", 5],
-  ["filmingDirection", "How to film it", 3], ["onScreenCaption", "On-screen caption", 2],
+["cameraQuestions", "Questions to ask / answer on camera", 3], ["filmingDirection", "How to film it", 3], ["onScreenCaption", "On-screen caption", 2],
   ["caption", "Caption", 4], ["note", "Note (the client and the editor see it)", 2],
 ];
 function openOperatorEdit(videoId) {
@@ -860,7 +893,7 @@ const tourTab = key => { if (activeTab !== key) { activeTab = key; renderVideoTa
 // The first To film card the client films themselves (it has an Upload
 // footage button), else the first one. The upload and "film it your way"
 // steps only show on one they film.
-const tourUpload = c => c && [...c.querySelectorAll("a.btn")].find(a => a.textContent === "Upload footage");
+const tourUpload = c => c && [...c.querySelectorAll(".btn")].find(a => a.textContent.trim() === "Upload footage");
 const tourCard = () => { const cards = [...document.querySelectorAll("#listToFilm > .card")]; return cards.find(tourUpload) || cards[0]; };
 // The review steps open the review window on the first finished video
 // waiting for them (once), and point at its parts. With none waiting (a new

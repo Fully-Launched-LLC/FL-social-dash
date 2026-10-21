@@ -443,6 +443,115 @@ Timing to keep in mind: scripts approved 13 days before each post, filmed 10 day
     return give_task("Team Lead", f"{c['name']}: {label} plan (20 ideas)", desc)
 
 
+# ── scripts (Phase 6) ───────────────────────────────────────────────────
+def script_signature(v):
+    """What the Writer last worked from: a new card, or new notes (Tait's
+    send-back in editor_brief.scriptNotes, or the client's change request
+    in note) mean a new pass."""
+    eb = v.get("editor_brief") or {}
+    return f"{len(eb.get('scriptNotes') or [])}|{(v.get('note') or '').strip()}"
+
+
+def plan_script_jobs(videos, asked):
+    """Cards in Scripting the Writer hasn't seen in this form yet, by client."""
+    out = {}
+    for v in videos:
+        if v.get("status") == "scripting" and asked.get(v["id"]) != script_signature(v):
+            out.setdefault(v["client_id"], []).append(v)
+    return out
+
+
+def ask_for_scripts(sb, c, cards):
+    slug = c["slug"]
+    lines = "\n".join(f"- `{v['id']}` {v.get('title') or '(untitled)'}" + (f" (posts {v['post_date']})" if v.get("post_date") else "")
+                      + (" **changes requested**" if v.get("note") else "") for v in cards)
+    desc = f"""Script {len(cards)} card(s) for **{c['name']}** (Unify the System stage 5). You run it: Writer → Content Expert → Content Simplifier → Tait's desk.
+
+{lines}
+
+For each card:
+1. `{bridge_cmd()} card get --id <id>`: the idea, its format and why, the dates, and any notes (Tait's send-back notes, or the client's requested changes: fix exactly what they asked, keep the rest).
+2. **Content Writer:** hook, outline, script and the questions for whoever's filming (the client answers them if they film themselves), from their identity (`{bridge_cmd()} doc get --client {slug} --kind identity`) and Tait's rules. Unknown facts: `[LUKE: …]`-style placeholders for the person on camera, never invented. Save: `{bridge_cmd()} card put --id <id> --file <card.json>` with `{{"hook": "...", "outline": "...", "script": "...", "camera_questions": "...", "filming_instructions": "..."}}`.
+3. **Content Expert:** score it; send weak ones back to the Writer.
+4. **Content Simplifier:** one or two lines for Tait (what it is, the score, anything to decide), then `{bridge_cmd()} card ready --id <id> --score <n> --brief "<lines>"` puts it in Tait's Scripts to review.
+Timing: scripts are approved 13 days before the post date (each card says when)."""
+    return give_task("Team Lead", f"{c['name']}: script {len(cards)} card(s)", desc)
+
+
+# ── footage: from the dashboard into Google Drive (Phase 6) ─────────────
+DRIVE_ROOT = next(iter(sorted((HOME / "Library" / "CloudStorage").glob("GoogleDrive-*"))), None) if (HOME / "Library" / "CloudStorage").exists() else None
+
+
+def drive_id(path):
+    out = subprocess.run(["xattr", "-p", "com.google.drivefs.item-id#S", str(path)], capture_output=True, text=True)
+    return out.stdout.strip() or None
+
+
+def find_drive_folder(folder_id, st):
+    """The local Google Drive for desktop folder for a Drive folder id."""
+    cache = st.setdefault("drive_paths", {})
+    if folder_id in cache and pathlib.Path(cache[folder_id]).exists():
+        return pathlib.Path(cache[folder_id])
+    if not DRIVE_ROOT:
+        return None
+    base = DRIVE_ROOT / "My Drive" / "Fully Social OS" / "Clients"
+    for p in [base] + list(base.glob("*")) + list(base.glob("*/*")) + list(base.glob("*/*/*")):
+        if p.is_dir() and drive_id(p) == folder_id:
+            cache[folder_id] = str(p)
+            return p
+    return None
+
+
+def folder_id_of(url):
+    m = re.search(r"/folders/([A-Za-z0-9_-]+)", url or "")
+    return m.group(1) if m else None
+
+
+def card_folder_name(n, v):
+    title = re.sub(r'[\\/:*?"<>|]+', "", v.get("title") or "Untitled").strip()[:80]
+    posts = f" (posts {dt.date.fromisoformat(str(v['post_date'])[:10]).strftime('%b %-d')})" if v.get("post_date") else ""
+    return f"{n:02d}. {title}{posts}"
+
+
+def move_footage(sb, st):
+    """Clips dropped on a card (the 'footage' bucket) -> that card's folder in
+    the client's Google Drive footage folder; then the temporary copy goes."""
+    log = []
+    try:
+        rows = sb.select("social_footage", "select=*&storage_path=not.is.null&drive_url=is.null&kind=eq.raw")
+    except RuntimeError:
+        return log
+    if not rows or not DRIVE_ROOT:
+        return log
+    links = {r["client_id"]: r for r in sb.select("social_drive_folder_links", "select=client_id,footage_uploads")}
+    for f in rows:
+        v = (sb.select("social_videos", f"select=id,title,post_date,editor_brief&id=eq.{f['video_id']}") or [None])[0]
+        client_folder = find_drive_folder(folder_id_of((links.get(f["client_id"]) or {}).get("footage_uploads")), st)
+        if not v or not client_folder:
+            log.append(f"footage: no Drive folder for {f['name']}")
+            continue
+        eb = v.get("editor_brief") or {}
+        card = find_drive_folder(folder_id_of(eb.get("rawFootageUrl")), st) if eb.get("rawFootageUrl") else None
+        if not card:
+            existing = [d for d in client_folder.iterdir() if d.is_dir()]
+            prefix = re.sub(r'[\\/:*?"<>|]+', "", v.get("title") or "")[:80].strip()
+            card = next((d for d in existing if prefix and prefix in d.name), None) or client_folder / card_folder_name(len(existing) + 1, v)
+            card.mkdir(exist_ok=True)
+        dest = card / f["name"]
+        if dest.exists():
+            dest = card / f"{dest.stem}-{f['id'][:6]}{dest.suffix}"
+        dest.write_bytes(sb.download("footage", f["storage_path"]))
+        fid = drive_id(card)
+        url = f"https://drive.google.com/drive/folders/{fid}" if fid else None
+        sb.update("social_footage", {"id": f["id"]}, {"drive_url": url or str(dest), "storage_path": None})
+        sb._req("DELETE", f"/storage/v1/object/footage/{urllib.parse.quote(f['storage_path'])}", raw=True)
+        if url and not eb.get("rawFootageUrl"):
+            eb["rawFootageUrl"] = url
+            sb.update("social_videos", {"id": v["id"]}, {"editor_brief": eb})
+        log.append(f"footage: {f['name']} -> {card.name}")
+    return log
+
+
 def check(sb, verbose=True):
     st = load_state()
     clients = sb.select("social_clients", "select=id,name,slug,created_at,skip_onboarding,onboarding_questions")
@@ -520,6 +629,23 @@ def check(sb, verbose=True):
                 log.append(f"plan (asked for): {byid[pl['client_id']]['name']} -> {ask_for_plan(sb, byid[pl['client_id']], str(pl['month'])[:10])}")
                 done.append(pl["id"])
         STATE.write_text(json.dumps(st, indent=2))
+    # Scripts and footage (Phase 6).
+    try:
+        scripting = sb.select("social_videos", "select=id,client_id,title,status,note,post_date,editor_brief&status=eq.scripting")
+    except RuntimeError:
+        scripting = []
+    asked = st.setdefault("scripts_asked", {})
+    byid = {c["id"]: c for c in clients}
+    for cid, cards in plan_script_jobs(scripting, asked).items():
+        if byid.get(cid):
+            log.append(f"scripts: {byid[cid]['name']} ({len(cards)}) -> {ask_for_scripts(sb, byid[cid], cards)}")
+            for v in cards:
+                asked[v["id"]] = script_signature(v)
+    try:
+        log += move_footage(sb, st)
+    except Exception as e:
+        log.append(f"footage: {e}")
+    STATE.write_text(json.dumps(st, indent=2))
     if verbose:
         print("\n".join(log) or "Nothing new.")
     return log
@@ -710,6 +836,8 @@ def main(argv=None):
     yt = sub.add_parser("youtube"); yt.add_argument("action", choices=["outliers"]); yt.add_argument("--query", required=True)
     yt.add_argument("--days", type=int, default=180); yt.add_argument("--max", type=int, default=25)
     tgp = sub.add_parser("telegram"); tgp.add_argument("action", choices=["pair"])
+    cd = sub.add_parser("card"); cd.add_argument("action", choices=["get", "put", "ready"]); cd.add_argument("--id", required=True)
+    cd.add_argument("--file"); cd.add_argument("--score", type=int); cd.add_argument("--brief")
     argv = list(sys.argv[1:] if argv is None else argv)
     if argv[:2] == ["doc", "get"]:   # `doc get` reads like `doc put`
         argv = ["doc-get"] + argv[2:]
@@ -804,6 +932,35 @@ def main(argv=None):
         code = f"{uuid.uuid4().int % 1000000:06d}"
         st["telegram_code"] = code; st.pop("telegram_chat", None); STATE.write_text(json.dumps(st, indent=2))
         print(f"In Telegram, open your bot and send:  /start {code}\nThe bridge pairs on its next check.")
+    elif a.cmd == "card":
+        rows = sb.select("social_videos", f"select=*&id=eq.{a.id}")
+        if not rows: sys.exit("No card with that id.")
+        v = rows[0]
+        if a.action == "get":
+            c = sb.select("social_clients", f"select=name,slug,client_system&id=eq.{v['client_id']}")[0]
+            eb = v.get("editor_brief") or {}
+            out = {"client": c, "title": v["title"], "idea": v.get("concept"), "format": eb.get("format"), "why": eb.get("why"),
+                   "filmed_by": v.get("filmed_by"), "status": v["status"],
+                   "timeline": timeline(v["post_date"]) if v.get("post_date") else None,
+                   "tait_send_back_notes": eb.get("scriptNotes") or [], "client_requested_changes": v.get("note"),
+                   "current": {k: v.get(k) for k in ("hook", "outline", "body", "camera_questions", "filming_instructions")}}
+            print(json.dumps(out, indent=2, default=str))
+        elif a.action == "put":
+            data = json.loads(pathlib.Path(a.file).read_text())
+            m = {"hook": "hook", "outline": "outline", "script": "body", "camera_questions": "camera_questions", "filming_instructions": "filming_instructions", "title": "title"}
+            patch = {m[k]: v2 for k, v2 in data.items() if k in m}
+            sb.update("social_videos", {"id": a.id}, patch)
+            print(f"Saved {', '.join(patch)} on {v['title']}.")
+        else:
+            if v["status"] != "scripting": sys.exit(f"That card is {v['status']}, not in Scripting.")
+            if not (v.get("hook") and v.get("body")): sys.exit("Save the hook and script first (card put).")
+            eb = v.get("editor_brief") or {}
+            if a.score is not None: eb["scriptScore"] = a.score
+            if a.brief: eb["scriptBrief"] = a.brief
+            if v.get("note"):   # keep the client's request with the card's history
+                eb["clientChanges"] = (eb.get("clientChanges") or []) + [{"note": v["note"], "at": now()}]
+            sb.update("social_videos", {"id": a.id}, {"status": "script_review", "editor_brief": eb, "note": None})
+            print(f"{v['title']} is in Tait's Scripts to review.")
     elif a.cmd == "doc-get":
         c = client_by_slug(sb, a.client)
         rows = sb.select("social_client_generated_docs", f"select=status,body_md,updated_at&client_id=eq.{c['id']}&kind=eq.{a.kind}")
