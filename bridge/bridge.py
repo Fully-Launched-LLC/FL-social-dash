@@ -552,6 +552,163 @@ def move_footage(sb, st):
     return log
 
 
+# ── editing and reviews (Phase 7) ───────────────────────────────────────
+SITE = os.environ.get("FULLY_SOCIAL_SITE", "https://social.fullylaunched.com")
+
+
+def edit_signature(v, open_comments=0):
+    """What the AI Editor last worked from: Tait's revisions, the client's
+    request, a new round, or new open comments mean another pass."""
+    eb = v.get("editor_brief") or {}
+    return f"{(eb.get('revisions') or '').strip()}|{(v.get('note') or '').strip()}|{v.get('client_revision_rounds') or 0}|{open_comments}"
+
+
+def plan_edit_jobs(videos, approved_guides, pending_clips, asked, open_comments=None):
+    """start: footage is in (every clip moved to Drive), no human editor, and
+    the client's editing guidelines are approved (Tait: wait for approval).
+    waiting: footage in, guidelines not approved yet.
+    revise: with the AI Editor, and there's something new to fix."""
+    open_comments = open_comments or {}
+    jobs = {"start": [], "waiting": [], "revise": []}
+    for v in videos:
+        eb = v.get("editor_brief") or {}
+        if v["status"] == "ready_to_edit" and not v.get("editor_id") and not eb.get("humanEditor"):
+            if v["id"] in pending_clips:
+                continue
+            (jobs["start"] if v["client_id"] in approved_guides else jobs["waiting"]).append(v)
+        elif v["status"] == "with_editor" and eb.get("aiEditor") and not v.get("editor_id"):
+            sig = edit_signature(v, open_comments.get(v["id"], 0))
+            if asked.get(v["id"]) not in (None, sig):
+                jobs["revise"].append(v)
+            elif v["id"] not in asked:
+                jobs["revise"].append(v)   # sent to the AI Editor from the dashboard
+    return jobs
+
+
+def ask_for_edit(sb, c, v, revise=False, notes=None):
+    slug = c["slug"]
+    what = "revise the edit" if revise else "edit the video"
+    fix = ""
+    if revise:
+        fix = "\n**What to fix** (fix exactly these, change nothing else):\n" + (notes or "(read the comments on the latest version)") + "\n"
+    desc = f"""**{c['name']}**: {what} for **{v.get('title')}** (card `{v['id']}`). Unify the System stage 7. You lead; the **Motion Graphics Designer** builds graphics, the **Content Reviewer** checks every render (their checklist) before it goes to Tait.
+{fix}
+1. `{bridge_cmd()} card get --id {v['id']}` (the script, outline, hook, dates) and the client's **approved** editing guidelines: `{bridge_cmd()} doc get --client {slug} --kind editing_guidelines`, plus brand guidelines and the feedback log.
+2. The raw footage is in Google Drive on this Mac: `{bridge_cmd()} footage where --id {v['id']}` prints the folder.
+3. Edit in Remotion (`editor/`), music and sound effects from the Library (`{bridge_cmd()} assets list --kind music`; never one marked never). Render to `editor/out/{slug}/{v['id']}.mp4`.
+4. Content Reviewer ⇄ you until it passes.
+5. Deliver it to Tait's desk: `{bridge_cmd()} video deliver --id {v['id']} --file editor/out/{slug}/{v['id']}.mp4` (a review copy for the player, a copy in their Final Edits Drive folder, and the card moves to Tait's Videos to review).
+The edit is due {v.get('due_to_edit') or 'soon'} (7 days before the post date)."""
+    return give_task("Content Editor", f"{c['name']}: {what}: {v.get('title')}", desc)
+
+
+def ask_for_captions(sb, c, v):
+    desc = f"""Draft the posting copy for **{c['name']}: {v.get('title')}** (card `{v['id']}`), now on Tait's desk to review.
+Read `{bridge_cmd()} card get --id {v['id']}` and the client's identity (`{bridge_cmd()} doc get --client {c['slug']} --kind identity`). Following your rules (short hook caption, their CTA, Kallaway-style packaging):
+`{bridge_cmd()} captions put --id {v['id']} --caption "<post caption>" --on-screen "<on-screen caption>" --cover "<cover idea: frame + text>"`
+Tait edits them in "Approve & add captions"."""
+    return give_task("Content Poster", f"{c['name']}: captions for {v.get('title')}", desc)
+
+
+def edit_notes(sb, v):
+    """What to fix: Tait's revisions, the client's request, and every note
+    left on the latest version (the review window closes them when the cut
+    is sent back, so they're read by date, not by open/closed)."""
+    eb = v.get("editor_brief") or {}
+    lines = []
+    if eb.get("revisions"):
+        lines.append("Tait: " + eb["revisions"])
+    if v.get("note") and v.get("client_revision_rounds"):
+        lines.append("Client: " + v["note"])
+    try:
+        ver = sb.select("social_video_versions", f"select=created_at&video_id=eq.{v['id']}&order=version.desc&limit=1")
+        since = f"&created_at=gte.{urllib.parse.quote(ver[0]['created_at'])}" if ver else ""
+        for cm in sb.select("social_video_comments", f"select=body,at_seconds,author_role,resolved_at&video_id=eq.{v['id']}{since}&order=at_seconds.nullsfirst"):
+            if cm.get("resolved_at"):
+                continue
+            at = cm.get("at_seconds")
+            when = f"{int(float(at)) // 60}:{int(float(at)) % 60:02d}" if at is not None else "Whole video"
+            lines.append(f"- {when} ({cm.get('author_role')}): {cm.get('body')}")
+    except RuntimeError:
+        pass
+    return "\n".join(lines)
+
+
+def desk_items(sb):
+    """Everything on Tait's desk, as stable ids (for Telegram notices)."""
+    items = {}
+    for kind, table, q in (("plan", "social_monthly_plans", "select=id&status=eq.on_desk"),
+                           ("doc", "social_client_generated_docs", "select=id&status=eq.on_desk"),
+                           ("script", "social_videos", "select=id&status=eq.script_review"),
+                           ("video", "social_videos", "select=id&status=eq.in_review"),
+                           ("post", "social_videos", "select=id&status=eq.ready_to_post")):
+        try:
+            items[kind] = [r["id"] for r in sb.select(table, q)]
+        except RuntimeError:
+            items[kind] = []
+    return items
+
+
+def desk_message(items, new_ids):
+    words = {"plan": ("monthly plan", "monthly plans"), "doc": ("document", "documents"), "script": ("script", "scripts"),
+             "video": ("video to review", "videos to review"), "post": ("video to post", "videos to post")}
+    parts = [f"{len(v)} {words[k][0] if len(v) == 1 else words[k][1]}" for k, v in items.items() if v]
+    fresh = sum(1 for k in items for i in items[k] if i in new_ids)
+    return f"On your desk: {', '.join(parts)} ({fresh} new).\n{SITE}/operator/dashboard.html#desk"
+
+
+def notify_tait(sb, st):
+    """Text Tait (his Telegram bot) when something new lands on his desk; at
+    most every 2 hours, grouped."""
+    env = read_env(CONFIG)
+    token, chat = env.get("TELEGRAM_BOT_TOKEN"), st.get("telegram_chat")
+    if not token or not chat:
+        return []
+    items = desk_items(sb)
+    now_ids = {i for v in items.values() for i in v}
+    new = now_ids - set(st.get("desk_seen", []))
+    last = st.get("desk_notified_at")
+    recent = bool(last) and (dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(last)).total_seconds() < 2 * 3600
+    if not new:
+        st["desk_seen"] = sorted(now_ids)   # things that left the desk drop off
+        return []
+    if recent:
+        return []                           # tell him at the next window
+    tg("sendMessage", token, {"chat_id": chat, "text": desk_message(items, new)})
+    st["desk_seen"], st["desk_notified_at"] = sorted(now_ids), now()
+    return [f"telegram: desk notice ({len(new)} new)"]
+
+
+def notify_clients(sb, st):
+    """Once a day per client: email them when cards are ready to approve or a
+    finished video is ready to review (the dashboard's /api/notify-review)."""
+    url, key = config()
+    log, today = [], dt.date.today().isoformat()
+    sent = st.setdefault("client_emailed", {})
+    try:
+        waiting = sb.select("social_videos", "select=id,client_id,status,concept_approved_at&or=(status.eq.client_review,and(status.eq.concept_pending,concept_approved_at.not.is.null))")
+    except RuntimeError:
+        return log
+    by = {}
+    for v in waiting:
+        by.setdefault(v["client_id"], set()).add(v["id"])
+    for cid, ids in by.items():
+        prev = sent.get(cid, {})
+        if prev.get("day") == today or not (ids - set(prev.get("ids", []))):
+            continue
+        req = urllib.request.Request(SITE + "/api/notify-review", data=json.dumps({"clientId": cid}).encode(), method="POST",
+                                     headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"})
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                out = json.loads(r.read() or b"{}")
+            log.append(f"client email: {out.get('email', cid)} ({out.get('count', '?')})")
+        except Exception as e:
+            log.append(f"client email {cid}: {e}")
+            continue
+        sent[cid] = {"day": today, "ids": sorted(ids)}
+    return log
+
+
 def check(sb, verbose=True):
     st = load_state()
     clients = sb.select("social_clients", "select=id,name,slug,created_at,skip_onboarding,onboarding_questions")
@@ -645,6 +802,39 @@ def check(sb, verbose=True):
         log += move_footage(sb, st)
     except Exception as e:
         log.append(f"footage: {e}")
+    # Editing and reviews (Phase 7).
+    try:
+        vids = sb.select("social_videos", "select=id,client_id,title,status,note,editor_id,editor_brief,client_revision_rounds,due_to_edit&status=in.(ready_to_edit,with_editor)")
+        guides = {d["client_id"] for d in sb.select("social_client_generated_docs", "select=client_id&kind=eq.editing_guidelines&status=eq.approved")}
+        pending = {f["video_id"] for f in sb.select("social_footage", "select=video_id&kind=eq.raw&storage_path=not.is.null")}
+        oc = {}
+    except RuntimeError:
+        vids = []
+    edits = st.setdefault("edits_asked", {})
+    ej = plan_edit_jobs(vids, guides if vids else set(), pending if vids else set(), edits, oc if vids else {})
+    for v in ej["start"]:
+        c = byid.get(v["client_id"])
+        if not c: continue
+        eb = dict(v.get("editor_brief") or {}, aiEditor=True); eb.pop("waitingOn", None)
+        sb.update("social_videos", {"id": v["id"]}, {"status": "with_editor", "editor_brief": eb})
+        log.append(f"edit: {c['name']}: {v['title']} -> {ask_for_edit(sb, c, v)}")
+        edits[v["id"]] = edit_signature(dict(v, editor_brief=eb), oc.get(v["id"], 0))
+    for v in ej["waiting"]:
+        eb = v.get("editor_brief") or {}
+        if eb.get("waitingOn") != "editing guidelines":
+            sb.update("social_videos", {"id": v["id"]}, {"editor_brief": dict(eb, waitingOn="editing guidelines")})
+            log.append(f"edit waiting on editing guidelines: {v['title']}")
+    for v in ej["revise"]:
+        c = byid.get(v["client_id"])
+        if not c: continue
+        first = v["id"] not in edits
+        log.append(f"edit{'' if first else ' revise'}: {c['name']}: {v['title']} -> {ask_for_edit(sb, c, v, revise=not first, notes=edit_notes(sb, v))}")
+        edits[v["id"]] = edit_signature(v, oc.get(v["id"], 0))
+    for fn in (notify_tait, notify_clients):
+        try:
+            log += fn(sb, st)
+        except Exception as e:
+            log.append(f"{fn.__name__}: {e}")
     STATE.write_text(json.dumps(st, indent=2))
     if verbose:
         print("\n".join(log) or "Nothing new.")
@@ -836,6 +1026,10 @@ def main(argv=None):
     yt = sub.add_parser("youtube"); yt.add_argument("action", choices=["outliers"]); yt.add_argument("--query", required=True)
     yt.add_argument("--days", type=int, default=180); yt.add_argument("--max", type=int, default=25)
     tgp = sub.add_parser("telegram"); tgp.add_argument("action", choices=["pair"])
+    vd = sub.add_parser("video"); vd.add_argument("action", choices=["deliver"]); vd.add_argument("--id", required=True); vd.add_argument("--file", required=True)
+    cp = sub.add_parser("captions"); cp.add_argument("action", choices=["put"]); cp.add_argument("--id", required=True)
+    cp.add_argument("--caption"); cp.add_argument("--on-screen"); cp.add_argument("--cover")
+    fw = sub.add_parser("footage"); fw.add_argument("action", choices=["where"]); fw.add_argument("--id", required=True)
     cd = sub.add_parser("card"); cd.add_argument("action", choices=["get", "put", "ready"]); cd.add_argument("--id", required=True)
     cd.add_argument("--file"); cd.add_argument("--score", type=int); cd.add_argument("--brief")
     argv = list(sys.argv[1:] if argv is None else argv)
@@ -932,6 +1126,46 @@ def main(argv=None):
         code = f"{uuid.uuid4().int % 1000000:06d}"
         st["telegram_code"] = code; st.pop("telegram_chat", None); STATE.write_text(json.dumps(st, indent=2))
         print(f"In Telegram, open your bot and send:  /start {code}\nThe bridge pairs on its next check.")
+    elif a.cmd == "video":
+        v = sb.select("social_videos", f"select=*&id=eq.{a.id}")[0]
+        c = sb.select("social_clients", f"select=id,name,slug&id=eq.{v['client_id']}")[0]
+        src = pathlib.Path(a.file)
+        if not src.exists(): sys.exit(f"No file at {src}")
+        vers = sb.select("social_video_versions", f"select=version&video_id=eq.{v['id']}&order=version.desc&limit=1")
+        n = (vers[0]["version"] + 1) if vers else 1
+        path = f"{v['client_id']}/{v['id']}/{int(time.time() * 1000)}-v{n}-{re.sub(r'[^A-Za-z0-9._-]+', '_', src.name)}"
+        sb.upload("review", path, src.read_bytes(), "video/mp4")
+        op = sb.select("social_operators", "select=id&limit=1")[0]["id"]
+        st = load_state()
+        drive_note = ""
+        link = (sb.select("social_drive_folder_links", f"select=final_edits&client_id=eq.{v['client_id']}") or [{}])[0].get("final_edits")
+        folder = find_drive_folder(folder_id_of(link), st) if link else None
+        if folder:
+            title = re.sub(r'[\\/:*?"<>|]+', "", v.get("title") or "video").strip()[:80]
+            dest = folder / f"{title} v{n}{src.suffix}"
+            dest.write_bytes(src.read_bytes())
+            drive_note = f" Copy in Drive: {dest.name}."
+            STATE.write_text(json.dumps(st, indent=2))
+        sb.insert("social_video_versions", {"video_id": v["id"], "version": n, "file_name": src.name, "storage_path": path, "created_by": op})
+        eb = dict(v.get("editor_brief") or {}); eb.pop("waitingOn", None)
+        sb.update("social_videos", {"id": v["id"]}, {"status": "in_review", "editor_brief": eb})
+        if n == 1 or not eb.get("captionDraft"):
+            try: ask_for_captions(sb, c, v)
+            except Exception: pass
+        print(f"v{n} of {v['title']} is on Tait's desk (Videos to review).{drive_note}")
+    elif a.cmd == "captions":
+        v = sb.select("social_videos", f"select=editor_brief&id=eq.{a.id}")[0]
+        eb = dict(v.get("editor_brief") or {})
+        eb["captionDraft"] = {k: x for k, x in (("caption", a.caption), ("onScreenCaption", a.on_screen), ("cover", a.cover)) if x}
+        sb.update("social_videos", {"id": a.id}, {"editor_brief": eb})
+        print("Saved the caption draft for Tait.")
+    elif a.cmd == "footage":
+        v = sb.select("social_videos", f"select=client_id,editor_brief&id=eq.{a.id}")[0]
+        st = load_state()
+        url = (v.get("editor_brief") or {}).get("rawFootageUrl") or (sb.select("social_drive_folder_links", f"select=footage_uploads&client_id=eq.{v['client_id']}") or [{}])[0].get("footage_uploads")
+        folder = find_drive_folder(folder_id_of(url), st) if url else None
+        STATE.write_text(json.dumps(st, indent=2))
+        print(folder or f"Couldn't find it on this Mac (Drive link: {url}).")
     elif a.cmd == "card":
         rows = sb.select("social_videos", f"select=*&id=eq.{a.id}")
         if not rows: sys.exit("No card with that id.")

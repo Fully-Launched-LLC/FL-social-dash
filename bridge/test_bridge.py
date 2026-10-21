@@ -1,7 +1,7 @@
 """Tests for the bridge's decisions (no network): python3 bridge/test_bridge.py"""
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from bridge import plan_jobs, plan_style_jobs, questions_from_text, timeline, plan_dates, match_client, idea_title, months_ahead, plan_script_jobs, script_signature, card_folder_name
+from bridge import plan_jobs, plan_style_jobs, questions_from_text, timeline, plan_dates, match_client, idea_title, months_ahead, plan_script_jobs, script_signature, card_folder_name, plan_edit_jobs, edit_signature, desk_message
 import datetime as dt
 
 SINCE = "2026-10-21T12:00:00+00:00"
@@ -104,6 +104,26 @@ check("Tait's send-back asks again", list(plan_script_jobs([back], {"v1": script
 client = dict(v1, note="change the ending")
 check("client's requested changes ask again", list(plan_script_jobs([client], {"v1": script_signature(v1)})) == ["a"])
 check("card folder name like Tait's", card_folder_name(20, {"title": 'Snow: rules?', "post_date": "2026-11-14"}) == "20. Snow rules (posts Nov 14)")
+
+# ── editing (Phase 7) ──
+r1 = {"id": "e1", "client_id": "a", "status": "ready_to_edit", "editor_id": None, "editor_brief": {}}
+j = plan_edit_jobs([r1], {"a"}, set(), {})
+check("footage in + guidelines approved -> the AI Editor starts", [v["id"] for v in j["start"]] == ["e1"])
+j = plan_edit_jobs([r1], set(), set(), {})
+check("guidelines not approved -> it waits (Tait's rule)", j["start"] == [] and [v["id"] for v in j["waiting"]] == ["e1"])
+j = plan_edit_jobs([r1], {"a"}, {"e1"}, {})
+check("clips still moving to Drive -> not yet", j["start"] == [] and j["waiting"] == [])
+j = plan_edit_jobs([dict(r1, editor_id="human")], {"a"}, set(), {})
+check("a human editor's card is left alone", j["start"] == [])
+w = {"id": "e2", "client_id": "a", "status": "with_editor", "editor_id": None, "editor_brief": {"aiEditor": True}, "client_revision_rounds": 0}
+check("with the AI Editor, nothing new -> nothing", plan_edit_jobs([w], {"a"}, set(), {"e2": edit_signature(w)})["revise"] == [])
+w2 = dict(w, editor_brief={"aiEditor": True, "revisions": "0:12 louder"})
+check("Tait's revisions -> revise", [v["id"] for v in plan_edit_jobs([w2], {"a"}, set(), {"e2": edit_signature(w)})["revise"]] == ["e2"])
+w3 = dict(w, note="change the music", client_revision_rounds=1)
+check("client's round -> revise", [v["id"] for v in plan_edit_jobs([w3], {"a"}, set(), {"e2": edit_signature(w)})["revise"]] == ["e2"])
+check("sent to the AI Editor from the dashboard -> start", [v["id"] for v in plan_edit_jobs([w], {"a"}, set(), {})["revise"]] == ["e2"])
+m = desk_message({"plan": [], "doc": ["d"], "script": ["s1", "s2"], "video": ["v"], "post": []}, {"s2"})
+check("desk notice groups everything", m.startswith("On your desk: 1 document, 2 scripts, 1 video to review (1 new)."), m)
 
 print("all passed" if not fails else f"{fails} failed")
 sys.exit(1 if fails else 0)

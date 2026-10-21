@@ -831,6 +831,25 @@ with Google Drive for desktop) and deletes the temporary copy. Video has
 been filmed: on time keeps the post date and the edit is due P−7; late
 falls back to 7 + 7. To Do has a Scripting stage.
 
+**Editing and reviews** (Unify Phase 7, Tait 2026-10-21; no migration):
+the **AI Editor first, humans as backup**. When a card's footage is in (every
+clip moved to Drive) and the client's editing guidelines are approved, the
+bridge moves it to `with_editor` with `editor_brief.aiEditor` and gives the
+Content Editor the edit (Motion Designer and Reviewer with it); without
+approved guidelines it waits (`editor_brief.waitingOn`, shown on To Do and My
+desk). **Send to editor** offers **AI editor** next to the human editors (a
+human sets `humanEditor`, which the bridge leaves alone). `bridge.py video
+deliver` uploads a review copy (the `review` bucket, a new
+`social_video_versions` row), copies it to the client's Final Edits Drive
+folder and puts the card in Videos to review; the Content Poster drafts the
+captions (`editor_brief.captionDraft`), which open pre-filled in Approve &
+add captions. Tait's notes or a client's round go back to the AI Editor the
+same way (bridge `edit_notes`). The bridge texts Tait (Telegram, grouped, at
+most every 2 hours) when new things land on My desk, and emails each client
+once a day when cards or videos wait for them (`/api/notify-review`, which
+now lists cards too and accepts the service-role key from the bridge; live
+once deployed).
+
 **Content Ideas** (no migration; Tait, 2026-10-19: "ideas are on one
 side and send to the client on the other"). Two columns, per client (the
 top client filter), every idea at once, no category filter: **Ideas** (banked: the client

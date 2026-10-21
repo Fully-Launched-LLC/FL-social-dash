@@ -47,6 +47,9 @@ async function rest(path, { method = "GET", body, prefer } = {}) {
 async function callerFrom(req) {
   const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
   if (!token) { const e = new Error("Sign in first."); e.status = 401; throw e; }
+  // The bridge on Tait's Mac (Unify Phase 7) signs with the service-role key
+  // itself, which only Vercel and Tait's private bridge.env hold.
+  if (env("SUPABASE_SERVICE_ROLE_KEY") && token === env("SUPABASE_SERVICE_ROLE_KEY")) return { user: { id: null }, isOperator: true, clientId: null, bridge: true };
   const res = await fetch(env("SUPABASE_URL") + "/auth/v1/user", {
     headers: { apikey: env("SUPABASE_ANON_KEY") || env("SUPABASE_SERVICE_ROLE_KEY"), Authorization: "Bearer " + token },
   });

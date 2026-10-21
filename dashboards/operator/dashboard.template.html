@@ -386,7 +386,12 @@ async function sendToEditor(id, btn) {
   const sel = btn.parentElement.querySelector("select");
   const editorId = sel ? sel.value : "";
   if (!editorId) { alert("Pick an editor first."); return; }
-  await updateVideo(id, { editorId, status: "with_editor" });
+  const x = findVideo(id), eb = Object.assign({}, x ? x.video.editorBrief : {});
+  // (Unify Phase 7) The AI Editor (Content Editor in Paperclip): the bridge
+  // on Tait's Mac picks it up. A human editor: the editor's page, as before.
+  if (editorId === "ai") { eb.aiEditor = true; delete eb.humanEditor; await updateVideo(id, { editorId: null, status: "with_editor", editorBrief: eb }); return; }
+  delete eb.aiEditor; eb.humanEditor = true;
+  await updateVideo(id, { editorId, status: "with_editor", editorBrief: eb });
 }
 // Edit review, Frame.io style (openReviewPlayer in shell.js; the video
 // streams from Drive). Tait leaves notes pinned to moments and sends them
@@ -441,8 +446,9 @@ function approveEdit(id) {
   const box = openModal(`
     <h2>${toPost ? "Approve for posting" : "Approve edit — add captions"}</h2>
     <div class="meta" style="margin-bottom:12px">${escapeHtml(x.client.name)} · ${escapeHtml(v.title || "")}. ${toPost ? `They've used both rounds of changes, so this goes straight to <b>Ready to post</b>. Check the captions.` : "The client sees these when they approve it for posting."}</div>
-    ${textField("onScreenCaption", "On-screen caption (text shown on the video)", v.onScreenCaption, 2)}
-    ${textField("caption", "Caption (the post caption)", v.caption, 5)}
+    ${(v.editorBrief || {}).captionDraft && !v.caption ? `<div class="meta" style="margin-bottom:8px">Drafted by the Content Poster. Change anything.${v.editorBrief.captionDraft.cover ? ` Cover idea: ${escapeHtml(v.editorBrief.captionDraft.cover)}` : ""}</div>` : ""}
+    ${textField("onScreenCaption", "On-screen caption (text shown on the video)", v.onScreenCaption || ((v.editorBrief || {}).captionDraft || {}).onScreenCaption, 2)}
+    ${textField("caption", "Caption (the post caption)", v.caption || ((v.editorBrief || {}).captionDraft || {}).caption, 5)}
     ${textField("platform", "Platforms (comma-separated)", (v.platform || []).join(", "))}
     ${dateField("postDate", "Post date", v.postDate)}
     <div class="auth-error" id="aeError"></div>
@@ -648,7 +654,7 @@ function vrowHtml(x, actionsHtml) {
     : filmedByX(x) === "us" && v.status === "to_film" ? "No filming" : "";
   return `<div class="row vrow" data-id="${v.id}">
     <div><b class="video-card title" onclick="openOperatorVideoModal('${v.id}')">${escapeHtml(v.title || "(untitled)")}</b>
-      <div class="sub">${escapeHtml(x.client.name)}${v.assignedEditor && v.status === "with_editor" ? " · Editor: " + escapeHtml(v.assignedEditor) : ""}</div></div>
+      <div class="sub">${escapeHtml(x.client.name)}${v.assignedEditor && v.status === "with_editor" ? " · Editor: " + escapeHtml(v.assignedEditor) : v.status === "with_editor" && (v.editorBrief || {}).aiEditor ? " · AI editor" : ""}${(v.editorBrief || {}).waitingOn && v.status === "ready_to_edit" ? ` · <span style="color:var(--gold)">Waiting on their ${escapeHtml(v.editorBrief.waitingOn)}</span>` : ""}</div></div>
     <div class="when">${v.postDate ? escapeHtml(niceDate(v.postDate)) : "Not set"}${extra ? `<small>${escapeHtml(extra)}</small>` : ""}</div>
     <div>${platformPills(v.platform)}</div>
     <div>${statusDot(v.status, STATUS_LABEL, !!timeSensitive(x))}</div>
@@ -679,10 +685,10 @@ function smallBtn(label, onclick, cls) {
   return `<button class="${cls || ""}" style="font-size:0.78rem;padding:5px 10px" onclick="${onclick}">${escapeHtml(label)}</button>`;
 }
 function editorSelect(selected) {
-  if (!EDITORS.length) return `<span class="meta">No editors set up yet. Invite one on the Editors page.</span>`;
+  if (!EDITORS.length) return `<select style="font-size:0.82rem;padding:5px 6px"><option value="">Pick editor…</option><option value="ai">AI editor</option></select>`;
   const opts = EDITORS.filter(e => e.active || e.id === selected)
     .map(e => `<option value="${e.id}" ${e.id === selected ? "selected" : ""}>${escapeHtml(e.name)}</option>`).join("");
-  return `<select style="font-size:0.82rem;padding:5px 6px"><option value="">Pick editor…</option>${opts}</select>`;
+  return `<select style="font-size:0.82rem;padding:5px 6px"><option value="">Pick editor…</option><option value="ai">AI editor</option>${opts}</select>`;
 }
 // "We film" videos the client has approved: Tait films them (or already
 // has the footage) and sends them to the editor.
@@ -2035,10 +2041,13 @@ function renderDesk() {
     ? `<div class="vtable">${VROW_HEAD}${q.scripts.map(x => vrowHtml(x, smallBtn("Open", `openOperatorVideoModal('${x.video.id}')`) + smallBtn("Approve script", `approveScript('${x.video.id}')`, "primary") + smallBtn("Send back", `sendBackScript('${x.video.id}')`))).join("")}</div>`
     : `<div class="empty">No scripts waiting.</div>`;
 
-  document.getElementById("deskDocs").innerHTML = q.docs.map(d => `<div class="doc-row"><div><b>${escapeHtml(DOC_LABEL[d.kind] || d.title)}</b> · ${escapeHtml(CLIENT_BY_ID[d.client_id].name)}
+  const waiting = workVideos().filter(x => x.video.status === "ready_to_edit" && (x.video.editorBrief || {}).waitingOn === "editing guidelines");
+  const waitNote = [...new Set(waiting.map(x => x.client.id))].map(cid => { const n = waiting.filter(x => x.client.id === cid).length;
+    return `<div class="doc-row"><div><b>${n} video${n === 1 ? "" : "s"} waiting</b> on ${escapeHtml(CLIENT_BY_ID[cid].name)}'s editing guidelines <div class="meta">The AI Editor starts as soon as you approve them.</div></div><div>${smallBtn("Open", `openClientPage('${cid}','docs')`)}</div></div>`; }).join("");
+  document.getElementById("deskDocs").innerHTML = waitNote + q.docs.map(d => `<div class="doc-row"><div><b>${escapeHtml(DOC_LABEL[d.kind] || d.title)}</b> · ${escapeHtml(CLIENT_BY_ID[d.client_id].name)}
       <div class="meta">${[d.built_by && "Built by " + d.built_by, d.sources && "From " + d.sources].filter(Boolean).map(escapeHtml).join(" · ")}</div></div>
       <div>${smallBtn("Open", `openDoc('${d.client_id}','${d.kind}')`)}${smallBtn("Approve", `setDocStatus('${d.id}','approved')`, "primary")}</div></div>`).join("")
-    || `<div class="empty">No documents waiting.</div>`;
+    || (waitNote ? "" : `<div class="empty">No documents waiting.</div>`);
 
   document.getElementById("deskVideos").innerHTML = q.videos.length
     ? `<div class="vtable">${VROW_HEAD}${q.videos.map(x => vrowHtml(x, operatorActionsHtml(x))).join("")}</div>` : `<div class="empty">No videos waiting for your review.</div>`;

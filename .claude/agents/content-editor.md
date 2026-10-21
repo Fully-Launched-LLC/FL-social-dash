@@ -46,3 +46,7 @@ the video's approved card.
 - **Music and sound effects** come from the shared Library:
   `python3 bridge/bridge.py assets list --kind music` (or `sfx`, `--favourites`).
   Never use one Tait marked "never"; prefer his favourites.
+- **Edits (Phase 7):** the bridge gives you "<client>: edit the video: <title>"
+  (or "revise the edit" with the exact notes). Footage path:
+  `python3 bridge/bridge.py footage where --id <card>`. After the Reviewer
+  passes it: `python3 bridge/bridge.py video deliver --id <card> --file <mp4>`.

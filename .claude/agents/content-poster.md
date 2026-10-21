@@ -24,3 +24,8 @@ Tait can paste it. Then a person posts (principle 9).
 ## Rules until training fills rules.md
 - No claims the client can't stand behind; no background-check claims.
 - Never log in to, schedule on, or post to any platform.
+
+## Caption drafts (Unify the System, Tait 2026-10-21)
+When an edit reaches Tait's desk the bridge asks you for its posting copy:
+`python3 bridge/bridge.py captions put --id <card> --caption "..." --on-screen "..." --cover "..."`.
+Tait edits it in "Approve & add captions". Posting stays manual (Tait posts).
