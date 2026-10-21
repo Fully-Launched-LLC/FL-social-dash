@@ -387,7 +387,10 @@ fully-social-os/
                                (moodboards: social_moodboard_items and
                                the private 'moodboards' bucket; the
                                Library: social_style_assets previews in
-                               the private 'library' bucket, ratings)
+                               the private 'library' bucket, ratings), 029
+                               (social_ideas: requested_post_date,
+                               planned_post_date, special_request; the
+                               private 'ideas' bucket)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -792,6 +795,23 @@ shell.js. Also "Add ideas with Claude" and "+ New idea", as on To Do) → **Cont
 sent to them; see below) → **Clients** (name, portal
 address, who films, raw footage folder, finished video folder) → **Fully AI Social** (the AI content team, below) → **Editor
 portal ↗**. A client filter across the top narrows every page.
+
+**Content Ideas → Idea database** (Unify Phase 5, Tait 2026-10-21;
+migrations 026 + 029): every idea per client in `social_ideas`, from Tait
+(+ Add idea: text, links, screenshots/voice notes, a special-request post
+date), his **Telegram bot** (the bridge reads it: "Grad Gig: idea…", voice
+notes transcribed, photos to the private 'ideas' bucket; pair with
+`bridge.py telegram pair`), weekly research per client (Content Researcher:
+Reddit's public feed, YouTube Data API outliers via `bridge.py youtube
+outliers`, small Apify runs for Instagram; no TikTok) and Sandcastles links.
+On the 10th the bridge asks the Team Lead for next month's plan: 20 ideas
+(any mix), scored by the Expert, briefed by the Simplifier, put on My desk
+by `bridge.py plan put` with post dates spread over the month's weekdays
+(special requests keep their day). Tait's timing from a post date P: script
+approved P−13, filmed P−10, edit done P−7. "Ask the team for next month's
+plan" makes a draft plan the bridge picks up. Automatic plans start with
+December 2026 (installed after the 10th). The older board below is the
+**Unsent cards** tab.
 
 **Content Ideas** (no migration; Tait, 2026-10-19: "ideas are on one
 side and send to the client on the other"). Two columns, per client (the

@@ -158,11 +158,16 @@
 
   <section class="view" id="view-ideabank">
     <div class="page-head">
-      <div><h1>Content Ideas</h1><p>Each idea with the format it's paired with. Click a card to edit its hook, script, outline and the rest. Drag it to Sent to client to send it; drag it back to take it off their portal.</p></div>
+      <div><h1>Content Ideas</h1><p>Every idea for every client: yours (from here or Telegram), the research team's, and Sandcastles finds. On the 10th the team builds next month's plan of 20 from here.</p></div>
       <div class="page-actions">
-        <button class="accent" onclick="openBulkAdd(null, true)">Add ideas with Claude</button>
+        <button class="accent" onclick="openIdeaForm(null)">+ Add idea</button>
+        <button onclick="askForPlan()">Ask the team for next month's plan</button>
       </div>
     </div>
+    <div class="client-tabs" id="ideaTabs"></div>
+    <div id="ideaDb"></div>
+    <div id="oldBoardHead" class="page-head" style="display:none"><div><p>Cards made before the idea database: drag one to Sent to client to send it, or back to take it off their portal.</p></div>
+      <div class="page-actions"><button class="accent" onclick="openBulkAdd(null, true)">Add ideas with Claude</button></div></div>
     <div class="board" id="ideaBoard">
       <div class="board-col" data-col="bank"><div class="board-head"><b>Ideas</b> <span class="c" id="bankColN"></span><small>The client can't see these.</small></div><div class="board-list" id="bankList"></div></div>
       <div class="board-col" data-col="sent"><div class="board-head"><b>Sent to client</b> <span class="c" id="sentColN"></span><small>In their portal, waiting to be filmed.</small></div><div class="board-list" id="sentList"></div></div>
@@ -1705,6 +1710,113 @@ document.getElementById("view-todo").addEventListener("click", e => {
   if (!row || e.target.closest("button, a, select, input, textarea, .video-card")) return;
   openOperatorVideoModal(row.dataset.id);
 });
+// ---------- Content Idea Database (Unify the System, Phase 5; migrations 026, 029) ----------
+// social_ideas: Tait's ideas (here or by Telegram), research finds, Sandcastles
+// links. The monthly plan (bridge.py, on the 10th) picks 20 for next month.
+let IDEA_VIEW = { tab: "db", status: "open", source: "", q: "" };
+const IDEA_STATUS = { new: "New", in_plan: "In a plan", approved: "Approved", rejected: "Rejected", used: "On a card" };
+const IDEA_SOURCE = { tait: "You", phone: "Telegram", research: "Research", sandcastles: "Sandcastles", client: "Client" };
+async function renderIdeaDb() {
+  const tabs = [["db", "Idea database"], ["cards", "Unsent cards"]];
+  document.getElementById("ideaTabs").innerHTML = tabs.map(([k, l]) => `<div class="chip ${k === IDEA_VIEW.tab ? "active" : ""}" data-it="${k}">${l}</div>`).join("");
+  document.querySelectorAll("#ideaTabs .chip").forEach(el => el.onclick = () => { IDEA_VIEW.tab = el.dataset.it; renderIdeaDb(); });
+  const db = document.getElementById("ideaDb"), cards = IDEA_VIEW.tab === "cards";
+  document.getElementById("ideaBoard").style.display = cards ? "" : "none";
+  document.getElementById("oldBoardHead").style.display = cards ? "" : "none";
+  db.style.display = cards ? "none" : "";
+  if (cards) return;
+  if (!HAS_026) { db.innerHTML = `<div class="card"><div class="meta">Run migration 026 to turn on the idea database.</div></div>`; return; }
+  const mine = IDEAS.filter(i => inClientFilter(i.client_id) && CLIENT_BY_ID[i.client_id]);
+  const shown = mine.filter(i => (IDEA_VIEW.status === "open" ? ["new", "in_plan", "approved"].includes(i.status) : !IDEA_VIEW.status || i.status === IDEA_VIEW.status)
+    && (!IDEA_VIEW.source || i.source === IDEA_VIEW.source)
+    && (!IDEA_VIEW.q || (i.title + " " + (i.body || "")).toLowerCase().includes(IDEA_VIEW.q.toLowerCase())))
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const files = shown.flatMap(i => (i.attachments || []).map(a => a.path));
+  const signed = {};
+  if (files.length) {
+    const { data } = await sbClient.storage.from("ideas").createSignedUrls(files, 3600);
+    (data || []).forEach(x => { if (x && x.signedUrl) signed[x.path] = x.signedUrl; });
+  }
+  const count = s => mine.filter(i => s === "open" ? ["new", "in_plan", "approved"].includes(i.status) : i.status === s).length;
+  db.innerHTML = `<div class="card">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+      <select id="ideaStatus">${[["open", "Open"], ["new", "New"], ["in_plan", "In a plan"], ["approved", "Approved"], ["used", "On a card"], ["rejected", "Rejected"], ["", "All"]].map(([k, l]) => `<option value="${k}" ${k === IDEA_VIEW.status ? "selected" : ""}>${l} (${k ? count(k) : mine.length})</option>`).join("")}</select>
+      <select id="ideaSource"><option value="">Every source</option>${Object.entries(IDEA_SOURCE).map(([k, l]) => `<option value="${k}" ${k === IDEA_VIEW.source ? "selected" : ""}>${l}</option>`).join("")}</select>
+      <input type="search" id="ideaQ" placeholder="Search" value="${escapeHtml(IDEA_VIEW.q)}">
+    </div>
+    ${shown.map(i => `<div class="doc-row" data-idea="${i.id}" style="align-items:flex-start">
+      <div style="flex:1;min-width:220px"><b>${escapeHtml(i.title)}</b> ${i.score ? `<span class="badge">${i.score}/10</span>` : ""}
+        <div class="meta">${[globalClientFilter === "all" && CLIENT_BY_ID[i.client_id].name, IDEA_SOURCE[i.source] + (i.source_detail ? " · " + i.source_detail : ""), i.format && "Format: " + i.format,
+          i.requested_post_date && "Post on " + niceDate(i.requested_post_date), i.planned_post_date && "Planned " + niceDate(i.planned_post_date)].filter(Boolean).map(escapeHtml).join(" · ")}</div>
+        ${i.body ? `<div class="brief">${escapeHtml(i.body).replace(/\n/g, "<br>")}</div>` : ""}
+        ${i.why ? `<div class="meta">Why: ${escapeHtml(i.why)}</div>` : ""}
+        ${(i.links || []).map(l => `<div class="meta"><a href="${escapeHtml(l)}" target="_blank" rel="noopener">${escapeHtml(l)}</a></div>`).join("")}
+        ${(i.attachments || []).map(a => signed[a.path] ? (a.kind === "image" ? `<a href="${escapeHtml(signed[a.path])}" target="_blank" rel="noopener"><img src="${escapeHtml(signed[a.path])}" alt="" style="max-width:160px;border-radius:6px;margin-top:6px"></a>` : `<div class="meta"><a href="${escapeHtml(signed[a.path])}" target="_blank" rel="noopener">${escapeHtml(a.name || "file")}</a></div>`) : "").join("")}
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">${statusBadge(i.status, IDEA_STATUS)}${smallBtn("Edit", `openIdeaForm('${i.id}')`)}${i.status === "rejected" ? smallBtn("Restore", `setIdeaStatus('${i.id}','new')`) : ["new"].includes(i.status) ? smallBtn("Reject", `setIdeaStatus('${i.id}','rejected')`, "reject") : ""}</div></div>`).join("")
+      || `<div class="empty">No ideas here yet. Add one, or text your Telegram bot.</div>`}</div>`;
+  document.getElementById("ideaStatus").onchange = e => { IDEA_VIEW.status = e.target.value; renderIdeaDb(); };
+  document.getElementById("ideaSource").onchange = e => { IDEA_VIEW.source = e.target.value; renderIdeaDb(); };
+  document.getElementById("ideaQ").oninput = e => { IDEA_VIEW.q = e.target.value; clearTimeout(renderIdeaDb.t); renderIdeaDb.t = setTimeout(async () => { await renderIdeaDb(); const q = document.getElementById("ideaQ"); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }, 250); };
+}
+function openIdeaForm(id) {
+  const i = id ? IDEAS.find(x => x.id === id) : null;
+  const clientId = i ? i.client_id : (globalClientFilter !== "all" ? globalClientFilter : "");
+  const box = openModal(`<h2>${i ? "Edit idea" : "Add an idea"}</h2>
+    ${lbl("Client")}<select id="ifClient" style="width:100%;margin-bottom:10px" ${i ? "disabled" : ""}><option value="">Pick a client…</option>${CLIENTS.map(c => `<option value="${c.id}" ${c.id === clientId ? "selected" : ""}>${escapeHtml(c.name)}</option>`).join("")}</select>
+    ${lbl("The idea")}<textarea id="ifBody" rows="5" style="width:100%;margin-bottom:10px" placeholder="What's the video? A hook, a question a customer asked, a story…">${escapeHtml(i ? (i.body || i.title) : "")}</textarea>
+    ${lbl("Links (one per line: Sandcastles, Instagram, YouTube, Reddit…)")}<textarea id="ifLinks" rows="2" style="width:100%;margin-bottom:10px">${escapeHtml(i ? (i.links || []).join("\n") : "")}</textarea>
+    <div class="grid-2">
+      <div>${lbl("Where it's from")}<select id="ifSource" style="width:100%;margin-bottom:10px">${Object.entries(IDEA_SOURCE).map(([k, l]) => `<option value="${k}" ${(i ? i.source : "tait") === k ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+      <div>${lbl("Post it on (special request)")}<input type="date" id="ifDate" value="${escapeHtml(i && i.requested_post_date ? i.requested_post_date : "")}" style="width:100%;margin-bottom:10px"></div>
+    </div>
+    ${lbl("Format (optional)")}<input type="text" id="ifFormat" value="${escapeHtml(i && i.format || "")}" style="width:100%;margin-bottom:10px">
+    ${i ? "" : `${lbl("Screenshots or voice notes (optional)")}<input type="file" id="ifFiles" accept="image/*,audio/*,video/*" multiple style="margin-bottom:10px">`}
+    <div class="modal-actions">${i ? smallBtn("Delete", `deleteIdea('${i.id}')`, "reject") : ""}<button onclick="closeVideoModal()">Cancel</button><button class="primary" id="ifSave">${i ? "Save" : "Add idea"}</button></div>
+    <div class="auth-error" id="ifErr"></div>`);
+  box.querySelector("#ifSave").onclick = async () => {
+    const err = box.querySelector("#ifErr"), body = box.querySelector("#ifBody").value.trim();
+    const links = box.querySelector("#ifLinks").value.split(/\s+/).map(s => s.trim()).filter(s => /^https?:\/\//.test(s));
+    const client = i ? i.client_id : box.querySelector("#ifClient").value;
+    if (!client) { err.textContent = "Pick a client."; return; }
+    if (!body && !links.length) { err.textContent = "Write the idea, or paste a link."; return; }
+    const first = (body.split(/(?<=[.!?])\s|\n/)[0] || links[0] || "").slice(0, 90);
+    const row = { title: first, body: body || null, links, source: box.querySelector("#ifSource").value,
+      requested_post_date: box.querySelector("#ifDate").value || null, format: box.querySelector("#ifFormat").value.trim() || null };
+    const attachments = [];
+    const picked = box.querySelector("#ifFiles");
+    for (const f of picked ? Array.from(picked.files || []) : []) {
+      try {
+        const path = await uploadToBucket("ideas", `${client}/${Date.now()}-${f.name.replace(/[^\w.\-]+/g, "_")}`, f, () => {});
+        attachments.push({ path, kind: /^image\//.test(f.type) ? "image" : /^audio\//.test(f.type) ? "audio" : "file", name: f.name });
+      } catch (e) { err.textContent = `${f.name} didn't upload: ${e.message || e}`; return; }
+    }
+    const { error } = i ? await sbClient.from("social_ideas").update(row).eq("id", i.id)
+      : await sbClient.from("social_ideas").insert(Object.assign(row, { client_id: client, attachments, created_by: "tait" }));
+    if (error) { err.textContent = error.message; return; }
+    closeVideoModal(); await loadLiveData();
+  };
+}
+async function deleteIdea(id) {
+  if (!confirm("Delete this idea for good?")) return;
+  const { error } = await sbClient.from("social_ideas").delete().eq("id", id);
+  if (error) { alert(error.message); return; }
+  closeVideoModal(); await loadLiveData();
+}
+// A plan the team should build now (not waiting for the 10th): a draft
+// plan with no ideas, which the bridge turns into a Team Lead task.
+async function askForPlan() {
+  const clientId = globalClientFilter !== "all" ? globalClientFilter : null;
+  if (!clientId) { alert("Pick a client at the top first."); return; }
+  const d = new Date(), next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+  const month = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-01`;
+  if (PLANS.some(p => p.client_id === clientId && String(p.month).slice(0, 10) === month)) { alert("There's already a plan for next month."); return; }
+  const { error } = await sbClient.from("social_monthly_plans").insert({ client_id: clientId, month, status: "draft" });
+  if (error) { alert(error.message); return; }
+  alert(`Asked the team for ${CLIENT_BY_ID[clientId].name}'s ${next.toLocaleDateString(undefined, { month: "long" })} plan. It lands on My desk when it's ready (the bridge needs to be running on your Mac).`);
+  await loadLiveData();
+}
+
 // ---------- Moodboards + Library (Unify the System, Phase 4; migration 028) ----------
 // A moodboard is what Tait likes (motion graphics, fonts, text styles,
 // colours, video styles) as screenshots, videos and links, per client or for
@@ -2093,7 +2205,7 @@ document.getElementById("view-desk").addEventListener("click", e => {
 function renderAll() {
   const cn = document.getElementById("navClientsN"); cn.hidden = !CLIENTS.length; cn.textContent = CLIENTS.length;
   renderGlobalClientFilter();
-  renderDesk(); renderTodo(); renderCalendar(); renderIdeaBank(); renderAllClients(); renderEditors(); renderAiTeam();
+  renderDesk(); renderTodo(); renderCalendar(); renderIdeaBank(); renderIdeaDb(); renderAllClients(); renderEditors(); renderAiTeam();
   if (document.getElementById("view-client").classList.contains("active")) renderClientPage();
   if (LIB.tab !== "house" || document.getElementById("view-library").classList.contains("active")) renderLibrary();
 }

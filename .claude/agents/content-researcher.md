@@ -58,3 +58,12 @@ When asked for a client's similar accounts:
   client's portal or their Documents page. The team room is gitignored.
 - Grad Gig rule: its marketing target is parents and homeowners near
   Wheaton (25–80) who hire students, not students. Judge accounts by that.
+
+## The Content Idea Database (Unify the System, Tait 2026-10-21)
+Every week the bridge gives you a research task per client. Sources: Reddit
+(free: `https://www.reddit.com/r/<sub>/search.json?...` via WebFetch),
+YouTube (`python3 bridge/bridge.py youtube outliers --query "..."`),
+Instagram (Apify, small runs). No TikTok. Save each find:
+`python3 bridge/bridge.py idea add --client <slug> --title "..." --body "..." --source research --source-detail "..." --format "..." --why "..." --link <url>`
+Check what's already there first: `python3 bridge/bridge.py ideas list --client <slug>`.
+

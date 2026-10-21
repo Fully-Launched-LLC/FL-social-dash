@@ -18,3 +18,12 @@ Your job: keep the work moving between employees and keep the record.
 - Before any gate, the Content Simplifier writes Tait a short brief (what the
   team made, what he needs to decide) and posts it on the task he approves.
 - After Tait's feedback, make sure the employee involved proposes a rule.
+
+## The monthly plan (Unify the System, Tait 2026-10-21)
+On the 10th (or when Tait asks on the dashboard) the bridge gives you
+"<client>: <Month> plan (20 ideas)". Follow its steps: Strategist picks 20
+from `bridge.py ideas list --client <slug> --status new`, Expert scores,
+Simplifier writes the brief, then `bridge.py plan put` puts it on Tait's
+desk. Timing for every video: script approved 13 days before its post,
+filmed 10 days before, edit done 7 days before.
+

@@ -191,6 +191,58 @@ def plan_style_jobs(clients, onboardings, docs, moodboard):
     return jobs
 
 
+# ── ideas: dates, phone messages (pure, tested) ─────────────────────────
+def timeline(post):
+    """Tait's timing (2026-10-21) from a post date: script approved by P-13,
+    filmed by P-10, edit done by P-7."""
+    d = dt.date.fromisoformat(str(post)[:10])
+    return {"post": d.isoformat(), "script_due": (d - dt.timedelta(days=13)).isoformat(),
+            "film_by": (d - dt.timedelta(days=10)).isoformat(), "edit_due": (d - dt.timedelta(days=7)).isoformat()}
+
+
+def plan_dates(month_first, n, requested=()):
+    """n post dates spread evenly over the month's weekdays (Mon-Fri);
+    requested dates (special requests) are kept and count toward n."""
+    first = dt.date.fromisoformat(str(month_first)[:10]).replace(day=1)
+    nxt = (first.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
+    days = [first + dt.timedelta(days=i) for i in range((nxt - first).days)]
+    weekdays = [d for d in days if d.weekday() < 5]
+    fixed = sorted({dt.date.fromisoformat(str(r)[:10]) for r in requested if r})
+    left = max(0, n - len(fixed))
+    free = [d for d in weekdays if d not in fixed]
+    picks = []
+    if left and free:
+        step = len(free) / left
+        picks = [free[min(len(free) - 1, int(i * step + step / 2))] for i in range(left)]
+    return sorted([d.isoformat() for d in fixed] + [d.isoformat() for d in picks])
+
+
+def match_client(text, clients):
+    """'Grad Gig: idea about snow' -> (client, 'idea about snow'). Matches the
+    client's name or portal address at the start, before ':' or ' - '.
+    Returns (None, text) when no client is named."""
+    m = re.match(r"^\s*([^:\n]{2,40}?)\s*(?::|\s-\s|—)\s*(.+)$", text or "", flags=re.S)
+    if m:
+        head = re.sub(r"[^a-z0-9]", "", m.group(1).lower())
+        for c in clients:
+            for key in (c.get("name") or "", c.get("slug") or ""):
+                k = re.sub(r"[^a-z0-9]", "", key.lower())
+                if k and (k == head or (len(head) >= 3 and k.startswith(head))):
+                    return c, m.group(2).strip()
+    return None, (text or "").strip()
+
+
+def idea_title(text):
+    first = re.split(r"(?<=[.!?])\s|\n", text.strip(), maxsplit=1)[0]
+    return (first[:90] + "…") if len(first) > 90 else first
+
+
+def months_ahead(today=None):
+    """The month a plan built today is for (next month), as YYYY-MM-01."""
+    today = today or dt.date.today()
+    return (today.replace(day=28) + dt.timedelta(days=4)).replace(day=1).isoformat()
+
+
 def questions_from_text(text):
     """The dashboard's plain-text question format -> onboarding_questions JSON
     (same rules as questionsFromText in dashboards/template/shell.js):
@@ -349,6 +401,38 @@ def ask_for_house_style(sb):
     return tid
 
 
+def ask_for_research(sb, c):
+    slug = c["slug"]
+    desc = f"""Weekly research for **{c['name']}** (Unify the System stage 4). Find what their customers ask and what's performing in their niche, and add it to their Content Idea Database. Sources (Tait, 2026-10-21): **Reddit, Instagram, YouTube. No TikTok.**
+
+1. Read who their customer is: `{bridge_cmd()} doc get --client {slug} --kind icp` and `--kind identity` (or `clients/{slug}/` files if those aren't built yet).
+2. **Reddit (free):** the subreddits their customers use; read `https://www.reddit.com/r/<sub>/search.json?q=<words>&restrict_sr=1&sort=top&t=month` (WebFetch). Real questions only, with the link.
+3. **YouTube (free):** `{bridge_cmd()} youtube outliers --query "<niche words>"`: videos far above their channel's usual views.
+4. **Instagram (Apify, keep it small: at most ~150 results this week):** comments on niche/competitor posts, and outlier reels (views vs the account's median). If Apify is out of credit, say so here and skip it.
+5. Add every good find as an idea, paired with a format and why it should work:
+   `{bridge_cmd()} idea add --client {slug} --title "<the idea>" --body "<what to say / the question asked>" --source research --source-detail "<r/sub, @account 12x, YouTube 8x>" --format "<format>" --why "<why it should work>" --link <url>`
+   About 5-15 strong ideas; skip anything already in their ideas (`{bridge_cmd()} ideas list --client {slug}`).
+6. Post one line here: how many ideas from where."""
+    return give_task("Content Researcher", f"{c['name']}: weekly research", desc)
+
+
+def ask_for_plan(sb, c, month):
+    slug = c["slug"]
+    label = dt.date.fromisoformat(month).strftime("%B %Y")
+    desc = f"""Build **{c['name']}'s plan for {label}** (Unify the System stage 4). You run it; Tait's rules: 20 ideas from their Content Idea Database (any mix of Tait's and research), special requests keep their day.
+
+1. **Content Strategist:** pick the 20 strongest ideas from `{bridge_cmd()} ideas list --client {slug} --status new` (ideas with a requested post date must be in), pair each with a format, one line why.
+2. **Content Expert:** score each 1-10 (Film it / Fix it); swap out anything under 7 for the next best idea.
+3. Write the plan as JSON, `clients/{slug}/team-room/plan-{month[:7]}.json`:
+   `[{{"idea_id": "<id>", "format": "...", "why": "...", "score": 8}}, ...]`
+   (a brand-new idea instead of an idea_id: `{{"title": "...", "body": "...", "source": "research", "format": "...", "why": "...", "score": 8}}`).
+4. **Content Simplifier:** a short brief for Tait (`clients/{slug}/team-room/plan-{month[:7]}-brief.md`): the 20 in a list, the mix, anything he should know, ending with "What we need from Tait".
+5. Put it on Tait's desk (it also spreads the post dates over the month's weekdays and keeps special requests):
+   `{bridge_cmd()} plan put --client {slug} --month {month[:7]} --file clients/{slug}/team-room/plan-{month[:7]}.json --brief clients/{slug}/team-room/plan-{month[:7]}-brief.md`
+Timing to keep in mind: scripts approved 13 days before each post, filmed 10 days before, edit done 7 days before."""
+    return give_task("Team Lead", f"{c['name']}: {label} plan (20 ideas)", desc)
+
+
 def check(sb, verbose=True):
     st = load_state()
     clients = sb.select("social_clients", "select=id,name,slug,created_at,skip_onboarding,onboarding_questions")
@@ -387,9 +471,150 @@ def check(sb, verbose=True):
             log.append(f"house style -> {ask_for_house_style(sb)}")
             st["house_asked_open"] = True
             STATE.write_text(json.dumps(st, indent=2))
+    # Ideas (Phase 5): phone ideas, weekly research, the plan on the 10th.
+    try:
+        log += handle_telegram(sb, st)
+    except Exception as e:
+        log.append(f"telegram: {e}")
+    try:
+        active = sb.select("social_clients", "select=id,name,slug&status=eq.active")
+        plans = sb.select("social_monthly_plans", "select=client_id,month")
+    except RuntimeError:
+        active = None
+    if active is not None:
+        today = dt.date.today()
+        for c in active:
+            last = st.setdefault("research_last", {}).get(c["id"])
+            if not last or (today - dt.date.fromisoformat(last)).days >= 7:
+                log.append(f"research: {c['name']} -> {ask_for_research(sb, c)}")
+                st["research_last"][c["id"]] = today.isoformat()
+            month = months_ahead(today)
+            asked = st.setdefault("plan_asked", {}).get(c["id"])
+            if "plans_start" not in st:   # installed after the 10th: start with the following cycle
+                st["plans_start"] = month if today.day < 10 else months_ahead(dt.date.fromisoformat(month))
+            if today.day >= 10 and month >= st["plans_start"] and asked != month and not any(p["client_id"] == c["id"] and str(p["month"])[:10] == month for p in plans):
+                log.append(f"plan {month[:7]}: {c['name']} -> {ask_for_plan(sb, c, month)}")
+                st["plan_asked"][c["id"]] = month
+        # "Ask the team for next month's plan" on the dashboard: a draft plan with no ideas yet.
+        try:
+            drafts = sb.select("social_monthly_plans", "select=id,client_id,month&status=eq.draft")
+            used = {i["plan_id"] for i in sb.select("social_ideas", "select=plan_id&plan_id=not.is.null")}
+        except RuntimeError:
+            drafts, used = [], set()
+        byid = {c["id"]: c for c in active}
+        for pl in drafts:
+            done = st.setdefault("plan_drafts_asked", [])
+            if pl["id"] not in used and pl["id"] not in done and byid.get(pl["client_id"]):
+                log.append(f"plan (asked for): {byid[pl['client_id']]['name']} -> {ask_for_plan(sb, byid[pl['client_id']], str(pl['month'])[:10])}")
+                done.append(pl["id"])
+        STATE.write_text(json.dumps(st, indent=2))
     if verbose:
         print("\n".join(log) or "Nothing new.")
     return log
+
+
+# ── Telegram: text ideas from the phone ─────────────────────────────────
+def tg(method, token, params=None, raw_url=None):
+    url = raw_url or f"https://api.telegram.org/bot{token}/{method}"
+    data = urllib.parse.urlencode(params).encode() if params else None
+    with urllib.request.urlopen(urllib.request.Request(url, data=data), timeout=60) as r:
+        body = r.read()
+    return body if raw_url else json.loads(body)
+
+
+def tg_file(token, file_id):
+    info = tg("getFile", token, {"file_id": file_id})["result"]
+    return pathlib.Path(info["file_path"]).name, tg(None, token, raw_url=f"https://api.telegram.org/file/bot{token}/{info['file_path']}")
+
+
+def handle_telegram(sb, st, verbose=True):
+    env = read_env(CONFIG)
+    token = env.get("TELEGRAM_BOT_TOKEN")
+    if not token or "paste" in token.lower():
+        return []
+    log, owner = [], st.get("telegram_chat")
+    upd = tg("getUpdates", token, {"offset": st.get("telegram_offset", 0), "timeout": 0})
+    clients = sb.select("social_clients", "select=id,name,slug&status=eq.active")
+    for u in upd.get("result", []):
+        st["telegram_offset"] = u["update_id"] + 1
+        msg = u.get("message") or {}
+        chat = (msg.get("chat") or {}).get("id")
+        text = (msg.get("text") or msg.get("caption") or "").strip()
+        reply = lambda s: tg("sendMessage", token, {"chat_id": chat, "text": s})
+        if not owner:
+            if st.get("telegram_code") and text.endswith(st["telegram_code"]):
+                st["telegram_chat"] = owner = chat
+                st.pop("telegram_code", None)
+                reply("Paired. Text me ideas like:\nGrad Gig: snow shovelling for seniors\nVoice notes, screenshots and links work too.")
+            continue
+        if chat != owner:
+            continue
+        pending = st.pop("telegram_pending", None)
+        client, body = match_client(text, clients)
+        if not client and pending:
+            client, _ = match_client(text + ": x", clients)
+            if client:
+                body, msg = pending["body"], pending["msg"]
+        links = re.findall(r"https?://\S+", body or "")
+        attachments = []
+        try:
+            if msg.get("voice") or msg.get("audio"):
+                fid = (msg.get("voice") or msg.get("audio"))["file_id"]
+                name, data = tg_file(token, fid)
+                CACHE.mkdir(parents=True, exist_ok=True)
+                local = CACHE / f"tg-{fid[-12:]}-{name}"
+                local.write_bytes(data)
+                spoken = transcribe_file(local)
+                if not client:
+                    client, spoken_body = match_client(spoken, clients)
+                    spoken = spoken_body if client else spoken
+                body = (body + "\n\n" if body else "") + spoken
+            if msg.get("photo") or msg.get("document"):
+                fid = msg["photo"][-1]["file_id"] if msg.get("photo") else msg["document"]["file_id"]
+                name, data = tg_file(token, fid)
+                path = f"{client['id'] if client else 'inbox'}/{int(time.time())}-{name}"
+                sb.upload("ideas", path, data, "image/jpeg" if msg.get("photo") else (msg["document"].get("mime_type") or "application/octet-stream"))
+                attachments.append({"path": path, "kind": "image" if msg.get("photo") else "file", "name": name})
+        except Exception as e:
+            reply(f"I couldn't read that: {e}")
+            continue
+        if not client:
+            st["telegram_pending"] = {"body": body, "msg": msg}
+            reply("Which client is this for? Reply with the name: " + ", ".join(c["name"] for c in clients))
+            continue
+        if not (body or attachments or links):
+            reply("Send the idea after the client's name, e.g. Grad Gig: snow shovelling for seniors")
+            continue
+        sb.insert("social_ideas", {"client_id": client["id"], "title": idea_title(body) if body else "Idea from Telegram",
+                                   "body": body or None, "links": links, "attachments": attachments,
+                                   "source": "phone", "created_by": "tait"})
+        reply(f"Added to {client['name']}'s ideas ✓")
+        log.append(f"telegram idea: {client['name']}")
+    STATE.write_text(json.dumps(st, indent=2))
+    return log
+
+
+# ── YouTube outliers (free Data API key) ────────────────────────────────
+def youtube_outliers(key, query, days=180, limit=25):
+    """Search the niche, then score each video against its channel's usual
+    views (channel views / videos). Outlier = several times its channel's norm."""
+    api = "https://www.googleapis.com/youtube/v3/"
+    after = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    get = lambda path, **q: json.loads(urllib.request.urlopen(api + path + "?" + urllib.parse.urlencode(dict(q, key=key)), timeout=30).read())
+    found = get("search", part="snippet", q=query, type="video", order="viewCount", publishedAfter=after, maxResults=min(50, limit * 2))
+    vids = [i["id"]["videoId"] for i in found.get("items", [])]
+    if not vids:
+        return "No videos found."
+    stats = get("videos", part="statistics,snippet", id=",".join(vids)).get("items", [])
+    chans = {c["id"]: c for c in get("channels", part="statistics,snippet", id=",".join({v["snippet"]["channelId"] for v in stats})).get("items", [])}
+    rows = []
+    for v in stats:
+        views = int(v["statistics"].get("viewCount", 0))
+        ch = chans.get(v["snippet"]["channelId"], {}).get("statistics", {})
+        norm = int(ch.get("viewCount", 0)) / max(1, int(ch.get("videoCount", 1)))
+        rows.append((views / max(1, norm), views, v["snippet"]["title"], v["snippet"]["channelTitle"], v["id"]))
+    rows.sort(reverse=True)
+    return "\n".join(f"{x:.1f}x · {views:,} views · {title} · {ch} · https://youtu.be/{vid}" for x, views, title, ch, vid in rows[:limit])
 
 
 # ── the Library: shared music and sound effects ─────────────────────────
@@ -459,6 +684,16 @@ def main(argv=None):
     m = sub.add_parser("moodboard"); m.add_argument("action", choices=["get", "used"]); m.add_argument("--client", required=True, help="a portal address, or 'house'")
     s = sub.add_parser("assets"); s.add_argument("action", choices=["sync", "list"]); s.add_argument("--kind", choices=["music", "sfx"])
     s.add_argument("--folder"); s.add_argument("--favourites", action="store_true")
+    ia = sub.add_parser("idea"); ia.add_argument("action", choices=["add"]); ia.add_argument("--client", required=True)
+    ia.add_argument("--title", required=True); ia.add_argument("--body"); ia.add_argument("--source", default="research", choices=["tait", "phone", "research", "sandcastles", "client"])
+    ia.add_argument("--source-detail"); ia.add_argument("--format"); ia.add_argument("--why"); ia.add_argument("--link", action="append", default=[])
+    ia.add_argument("--requested-post-date"); ia.add_argument("--by", default=None)
+    il = sub.add_parser("ideas"); il.add_argument("action", choices=["list"]); il.add_argument("--client", required=True); il.add_argument("--status")
+    pp = sub.add_parser("plan"); pp.add_argument("action", choices=["put"]); pp.add_argument("--client", required=True)
+    pp.add_argument("--month", required=True, help="YYYY-MM"); pp.add_argument("--file", required=True); pp.add_argument("--brief")
+    yt = sub.add_parser("youtube"); yt.add_argument("action", choices=["outliers"]); yt.add_argument("--query", required=True)
+    yt.add_argument("--days", type=int, default=180); yt.add_argument("--max", type=int, default=25)
+    tgp = sub.add_parser("telegram"); tgp.add_argument("action", choices=["pair"])
     argv = list(sys.argv[1:] if argv is None else argv)
     if argv[:2] == ["doc", "get"]:   # `doc get` reads like `doc put`
         argv = ["doc-get"] + argv[2:]
@@ -503,6 +738,56 @@ def main(argv=None):
             sys.exit("No questions found: use ## Section and - question lines")
         sb.update("social_clients", {"id": c["id"]}, {"onboarding_questions": qs})
         print(f"Saved {sum(len(s['items']) for s in qs)} questions in {len(qs)} sections for {c['name']}.")
+    elif a.cmd == "idea":
+        c = client_by_slug(sb, a.client)
+        row = {"client_id": c["id"], "title": a.title, "body": a.body, "source": a.source, "source_detail": a.source_detail,
+               "format": a.format, "why": a.why, "links": a.link, "created_by": a.by or ("tait" if a.source == "tait" else "Content Researcher")}
+        if a.requested_post_date:
+            row["requested_post_date"] = a.requested_post_date
+        r = sb.insert("social_ideas", row)
+        print(f"Added idea {r[0]['id']} to {c['name']}.")
+    elif a.cmd == "ideas":
+        c = client_by_slug(sb, a.client)
+        q = f"select=id,title,body,source,source_detail,format,why,status,score,requested_post_date,special_request,links,created_at&client_id=eq.{c['id']}&order=created_at"
+        if a.status: q += f"&status=eq.{a.status}"
+        rows = sb.select("social_ideas", q)
+        for r in rows:
+            print(json.dumps(r, default=str))
+        print(f"{len(rows)} idea(s).", file=sys.stderr)
+    elif a.cmd == "plan":
+        c = client_by_slug(sb, a.client)
+        month = a.month[:7] + "-01"
+        items = json.loads(pathlib.Path(a.file).read_text())
+        brief = pathlib.Path(a.brief).read_text() if a.brief else None
+        plan = sb.insert("social_monthly_plans", {"client_id": c["id"], "month": month, "status": "on_desk", "brief_md": brief}, upsert_on="client_id,month")[0]
+        ids = []
+        for it in items:
+            if it.get("idea_id"):
+                ids.append(it["idea_id"])
+                patch = {k: it[k] for k in ("format", "why", "score") if it.get(k) is not None}
+                if patch: sb.update("social_ideas", {"id": it["idea_id"]}, patch)
+            else:
+                r = sb.insert("social_ideas", {"client_id": c["id"], "title": it["title"], "body": it.get("body"), "source": it.get("source", "research"),
+                                               "format": it.get("format"), "why": it.get("why"), "score": it.get("score"), "created_by": "Content Strategist"})
+                ids.append(r[0]["id"])
+        rows = {r["id"]: r for r in sb.select("social_ideas", f"select=id,requested_post_date&id=in.({','.join(ids)})")} if ids else {}
+        requested = [rows[i]["requested_post_date"] for i in ids if rows.get(i, {}).get("requested_post_date")]
+        dates = plan_dates(month, len(ids), requested)
+        free = [d for d in dates if d not in requested]
+        for i in ids:
+            req = rows.get(i, {}).get("requested_post_date")
+            day = str(req)[:10] if req else free.pop(0)
+            sb.update("social_ideas", {"id": i}, {"plan_id": plan["id"], "status": "in_plan", "planned_post_date": day})
+        print(f"{c['name']}: {len(ids)} ideas for {a.month} on Tait's desk.")
+    elif a.cmd == "youtube":
+        key = read_env(CONFIG).get("YOUTUBE_API_KEY")
+        if not key: sys.exit(f"Add YOUTUBE_API_KEY to {CONFIG} (a free key from Google Cloud).")
+        print(youtube_outliers(key, a.query, a.days, a.max))
+    elif a.cmd == "telegram":
+        st = load_state()
+        code = f"{uuid.uuid4().int % 1000000:06d}"
+        st["telegram_code"] = code; st.pop("telegram_chat", None); STATE.write_text(json.dumps(st, indent=2))
+        print(f"In Telegram, open your bot and send:  /start {code}\nThe bridge pairs on its next check.")
     elif a.cmd == "doc-get":
         c = client_by_slug(sb, a.client)
         rows = sb.select("social_client_generated_docs", f"select=status,body_md,updated_at&client_id=eq.{c['id']}&kind=eq.{a.kind}")
