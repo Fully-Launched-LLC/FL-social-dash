@@ -220,18 +220,26 @@ def plan_dates(month_first, n, requested=()):
 
 
 def match_client(text, clients):
-    """'Grad Gig: idea about snow' -> (client, 'idea about snow'). Matches the
-    client's name or portal address at the start, before ':' or ' - '.
-    Returns (None, text) when no client is named."""
-    m = re.match(r"^\s*([^:\n]{2,40}?)\s*(?::|\s-\s|—)\s*(.+)$", text or "", flags=re.S)
-    if m:
-        head = re.sub(r"[^a-z0-9]", "", m.group(1).lower())
-        for c in clients:
-            for key in (c.get("name") or "", c.get("slug") or ""):
-                k = re.sub(r"[^a-z0-9]", "", key.lower())
-                if k and (k == head or (len(head) >= 3 and k.startswith(head))):
-                    return c, m.group(2).strip()
-    return None, (text or "").strip()
+    """'Grad Gig: idea about snow' or 'grad gig test idea: snow rules' ->
+    (client, the rest). The message must start with the client's name or
+    portal address (any case, spaces or dashes); a ':' or ' - ' right after
+    it is dropped. Returns (None, text) when no client is named."""
+    raw = (text or "").strip()
+    low = raw.lower()
+    best = None
+    for c in clients:
+        for key in (c.get("name") or "", (c.get("slug") or "").replace("-", " "), c.get("slug") or ""):
+            k = key.lower().strip()
+            if not k:
+                continue
+            pattern = r"^" + r"[\s\-_]*".join(re.escape(w) for w in re.split(r"[\s\-_]+", k)) + r"(?![a-z0-9])"
+            m = re.match(pattern, low)
+            if m and (best is None or m.end() > best[1]):
+                best = (c, m.end())
+    if not best:
+        return None, raw
+    rest = re.sub(r"^\s*(?::|-|—)?\s*", "", raw[best[1]:])
+    return best[0], rest.strip()
 
 
 def idea_title(text):
@@ -544,7 +552,11 @@ def handle_telegram(sb, st, verbose=True):
         msg = u.get("message") or {}
         chat = (msg.get("chat") or {}).get("id")
         text = (msg.get("text") or msg.get("caption") or "").strip()
-        reply = lambda s: tg("sendMessage", token, {"chat_id": chat, "text": s})
+        def reply(s):
+            try:
+                tg("sendMessage", token, {"chat_id": chat, "text": s})
+            except Exception:
+                pass   # the idea is saved either way; a missed reply isn't worth stopping for
         if not owner:
             if st.get("telegram_code") and text.endswith(st["telegram_code"]):
                 st["telegram_chat"] = owner = chat
