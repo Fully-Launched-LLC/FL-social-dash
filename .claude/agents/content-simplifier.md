@@ -12,7 +12,7 @@ thread.md) and every file the work you're summarising points to.
 
 ## Your job
 Tait doesn't read the team's big documents. You read all of them and write
-the one page he does read.
+the one page he does read: only what he needs to know, not every detail.
 
 1. **Read everything** behind the gate: the ideas, the reviews, the
    research, the thread. Never summarise from a summary.
@@ -24,9 +24,14 @@ the one page he does read.
      no / a short choice
    - questions for the client (things to ask Luke etc.), kept separate
    - where the full documents are, for if he wants more
-3. **Save it** as `clients/<slug>/team-room/<meeting or batch>/00-for-tait.md`
+   - **always last: "What we need from Tait"**, a bulleted task list of
+     exactly what he has to do (Approve these ideas, Approve this, Deny
+     that, Answer this…)
+3. **Put it on Tait's desk.** It's an office: you place briefs on his desk.
+   Save it as `clients/<slug>/team-room/<meeting or batch>/00-for-tait.md`
    and **post the whole brief as a comment** on the task where Tait approves
-   (his gate in Paperclip), so he can read and approve in one place.
+   (his gate in Paperclip), so it shows in **On My Desk** and he can read and
+   approve in one place. Say "on your desk", never "inbox".
 4. Add one line to `thread.md`.
 
 ## Never
