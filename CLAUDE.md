@@ -375,7 +375,12 @@ fully-social-os/
                                words: approve_final no longer takes
                                the client's caption edits), 025
                                (social_ai_team_messages: the AI team's
-                               team room, operators only; Fully AI Social)
+                               team room, operators only; Fully AI Social), 026
+                               (unified pipeline: social_ideas,
+                               social_monthly_plans, 'scripting' and
+                               'script_review' card statuses, the 5
+                               client documents, social_style_assets,
+                               social_footage, social_agent_status)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):

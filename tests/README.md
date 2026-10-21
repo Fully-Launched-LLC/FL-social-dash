@@ -26,6 +26,7 @@ dashboards first with `python3 dashboards/build.py` if templates changed).
 | `documents.test.mjs` | Client documents: added, checked, ordered and removed on Clients → Edit; shown on the portal's Documents page (under Content Calendar). |
 | `editor-onboarding.test.mjs` | Editor onboarding: Editors page (list, + Invite editor, Resend invite), the editor's first visit (create a password, marked set up), the walkthrough (To Edit, Time sensitive, Edit by, Calendar, Documents, bookmark), Time sensitive and Documents on the editor page, and the operator's ?tour=1 preview. |
 | `flow.test.mjs 1\|2\|3` | Both client journeys end to end, clicking the real built pages: 30 client-filmed ideas (suggest changes / Video has been filmed → 7+7 dates → editor → revisions or approve + captions → client caption edits / change requests → posted), a we-film client (approve ideas, no upload), a per-video switch, and a new client with contact details + invite claim. Run 2 adds suggestions and client edits; run 3 adds owner revisions and backing out of "filmed". |
+| `unified-pipeline.test.mjs` | Migration 026: ideas and monthly plans (operator only, status changes logged), Scripting / Script review cards hidden from clients, the 5 client documents (client reads only approved brand guidelines), style assets, the footage library (clients add b-roll/raw, see their own), the agent room. |
 | `harness.mjs` | Shared setup for the flow test. |
 
 `serve_local.py` serves `dashboards/dist` on http://localhost:5173 with the
