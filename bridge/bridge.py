@@ -55,7 +55,9 @@ def read_env(path):
             line = line.strip()
             if line and not line.startswith("#") and "=" in line:
                 k, v = line.split("=", 1)
-                out[k.strip()] = v.strip().strip('"').strip("'")
+                v = v.strip().strip('"').strip("'")
+                if v and not v.startswith("paste-"):   # placeholders like paste-your-key-here = not set
+                    out[k.strip()] = v
     return out
 
 
