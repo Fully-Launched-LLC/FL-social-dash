@@ -53,6 +53,8 @@ chk("client can't see a card in Script review", n(await as(CL, `select id from s
 chk("client can't update a card in Script review", n(await as(CL, `update social_videos set title='x' where id=$1 returning id`, [vid])) === 0);
 chk("operator sends it (concept_pending, unstamped): still hidden", ok(await as(OP, `update social_videos set status='concept_pending' where id=$1`, [vid])) && n(await as(CL, `select id from social_videos where id=$1`, [vid])) === 0);
 chk("gate 1 approval shows it to the client", ok(await as(OP, `select * from social_operator_approve_concept($1)`, [vid])) && n(await as(CL, `select id from social_videos where id=$1`, [vid])) === 1);
+r = await as(CL, `select hook, body, outline, camera_questions from social_videos where id=$1`, [vid]);
+chk("client sees the whole card: hook, script, outline, camera questions", r.data?.[0]?.hook === "h" && r.data[0].body === "s" && r.data[0].outline === "o" && r.data[0].camera_questions === "q", r.data);
 chk("other client can't see it", n(await as(CL2, `select id from social_videos where id=$1`, [vid])) === 0);
 const vlog = await db.query(`select from_status, to_status from social_status_audit_log where video_id=$1 order by id`, [vid]);
 chk("card status changes are logged", vlog.rows.some(x => x.from_status === "scripting" && x.to_status === "script_review"), vlog.rows);
@@ -73,7 +75,7 @@ chk("client can't approve documents", n(await as(CL, `update social_client_gener
 
 // ── Style assets: operator only ──
 chk("operator adds shared music", ok(await as(OP, `insert into social_style_assets (kind, name, path, tags) values ('music','Arrival of the Birds','editor/public/clients/_music/cinematic/x.mp3','{warm,hopeful}')`)));
-chk("operator adds client sfx", ok(await as(OP, `insert into social_style_assets (client_id, kind, name) values ($1,'sfx','Deep impact')`, [GG])));
+chk("operator adds shared sfx", ok(await as(OP, `insert into social_style_assets (kind, name) values ('sfx','Deep impact')`)));
 chk("client can't read style assets", n(await as(CL, `select * from social_style_assets`)) === 0);
 chk("editor can't read style assets (agents use the bridge)", n(await as(ED, `select * from social_style_assets`)) === 0);
 

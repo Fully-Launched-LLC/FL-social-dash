@@ -13,8 +13,9 @@
 --      brand_guidelines, icp, identity, editing_guidelines, content_research,
 --      each draft → on_desk → approved. Operator-only, except the approved
 --      brand guidelines, which the client can read (Tait's call).
---   4. social_style_assets: each client's music, sound effects, caption lines
---      and video types (client_id null = shared by every client).
+--   4. social_style_assets: music, sound effects, caption lines and video
+--      types, shared by the whole system (Tait: "shared by the entire system").
+--      Each client's own look lives in their editing guidelines document.
 --   5. social_footage: every footage file (raw per card, b-roll, old footage,
 --      finished cut). Files stay in Google Drive for now; storage_path is for
 --      Supabase later. Clients see their own b-roll and old footage library.
@@ -105,7 +106,8 @@ alter table social_videos add constraint social_videos_status_check check (statu
   'with_editor', 'in_review', 'client_review', 'ready_to_post', 'posted'
 ));
 
--- Clients never see a card before Tait approves its script (gate 1).
+-- Clients never see a card before Tait approves its script (gate 1). After
+-- that they see the whole card: hook, outline, script and camera_questions.
 drop policy if exists "client users read own visible videos" on social_videos;
 create policy "client users read own visible videos" on social_videos
   for select to authenticated
@@ -151,10 +153,9 @@ create policy "client users read own brand guidelines" on social_client_generate
     and status = 'approved'
   );
 
--- ── 4. Style assets (music, sound effects, caption lines, video types) ───
+-- ── 4. Style assets (shared by every client) ─────────────────────────────
 create table if not exists social_style_assets (
   id uuid primary key default gen_random_uuid(),
-  client_id uuid references social_clients(id) on delete cascade, -- null = every client
   kind text not null check (kind in ('music', 'sfx', 'caption_line', 'video_type')),
   name text not null,
   path text,                                   -- e.g. editor/public/clients/_music/cinematic/…
@@ -165,7 +166,7 @@ create table if not exists social_style_assets (
   created_at timestamptz not null default now()
 );
 
-create index if not exists social_style_assets_client_idx on social_style_assets(client_id, kind);
+create index if not exists social_style_assets_kind_idx on social_style_assets(kind);
 alter table social_style_assets enable row level security;
 
 drop policy if exists "operators manage style assets" on social_style_assets;
