@@ -383,7 +383,11 @@ fully-social-os/
                                social_footage, social_agent_status), 027
                                (social_onboarding_recordings: voice
                                memos and call recordings with their
-                               transcripts; questions_/docs_requested_at)
+                               transcripts; questions_/docs_requested_at), 028
+                               (moodboards: social_moodboard_items and
+                               the private 'moodboards' bucket; the
+                               Library: social_style_assets previews in
+                               the private 'library' bucket, ratings)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -754,6 +758,20 @@ back; only approved brand guidelines reach the client), Footage (b-roll and
 old footage the client sees, raw footage on cards, finished cuts) and
 Videos, plus **Open their portal**. To Do (every video by stage) stays as a
 secondary page.
+
+**Style guides** (Unify Phase 4, Tait 2026-10-21; migration 028): each
+client's page has a **Moodboard** tab, and **Library → House moodboard**
+holds one for every client. Tait drops in screenshots, videos and links of
+motion graphics, fonts, text styles, colours and video styles. Once a
+client's brand guidelines are approved, the bridge asks the Content Editor
+(with the Motion Designer and Strategist) to turn the moodboard into their
+**editing guidelines** (skill `editing-guidelines-doc`, starting from
+`team/content-editor/house-style.md`), which land on My desk; new moodboard
+items update them. **No edit starts until a client's editing guidelines are
+approved** (Tait's rule). **Library** (sidebar) lists the shared music and
+sound effects (`bridge.py assets sync` indexes the folders and uploads short
+previews): play, ★ Favourite, Never use. The Editor picks from it with
+`bridge.py assets list` and never uses a track marked Never.
 
 Nav: **To Do** (every video by stage, one tab each plus All, with counts:
 sent back with suggestions → waiting on client → ready for an editor → with

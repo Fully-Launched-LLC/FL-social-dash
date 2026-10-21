@@ -16,6 +16,14 @@
 .client-tabs { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 16px; }
 .doc-row { display:flex; justify-content:space-between; gap:10px; align-items:center; border-top:1px solid var(--border); padding:10px 0; flex-wrap:wrap; }
 .doc-row:first-of-type { border-top:0; }
+.mood-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; margin-top:12px; }
+.mood-item { border:1px solid var(--border); border-radius:10px; padding:8px; background:var(--white); font-size:0.82rem; }
+.mood-item img, .mood-item video { width:100%; border-radius:6px; display:block; background:#000; aspect-ratio:9/12; object-fit:cover; }
+.mood-drop { border:2px dashed var(--border); border-radius:10px; padding:16px; text-align:center; color:var(--sub); }
+.mood-drop.over { border-color:var(--gold); color:var(--ink); }
+.lib-row { display:flex; align-items:center; gap:10px; border-top:1px solid var(--border); padding:7px 0; flex-wrap:wrap; }
+.lib-row .nm { flex:1; min-width:160px; }
+.lib-row button.on { background:var(--ink); color:var(--white); }
 </style>
 <style>
 /* Content Ideas: two columns, drag a card across to send it */
@@ -74,6 +82,7 @@
   <div class="nav-item" data-view="clients" data-label="Clients">Clients<span class="n" id="navClientsN" hidden></span></div>
   <div class="nav-item" data-view="todo" data-label="To Do">To Do<span class="n" id="navTodoN" hidden></span></div>
   <div class="nav-item" data-view="calendar" data-label="Content Calendar">Content Calendar</div>
+  <div class="nav-item" data-view="library" data-label="Library">Library</div>
   <div class="nav-item" data-view="editors" data-label="Editors">Editors</div>
   <div class="nav-item" data-view="aiteam" data-label="Fully AI Social">Fully AI Social</div>
   <a class="nav-item" href="/editor/dashboard.html" target="_blank" rel="noopener" style="text-decoration:none">Editor portal ↗</a>
@@ -108,6 +117,12 @@
     </div>
     <div class="client-tabs" id="cpTabs"></div>
     <div id="cpBody"></div>
+  </section>
+
+  <section class="view" id="view-library">
+    <div class="page-head"><div><h1>Library</h1><p>Music and sound effects every client shares, and the house moodboard. Mark favourites and anything never to use: the editor follows it.</p></div></div>
+    <div class="client-tabs" id="libTabs"></div>
+    <div id="libBody"></div>
   </section>
 
   <section class="view" id="view-todo">
@@ -279,6 +294,7 @@ async function loadLiveData() {
   await loadFixCounts();
   await loadAiMessages();
   await loadDeskData();
+  await loadStyleData();
   renderAll();
 }
 // For videos with an editor or at Edit review: how many of the comments
@@ -1689,6 +1705,150 @@ document.getElementById("view-todo").addEventListener("click", e => {
   if (!row || e.target.closest("button, a, select, input, textarea, .video-card")) return;
   openOperatorVideoModal(row.dataset.id);
 });
+// ---------- Moodboards + Library (Unify the System, Phase 4; migration 028) ----------
+// A moodboard is what Tait likes (motion graphics, fonts, text styles,
+// colours, video styles) as screenshots, videos and links, per client or for
+// every client (client_id null = the house moodboard). The bridge asks the
+// Content Editor to turn it into the client's editing guidelines.
+let MOOD = [], ASSETS = [], HAS_028 = true, LIB = { tab: "music", folder: "", q: "" };
+async function loadStyleData() {
+  const [m, a] = await Promise.all([
+    sbClient.from("social_moodboard_items").select("*").order("created_at"),
+    sbClient.from("social_style_assets").select("*").order("name"),
+  ]);
+  HAS_028 = !m.error;
+  MOOD = m.data || []; ASSETS = a.error ? [] : (a.data || []);
+}
+const moodKind = f => /^image\//.test(f.type) ? "image" : /^video\//.test(f.type) ? "video" : null;
+async function moodboardHtml(clientId) {
+  const items = MOOD.filter(m => (m.client_id || null) === (clientId || null));
+  const paths = items.filter(m => m.storage_path).map(m => m.storage_path);
+  const signed = {};
+  if (paths.length) {
+    const { data } = await sbClient.storage.from("moodboards").createSignedUrls(paths, 3600);
+    (data || []).forEach(x => { if (x && x.signedUrl) signed[x.path] = x.signedUrl; });
+  }
+  const tile = m => `<div class="mood-item" data-mood="${m.id}">
+      ${m.kind === "image" && signed[m.storage_path] ? `<img src="${escapeHtml(signed[m.storage_path])}" alt="">`
+        : m.kind === "video" && signed[m.storage_path] ? `<video src="${escapeHtml(signed[m.storage_path])}" muted controls preload="metadata"></video>`
+        : m.url ? `<a href="${escapeHtml(m.url)}" target="_blank" rel="noopener">${escapeHtml(m.url)}</a>` : ""}
+      <div style="margin-top:6px"><b>${escapeHtml(m.name || (m.kind === "note" ? "Note" : m.kind))}</b> ${m.used_at ? '<span class="meta">· in the guidelines</span>' : '<span class="meta">· new</span>'}</div>
+      ${m.note ? `<div class="meta">${escapeHtml(m.note)}</div>` : ""}
+      <div style="margin-top:6px;display:flex;gap:4px">${smallBtn("Note", `moodNote('${m.id}')`)}${smallBtn("Remove", `moodRemove('${m.id}')`, "reject")}</div></div>`;
+  const key = clientId || "house";
+  return `<div class="mood-drop" data-mood-drop>Drop screenshots and videos of motion graphics, fonts, text styles, colours and video styles you like
+      <div style="margin-top:8px"><label class="btn">Choose files<input type="file" id="moodPick-${key}" data-mood-pick accept="image/*,video/*" multiple hidden></label>
+      <button onclick="moodLink('${clientId || ""}')">+ Add a link or note</button></div><div class="meta" data-mood-msg style="margin-top:6px"></div></div>
+    <div class="mood-grid">${items.slice().reverse().map(tile).join("") || ""}</div>
+    ${items.length ? "" : '<div class="empty" style="margin-top:10px">Nothing here yet.</div>'}`;
+}
+function wireMoodboard(root, clientId) {
+  const add = async files => {
+    const msg = root.querySelector("[data-mood-msg]");
+    const list = Array.from(files).filter(moodKind);
+    if (!list.length) { msg.textContent = "Add images or videos (or use + Add a link or note)."; return; }
+    for (let i = 0; i < list.length; i++) {
+      const f = list[i];
+      try {
+        const path = await uploadToBucket("moodboards", `${clientId || "house"}/${Date.now()}-${f.name.replace(/[^\w.\-]+/g, "_")}`, f,
+          pct => { msg.textContent = `Uploading ${i + 1} of ${list.length}… ${pct}%`; });
+        const { error } = await sbClient.from("social_moodboard_items").insert({ client_id: clientId || null, kind: moodKind(f), name: f.name, storage_path: path });
+        if (error) throw error;
+      } catch (e) { msg.textContent = `${f.name} didn't upload: ${e.message || e}`; return; }
+    }
+    await loadStyleData(); rerenderMood();
+  };
+  const pick = root.querySelector("[data-mood-pick]"), drop = root.querySelector("[data-mood-drop]");
+  if (pick) pick.onchange = e => add(e.target.files || []);
+  if (drop) {
+    drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+    drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+    drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); add(e.dataTransfer.files || []); });
+  }
+}
+function rerenderMood() {
+  if (document.getElementById("view-client").classList.contains("active")) renderClientPage();
+  if (LIB.tab !== "house" || document.getElementById("view-library").classList.contains("active")) renderLibrary();
+  if (document.getElementById("view-library").classList.contains("active")) renderLibrary();
+}
+function moodLink(clientId) {
+  const box = openModal(`<h2>Add a link or note</h2>
+    ${lbl("Link (Instagram, YouTube, a site…)")}<input type="url" id="mlUrl" style="width:100%;margin-bottom:10px">
+    ${lbl("What you like about it")}<textarea id="mlNote" rows="4" style="width:100%"></textarea>
+    <div class="modal-actions"><button onclick="closeVideoModal()">Cancel</button><button class="primary" id="mlGo">Add</button></div><div class="auth-error" id="mlErr"></div>`);
+  box.querySelector("#mlGo").onclick = async () => {
+    const url = box.querySelector("#mlUrl").value.trim(), note = box.querySelector("#mlNote").value.trim();
+    if (!url && !note) { box.querySelector("#mlErr").textContent = "Add a link or a note."; return; }
+    const { error } = await sbClient.from("social_moodboard_items").insert({ client_id: clientId || null, kind: url ? "link" : "note", url: url || null, note: note || null, name: url ? null : "Note" });
+    if (error) { box.querySelector("#mlErr").textContent = error.message; return; }
+    closeVideoModal(); await loadStyleData(); rerenderMood();
+  };
+}
+async function moodNote(id) {
+  const m = MOOD.find(x => x.id === id);
+  const note = prompt("What do you like about it?", m && m.note || "");
+  if (note === null) return;
+  const { error } = await sbClient.from("social_moodboard_items").update({ note: note.trim() || null }).eq("id", id);
+  if (error) { alert(error.message); return; }
+  await loadStyleData(); rerenderMood();
+}
+async function moodRemove(id) {
+  if (!confirm("Remove this from the moodboard?")) return;
+  const m = MOOD.find(x => x.id === id);
+  const { error } = await sbClient.from("social_moodboard_items").delete().eq("id", id);
+  if (error) { alert(error.message); return; }
+  if (m && m.storage_path) await sbClient.storage.from("moodboards").remove([m.storage_path]);
+  await loadStyleData(); rerenderMood();
+}
+
+function renderLibrary() {
+  const tabs = [["music", "Music"], ["sfx", "Sound effects"], ["house", "House moodboard"]];
+  document.getElementById("libTabs").innerHTML = tabs.map(([k, l]) => `<div class="chip ${k === LIB.tab ? "active" : ""}" data-lib="${k}">${l}</div>`).join("");
+  document.querySelectorAll("#libTabs .chip").forEach(el => el.onclick = () => { LIB = { tab: el.dataset.lib, folder: "", q: "" }; renderLibrary(); });
+  const body = document.getElementById("libBody");
+  if (!HAS_028) { body.innerHTML = `<div class="card" style="border-color:var(--gold)"><b>The Library needs migration 028.</b><div class="meta">Run supabase/migrations/028_moodboards_and_library.sql in the Supabase SQL Editor.</div></div>`; return; }
+  if (LIB.tab === "house") {
+    body.innerHTML = `<div class="card"><h2>House moodboard <span class="meta">Every client's editing guidelines start from this.</span></h2><div id="houseMood">Loading…</div></div>`;
+    moodboardHtml(null).then(html => { const el = document.getElementById("houseMood"); if (el) { el.innerHTML = html; wireMoodboard(el, null); } });
+    return;
+  }
+  const all = ASSETS.filter(a => a.kind === LIB.tab);
+  const folders = [...new Set(all.map(a => a.folder).filter(Boolean))].sort();
+  const shown = all.filter(a => (!LIB.folder || a.folder === LIB.folder) && (!LIB.q || a.name.toLowerCase().includes(LIB.q.toLowerCase())));
+  body.innerHTML = `<div class="card">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <select id="libFolder"><option value="">All folders (${all.length})</option>${folders.map(f => `<option ${f === LIB.folder ? "selected" : ""}>${escapeHtml(f)}</option>`).join("")}</select>
+      <input type="search" id="libQ" placeholder="Search" value="${escapeHtml(LIB.q)}">
+    </div>
+    ${all.length ? "" : `<div class="empty">Nothing here yet. The bridge adds your folders: <code>python3 bridge/bridge.py assets sync</code>.</div>`}
+    ${shown.map(a => `<div class="lib-row" data-asset="${a.id}"><button onclick="libPlay('${a.id}', this)">▶</button>
+      <div class="nm"><b>${escapeHtml(a.name)}</b><div class="meta">${escapeHtml([a.folder, a.duration_s ? Math.round(a.duration_s) + "s" : ""].filter(Boolean).join(" · "))}</div></div>
+      <button class="${a.rating === "favourite" ? "on" : ""}" onclick="libRate('${a.id}','favourite')">★ Favourite</button>
+      <button class="${a.rating === "never" ? "on" : ""}" onclick="libRate('${a.id}','never')">Never use</button></div>`).join("")}
+    </div><audio id="libAudio" hidden></audio>`;
+  document.getElementById("libFolder").onchange = e => { LIB.folder = e.target.value; renderLibrary(); };
+  document.getElementById("libQ").oninput = e => { LIB.q = e.target.value; clearTimeout(renderLibrary.t); renderLibrary.t = setTimeout(() => { renderLibrary(); const q = document.getElementById("libQ"); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }, 250); };
+}
+async function libPlay(id, btn) {
+  const a = ASSETS.find(x => x.id === id), audio = document.getElementById("libAudio");
+  if (!a || !a.preview_path) return;
+  if (audio.dataset.id === id && !audio.paused) { audio.pause(); btn.textContent = "▶"; return; }
+  document.querySelectorAll(".lib-row button").forEach(b => { if (b.textContent === "❚❚") b.textContent = "▶"; });
+  const { data } = await sbClient.storage.from("library").createSignedUrl(a.preview_path, 3600);
+  if (!data || !data.signedUrl) return;
+  audio.src = data.signedUrl; audio.dataset.id = id;
+  audio.onended = () => { btn.textContent = "▶"; };
+  try { await audio.play(); btn.textContent = "❚❚"; } catch (e) {}
+}
+async function libRate(id, rating) {
+  const a = ASSETS.find(x => x.id === id);
+  const next = a && a.rating === rating ? null : rating;
+  const { error } = await sbClient.from("social_style_assets").update({ rating: next }).eq("id", id);
+  if (error) { alert(error.message); return; }
+  if (a) a.rating = next;
+  renderLibrary();
+}
+
 // ---------- My desk + client pages (Unify the System, Phase 2) ----------
 // Migration 026 adds ideas, monthly plans, the 5 client documents and the
 // footage library. Before it's run these just come back empty, and My desk
@@ -1869,7 +2029,7 @@ function renderClientPage() {
   document.getElementById("cpTitle").textContent = c.name;
   document.getElementById("cpSub").textContent = `/clients/${c.slug} · ${WHO_FILMS[c.clientSystem] || c.clientSystem}`;
   document.getElementById("cpPortal").href = "/clients/" + encodeURIComponent(c.slug);
-  const tabs = [["overview", "Overview"], ["docs", "Documents"], ["footage", "Footage"], ["videos", "Videos"]];
+  const tabs = [["overview", "Overview"], ["docs", "Documents"], ["moodboard", "Moodboard"], ["footage", "Footage"], ["videos", "Videos"]];
   document.getElementById("cpTabs").innerHTML = tabs.map(([k, l]) => `<div class="chip ${k === CLIENT_PAGE.tab ? "active" : ""}" data-cptab="${k}">${l}</div>`).join("");
   document.querySelectorAll("#cpTabs .chip").forEach(el => el.onclick = () => { CLIENT_PAGE.tab = el.dataset.cptab; renderClientPage(); });
   const body = document.getElementById("cpBody"), f = c.driveFolders;
@@ -1891,6 +2051,11 @@ function renderClientPage() {
         return `<div class="doc-row"><div><b>${escapeHtml(k.label)}</b>${k.note ? `<div class="meta">${escapeHtml(k.note)}</div>` : ""}</div>
           <div style="display:flex;gap:6px;align-items:center">${d ? statusBadge(d.status, DOC_STATUS) : '<span class="meta">Not built yet</span>'}${HAS_026 ? smallBtn(d ? "Open" : "Write it", `openDoc('${c.id}','${k.kind}')`) : ""}</div></div>`; }).join("")}
       ${c.documents.length ? `<h2 style="margin-top:16px">Linked documents</h2>${c.documents.map(d => `<div class="doc-row"><a href="${escapeHtml(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.title)}</a></div>`).join("")}` : ""}</div>`;
+  } else if (CLIENT_PAGE.tab === "moodboard") {
+    if (!HAS_028) { body.innerHTML = `<div class="card"><div class="meta" style="color:var(--gold)">Run migration 028 to keep a moodboard here.</div></div>`; return; }
+    body.innerHTML = `<div class="card"><h2>Moodboard <span class="meta">The team turns this into ${escapeHtml(c.name)}'s editing guidelines. Operator only.</span></h2><div id="clientMood">Loading…</div></div>`;
+    const id = c.id;
+    moodboardHtml(id).then(html => { const el = document.getElementById("clientMood"); if (el && CLIENT_PAGE.id === id) { el.innerHTML = html; wireMoodboard(el, id); } });
   } else if (CLIENT_PAGE.tab === "footage") {
     const mine = FOOTAGE.filter(x => x.client_id === c.id);
     const group = (kind, label, note) => { const items = mine.filter(x => x.kind === kind);
@@ -1930,6 +2095,7 @@ function renderAll() {
   renderGlobalClientFilter();
   renderDesk(); renderTodo(); renderCalendar(); renderIdeaBank(); renderAllClients(); renderEditors(); renderAiTeam();
   if (document.getElementById("view-client").classList.contains("active")) renderClientPage();
+  if (LIB.tab !== "house" || document.getElementById("view-library").classList.contains("active")) renderLibrary();
 }
 
 // Only a social_operators login gets past the gate — never an editor or

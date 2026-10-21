@@ -112,6 +112,10 @@ class Supabase:
     def download(self, bucket, path):
         return self._req("GET", f"/storage/v1/object/{bucket}/{urllib.parse.quote(path)}", raw=True)
 
+    def upload(self, bucket, path, data, content_type):
+        return self._req("POST", f"/storage/v1/object/{bucket}/{urllib.parse.quote(path)}", data,
+                         {"Content-Type": content_type, "x-upsert": "true"}, raw=True)
+
 
 # ── Paperclip ───────────────────────────────────────────────────────────
 def paperclip(method, path, body=None):
@@ -164,6 +168,26 @@ def plan_jobs(clients, onboardings, recordings, since):
         asked = ob.get(c["id"], {}).get("docs_requested_at") or ""
         if done and max(r.get("transcribed_at") or "" for r in done) > asked:
             jobs["documents"].append(c)
+    return jobs
+
+
+def plan_style_jobs(clients, onboardings, docs, moodboard):
+    """Editing guidelines (Phase 4): build them once a client's brand
+    guidelines are approved; update them when new moodboard items arrive.
+    House moodboard items (client_id null) update the house style."""
+    ob = {o["client_id"]: o for o in onboardings}
+    have = {(d["client_id"], d["kind"]): d for d in docs}
+    jobs = {"build": [], "update": [], "house": False}
+    for c in clients:
+        brand = have.get((c["id"], "brand_guidelines"))
+        guide = have.get((c["id"], "editing_guidelines"))
+        asked = ob.get(c["id"], {}).get("style_requested_at") or ""
+        fresh = [m for m in moodboard if m.get("client_id") == c["id"] and not m.get("used_at") and (m.get("created_at") or "") > asked]
+        if brand and brand.get("status") == "approved" and not guide and not asked:
+            jobs["build"].append(c)
+        elif fresh and (guide or asked):
+            jobs["update"].append(c)
+    jobs["house"] = any(m.get("client_id") is None and not m.get("used_at") for m in moodboard)
     return jobs
 
 
@@ -299,6 +323,32 @@ def ask_for_documents(sb, c):
     return tid
 
 
+def ask_for_style(sb, c, update=False):
+    slug = c["slug"]
+    what = "update their editing guidelines with the new moodboard items" if update else "build their editing guidelines"
+    desc = f"""**{c['name']}**: {what} (Unify the System stage 3: the client's style guide). You lead; bring in the **Motion Graphics Designer** (motion graphics, text styles) and the **Content Strategist** (video types, pacing) as you need them.
+
+1. Read: their approved brand guidelines `{bridge_cmd()} doc get --client {slug} --kind brand_guidelines`, their identity `--kind identity`, the house style `team/content-editor/house-style.md`, their `clients/{slug}/style-profile.md` and `team-room/feedback-log.md` if they exist.
+2. Their moodboard: `{bridge_cmd()} moodboard get --client {slug}` downloads every screenshot and video Tait dropped in and prints his notes and links. Look at every image; watch every video (`watch` skill). Pull out the motion graphics, fonts, text styles, colours, layouts and video styles.
+3. Write the guidelines with the `editing-guidelines-doc` skill, save as `clients/{slug}/sources/editing_guidelines.md`, then
+   `{bridge_cmd()} doc put --client {slug} --kind editing_guidelines --file clients/{slug}/sources/editing_guidelines.md --status on_desk --built-by "Content Editor" --sources "moodboard (N items), brand guidelines"`
+   and `{bridge_cmd()} moodboard used --client {slug}`.
+4. Tait approves it on My desk. **No edit for this client starts until it's approved** (Tait's rule)."""
+    tid = give_task("Content Editor", f"{c['name']}: {what}", desc)
+    sb.insert("social_client_onboarding", {"client_id": c["id"], "style_requested_at": now()}, upsert_on="client_id")
+    return tid
+
+
+def ask_for_house_style(sb):
+    desc = f"""Tait added items to the **house moodboard** (every client). Fold them into the house style.
+
+1. `{bridge_cmd()} moodboard get --client house` downloads them with Tait's notes. Look at every image; watch every video.
+2. Update `team/content-editor/house-style.md` (the defaults every client's editing guidelines start from): motion graphics, fonts, text styles, colours, video styles. Add only what the items show; Tait is the rule maker, so list anything that would change an existing rule as a question for him.
+3. `{bridge_cmd()} moodboard used --client house`, then post one line here."""
+    tid = give_task("Content Editor", "House moodboard: fold new items into the house style", desc)
+    return tid
+
+
 def check(sb, verbose=True):
     st = load_state()
     clients = sb.select("social_clients", "select=id,name,slug,created_at,skip_onboarding,onboarding_questions")
@@ -321,9 +371,68 @@ def check(sb, verbose=True):
         jobs = plan_jobs(clients, sb.select("social_client_onboarding", "select=client_id,voice_memo_path,voice_memo_uploaded_at,questions_requested_at,docs_requested_at"), recs, st["since"])
     for c in jobs["documents"]:
         log.append(f"documents: {c['name']} -> {ask_for_documents(sb, c)}")
+    try:
+        docs = sb.select("social_client_generated_docs", "select=client_id,kind,status")
+        mood = sb.select("social_moodboard_items", "select=id,client_id,used_at,created_at")
+        obs2 = sb.select("social_client_onboarding", "select=client_id,style_requested_at")
+    except RuntimeError:
+        mood = None   # migration 028 not run yet
+    if mood is not None:
+        sj = plan_style_jobs(clients, obs2, docs, mood)
+        for c in sj["build"]:
+            log.append(f"editing guidelines: {c['name']} -> {ask_for_style(sb, c)}")
+        for c in sj["update"]:
+            log.append(f"editing guidelines update: {c['name']} -> {ask_for_style(sb, c, update=True)}")
+        if sj["house"] and not st.get("house_asked_open"):
+            log.append(f"house style -> {ask_for_house_style(sb)}")
+            st["house_asked_open"] = True
+            STATE.write_text(json.dumps(st, indent=2))
     if verbose:
         print("\n".join(log) or "Nothing new.")
     return log
+
+
+# ── the Library: shared music and sound effects ─────────────────────────
+REPO = pathlib.Path(__file__).resolve().parents[1]
+LIBRARY_DIRS = [("music", REPO / "editor/public/clients/_music"), ("sfx", REPO / "editor/public/clients/_sfx/library")]
+AUDIO = {".mp3", ".wav", ".m4a", ".aif", ".aiff", ".flac", ".ogg", ".aac"}
+
+
+def audio_seconds(path):
+    out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(path)],
+                         capture_output=True, text=True)
+    try:
+        return round(float(out.stdout.strip()), 1)
+    except ValueError:
+        return None
+
+
+def sync_assets(sb):
+    """Index the shared music and sound effects folders into
+    social_style_assets, with a small MP3 preview in the 'library' bucket
+    (music: the first 60 s; sound effects: all of it, up to 15 s)."""
+    known = {r["path"] for r in sb.select("social_style_assets", "select=path")}
+    added = 0
+    for kind, root in LIBRARY_DIRS:
+        if not root.exists():
+            continue
+        for f in sorted(root.rglob("*")):
+            if f.suffix.lower() not in AUDIO or f.name.startswith("._"):
+                continue
+            rel = str(f.relative_to(REPO))
+            if rel in known:
+                continue
+            folder = f.parent.name if f.parent != root else root.name
+            preview = f"{kind}/{uuid.uuid5(uuid.NAMESPACE_URL, rel).hex}.mp3"
+            with tempfile.TemporaryDirectory() as tmp:
+                out = pathlib.Path(tmp) / "p.mp3"
+                cut = ["-t", "60"] if kind == "music" else ["-t", "15"]
+                subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(f), *cut, "-ac", "2", "-b:a", "96k", str(out)], check=True)
+                sb.upload("library", preview, out.read_bytes(), "audio/mpeg")
+            sb.insert("social_style_assets", {"kind": kind, "name": f.stem, "path": rel, "folder": folder,
+                                              "preview_path": preview, "duration_s": audio_seconds(f)})
+            added += 1
+    return f"Library: {added} new file(s) added ({len(known) + added} in all)."
 
 
 # ── commands agents use ─────────────────────────────────────────────────
@@ -346,6 +455,13 @@ def main(argv=None):
     d = sub.add_parser("doc"); d.add_argument("action", choices=["put"]); d.add_argument("--client", required=True)
     d.add_argument("--kind", required=True, choices=DOC_KINDS); d.add_argument("--file", required=True)
     d.add_argument("--status", default="on_desk", choices=["draft", "on_desk"]); d.add_argument("--built-by", default=None); d.add_argument("--sources", default=None)
+    dg = sub.add_parser("doc-get"); dg.add_argument("--client", required=True); dg.add_argument("--kind", required=True, choices=DOC_KINDS)
+    m = sub.add_parser("moodboard"); m.add_argument("action", choices=["get", "used"]); m.add_argument("--client", required=True, help="a portal address, or 'house'")
+    s = sub.add_parser("assets"); s.add_argument("action", choices=["sync", "list"]); s.add_argument("--kind", choices=["music", "sfx"])
+    s.add_argument("--folder"); s.add_argument("--favourites", action="store_true")
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv[:2] == ["doc", "get"]:   # `doc get` reads like `doc put`
+        argv = ["doc-get"] + argv[2:]
     a = ap.parse_args(argv)
 
     sb = Supabase(*config())
@@ -387,6 +503,50 @@ def main(argv=None):
             sys.exit("No questions found: use ## Section and - question lines")
         sb.update("social_clients", {"id": c["id"]}, {"onboarding_questions": qs})
         print(f"Saved {sum(len(s['items']) for s in qs)} questions in {len(qs)} sections for {c['name']}.")
+    elif a.cmd == "doc-get":
+        c = client_by_slug(sb, a.client)
+        rows = sb.select("social_client_generated_docs", f"select=status,body_md,updated_at&client_id=eq.{c['id']}&kind=eq.{a.kind}")
+        if not rows:
+            sys.exit(f"{c['name']} has no {a.kind} yet.")
+        print(f"<!-- {a.kind} · {rows[0]['status']} · {rows[0]['updated_at']} -->\n" + rows[0]["body_md"])
+    elif a.cmd == "moodboard":
+        house = a.client == "house"
+        cid = None if house else client_by_slug(sb, a.client)["id"]
+        filt = "client_id=is.null" if house else f"client_id=eq.{cid}"
+        if a.action == "used":
+            sb._req("PATCH", f"/rest/v1/social_moodboard_items?{filt}&used_at=is.null", {"used_at": now()}, {"Prefer": "return=minimal"})
+            if house:
+                st = load_state(); st.pop("house_asked_open", None); STATE.write_text(json.dumps(st, indent=2))
+            print("Marked used."); return
+        items = sb.select("social_moodboard_items", f"select=*&{filt}&order=created_at")
+        folder = HOME / ".cache" / "fully-social" / "moodboards" / a.client
+        folder.mkdir(parents=True, exist_ok=True)
+        for it in items:
+            line = f"- [{it['kind']}] {it.get('name') or ''}"
+            if it.get("storage_path"):
+                local = folder / pathlib.Path(it["storage_path"]).name
+                if not local.exists():
+                    local.write_bytes(sb.download("moodboards", it["storage_path"]))
+                line += f" -> {local}"
+            if it.get("url"):
+                line += f" -> {it['url']}"
+            if it.get("note"):
+                line += f"\n    Tait: {it['note']}"
+            if not it.get("used_at"):
+                line += "  (new)"
+            print(line)
+        print(f"{len(items)} item(s). Files in {folder}" if items else "The moodboard is empty.")
+    elif a.cmd == "assets":
+        if a.action == "sync":
+            print(sync_assets(sb))
+        else:
+            q = "select=kind,name,folder,path,tags,rating,duration_s&order=folder,name&rating=not.eq.never"
+            q = q.replace("&rating=not.eq.never", "") + "&or=(rating.is.null,rating.eq.favourite)"
+            if a.kind: q += f"&kind=eq.{a.kind}"
+            if a.folder: q += f"&folder=eq.{urllib.parse.quote(a.folder)}"
+            if a.favourites: q += "&rating=eq.favourite"
+            for r in sb.select("social_style_assets", q):
+                print(f"{'★ ' if r.get('rating') == 'favourite' else ''}{r['kind']} · {r.get('folder') or ''} · {r['name']} · {r.get('duration_s') or '?'}s · {r['path']}")
     elif a.cmd == "doc":
         c = client_by_slug(sb, a.client)
         row = {"client_id": c["id"], "kind": a.kind, "title": DOC_TITLES[a.kind],

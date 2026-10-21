@@ -1,7 +1,7 @@
 """Tests for the bridge's decisions (no network): python3 bridge/test_bridge.py"""
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from bridge import plan_jobs, questions_from_text
+from bridge import plan_jobs, plan_style_jobs, questions_from_text
 
 SINCE = "2026-10-21T12:00:00+00:00"
 old = {"id": "a", "name": "Grad Gig", "slug": "gg", "created_at": "2026-09-01T00:00:00+00:00", "onboarding_questions": None}
@@ -46,5 +46,25 @@ Note: Talk like you would to a friend.
 check("questions parse into sections", [s["section"] for s in qs] == ["Your business", "Your brand"])
 check("note kept, story marked, ids unique", qs[0]["note"].startswith("Talk") and qs[0]["items"][1].get("story") is True and len({i["id"] for s in qs for i in s["items"]}) == 3)
 check("no-note section has no note key", "note" not in qs[1])
+# ── editing guidelines (Phase 4) ──
+gg = {"id": "a", "name": "Grad Gig", "slug": "gg"}
+brand_ok = {"client_id": "a", "kind": "brand_guidelines", "status": "approved"}
+brand_desk = dict(brand_ok, status="on_desk")
+guide = {"client_id": "a", "kind": "editing_guidelines", "status": "on_desk"}
+j = plan_style_jobs([gg], [], [brand_desk], [])
+check("no guidelines until the brand guidelines are approved", j["build"] == [] and j["update"] == [])
+j = plan_style_jobs([gg], [], [brand_ok], [])
+check("approved brand guidelines start the editing guidelines", [c["id"] for c in j["build"]] == ["a"])
+j = plan_style_jobs([gg], [{"client_id": "a", "style_requested_at": "2026-10-21T15:00:00"}], [brand_ok], [])
+check("asked once", j["build"] == [] and j["update"] == [])
+mb_old = {"client_id": "a", "created_at": "2026-10-21T14:00:00", "used_at": None}
+mb_new = {"client_id": "a", "created_at": "2026-10-21T16:00:00", "used_at": None}
+j = plan_style_jobs([gg], [{"client_id": "a", "style_requested_at": "2026-10-21T15:00:00"}], [brand_ok, guide], [mb_old])
+check("items already there when it was asked aren't a new update", j["update"] == [])
+j = plan_style_jobs([gg], [{"client_id": "a", "style_requested_at": "2026-10-21T15:00:00"}], [brand_ok, guide], [mb_old, mb_new])
+check("new moodboard items update the guidelines", [c["id"] for c in j["update"]] == ["a"])
+j = plan_style_jobs([gg], [], [brand_ok, guide], [{"client_id": None, "created_at": "x", "used_at": None}])
+check("house moodboard items update the house style", j["house"] is True and j["update"] == [])
+
 print("all passed" if not fails else f"{fails} failed")
 sys.exit(1 if fails else 0)
