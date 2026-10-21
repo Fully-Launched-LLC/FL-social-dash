@@ -91,7 +91,7 @@ const idx = Array.from({ length: 30 }, (_, i) => i);
 
 // ── 1. Operator plans 30 ideas with Claude and adds them ──
 let op = track(await OP());
-chk("opens on To Do", $(op, "#view-todo").classList.contains("active"));
+chk("opens on My desk", $(op, "#view-desk").classList.contains("active"));
 await click($(op, "#bulkAddBtn"), "add ideas");
 $(op, "#bkClient").value = FL;
 $(op, "#bkText").value = "Here you go:\n```json\n" + JSON.stringify(plan, null, 2) + "\n```";

@@ -718,6 +718,23 @@ back one piece at a time:
 
 ### Operator dashboard — `/` → `/operator/dashboard.html`
 
+**My desk** (Unify the System Phase 2, Tait 2026-10-21; migration 026) is
+the home page: everything waiting on Tait in 5 queues with counts, narrowed
+by the top client filter. **Ideas to review** (monthly plans with status
+`on_desk`: approve or reject each idea, then close the plan), **Scripts to
+review** (cards in `script_review`: Approve script runs gate 1 so the client
+sees the whole card, hook, outline, script and camera questions; Send back
+puts it in `scripting` with the note in `editor_brief.scriptNotes`),
+**Documents to review** (the 5 client documents in `on_desk`), **Videos to
+review** (`in_review`) and **Videos to post** (`ready_to_post`). Before 026
+is run, the first three are empty and the desk says so. **Clients → Open**
+opens one client's page: Overview, Documents (brand guidelines, ICP,
+identity, editing guidelines, content research: write, edit, approve, send
+back; only approved brand guidelines reach the client), Footage (b-roll and
+old footage the client sees, raw footage on cards, finished cuts) and
+Videos, plus **Open their portal**. To Do (every video by stage) stays as a
+secondary page.
+
 Nav: **To Do** (every video by stage, one tab each plus All, with counts:
 sent back with suggestions → waiting on client → ready for an editor → with
 an editor → edits to review → ready to post, plus an **Abandoned** tab

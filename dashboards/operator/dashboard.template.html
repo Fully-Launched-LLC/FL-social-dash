@@ -4,7 +4,19 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Fully Launched — Operator</title>
-<style>/*__SHELL_CSS__*/</style>
+<style>/*__SHELL_CSS__*//* My desk (Unify Phase 2): one tile per queue, then each queue. */
+.desk-tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:22px; }
+.desk-tile { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:12px 14px; cursor:pointer; color:var(--ink); }
+.desk-tile b { display:block; font-size:1.6rem; line-height:1.1; }
+.desk-tile.hot { border-color:var(--gold); }
+.desk-tile span { font-size:0.82rem; color:var(--sub); }
+.desk-item { border-top:1px solid var(--border); padding:12px 0; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.desk-item:first-of-type { border-top:0; }
+.desk-item .brief { font-size:0.86rem; color:var(--sub); margin-top:4px; max-width:640px; }
+.client-tabs { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 16px; }
+.doc-row { display:flex; justify-content:space-between; gap:10px; align-items:center; border-top:1px solid var(--border); padding:10px 0; flex-wrap:wrap; }
+.doc-row:first-of-type { border-top:0; }
+</style>
 <style>
 /* Content Ideas: two columns, drag a card across to send it */
 .board { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
@@ -57,10 +69,11 @@
   <div class="brand"><img src="/assets/logo-white.png" alt="Fully Launched"></div>
   <div class="sync-badge" id="authUserBadge"></div>
   <div class="nav-group">Workspace</div>
-  <div class="nav-item active" data-view="todo" data-label="To Do">To Do<span class="n" id="navTodoN" hidden></span></div>
-  <div class="nav-item" data-view="calendar" data-label="Content Calendar">Content Calendar</div>
+  <div class="nav-item active" data-view="desk" data-label="My desk">My desk<span class="n" id="navDeskN" hidden></span></div>
   <div class="nav-item" data-view="ideabank" data-label="Content Ideas">Content Ideas<span class="n" id="navBankN" hidden></span></div>
   <div class="nav-item" data-view="clients" data-label="Clients">Clients<span class="n" id="navClientsN" hidden></span></div>
+  <div class="nav-item" data-view="todo" data-label="To Do">To Do<span class="n" id="navTodoN" hidden></span></div>
+  <div class="nav-item" data-view="calendar" data-label="Content Calendar">Content Calendar</div>
   <div class="nav-item" data-view="editors" data-label="Editors">Editors</div>
   <div class="nav-item" data-view="aiteam" data-label="Fully AI Social">Fully AI Social</div>
   <a class="nav-item" href="/editor/dashboard.html" target="_blank" rel="noopener" style="text-decoration:none">Editor portal ↗</a>
@@ -75,7 +88,29 @@
   <div id="globalClientBanner"></div>
   <div id="loadError"></div>
 
-  <section class="view active" id="view-todo">
+  <section class="view active" id="view-desk">
+    <div class="page-head">
+      <div><h1>My desk</h1><p>Everything waiting on you, and nothing else. Approve it, or send it back with a note.</p></div>
+    </div>
+    <div id="deskNotice"></div>
+    <div class="desk-tiles" id="deskTiles"></div>
+    <div class="card" data-queue="ideas"><h2>Ideas to review <span class="meta">Monthly plans: approve or reject each idea.</span></h2><div id="deskIdeas"></div></div>
+    <div class="card" data-queue="scripts"><h2>Scripts to review <span class="meta">Approve and the client sees the whole card.</span></h2><div id="deskScripts"></div></div>
+    <div class="card" data-queue="docs"><h2>Documents to review <span class="meta">Operator-only, except approved brand guidelines.</span></h2><div id="deskDocs"></div></div>
+    <div class="card" data-queue="videos"><h2>Videos to review</h2><div id="deskVideos"></div></div>
+    <div class="card" data-queue="post"><h2>Videos to post</h2><div id="deskPost"></div></div>
+  </section>
+
+  <section class="view" id="view-client">
+    <div class="page-head">
+      <div><h1 id="cpTitle">Client</h1><p id="cpSub"></p></div>
+      <div class="page-actions"><button onclick="document.querySelector('.nav-item[data-view=clients]').click()">All clients</button><a class="btn accent" id="cpPortal" target="_blank" rel="noopener">Open their portal ↗</a></div>
+    </div>
+    <div class="client-tabs" id="cpTabs"></div>
+    <div id="cpBody"></div>
+  </section>
+
+  <section class="view" id="view-todo">
     <div class="page-head">
       <div><h1>To Do<span class="hot-tag" id="todoHot" hidden></span></h1><p>Every video, by the stage it's in. Pick a stage, or All. Click any video to see its whole card.</p></div>
       <div class="page-actions">
@@ -243,6 +278,7 @@ async function loadLiveData() {
   if (globalClientFilter !== "all" && !CLIENT_BY_ID[globalClientFilter]) globalClientFilter = "all";
   await loadFixCounts();
   await loadAiMessages();
+  await loadDeskData();
   renderAll();
 }
 // For videos with an editor or at Edit review: how many of the comments
@@ -1089,14 +1125,14 @@ function renderAllClients() {
     const count = VIDEOS.filter(x => x.client.id === c.id && x.video.status !== "rejected" && !inIdeaBank(x)).length;
     const banked = VIDEOS.filter(x => x.client.id === c.id && inIdeaBank(x)).length;
     const toReview = VIDEOS.filter(x => x.client.id === c.id && x.video.status === "client_review").length;
-    return `<div class="row"><div class="left"><b>${escapeHtml(c.name)}</b>
+    return `<div class="row"><div class="left"><b class="video-card" style="display:inline-block" onclick="openClientPage('${c.id}')">${escapeHtml(c.name)}</b>
       <div class="meta">/clients/${escapeHtml(c.slug)} · ${escapeHtml(WHO_FILMS[c.clientSystem] || c.clientSystem)} · ${count} video(s)${banked ? ` · ${banked} in Content Ideas` : ""}</div>
       ${missing.length ? `<div class="meta" style="color:var(--red)">Missing: ${missing.join(", ")}</div>` : ""}
       <div class="meta">${c.contactName || c.contactEmail || c.contactPhone
         ? "Contact: " + [c.contactName, c.contactEmail, c.contactPhone].filter(Boolean).map(escapeHtml).join(" · ")
         : `<span style="color:var(--red)">No contact yet</span>`}</div>
       ${(() => { const s = onboardingSummary(c.onboarding, c.clientSystem !== "concierge"); return `<div class="meta" style="${s.failed ? "color:var(--red)" : ""}">Onboarding: ${escapeHtml(s.label)}</div>`; })()}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn primary" style="font-size:0.75rem;padding:4px 9px" href="/clients/${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Open portal</a>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="primary" style="font-size:0.75rem;padding:4px 9px" onclick="openClientPage('${c.id}')">Open</button><a class="btn" style="font-size:0.75rem;padding:4px 9px" href="/clients/${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Open portal</a>
       <button style="font-size:0.75rem;padding:4px 9px" onclick="openOnboarding('${c.id}')">Onboarding</button>
       ${INVITES_ENABLED ? `<button style="font-size:0.75rem;padding:4px 9px" onclick="inviteClient('${c.id}', this)">${c.onboarding && c.onboarding.invited_at ? "Resend invite" : "Invite to portal"}</button>` : ""}
       ${toReview ? `<button style="font-size:0.75rem;padding:4px 9px" onclick="notifyReview('${c.id}', ${toReview}, this)">Email: ${toReview} to review</button>` : ""}
@@ -1612,10 +1648,247 @@ document.getElementById("view-todo").addEventListener("click", e => {
   if (!row || e.target.closest("button, a, select, input, textarea, .video-card")) return;
   openOperatorVideoModal(row.dataset.id);
 });
+// ---------- My desk + client pages (Unify the System, Phase 2) ----------
+// Migration 026 adds ideas, monthly plans, the 5 client documents and the
+// footage library. Before it's run these just come back empty, and My desk
+// says so; videos work as before.
+let PLANS = [], IDEAS = [], DOCS = [], FOOTAGE = [], HAS_026 = true;
+async function loadDeskData() {
+  const [plansRes, ideasRes, docsRes, footRes] = await Promise.all([
+    sbClient.from("social_monthly_plans").select("*").order("month"),
+    sbClient.from("social_ideas").select("*").order("created_at"),
+    sbClient.from("social_client_generated_docs").select("*"),
+    sbClient.from("social_footage").select("*").order("created_at"),
+  ]);
+  HAS_026 = !plansRes.error && !ideasRes.error && !footRes.error;
+  PLANS = plansRes.data || []; IDEAS = ideasRes.data || []; FOOTAGE = footRes.data || [];
+  DOCS = docsRes.error ? [] : (docsRes.data || []);
+}
+const DOC_KINDS = [
+  { kind: "brand_guidelines", label: "Brand guidelines", note: "The client sees this once you approve it." },
+  { kind: "icp", label: "ICP / Customer data" },
+  { kind: "identity", label: "Identity", note: "Voice, who they are, what they sell, formats that might work." },
+  { kind: "editing_guidelines", label: "Editing guidelines", note: "Captions, motion graphics, pacing: the editor reads this every edit." },
+  { kind: "content_research", label: "Content research", note: "Comes later." },
+];
+const DOC_LABEL = Object.fromEntries(DOC_KINDS.map(d => [d.kind, d.label]));
+const DOC_STATUS = { draft: "Draft", on_desk: "On your desk", approved: "Approved" };
+const inClientFilter = clientId => globalClientFilter === "all" || clientId === globalClientFilter;
+
+function deskQueues() {
+  const vids = workVideos();
+  return {
+    ideas: PLANS.filter(p => p.status === "on_desk" && inClientFilter(p.client_id)),
+    scripts: vids.filter(x => x.video.status === "script_review"),
+    docs: DOCS.filter(d => d.status === "on_desk" && inClientFilter(d.client_id) && CLIENT_BY_ID[d.client_id]),
+    videos: vids.filter(x => x.video.status === "in_review"),
+    post: vids.filter(x => x.video.status === "ready_to_post").sort(byPostDate),
+  };
+}
+function renderDesk() {
+  const q = deskQueues();
+  const tiles = [["ideas", "Ideas to review", q.ideas.reduce((n, p) => n + IDEAS.filter(i => i.plan_id === p.id && i.status === "in_plan").length, 0)],
+    ["scripts", "Scripts to review", q.scripts.length], ["docs", "Documents to review", q.docs.length],
+    ["videos", "Videos to review", q.videos.length], ["post", "Videos to post", q.post.length]];
+  const total = tiles.reduce((n, t) => n + t[2], 0);
+  const nav = document.getElementById("navDeskN"); nav.hidden = !total; nav.textContent = total;
+  document.getElementById("deskTiles").innerHTML = tiles.map(([k, label, n]) =>
+    `<div class="desk-tile${n ? " hot" : ""}" data-go="${k}"><b>${n}</b><span>${escapeHtml(label)}</span></div>`).join("");
+  document.querySelectorAll("#deskTiles .desk-tile").forEach(el => el.onclick = () =>
+    document.querySelector(`#view-desk [data-queue="${el.dataset.go}"]`).scrollIntoView({ behavior: "smooth" }));
+  document.getElementById("deskNotice").innerHTML = HAS_026 ? "" :
+    `<div class="card" style="border-color:var(--gold)"><b>Ideas, documents and footage need migration 026.</b><div class="meta">Run supabase/migrations/026_unified_pipeline.sql in the Supabase SQL Editor. Videos to review and to post work already.</div></div>`;
+
+  document.getElementById("deskIdeas").innerHTML = q.ideas.map(p => {
+    const ideas = IDEAS.filter(i => i.plan_id === p.id);
+    const month = new Date(p.month + "T00:00:00").toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    return `<div class="desk-item" style="display:block"><b>${escapeHtml(CLIENT_BY_ID[p.client_id]?.name || "")} · ${escapeHtml(month)}</b>
+      <span class="meta"> · ${ideas.filter(i => i.status === "approved").length} approved, ${ideas.filter(i => i.status === "in_plan").length} to review</span>
+      ${p.brief_md ? `<div class="brief">${mdToHtml(p.brief_md)}</div>` : ""}
+      ${ideas.map(i => `<div class="doc-row"><div><b>${escapeHtml(i.title)}</b>${i.score ? ` <span class="badge">${i.score}/10</span>` : ""}
+        <div class="meta">${[i.format && "Format: " + i.format, i.source && "From: " + i.source + (i.source_detail ? " (" + i.source_detail + ")" : ""), i.why && "Why: " + i.why].filter(Boolean).map(escapeHtml).join(" · ")}</div>
+        ${i.body ? `<div class="brief">${escapeHtml(i.body)}</div>` : ""}</div>
+        <div>${i.status === "in_plan" ? smallBtn("Approve", `setIdeaStatus('${i.id}','approved')`, "primary") + smallBtn("Reject", `setIdeaStatus('${i.id}','rejected')`, "reject")
+          : statusBadge(i.status, { approved: "Approved", rejected: "Rejected", used: "On a card", new: "New", in_plan: "In plan" })}</div></div>`).join("")}
+      <div style="margin-top:8px">${smallBtn("Approve the rest and close the plan", `approvePlan('${p.id}')`, "primary")}</div></div>`;
+  }).join("") || `<div class="empty">No monthly plan waiting.</div>`;
+
+  document.getElementById("deskScripts").innerHTML = q.scripts.length
+    ? `<div class="vtable">${VROW_HEAD}${q.scripts.map(x => vrowHtml(x, smallBtn("Open", `openOperatorVideoModal('${x.video.id}')`) + smallBtn("Approve script", `approveScript('${x.video.id}')`, "primary") + smallBtn("Send back", `sendBackScript('${x.video.id}')`))).join("")}</div>`
+    : `<div class="empty">No scripts waiting.</div>`;
+
+  document.getElementById("deskDocs").innerHTML = q.docs.map(d => `<div class="doc-row"><div><b>${escapeHtml(DOC_LABEL[d.kind] || d.title)}</b> · ${escapeHtml(CLIENT_BY_ID[d.client_id].name)}
+      <div class="meta">${[d.built_by && "Built by " + d.built_by, d.sources && "From " + d.sources].filter(Boolean).map(escapeHtml).join(" · ")}</div></div>
+      <div>${smallBtn("Open", `openDoc('${d.client_id}','${d.kind}')`)}${smallBtn("Approve", `setDocStatus('${d.id}','approved')`, "primary")}</div></div>`).join("")
+    || `<div class="empty">No documents waiting.</div>`;
+
+  document.getElementById("deskVideos").innerHTML = q.videos.length
+    ? `<div class="vtable">${VROW_HEAD}${q.videos.map(x => vrowHtml(x, operatorActionsHtml(x))).join("")}</div>` : `<div class="empty">No videos waiting for your review.</div>`;
+  document.getElementById("deskPost").innerHTML = q.post.map(postCardHtml).join("") || `<div class="empty">Nothing ready to post.</div>`;
+}
+
+async function setIdeaStatus(id, status) {
+  const { error } = await sbClient.from("social_ideas").update({ status }).eq("id", id);
+  if (error) { alert("Couldn't save: " + error.message); return; }
+  await loadLiveData();
+}
+async function approvePlan(planId) {
+  const left = IDEAS.filter(i => i.plan_id === planId && i.status === "in_plan");
+  if (left.length && !confirm(`Approve the ${left.length} idea(s) you haven't reviewed, and close this plan?`)) return;
+  if (left.length) {
+    const { error } = await sbClient.from("social_ideas").update({ status: "approved" }).in("id", left.map(i => i.id));
+    if (error) { alert("Couldn't save: " + error.message); return; }
+  }
+  const { error } = await sbClient.from("social_monthly_plans").update({ status: "approved", approved_at: new Date().toISOString() }).eq("id", planId);
+  if (error) { alert("Couldn't save: " + error.message); return; }
+  await loadLiveData();
+}
+// Approving a script is gate 1: the card goes to the client, who sees the
+// whole card (hook, outline, script, camera questions).
+async function approveScript(id) {
+  const { error } = await sbClient.from("social_videos").update({ status: "concept_pending", concept_approved_at: null, concept_approved_by: null }).eq("id", id);
+  if (error) { alert("Couldn't save: " + error.message); return; }
+  const r = await runVideoAction("approve_concept_owner", id);
+  if (r.error) { alert(r.error); }
+  await loadLiveData();
+}
+function sendBackScript(id) {
+  const x = findVideo(id);
+  if (!x) return;
+  const box = openModal(`<h2>Send the script back</h2>
+    <div class="meta" style="margin-bottom:10px">${escapeHtml(x.client.name)} · ${escapeHtml(x.video.title || "")}</div>
+    ${lbl("What should change?")}<textarea id="sbNote" rows="5" style="width:100%"></textarea>
+    <div class="modal-actions"><button onclick="closeVideoModal()">Cancel</button><button class="primary" id="sbGo">Send back to the Writer</button></div>`);
+  box.querySelector("#sbGo").onclick = async () => {
+    const note = box.querySelector("#sbNote").value.trim();
+    if (!note) { box.querySelector("#sbNote").focus(); return; }
+    const brief = Object.assign({}, x.video.editorBrief);
+    brief.scriptNotes = (brief.scriptNotes || []).concat([{ note, at: new Date().toISOString() }]);
+    closeVideoModal();
+    await updateVideo(id, { status: "scripting", editorBrief: brief, note });
+  };
+}
+
+// ----- documents -----
+function docFor(clientId, kind) { return DOCS.find(d => d.client_id === clientId && d.kind === kind) || null; }
+function openDoc(clientId, kind) {
+  const c = CLIENT_BY_ID[clientId], d = docFor(clientId, kind), meta = DOC_KINDS.find(k => k.kind === kind);
+  const box = openModal(`<h2>${escapeHtml(meta ? meta.label : kind)} · ${escapeHtml(c.name)}</h2>
+    <div class="meta" style="margin-bottom:10px">${d ? escapeHtml(DOC_STATUS[d.status] || d.status) : "Not built yet"}${meta && meta.note ? " · " + escapeHtml(meta.note) : ""}</div>
+    ${d && d.review_note ? `<div class="meta" style="margin-bottom:10px">Your last note: ${escapeHtml(d.review_note)}</div>` : ""}
+    <div id="docView" style="max-height:50vh;overflow:auto;margin-bottom:10px">${d && d.body_md ? mdToHtml(d.body_md) : '<div class="empty">Nothing written yet.</div>'}</div>
+    <textarea id="docEdit" rows="16" style="width:100%;display:none">${escapeHtml(d ? d.body_md : "")}</textarea>
+    <div class="modal-actions">
+      <button onclick="closeVideoModal()">Close</button>
+      <button id="docEditBtn">Edit</button>
+      ${d && d.status !== "draft" ? `<button id="docBack">Send back with a note</button>` : ""}
+      ${d && d.status !== "approved" ? `<button class="primary" id="docApprove">Approve</button>` : ""}
+    </div><div class="auth-error" id="docErr"></div>`);
+  const edit = box.querySelector("#docEdit"), view = box.querySelector("#docView"), btn = box.querySelector("#docEditBtn");
+  btn.onclick = async () => {
+    if (edit.style.display === "none") { edit.style.display = ""; view.style.display = "none"; btn.textContent = "Save"; return; }
+    const row = { body_md: edit.value };
+    const { error } = d
+      ? await sbClient.from("social_client_generated_docs").update(row).eq("id", d.id)
+      : await sbClient.from("social_client_generated_docs").insert(Object.assign(row, { client_id: clientId, kind, title: meta ? meta.label : kind, status: "draft", built_by: "Tait" }));
+    if (error) { box.querySelector("#docErr").textContent = error.message; return; }
+    closeVideoModal(); await loadLiveData();
+  };
+  const ap = box.querySelector("#docApprove");
+  if (ap) ap.onclick = async () => { closeVideoModal(); await setDocStatus(d.id, "approved"); };
+  const back = box.querySelector("#docBack");
+  if (back) back.onclick = async () => {
+    const note = prompt("What should change?");
+    if (!note) return;
+    const { error } = await sbClient.from("social_client_generated_docs").update({ status: "draft", review_note: note, approved_at: null, approved_by: null }).eq("id", d.id);
+    if (error) { box.querySelector("#docErr").textContent = error.message; return; }
+    closeVideoModal(); await loadLiveData();
+  };
+}
+async function setDocStatus(id, status) {
+  const patch = status === "approved" ? { status, approved_at: new Date().toISOString(), approved_by: ME.id, review_note: null } : { status };
+  const { error } = await sbClient.from("social_client_generated_docs").update(patch).eq("id", id);
+  if (error) { alert("Couldn't save: " + error.message); return; }
+  await loadLiveData();
+}
+
+// ----- one client's page -----
+let CLIENT_PAGE = { id: null, tab: "overview" };
+function openClientPage(clientId, tab) {
+  CLIENT_PAGE = { id: clientId, tab: tab || "overview" };
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById("view-client").classList.add("active");
+  document.querySelectorAll(".nav-item[data-view]").forEach(i => i.classList.toggle("active", i.dataset.view === "clients"));
+  document.getElementById("crumbPage").textContent = "Clients";
+  renderClientPage();
+}
+function renderClientPage() {
+  const c = CLIENT_BY_ID[CLIENT_PAGE.id];
+  if (!c) return;
+  document.getElementById("cpTitle").textContent = c.name;
+  document.getElementById("cpSub").textContent = `/clients/${c.slug} · ${WHO_FILMS[c.clientSystem] || c.clientSystem}`;
+  document.getElementById("cpPortal").href = "/clients/" + encodeURIComponent(c.slug);
+  const tabs = [["overview", "Overview"], ["docs", "Documents"], ["footage", "Footage"], ["videos", "Videos"]];
+  document.getElementById("cpTabs").innerHTML = tabs.map(([k, l]) => `<div class="chip ${k === CLIENT_PAGE.tab ? "active" : ""}" data-cptab="${k}">${l}</div>`).join("");
+  document.querySelectorAll("#cpTabs .chip").forEach(el => el.onclick = () => { CLIENT_PAGE.tab = el.dataset.cptab; renderClientPage(); });
+  const body = document.getElementById("cpBody"), f = c.driveFolders;
+  const link = (u, l) => u ? `<a href="${escapeHtml(u)}" target="_blank" rel="noopener">${escapeHtml(l)}</a>` : `<span class="meta">${escapeHtml(l)}: not set</span>`;
+  if (CLIENT_PAGE.tab === "overview") {
+    const s = onboardingSummary(c.onboarding, c.clientSystem !== "concierge");
+    body.innerHTML = `<div class="card">
+      <div class="meta">Contact: ${[c.contactName, c.contactEmail, c.contactPhone].filter(Boolean).map(escapeHtml).join(" · ") || "none yet"}</div>
+      <div class="meta">Onboarding: ${escapeHtml(s.label)}</div>
+      <div class="meta">Folders: ${[link(f.footageUploads, "Raw footage"), link(f.finalEdits, "Finished videos"), link(f.root, "Main folder")].join(" · ")}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
+        <button onclick="openOnboarding('${c.id}')">Onboarding</button>
+        <button onclick="document.querySelector('.nav-item[data-view=clients]').click();openClientPanel('${c.id}')">Edit client</button>
+      </div></div>`;
+  } else if (CLIENT_PAGE.tab === "docs") {
+    body.innerHTML = `<div class="card"><h2>Documents <span class="meta">Operator-only. The client sees brand guidelines once approved.</span></h2>
+      ${HAS_026 ? "" : `<div class="meta" style="color:var(--gold)">Run migration 026 to build and approve these here.</div>`}
+      ${DOC_KINDS.map(k => { const d = docFor(c.id, k.kind);
+        return `<div class="doc-row"><div><b>${escapeHtml(k.label)}</b>${k.note ? `<div class="meta">${escapeHtml(k.note)}</div>` : ""}</div>
+          <div style="display:flex;gap:6px;align-items:center">${d ? statusBadge(d.status, DOC_STATUS) : '<span class="meta">Not built yet</span>'}${HAS_026 ? smallBtn(d ? "Open" : "Write it", `openDoc('${c.id}','${k.kind}')`) : ""}</div></div>`; }).join("")}
+      ${c.documents.length ? `<h2 style="margin-top:16px">Linked documents</h2>${c.documents.map(d => `<div class="doc-row"><a href="${escapeHtml(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.title)}</a></div>`).join("")}` : ""}</div>`;
+  } else if (CLIENT_PAGE.tab === "footage") {
+    const mine = FOOTAGE.filter(x => x.client_id === c.id);
+    const group = (kind, label, note) => { const items = mine.filter(x => x.kind === kind);
+      return `<h2 style="margin-top:14px">${label} <span class="meta">${note}</span></h2>${items.map(x => `<div class="doc-row"><div>${x.drive_url ? `<a href="${escapeHtml(x.drive_url)}" target="_blank" rel="noopener">${escapeHtml(x.name)}</a>` : escapeHtml(x.name)}
+        ${x.video_id && findVideo(x.video_id) ? `<div class="meta">On: ${escapeHtml(findVideo(x.video_id).video.title || "")}</div>` : ""}</div><span class="meta">${escapeHtml(niceDate(x.created_at.slice(0, 10)))}</span></div>`).join("") || '<div class="empty">None yet.</div>'}`; };
+    body.innerHTML = `<div class="card">
+      <div class="meta">Drive folders: ${[link(f.footageUploads, "Raw footage"), link(f.previousContent, "Previous content"), link(f.finalEdits, "Finished videos")].join(" · ")}</div>
+      ${HAS_026 ? `<div style="margin-top:10px">${smallBtn("+ Add footage link", `addFootage('${c.id}')`)}</div>` : `<div class="meta" style="color:var(--gold)">Run migration 026 to keep a footage library here.</div>`}
+      ${group("broll", "B-roll", "the client sees these")}${group("old", "Old footage", "the client sees these")}${group("raw", "Raw footage on cards", "")}${group("finished", "Finished cuts", "operator only")}</div>`;
+  } else {
+    const vids = VIDEOS.filter(x => x.client.id === c.id && x.video.status !== "rejected");
+    body.innerHTML = `<div class="card">${vids.length ? `<div class="vtable">${VROW_HEAD}${vids.map(x => vrowHtml(x, operatorActionsHtml(x))).join("")}</div>` : '<div class="empty">No videos yet.</div>'}</div>`;
+  }
+}
+function addFootage(clientId) {
+  const box = openModal(`<h2>Add footage</h2>
+    ${lbl("What is it")}<select id="afKind" style="width:100%;margin-bottom:10px"><option value="broll">B-roll (client sees it)</option><option value="old">Old footage (client sees it)</option><option value="finished">Finished cut (operator only)</option></select>
+    ${lbl("Name")}<input type="text" id="afName" style="width:100%;margin-bottom:10px">
+    ${lbl("Google Drive link")}<input type="url" id="afUrl" style="width:100%;margin-bottom:10px">
+    <div class="modal-actions"><button onclick="closeVideoModal()">Cancel</button><button class="primary" id="afGo">Add</button></div><div class="auth-error" id="afErr"></div>`);
+  box.querySelector("#afGo").onclick = async () => {
+    const name = box.querySelector("#afName").value.trim(), url = box.querySelector("#afUrl").value.trim();
+    if (!name || !url) { box.querySelector("#afErr").textContent = "Add a name and the Drive link."; return; }
+    const { error } = await sbClient.from("social_footage").insert({ client_id: clientId, kind: box.querySelector("#afKind").value, name, drive_url: url, uploaded_by_role: "operator" });
+    if (error) { box.querySelector("#afErr").textContent = error.message; return; }
+    closeVideoModal(); await loadLiveData();
+  };
+}
+document.getElementById("view-desk").addEventListener("click", e => {
+  const row = e.target.closest(".vrow[data-id]");
+  if (!row || e.target.closest("button, a, select, input, textarea, .video-card")) return;
+  openOperatorVideoModal(row.dataset.id);
+});
+
 function renderAll() {
   const cn = document.getElementById("navClientsN"); cn.hidden = !CLIENTS.length; cn.textContent = CLIENTS.length;
   renderGlobalClientFilter();
-  renderTodo(); renderCalendar(); renderIdeaBank(); renderAllClients(); renderEditors(); renderAiTeam();
+  renderDesk(); renderTodo(); renderCalendar(); renderIdeaBank(); renderAllClients(); renderEditors(); renderAiTeam();
+  if (document.getElementById("view-client").classList.contains("active")) renderClientPage();
 }
 
 // Only a social_operators login gets past the gate — never an editor or
@@ -1638,7 +1911,7 @@ async function resolveOperatorAccess(sb, user) {
 
 initAuthGate({
   resolveAccess: resolveOperatorAccess,
-  onReady: async (user, access) => { ME = access.roleRow; initRouter("todo"); await loadLiveData(); },
+  onReady: async (user, access) => { ME = access.roleRow; initRouter("desk"); await loadLiveData(); },
 });
 </script>
 </body>

@@ -284,6 +284,7 @@ function statusBadge(status, labelMap) {
 }
 
 const STATUS_LABEL = {
+  scripting: "Scripting", script_review: "Script review",
   concept_pending: "Idea", to_film: "To film", filmed: "Filmed",
   ready_to_edit: "Footage uploaded", rejected: "Abandoned", with_editor: "Editing",
   in_review: "Edit review", client_review: "Client final review",
@@ -294,7 +295,9 @@ const STATUS_LABEL = {
 // of it; concierge clients ("I film") start at to_film — Tait films them
 // himself and the client only approves the finished video. Both share
 // every stage from "filmed" onward.
-const STATUS_ORDER = ["concept_pending","to_film","filmed","ready_to_edit","with_editor","in_review","client_review","ready_to_post","posted"];
+// scripting / script_review (migration 026): the card before Tait approves
+// its script; the client never sees these.
+const STATUS_ORDER = ["scripting","script_review","concept_pending","to_film","filmed","ready_to_edit","with_editor","in_review","client_review","ready_to_post","posted"];
 
 // ---------- social_videos <-> page shape ----------
 // social_videos is the single source of truth for every video. Pages work
@@ -309,6 +312,7 @@ const VIDEO_COLUMNS = {
   finalCutUrl: "final_cut_url", onScreenCaption: "on_screen_caption", filmedBy: "filmed_by",
   conceptApprovedBy: "concept_approved_by", conceptApprovedAt: "concept_approved_at",
   clientRevisionRounds: "client_revision_rounds",
+  cameraQuestions: "camera_questions", ideaId: "idea_id",
   createdAt: "created_at", updatedAt: "updated_at",
 };
 // Rounds of changes a client gets on each finished video (Tait,
@@ -323,7 +327,7 @@ const clientRoundsUsed = v => (v.clientRevisionRounds || 0) >= REVISION_ROUNDS;
 // Gate-1 columns are deliberately absent — use the approve_concept action,
 // so every approval is stamped and logged.
 const VIDEO_WRITABLE = ["clientId","title","platform","hook","overview","outline","body","concept",
-  "filmingDirection","caption","note","status","editorId","editorBrief","dueToFilm","dueToEdit","postDate","finalCutUrl","onScreenCaption","filmedBy","clientRevisionRounds"];
+  "filmingDirection","caption","note","status","editorId","editorBrief","dueToFilm","dueToEdit","postDate","finalCutUrl","onScreenCaption","filmedBy","clientRevisionRounds","cameraQuestions"];
 
 function videoFromRow(row) {
   const v = {};

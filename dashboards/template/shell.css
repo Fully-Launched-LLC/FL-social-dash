@@ -14,6 +14,7 @@
   /* Warnings, errors and "overdue": the rare gold. */
   --green:var(--gold); --red:var(--gold); --amber:var(--gold); --purple:var(--gold);
   /* Status badges: white while there's work to do, dimmed once done. */
+  --status-scripting:var(--white); --status-script_review:var(--white);
   --status-concept_pending:var(--white); --status-to_film:var(--white); --status-filmed:var(--white);
   --status-ready_to_edit:var(--white); --status-rejected:var(--sub2); --status-with_editor:var(--white);
   --status-in_review:var(--white); --status-client_review:var(--white);

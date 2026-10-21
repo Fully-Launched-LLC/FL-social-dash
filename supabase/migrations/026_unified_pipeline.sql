@@ -142,6 +142,7 @@ alter table social_client_generated_docs add column if not exists approved_by uu
 alter table social_client_generated_docs add column if not exists approved_at timestamptz;
 alter table social_client_generated_docs add column if not exists sources text; -- which transcripts / files it was built from
 alter table social_client_generated_docs add column if not exists built_by text; -- the agent's name
+alter table social_client_generated_docs add column if not exists review_note text; -- Tait's note when he sends it back
 
 -- The client reads only their approved brand guidelines.
 drop policy if exists "client users read own brand guidelines" on social_client_generated_docs;
