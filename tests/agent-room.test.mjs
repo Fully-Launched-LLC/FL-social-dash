@@ -18,6 +18,7 @@ await db.exec(`
   insert into social_client_users (id,client_id,email) values ('${CL}','${GG}','gg@x');
   insert into social_agent_status (agent, status, working_on, client_id, paperclip_task, last_line, last_run_at, updated_at) values
     ('Content Editor','working','edit the video: Leaf rules','${GG}','FUL-40','Rendering v2', now(), now());
+  update social_agent_status set handoffs = '[{"from":"Content Editor","to":"Tait","task":"Grad Gig: Leaf rules v2 to review"},{"from":"Tait","to":"Content Editor","task":"Grad Gig: edit Leaf rules"}]' where agent='Content Editor';
   insert into social_agent_status (agent, status, stuck_on, needs_from_tait, updated_at) values
     ('Content Researcher','stuck','Claude run failed: session limit','Your Claude usage limit was hit.', now());
   insert into social_agent_status (agent, status, updated_at) values ('Content Writer','idle', now());
@@ -26,7 +27,7 @@ chk("client can't read the Agent room", !(await as(CL, `select * from social_age
 chk("client can't ask for agent actions", !!(await as(CL, `insert into social_agent_requests (agent, action) values ('Content Editor','pause')`)).error);
 
 const html = readFileSync(REPO + "dashboards/dist/operator/dashboard.html", "utf8");
-chk("no graph library or team-room paste left", !html.includes("d3@7") && !html.includes("aiAddBtn") && !html.includes("social_ai_team_messages"));
+chk("the live graph is back (d3), the team-room paste isn't", html.includes("d3@7.9.0") && html.includes('id="aiGraph"') && !html.includes("aiAddBtn") && !html.includes("social_ai_team_messages"));
 const op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
 const d = op.d;
 const nav = d.querySelector('.nav-item[data-view="aiteam"]');
@@ -44,6 +45,7 @@ chk("Try again asks the bridge", (await db.query(`select agent, action, done_at 
 chk("the card says it's been asked", cards().find(c => c.dataset.agent === "Content Researcher").textContent.includes("Asked: try again"));
 [...cards().find(c => c.dataset.agent === "Content Writer").querySelectorAll("button")].find(b => b.textContent === "Pause").click(); await settle();
 chk("Pause asks the bridge (after a confirm)", op.ui.confirms.some(m => m.includes("Pause Content Writer")) && (await db.query(`select 1 from social_agent_requests where agent='Content Writer' and action='pause'`)).rows.length === 1);
+chk("graph panel starts on Tait: what's waiting on you and what you handed out", d.getElementById("aiPanel").textContent.includes("Waiting on you") && d.getElementById("aiPanel").textContent.includes("Leaf rules v2 to review") && d.getElementById("aiPanel").textContent.includes("edit Leaf rules → Content Editor"), d.getElementById("aiPanel").textContent);
 chk("fresh data: no out-of-date notice", !d.getElementById("agentNotice").textContent.includes("out of date"));
 await db.exec(`update social_agent_status set updated_at = now() - interval '1 hour'`);
 const op2 = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html#aiteam"); await settle();

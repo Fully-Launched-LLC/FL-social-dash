@@ -135,6 +135,14 @@ rows = {r["agent"]: r for r in agent_rows(ags, iss, runs, [{"id": "gg", "name": 
 check("working agent: its task, client, task id, last line", rows["Content Editor"]["status"] == "working" and rows["Content Editor"]["working_on"].endswith("Leaf rules") and rows["Content Editor"]["client_id"] == "gg" and rows["Content Editor"]["paperclip_task"] == "FUL-40" and rows["Content Editor"]["last_line"] == "Rendering v2")
 check("failed run: stuck, and what Tait can do", rows["Content Researcher"]["status"] == "stuck" and "session limit" in rows["Content Researcher"]["stuck_on"] and "usage limit" in rows["Content Researcher"]["needs_from_tait"])
 check("idle and paused", rows["Content Writer"]["status"] == "idle" and rows["Content Poster"]["status"] == "paused" and rows["Content Poster"]["paused"] is True)
+soon = (dt.datetime.now(dt.timezone.utc)).isoformat()
+iss2 = iss + [{"id": "3", "identifier": "FUL-42", "title": "Grad Gig: script 2 cards", "status": "in_progress", "assigneeAgentId": "w", "createdByAgentId": "e", "updatedAt": soon},
+              {"id": "4", "identifier": "FUL-43", "title": "Approve: Grad Gig plan", "status": "in_review", "assigneeUserId": "local-board", "createdByAgentId": "w", "updatedAt": soon},
+              {"id": "5", "identifier": "FUL-44", "title": "Old work", "status": "done", "assigneeAgentId": "r", "createdByUserId": "local-board", "updatedAt": "2020-01-01"}]
+rows2 = {r["agent"]: r for r in agent_rows(ags, iss2, {}, [])}
+check("live hand-off between agents is on the receiver", {"from": "Content Editor", "to": "Content Writer", "task": "Grad Gig: script 2 cards"} in rows2["Content Writer"]["handoffs"], rows2["Content Writer"]["handoffs"])
+check("hand-off to Tait is on the sender", any(h["to"] == "Tait" for h in rows2["Content Writer"]["handoffs"]))
+check("old finished work isn't drawn", rows2["Content Researcher"]["handoffs"] == [])
 check("Apify out of credit is something Tait can fix", "Apify" in (needs_from_error("Apify: monthly usage limit exceeded, add credit") or ""))
 check("an unknown error needs no action from Tait", needs_from_error("TypeError: x") is None)
 

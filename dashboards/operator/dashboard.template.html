@@ -6,7 +6,7 @@
 <title>Fully Launched — Operator</title>
 <style>/*__SHELL_CSS__*//* My desk (Unify Phase 2): one tile per queue, then each queue. */
 .desk-tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:22px; }
-.desk-tile { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:12px 14px; cursor:pointer; color:var(--ink); }
+.desk-tile { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 14px; cursor:pointer; color:var(--ink); }
 .desk-tile b { display:block; font-size:1.6rem; line-height:1.1; }
 .desk-tile.hot { border-color:var(--gold); }
 .desk-tile span { font-size:0.82rem; color:var(--sub); }
@@ -17,13 +17,13 @@
 .doc-row { display:flex; justify-content:space-between; gap:10px; align-items:center; border-top:1px solid var(--border); padding:10px 0; flex-wrap:wrap; }
 .doc-row:first-of-type { border-top:0; }
 .mood-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; margin-top:12px; }
-.mood-item { border:1px solid var(--border); border-radius:10px; padding:8px; background:var(--white); font-size:0.82rem; }
+.mood-item { border:1px solid var(--border); border-radius:10px; padding:8px; background:var(--card); font-size:0.82rem; }
 .mood-item img, .mood-item video { width:100%; border-radius:6px; display:block; background:#000; aspect-ratio:9/12; object-fit:cover; }
 .mood-drop { border:2px dashed var(--border); border-radius:10px; padding:16px; text-align:center; color:var(--sub); }
 .mood-drop.over { border-color:var(--gold); color:var(--ink); }
 .lib-row { display:flex; align-items:center; gap:10px; border-top:1px solid var(--border); padding:7px 0; flex-wrap:wrap; }
 .lib-row .nm { flex:1; min-width:160px; }
-.lib-row button.on { background:var(--ink); color:var(--white); }
+.lib-row button.on { background:var(--ink); color:var(--card); }
 </style>
 <style>
 /* Content Ideas: two columns, drag a card across to send it */
@@ -43,8 +43,17 @@
 .idea-acts { margin-top:10px; }
 @media (max-width:760px) { .board { grid-template-columns:1fr; } }
 /* Fully AI Social: the AI team as a night-sky graph, its picked member, then the team room */
+.ai-stage { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:14px; margin-bottom:14px; }
+@media (max-width:900px) { .ai-stage { grid-template-columns:minmax(0,1fr); } }
+.ai-sky { position:relative; height:min(66vh,600px); min-height:400px; border-radius:16px; overflow:hidden; background:radial-gradient(120% 90% at 50% 40%, #0b1a2e, #04101f 70%); }
+.ai-sky canvas { position:absolute; inset:0; width:100%; height:100%; cursor:grab; touch-action:none; }
+.ai-legend { position:absolute; right:12px; bottom:10px; display:flex; flex-wrap:wrap; gap:6px 12px; font-size:0.72rem; color:#8a97ad; pointer-events:none; }
+.ai-legend span { display:inline-flex; align-items:center; gap:5px; }
+.ai-legend i { width:9px; height:9px; border-radius:50%; border:2px solid #b8c1d6; display:inline-block; }
+.ai-legend i.sq { border:none; border-radius:0; width:8px; height:8px; background:#fff; }
+.ai-panel { margin:0; display:flex; flex-direction:column; gap:8px; }
 .agent-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
-.agent-card { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:6px; }
+.agent-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:6px; }
 .agent-card.stuck { border-color:var(--red); }
 .agent-card.needs { border-color:var(--gold); }
 .agent-card h3 { margin:0; font-size:0.98rem; display:flex; justify-content:space-between; align-items:center; gap:8px; }
@@ -57,6 +66,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="/supabase/config.js"></script>
 </head>
 <body>
@@ -187,6 +197,12 @@
       <div class="page-actions"><span class="meta" id="agentUpdated"></span></div>
     </div>
     <div id="agentNotice"></div>
+    <div class="ai-stage">
+      <div class="ai-sky"><canvas id="aiGraph" aria-label="Live graph of the AI team working together"></canvas>
+        <div class="ai-legend"><span><i class="sq"></i>you</span><span><i style="border-color:#7CFFA0"></i>working</span><span><i style="border-color:#ff6b6b"></i>stuck</span><span><i></i>idle</span><span>moving dots = work being passed</span></div>
+      </div>
+      <div class="card ai-panel" id="aiPanel"></div>
+    </div>
     <div class="agent-grid" id="agentGrid"></div>
   </section>
 
@@ -1582,7 +1598,130 @@ function renderAgentRoom() {
           : `${a.status === "stuck" ? smallBtn("Try again", `agentRequest('${escapeHtml(a.agent)}','retry')`, "primary") : ""}${a.paused ? smallBtn("Resume", `agentRequest('${escapeHtml(a.agent)}','resume')`) : smallBtn("Pause", `agentRequest('${escapeHtml(a.agent)}','pause')`)}`}
       </div></div>`;
   }).join("") || "";
+  renderAiPanel();
+  initAiGraph();
 }
+
+// The live graph (Tait, 2026-10-21: "i still want to be able to see all of
+// the agents working together like we originally created"): Tait in the
+// middle, each employee from team.json as a glowing ring coloured by its
+// live state, the team's hand-off lines, and moving dots on the lines where
+// work is being passed right now (social_agent_status.handoffs, 032).
+let aiSelected = "tait", aiGraph = null;
+const agentByName = name => AGENTS.find(a => a.agent === name) || null;
+function liveHandoffs() { return AGENTS.flatMap(a => Array.isArray(a.handoffs) ? a.handoffs : []); }
+function renderAiPanel() {
+  const panel = document.getElementById("aiPanel");
+  if (!AI_TEAM || !panel) return;
+  const m = [...AI_TEAM.people, ...AI_TEAM.employees].find(x => x.id === aiSelected);
+  if (!m) return;
+  if (m.id === "tait") {
+    const toYou = liveHandoffs().filter(h => h.to === "Tait"), fromYou = liveHandoffs().filter(h => h.from === "Tait");
+    panel.innerHTML = `<h2>Tait</h2><div class="meta">${escapeHtml(m.sub || "")}</div>
+      <p style="margin:0;line-height:1.5">You approve the plan, every script, every document and every edit. Click anyone to see what they're doing.</p>
+      ${toYou.length ? `<div class="what"><b>Waiting on you:</b><br>${toYou.map(h => `${escapeHtml(h.from)}: ${escapeHtml(h.task)}`).join("<br>")}</div>` : ""}
+      ${fromYou.length ? `<div class="meta">You've handed out: ${fromYou.map(h => `${escapeHtml(h.task)} → ${escapeHtml(h.to)}`).join(" · ")}</div>` : ""}`;
+    return;
+  }
+  const a = agentByName(m.name) || { agent: m.name, status: "idle" };
+  const hs = liveHandoffs().filter(h => h.from === m.name || h.to === m.name);
+  panel.innerHTML = `<h2 style="display:flex;align-items:center;gap:8px"><i style="width:12px;height:12px;border-radius:50%;display:inline-block;background:${m.color}"></i>${escapeHtml(m.name)}</h2>
+    <span class="agent-state ${a.paused ? "paused" : a.status}" style="width:fit-content">${escapeHtml(a.paused ? "Paused" : a.status === "working" ? "Working" : a.status === "stuck" ? "Stuck" : "Idle")}</span>
+    <p style="margin:0;line-height:1.5">${escapeHtml(m.job || "")}</p>
+    ${a.working_on ? `<div class="what"><b>Now:</b> ${escapeHtml((a.client_id && CLIENT_BY_ID[a.client_id] ? CLIENT_BY_ID[a.client_id].name + " · " : "") + a.working_on)}</div>` : ""}
+    ${a.stuck_on ? `<div class="what" style="color:var(--red)"><b>Stuck:</b> ${escapeHtml(a.stuck_on)}</div>` : ""}
+    ${a.needs_from_tait ? `<div class="what" style="color:var(--gold)"><b>Needs you:</b> ${escapeHtml(a.needs_from_tait)}</div>` : ""}
+    ${hs.length ? `<div class="meta">${hs.map(h => `${escapeHtml(h.from)} → ${escapeHtml(h.to)}: ${escapeHtml(h.task)}`).join("<br>")}</div>` : ""}
+    ${a.last_line ? `<div class="line">“${escapeHtml(a.last_line)}”</div>` : ""}`;
+}
+function initAiGraph() {
+  if (typeof d3 === "undefined" || !AI_TEAM) return;
+  const canvas = document.getElementById("aiGraph");
+  const ctx = canvas && canvas.getContext && canvas.getContext("2d");
+  if (!ctx) return;   // no canvas (tests): the panel and cards still work
+  if (aiGraph) return;
+  const nodes = [...AI_TEAM.people.map(p => ({ ...p, kind: "person", r: 9 })), ...AI_TEAM.employees.map(e => ({ ...e, kind: "agent", r: 16 }))];
+  const links = AI_TEAM.handoffs.map(([s, t]) => ({ source: s, target: t }));
+  const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+  const idOf = name => name === "Tait" ? "tait" : (nodes.find(n => n.name === name) || {}).id;
+  byId.tait.fx = 0; byId.tait.fy = 0;
+  let W = 0, H = 0, DPR = 1, tf = d3.zoomIdentity, hover = null;
+  const stars = Array.from({ length: 110 }, () => ({ x: Math.random(), y: Math.random(), r: Math.random() * 1.1 + 0.2, a: Math.random() * 0.45 + 0.1 }));
+  const sim = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d => d.id).distance(150).strength(0.25))
+    .force("charge", d3.forceManyBody().strength(-900))
+    .force("collide", d3.forceCollide().radius(d => d.r + 40))
+    .force("x", d3.forceX(0).strength(0.03)).force("y", d3.forceY(0).strength(0.04));
+  const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
+  const stateOf = n => { const a = agentByName(n.name); return !a ? "idle" : a.paused ? "paused" : a.status; };
+  function size() { const b = canvas.parentElement.getBoundingClientRect(); W = b.width; H = b.height; DPR = window.devicePixelRatio || 1; canvas.width = W * DPR; canvas.height = H * DPR; }
+  function toGraph(ev) { const b = canvas.getBoundingClientRect(); const [x, y] = tf.invert([ev.clientX - b.left - W / 2, ev.clientY - b.top - H / 2]); return { x, y }; }
+  function pick(ev) { const p = toGraph(ev); return nodes.find(n => Math.hypot(n.x - p.x, n.y - p.y) < n.r + 14) || null; }
+  function text(s, x, y, size, color, weight) { ctx.font = `${weight} ${size}px "Hanken Grotesk", system-ui, sans-serif`; ctx.textAlign = "center"; ctx.fillStyle = color; ctx.fillText(s, x, y); }
+  function curve(s, t) { return { cx: (s.x + t.x) / 2 - (t.y - s.y) * 0.12, cy: (s.y + t.y) / 2 + (t.x - s.x) * 0.12 }; }
+  function draw() {
+    if (!W || !document.getElementById("view-aiteam").classList.contains("active")) return;
+    const t = performance.now() / 1000;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, W, H);
+    stars.forEach(s => { ctx.beginPath(); ctx.fillStyle = `rgba(210,218,240,${s.a})`; ctx.arc(s.x * W, s.y * H, s.r, 0, 7); ctx.fill(); });
+    ctx.save(); ctx.translate(W / 2 + tf.x, H / 2 + tf.y); ctx.scale(tf.k, tf.k);
+    const near = hover ? new Set([hover, ...links.filter(l => l.source.id === hover || l.target.id === hover).flatMap(l => [l.source.id, l.target.id])]) : null;
+    const al = id => !near || near.has(id) ? 1 : 0.12;
+    links.forEach(l => {
+      const { cx, cy } = curve(l.source, l.target), a = Math.min(al(l.source.id), al(l.target.id));
+      ctx.beginPath(); ctx.moveTo(l.source.x, l.source.y); ctx.quadraticCurveTo(cx, cy, l.target.x, l.target.y);
+      ctx.strokeStyle = `rgba(205,214,235,${0.12 * a})`; ctx.lineWidth = 0.9; ctx.stroke();
+    });
+    // Work being passed right now: a brighter line with dots travelling from sender to receiver.
+    liveHandoffs().forEach((h, k) => {
+      const s = byId[idOf(h.from)], r = byId[idOf(h.to)];
+      if (!s || !r) return;
+      const { cx, cy } = curve(s, r), a = Math.min(al(s.id), al(r.id));
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.quadraticCurveTo(cx, cy, r.x, r.y);
+      ctx.strokeStyle = `rgba(205,214,235,${0.4 * a})`; ctx.lineWidth = 1.4; ctx.stroke();
+      for (let j = 0; j < 2; j++) {
+        const u = (t * 0.18 + j * 0.5 + k * 0.13) % 1;
+        const x = (1 - u) ** 2 * s.x + 2 * (1 - u) * u * cx + u * u * r.x, y = (1 - u) ** 2 * s.y + 2 * (1 - u) * u * cy + u * u * r.y;
+        ctx.beginPath(); ctx.fillStyle = s.color || "#fff"; ctx.globalAlpha = a; ctx.arc(x, y, 3, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+      }
+    });
+    nodes.forEach(n => {
+      ctx.globalAlpha = al(n.id);
+      if (n.kind === "person") {
+        ctx.fillStyle = "#fff"; ctx.fillRect(n.x - n.r, n.y - n.r, n.r * 2, n.r * 2);
+        text(n.name, n.x, n.y + n.r + 18, 14, "#fff", 800); text(n.sub || "", n.x, n.y + n.r + 32, 10.5, "#8a97ad", 400);
+      } else {
+        const st = stateOf(n), color = st === "stuck" ? "#ff6b6b" : n.color;
+        const g = st === "working" ? 1 + 0.25 * Math.sin(t * 3) : st === "stuck" ? 0.9 : 0.3;
+        const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 3); grad.addColorStop(0, rgba(color, 0.35 * g)); grad.addColorStop(1, rgba(color, 0));
+        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 3, 0, 7); ctx.fill();
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, 7); ctx.fillStyle = rgba(color, 0.16); ctx.fill();
+        ctx.strokeStyle = rgba(color, st === "idle" || st === "paused" ? 0.5 : 1); ctx.lineWidth = n.id === aiSelected ? 3.5 : 2; ctx.stroke();
+        text(n.name, n.x, n.y + n.r + 18, 13, "#eef1f8", 700);
+        text(st === "working" ? "working" : st === "stuck" ? "stuck" : st === "paused" ? "paused" : "idle", n.x, n.y + n.r + 32, 10.5, st === "working" ? "#7CFFA0" : st === "stuck" ? "#ff6b6b" : "#8a97ad", 400);
+      }
+      ctx.globalAlpha = 1;
+    });
+    ctx.restore();
+  }
+  const zoom = d3.zoom().scaleExtent([0.4, 3]).filter(ev => ev.type === "wheel" || !pick(ev)).on("zoom", ev => { tf = ev.transform; draw(); });
+  d3.select(canvas).call(zoom).call(d3.drag().container(canvas).subject(ev => pick(ev.sourceEvent))
+    .on("start", ev => { sim.alphaTarget(0.25).restart(); ev.subject.fx = ev.subject.x; ev.subject.fy = ev.subject.y; })
+    .on("drag", ev => { const p = toGraph(ev.sourceEvent); ev.subject.fx = p.x; ev.subject.fy = p.y; })
+    .on("end", ev => { sim.alphaTarget(0); if (ev.subject.id !== "tait") { ev.subject.fx = null; ev.subject.fy = null; } }));
+  canvas.addEventListener("pointermove", ev => { const n = pick(ev); hover = n ? n.id : null; canvas.style.cursor = n ? "pointer" : ""; });
+  canvas.addEventListener("click", ev => { const n = pick(ev); if (n) { aiSelected = n.id; renderAiPanel(); } });
+  new ResizeObserver(() => { size(); draw(); }).observe(canvas.parentElement);
+  size();
+  (function loop() { draw(); requestAnimationFrame(loop); })();
+  aiGraph = true;
+}
+// The graph stays live while the Agent room is open: fresh status every 30 s.
+setInterval(async () => {
+  const v = document.getElementById("view-aiteam");
+  if (v && v.classList.contains("active") && typeof sbClient !== "undefined" && ME) { await loadAgents(); renderAgentRoom(); }
+}, 30000);
+
 async function agentRequest(agent, action) {
   if (action === "pause" && !confirm(`Pause ${agent}? It won't take new work until you resume it.`)) return;
   const { error } = await sbClient.from("social_agent_requests").insert({ agent, action });
