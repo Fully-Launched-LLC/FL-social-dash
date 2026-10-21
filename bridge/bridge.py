@@ -739,13 +739,29 @@ def agent_rows(agents, issues, last_runs, clients, last_lines=None):
                 if (cur.get("title") or "").lower().startswith(c["name"].lower()):
                     client = c["id"]
         stuck_on = (err or ("Paperclip shows an error" if a.get("status") == "error" else None))
-        if not stuck_on and blocked and not active:
-            stuck_on = f"Waiting: {blocked[0].get('title')}"
-        rows.append({"agent": a["name"], "role": a.get("title"), "status": status, "working_on": cur.get("title") if cur else None,
+        waiting = bool(cur and not active and blocked)   # a task waiting on another task isn't "stuck"
+        rows.append({"agent": a["name"], "role": a.get("title"), "handoffs": [], "status": status,
+                     "working_on": ((cur.get("title") or "") + (" (waiting on another task)" if waiting else "")) if cur else None,
                      "client_id": client, "paperclip_task": cur.get("identifier") if cur else None,
                      "stuck_on": (stuck_on or None) and stuck_on[:240], "needs_from_tait": needs_from_error(err) if err else None,
                      "paused": a.get("status") == "paused", "last_line": last_lines.get(a["id"]),
                      "last_run_at": run.get("finishedAt") or run.get("createdAt")})
+    # Live hand-offs for the graph (032): work passed in the last hour, or
+    # still in progress / in review, from whoever made the task to whoever has it.
+    names = {a["id"]: a["name"] for a in agents}
+    byname = {r["agent"]: r for r in rows}
+    cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=1)).isoformat()
+    for i in issues:
+        recent = (i.get("lastActivityAt") or i.get("updatedAt") or "") >= cutoff
+        if not (recent or i.get("status") in ("in_progress", "in_review")) or i.get("status") in ("cancelled",):
+            continue
+        frm = names.get(i.get("createdByAgentId")) or ("Tait" if i.get("createdByUserId") else None)
+        to = names.get(i.get("assigneeAgentId")) or ("Tait" if i.get("assigneeUserId") else None)
+        if not frm or not to or frm == to:
+            continue
+        home = byname.get(to) if to != "Tait" else byname.get(frm)
+        if home is not None and len(home["handoffs"]) < 6:
+            home["handoffs"].append({"from": frm, "to": to, "task": (i.get("title") or "")[:80]})
     return rows
 
 
@@ -809,7 +825,11 @@ def sync_agents(sb):
     clients = sb.select("social_clients", "select=id,name")
     for row in agent_rows(agents, issues, runs, clients, lines):
         row["updated_at"] = now()
-        sb.insert("social_agent_status", row, upsert_on="agent")
+        try:
+            sb.insert("social_agent_status", row, upsert_on="agent")
+        except RuntimeError:
+            row.pop("handoffs", None)   # before migration 032
+            sb.insert("social_agent_status", row, upsert_on="agent")
     return log
 
 
