@@ -44,12 +44,25 @@ async function rest(path, { method = "GET", body, prefer } = {}) {
 
 // Who's calling: their Supabase user, and whether they're an operator or
 // which client they log in for.
+// The role inside a Supabase JWT (no signature check: Supabase checks it).
+function jwtRole(token) {
+  try { return JSON.parse(Buffer.from(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString()).role || null; } catch (e) { return null; }
+}
+
 async function callerFrom(req) {
   const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
   if (!token) { const e = new Error("Sign in first."); e.status = 401; throw e; }
-  // The bridge on Tait's Mac (Unify Phase 7) signs with the service-role key
-  // itself, which only Vercel and Tait's private bridge.env hold.
+  // The bridge on Tait's Mac (Unify Phase 7) signs with a Supabase secret
+  // key (only Vercel and Tait's private bridge.env hold one). His may be the
+  // newer sb_secret_ style while Vercel holds the older service_role JWT, so
+  // anything that isn't a user's sign-in is checked with Supabase itself:
+  // only a secret key can list users through the admin API.
   if (env("SUPABASE_SERVICE_ROLE_KEY") && token === env("SUPABASE_SERVICE_ROLE_KEY")) return { user: { id: null }, isOperator: true, clientId: null, bridge: true };
+  if (token.startsWith("sb_secret_") || jwtRole(token) === "service_role") {
+    const admin = await fetch(env("SUPABASE_URL") + "/auth/v1/admin/users?per_page=1", { headers: { apikey: token, Authorization: "Bearer " + token } });
+    if (admin.ok) return { user: { id: null }, isOperator: true, clientId: null, bridge: true };
+    const e = new Error("That key isn't a secret key for this project."); e.status = 401; throw e;
+  }
   const res = await fetch(env("SUPABASE_URL") + "/auth/v1/user", {
     headers: { apikey: env("SUPABASE_ANON_KEY") || env("SUPABASE_SERVICE_ROLE_KEY"), Authorization: "Bearer " + token },
   });
