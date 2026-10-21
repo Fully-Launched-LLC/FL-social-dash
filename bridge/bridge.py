@@ -479,7 +479,7 @@ def check(sb, verbose=True):
     except Exception as e:
         log.append(f"telegram: {e}")
     try:
-        active = sb.select("social_clients", "select=id,name,slug&status=eq.active")
+        active = sb.select("social_clients", "select=id,name,slug,created_at&status=eq.active")
         plans = sb.select("social_monthly_plans", "select=client_id,month")
     except RuntimeError:
         active = None
@@ -487,7 +487,9 @@ def check(sb, verbose=True):
         today = dt.date.today()
         for c in active:
             last = st.setdefault("research_last", {}).get(c["id"])
-            if not last or (today - dt.date.fromisoformat(last)).days >= 7:
+            # Only clients added after the bridge was set up (Tait, 2026-10-21:
+            # "lets only research with new clients that come in when i add them").
+            if (c.get("created_at") or "") > st["since"] and (not last or (today - dt.date.fromisoformat(last)).days >= 7):
                 log.append(f"research: {c['name']} -> {ask_for_research(sb, c)}")
                 st["research_last"][c["id"]] = today.isoformat()
             month = months_ahead(today)
