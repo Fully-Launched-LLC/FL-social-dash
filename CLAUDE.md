@@ -791,7 +791,7 @@ Approve by is 3 days before posting, `APPROVE_DAYS_BEFORE_POST` in
 shell.js. Also "Add ideas with Claude" and "+ New idea", as on To Do) → **Content Ideas** (Tait,
 2026-10-19: a two-column board, ideas the client hasn't seen and ideas
 sent to them; see below) → **Clients** (name, portal
-address, who films, raw footage folder, finished video folder) → **Fully AI Social** (the AI content team, below) → **Editor
+address, who films, raw footage folder, finished video folder) → **Library** → **Editors** → **Agent room** (the AI content team, below) → **Editor
 portal ↗**. A client filter across the top narrows every page.
 
 **Content Ideas → Idea database** (Unify Phase 5, Tait 2026-10-21;
