@@ -27,6 +27,7 @@ function world(o) {
     if (u.includes("/rest/v1/social_client_onboarding") && method === "GET") return json(o.onboarding && (!u.includes("invited_email=") || u.includes("invited_email=eq." + encodeURIComponent(o.onboarding.invited_email))) ? [o.onboarding] : []);
     if (u.includes("/rest/v1/social_client_documents") && method === "GET") return json(o.docLinks || []);
     if (u.includes("/rest/v1/social_editors") && method === "GET") return json((o.editors || []).filter(e => u.includes(e.id) || u.includes(encodeURIComponent(e.email))));
+    if (u.includes("/auth/v1/admin/users")) return o.adminDenied ? json({ message: "invalid" }, 401) : json({ users: [] });
     if (u.includes("/rest/v1/social_videos") && method === "GET") return json(u.includes("status=eq.concept_pending") ? (o.cardVideos || []) : (o.reviewVideos || []));
     if (u.includes("/rest/v1/social_client_generated_docs") && method === "GET" && o.builtDocs) return json(o.builtDocs);
     if (u.includes("/rest/v1/")) return json(null, 201);
@@ -249,6 +250,10 @@ chk("invite-editor: a client's login can't become an editor (and nothing is save
   chk("notify-review: both in one email", mb.subject === "You have 1 video to review and 1 video card to approve" && mb.html.includes("Videos to review") && mb.html.includes("Video cards to approve"), mb.subject);
   c = world({ ...base, reviewVideos: vids }); r = await call(notifyReview, process.env.SUPABASE_SERVICE_ROLE_KEY, { clientId: C1 });
   chk("notify-review: the bridge signs with the service key", r.status === 200 && !c.some(x => x.url.includes("/auth/v1/user")), [r.status, r.body]);
+  c = world({ ...base, reviewVideos: vids }); r = await call(notifyReview, "sb_secret_abc", { clientId: C1 });
+  chk("notify-review: the bridge's newer sb_secret_ key is checked with Supabase's admin API", r.status === 200 && c.some(x => x.url.includes("/auth/v1/admin/users")), [r.status, r.body]);
+  c = world({ ...base, reviewVideos: vids, adminDenied: true }); r = await call(notifyReview, "sb_secret_wrong", { clientId: C1 });
+  chk("notify-review: a key Supabase refuses → 401, no email", r.status === 401 && !c.some(x => x.url.startsWith("https://api.resend.com")), [r.status, r.body]);
 }
 
 console.log(`${counts.pass} passed, ${counts.fail} failed`);
