@@ -48,7 +48,7 @@ questions) and make it theirs.
   "background checks").
 - **No em dashes.**
 
-## The five parts (25 to 30 questions)
+## The six parts (25 to 30 questions)
 
 **1. You and your business (4 to 6), voice first.** Note at the top:
 "Answer the way you'd talk to a friend. How you talk is part of what we're
@@ -91,9 +91,19 @@ price; real results with numbers; how people usually start and the first
 step they'd want a viewer to take; the objection they hear most and how
 they answer it.
 
+**6. Your brand (3 to 4), last.** (Tait, 2026-10-21: the interview also
+gathers what the brand guidelines need.) Note: "Short answers are fine. If
+you have brand files, you can also upload them on the Brand step." Ask:
+the colours they use (or want) and where they came from; their fonts, if
+they know them; their logo (what versions they have, anything it must never
+be put on); the look and feel in three words, plus any brands or accounts
+whose look they love; anything that's off-limits (colours, words, styles).
+The `brand-guidelines-doc` skill builds their brand guidelines from these
+answers, their files and their website.
+
 ## Output
 
-1. **`clients/<slug>/sources/voice-memo-questions.md`**: a header (client,
+1. **`clients/<slug>/sources/interview-questions.md`**: a header (client,
    date, built from which files), then the questions in the dashboard's
    text format, exactly:
 
@@ -113,7 +123,11 @@ Note: Just name each story in a sentence or two. Don't tell it in full: we'll as
 
 2. **Show Tait the questions** (just the list) and ask for changes.
 
-3. **On his OK, put them on the dashboard:** Clients → **Onboarding** →
+3. **Put them on the dashboard.** In the team (Paperclip), the Account
+   Manager saves them with the bridge:
+   `python3 bridge/bridge.py questions put --client <slug> --file clients/<slug>/sources/interview-questions.md`.
+   They show on the client's welcome page and on Clients → Onboarding,
+   where Tait copies or sends them. By hand: Clients → **Onboarding** →
    *Their voice memo questions* → paste the text block → *Save their
    questions*. That's what the client sees on their Questions page, with
    story prompts marked "Story". If Tait asks Claude to do it: in his

@@ -1,0 +1,14 @@
+node_modules
+dist
+.DS_Store
+.env
+
+# Ignore the output video from Git but not videos you import into src/.
+out
+
+# Client footage and assets used for renders: never in this public repo.
+public/clients/
+
+# Premium effect code and per-client graphics: Tait-only.
+src/effects/
+src/clients/

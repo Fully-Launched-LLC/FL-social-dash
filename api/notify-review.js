@@ -1,8 +1,10 @@
-// POST /api/notify-review { clientId }  (operators only)
+// POST /api/notify-review { clientId }  (operators, or the bridge on Tait's Mac)
 //
 // Emails the client's contact "You have N videos ready to review", listing
 // every video waiting on their approval (status client_review) with its
-// post date, and a button to their portal. Nothing changes in the database.
+// post date, plus (Unify Phase 7) every video card waiting for them to
+// approve, and a button to their portal. Nothing changes in the database.
+// The bridge sends it once a day per client automatically (bridge.py).
 
 const { env, need, rest, callerFrom, handler, portalUrl } = require("./_lib");
 const { reviewReadyEmail, sendEmail } = require("./_email");
@@ -19,11 +21,12 @@ module.exports = handler(async (req, { clientId }) => {
   if (!email) { const e = new Error(`Add ${client.name}'s contact email first.`); e.status = 400; throw e; }
 
   const videos = await rest("social_videos?select=title,post_date&status=eq.client_review&client_id=eq." + client.id + "&order=post_date.asc.nullslast");
-  if (!videos.length) { const e = new Error(`${client.name} has no videos waiting for their review.`); e.status = 400; throw e; }
+  const cards = await rest("social_videos?select=title,post_date&status=eq.concept_pending&concept_approved_at=not.is.null&client_id=eq." + client.id + "&order=post_date.asc.nullslast");
+  if (!videos.length && !cards.length) { const e = new Error(`${client.name} has nothing waiting for them.`); e.status = 400; throw e; }
 
   need("RESEND_API_KEY");
-  const { subject, html, text } = reviewReadyEmail({ contactName: client.contact_name, videos, portal: portalUrl(req), slug: client.slug });
+  const { subject, html, text } = reviewReadyEmail({ contactName: client.contact_name, videos, cards, portal: portalUrl(req), slug: client.slug });
   const mail = await sendEmail({ to: email, subject, html, text });
   if (!mail.ok) { const e = new Error("The email didn't send (" + mail.message + ")."); e.status = 502; throw e; }
-  return { sent: true, email, count: videos.length, ...(mail.warning ? { warning: mail.warning } : {}) };
+  return { sent: true, email, count: videos.length + cards.length, ...(mail.warning ? { warning: mail.warning } : {}) };
 });

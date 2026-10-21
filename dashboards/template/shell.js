@@ -284,6 +284,7 @@ function statusBadge(status, labelMap) {
 }
 
 const STATUS_LABEL = {
+  scripting: "Scripting", script_review: "Script review",
   concept_pending: "Idea", to_film: "To film", filmed: "Filmed",
   ready_to_edit: "Footage uploaded", rejected: "Abandoned", with_editor: "Editing",
   in_review: "Edit review", client_review: "Client final review",
@@ -294,7 +295,9 @@ const STATUS_LABEL = {
 // of it; concierge clients ("I film") start at to_film — Tait films them
 // himself and the client only approves the finished video. Both share
 // every stage from "filmed" onward.
-const STATUS_ORDER = ["concept_pending","to_film","filmed","ready_to_edit","with_editor","in_review","client_review","ready_to_post","posted"];
+// scripting / script_review (migration 026): the card before Tait approves
+// its script; the client never sees these.
+const STATUS_ORDER = ["scripting","script_review","concept_pending","to_film","filmed","ready_to_edit","with_editor","in_review","client_review","ready_to_post","posted"];
 
 // ---------- social_videos <-> page shape ----------
 // social_videos is the single source of truth for every video. Pages work
@@ -309,6 +312,7 @@ const VIDEO_COLUMNS = {
   finalCutUrl: "final_cut_url", onScreenCaption: "on_screen_caption", filmedBy: "filmed_by",
   conceptApprovedBy: "concept_approved_by", conceptApprovedAt: "concept_approved_at",
   clientRevisionRounds: "client_revision_rounds",
+  cameraQuestions: "camera_questions", ideaId: "idea_id",
   createdAt: "created_at", updatedAt: "updated_at",
 };
 // Rounds of changes a client gets on each finished video (Tait,
@@ -323,7 +327,7 @@ const clientRoundsUsed = v => (v.clientRevisionRounds || 0) >= REVISION_ROUNDS;
 // Gate-1 columns are deliberately absent — use the approve_concept action,
 // so every approval is stamped and logged.
 const VIDEO_WRITABLE = ["clientId","title","platform","hook","overview","outline","body","concept",
-  "filmingDirection","caption","note","status","editorId","editorBrief","dueToFilm","dueToEdit","postDate","finalCutUrl","onScreenCaption","filmedBy","clientRevisionRounds"];
+  "filmingDirection","caption","note","status","editorId","editorBrief","dueToFilm","dueToEdit","postDate","finalCutUrl","onScreenCaption","filmedBy","clientRevisionRounds","cameraQuestions"];
 
 function videoFromRow(row) {
   const v = {};
@@ -357,9 +361,10 @@ function videoFieldsToRow(fields) {
 // footage, and the client approves the idea). Absent = either.
 const VIDEO_ACTIONS = {
   approve_concept_owner:   { role: "operator", rpc: "social_operator_approve_concept", from: ["concept_pending"], to: "concept_pending", label: "Send to client", needsConceptUnapproved: true },
-  submit_footage:          { role: "client", from: ["concept_pending", "to_film", "filmed"], to: "ready_to_edit", label: "Video has been filmed", filmedBy: "client" },
-  approve_concept:         { role: "client", from: ["concept_pending"], to: "to_film",         label: "Approve idea", filmedBy: "us" },
-  request_concept_changes: { role: "client", from: ["concept_pending"], to: "concept_pending", label: "Suggest changes", needsNote: true, notePrompt: "What would you change about this idea?" },
+  // (030) Both client types approve cards and upload footage; changes go back to Scripting.
+  submit_footage:          { role: "client", from: ["concept_pending", "to_film", "filmed"], to: "ready_to_edit", label: "Video has been filmed" },
+  approve_concept:         { role: "client", from: ["concept_pending"], to: "to_film",         label: "Approve" },
+  request_concept_changes: { role: "client", from: ["concept_pending"], to: "scripting", label: "Request changes", needsNote: true, notePrompt: "What would you change? A small part, or the whole idea?" },
   approve_final:           { role: "client", from: ["client_review"], to: "ready_to_post", label: "Approve for posting" },
   request_revisions:       { role: "client", from: ["client_review"], to: "with_editor",   label: "Request changes to the video", needsNote: true, notePrompt: "What should change in the video?", destructive: true },
   mark_delivered:          { role: "editor", rpc: "social_editor_mark_delivered", from: ["with_editor"], to: "in_review", label: "Finished — send to Tait" },
@@ -401,10 +406,14 @@ function videoActionsFor(video, role, clientSystem) {
   });
 }
 
-// The 7 + 7 rule, same as submit_footage in 006: once the footage is in,
-// the edit is due in 7 days and it posts in 14 — or on the planned post
-// date, if that's later. Used where an operator submits footage directly.
+// Same as submit_footage in 030 (Tait's timing, 2026-10-21): footage on
+// time keeps the post date and the edit is due 7 days before it; late
+// footage (or no date) falls back to the 7 + 7 rule: edit in 7 days, post
+// in 14 (or the planned date, if later). Used where an operator submits
+// footage directly.
 function footageDates(video) {
+  if (video.postDate && addDaysISO(video.postDate, -7) >= addDaysISO(todayISO(), 3))
+    return { dueToEdit: addDaysISO(video.postDate, -7), postDate: video.postDate };
   const edit = addDaysISO(todayISO(), 7), post = addDaysISO(todayISO(), 14);
   return { dueToEdit: edit, postDate: video.postDate && video.postDate > post ? video.postDate : post };
 }

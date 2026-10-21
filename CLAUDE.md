@@ -373,7 +373,22 @@ fully-social-os/
                                (social_carousels.due_to_edit), 024
                                (only the operator edits a video's
                                words: approve_final no longer takes
-                               the client's caption edits)
+                               the client's caption edits), 026
+                               (unified pipeline: social_ideas,
+                               social_monthly_plans, 'scripting' and
+                               'script_review' card statuses, the 5
+                               client documents, social_style_assets,
+                               social_footage, social_agent_status), 027
+                               (social_onboarding_recordings: voice
+                               memos and call recordings with their
+                               transcripts; questions_/docs_requested_at), 028
+                               (moodboards: social_moodboard_items and
+                               the private 'moodboards' bucket; the
+                               Library: social_style_assets previews in
+                               the private 'library' bucket, ratings), 029
+                               (social_ideas: requested_post_date,
+                               planned_post_date, special_request; the
+                               private 'ideas' bucket)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -419,6 +434,16 @@ rehook every 10 to 15 seconds, every loop closed in the payoff, checked by
 
 **This repo is public on GitHub.** Nothing operator-only goes in it:
 `library/` and `clients/*/research/private/` are gitignored.
+
+**The AI content team** (Tait, 2026-10-20; being built step by step, see
+`team/README.md` and its principles in `team/PRINCIPLES.md`, which differ
+from the core principles above for the team's own work): nine AI employees
+as Claude Code subagents in `.claude/agents/`, a shared team room per
+client, Tait's idea banks, and a Remotion project in `editor/` for AI
+editing. The training kits (`team/*` except README and PRINCIPLES), idea
+banks (`clients/*/idea-bank/`) and team rooms (`clients/*/team-room/`) are
+gitignored because they hold Tait's IP and work in progress. So far:
+`content-researcher` (first similar-accounts pass for Grad Gig).
 
 Older order, kept for reference (skill `client-onboarding`, `.claude/skills/client-onboarding/`):
 save transcripts → `customer-data-doc` → the 3-3-3 (`positioning.md`) →
@@ -598,6 +623,23 @@ Finished videos to approve).
 
 ## Client onboarding (`/welcome`)
 
+**With the AI team** (Unify Phase 3, Tait 2026-10-21; migration 027 and
+`bridge/`): the bridge on Tait's Mac (`bridge/start.sh` runs Paperclip and
+`bridge/bridge.py watch`) checks every 2 minutes. A new client (created
+after the bridge was set up) with no questions → a Paperclip task for the
+Account Manager to write them (`voice-memo-questions`, now with a brand
+section), saved with `bridge.py questions put`. A voice memo from
+`/welcome`, or a call recording Tait uploads on Clients → Onboarding →
+Recordings → the bridge transcribes it with Groq Whisper (the watch kit's
+key), saves it on `social_onboarding_recordings` and appends it to the
+client's transcript, then asks the Account Manager to build brand
+guidelines (`brand-guidelines-doc`), ICP (`customer-data-doc`) and identity
+(`identity-doc`), each saved with `bridge.py doc put` onto My desk →
+Documents to review. A pasted transcript does the same ("Save and ask the
+team to build documents"). The bridge uses a Supabase service-role key Tait
+keeps in `~/.config/fully-social/bridge.env` (never in this repo). Before
+027 the panel keeps the older `/api/build-documents` flow.
+
 A new client's invite (`api/_email.js`: a white email with one navy box —
 the logo, "Welcome to your Fully Social dashboard", "Hi <first name>, we are
 excited to start working with <company>.", and one **Start here** button at
@@ -701,6 +743,37 @@ back one piece at a time:
 
 ### Operator dashboard — `/` → `/operator/dashboard.html`
 
+**My desk** (Unify the System Phase 2, Tait 2026-10-21; migration 026) is
+the home page: everything waiting on Tait in 5 queues with counts, narrowed
+by the top client filter. **Ideas to review** (monthly plans with status
+`on_desk`: approve or reject each idea, then close the plan), **Scripts to
+review** (cards in `script_review`: Approve script runs gate 1 so the client
+sees the whole card, hook, outline, script and camera questions; Send back
+puts it in `scripting` with the note in `editor_brief.scriptNotes`),
+**Documents to review** (the 5 client documents in `on_desk`), **Videos to
+review** (`in_review`) and **Videos to post** (`ready_to_post`). Before 026
+is run, the first three are empty and the desk says so. **Clients → Open**
+opens one client's page: Overview, Documents (brand guidelines, ICP,
+identity, editing guidelines, content research: write, edit, approve, send
+back; only approved brand guidelines reach the client), Footage (b-roll and
+old footage the client sees, raw footage on cards, finished cuts) and
+Videos, plus **Open their portal**. To Do (every video by stage) stays as a
+secondary page.
+
+**Style guides** (Unify Phase 4, Tait 2026-10-21; migration 028): each
+client's page has a **Moodboard** tab, and **Library → House moodboard**
+holds one for every client. Tait drops in screenshots, videos and links of
+motion graphics, fonts, text styles, colours and video styles. Once a
+client's brand guidelines are approved, the bridge asks the Content Editor
+(with the Motion Designer and Strategist) to turn the moodboard into their
+**editing guidelines** (skill `editing-guidelines-doc`, starting from
+`team/content-editor/house-style.md`), which land on My desk; new moodboard
+items update them. **No edit starts until a client's editing guidelines are
+approved** (Tait's rule). **Library** (sidebar) lists the shared music and
+sound effects (`bridge.py assets sync` indexes the folders and uploads short
+previews): play, ★ Favourite, Never use. The Editor picks from it with
+`bridge.py assets list` and never uses a track marked Never.
+
 Nav: **To Do** (every video by stage, one tab each plus All, with counts:
 sent back with suggestions → waiting on client → ready for an editor → with
 an editor → edits to review → ready to post, plus an **Abandoned** tab
@@ -718,8 +791,62 @@ Approve by is 3 days before posting, `APPROVE_DAYS_BEFORE_POST` in
 shell.js. Also "Add ideas with Claude" and "+ New idea", as on To Do) → **Content Ideas** (Tait,
 2026-10-19: a two-column board, ideas the client hasn't seen and ideas
 sent to them; see below) → **Clients** (name, portal
-address, who films, raw footage folder, finished video folder) → **Editor
+address, who films, raw footage folder, finished video folder) → **Library** → **Editors** → **Agent room** (the AI content team, below) → **Editor
 portal ↗**. A client filter across the top narrows every page.
+
+**Content Ideas → Idea database** (Unify Phase 5, Tait 2026-10-21;
+migrations 026 + 029): every idea per client in `social_ideas`, from Tait
+(+ Add idea: text, links, screenshots/voice notes, a special-request post
+date), his **Telegram bot** (the bridge reads it: "Grad Gig: idea…", voice
+notes transcribed, photos to the private 'ideas' bucket; pair with
+`bridge.py telegram pair`), weekly research per client (Content Researcher:
+Reddit's public feed, YouTube Data API outliers via `bridge.py youtube
+outliers`, small Apify runs for Instagram; no TikTok) and Sandcastles links.
+On the 10th the bridge asks the Team Lead for next month's plan: 20 ideas
+(any mix), scored by the Expert, briefed by the Simplifier, put on My desk
+by `bridge.py plan put` with post dates spread over the month's weekdays
+(special requests keep their day). Tait's timing from a post date P: script
+approved P−13, filmed P−10, edit done P−7. "Ask the team for next month's
+plan" makes a draft plan the bridge picks up. Automatic plans start with
+December 2026 (installed after the 10th). The older board below is the
+**Unsent cards** tab.
+
+**Scripting and the client's card** (Unify Phase 6, Tait 2026-10-21;
+migration 030): approving a monthly plan (or **Make a card** on one idea)
+makes a video card in `scripting` with the idea's format and why, post date
+P, film by P−10, edit by P−7 and `editor_brief.scriptDue` P−13. The bridge
+gives the Team Lead "script N cards": Writer (`bridge.py card get/put`) →
+Expert → Simplifier → `card ready` → My desk → Scripts to review. Approve
+script = gate 1: the client sees the whole card (hook, script, outline,
+**camera questions**: answered by a client who films, asked by the
+videographer otherwise). The client **Approves** or **Requests changes**
+(back to `scripting` with their note, the Writer revises, Tait approves,
+the client sees the new version). Footage is **uploaded on the card** by the
+client or the videographer (often Tait, through the client's portal) into
+the private `footage` bucket; the bridge moves each clip into the card's
+Google Drive folder (`01 Footage Uploads/NN. Title (posts Mon D)`, found
+with Google Drive for desktop) and deletes the temporary copy. Video has
+been filmed: on time keeps the post date and the edit is due P−7; late
+falls back to 7 + 7. To Do has a Scripting stage.
+
+**Editing and reviews** (Unify Phase 7, Tait 2026-10-21; no migration):
+the **AI Editor first, humans as backup**. When a card's footage is in (every
+clip moved to Drive) and the client's editing guidelines are approved, the
+bridge moves it to `with_editor` with `editor_brief.aiEditor` and gives the
+Content Editor the edit (Motion Designer and Reviewer with it); without
+approved guidelines it waits (`editor_brief.waitingOn`, shown on To Do and My
+desk). **Send to editor** offers **AI editor** next to the human editors (a
+human sets `humanEditor`, which the bridge leaves alone). `bridge.py video
+deliver` uploads a review copy (the `review` bucket, a new
+`social_video_versions` row), copies it to the client's Final Edits Drive
+folder and puts the card in Videos to review; the Content Poster drafts the
+captions (`editor_brief.captionDraft`), which open pre-filled in Approve &
+add captions. Tait's notes or a client's round go back to the AI Editor the
+same way (bridge `edit_notes`). The bridge texts Tait (Telegram, grouped, at
+most every 2 hours) when new things land on My desk, and emails each client
+once a day when cards or videos wait for them (`/api/notify-review`, which
+now lists cards too and accepts the service-role key from the bridge; live
+once deployed).
 
 **Content Ideas** (no migration; Tait, 2026-10-19: "ideas are on one
 side and send to the client on the other"). Two columns, per client (the
@@ -903,6 +1030,20 @@ finished video when one is waiting: To review → Review
 the video → inside the review window, the player and its comment marks, a
 comment at a moment or on the whole video, Send changes or Approve. Steps
 that don't apply (nothing to film, no documents) are left out.
+
+### Agent room (Unify Phase 8, Tait 2026-10-21; migrations 026 + 031)
+
+A sidebar tab on the operator dashboard (it replaced Fully AI Social and its
+hand-pasted team-room feed; migration 025 was dropped). One card per AI
+employee, filled from Paperclip by the bridge on Tait's Mac every couple of
+minutes (`social_agent_status`): Working / Idle / Stuck / Paused, what it's
+doing now (client, task, Paperclip task id), what it's stuck on, what it
+needs from Tait (e.g. his Claude usage limit, Apify credit), its last line
+of work and when it last ran; stuck and needs-you first, with a count on the
+tab. **Try again**, **Pause** and **Resume** insert `social_agent_requests`,
+which the bridge carries out in Paperclip. The job line on each card comes
+from `team/team.json`, baked in by build.py. When the data is over 10
+minutes old the page says to start `bridge/start.sh`. Operators only.
 
 ### Carousels (migration 022; Tait, 2026-10-15)
 

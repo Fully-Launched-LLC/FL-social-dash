@@ -27,7 +27,7 @@ function world(o) {
     if (u.includes("/rest/v1/social_client_onboarding") && method === "GET") return json(o.onboarding && (!u.includes("invited_email=") || u.includes("invited_email=eq." + encodeURIComponent(o.onboarding.invited_email))) ? [o.onboarding] : []);
     if (u.includes("/rest/v1/social_client_documents") && method === "GET") return json(o.docLinks || []);
     if (u.includes("/rest/v1/social_editors") && method === "GET") return json((o.editors || []).filter(e => u.includes(e.id) || u.includes(encodeURIComponent(e.email))));
-    if (u.includes("/rest/v1/social_videos") && method === "GET") return json(o.reviewVideos || []);
+    if (u.includes("/rest/v1/social_videos") && method === "GET") return json(u.includes("status=eq.concept_pending") ? (o.cardVideos || []) : (o.reviewVideos || []));
     if (u.includes("/rest/v1/social_client_generated_docs") && method === "GET" && o.builtDocs) return json(o.builtDocs);
     if (u.includes("/rest/v1/")) return json(null, 201);
     if (u.includes("/auth/v1/admin/generate_link")) return o.generateLink(JSON.parse(init.body), json);
@@ -228,7 +228,7 @@ chk("invite-editor: a client's login can't become an editor (and nothing is save
   r = await call(notifyReview, "opTok", { clientId: C2 });
   chk("notify-review: no contact email → 400", r.status === 400 && /contact email/.test(r.body.error), r.body);
   c = world({ ...base, reviewVideos: [] }); r = await call(notifyReview, "opTok", { clientId: C1 });
-  chk("notify-review: nothing waiting → 400, no email", r.status === 400 && /no videos/.test(r.body.error) && !c.some(x => x.url.startsWith("https://api.resend.com")), r.body);
+  chk("notify-review: nothing waiting → 400, no email", r.status === 400 && /nothing waiting/.test(r.body.error) && !c.some(x => x.url.startsWith("https://api.resend.com")), r.body);
   c = world({ ...base, reviewVideos: vids }); r = await call(notifyReview, "opTok", { clientId: C1 });
   const q = c.find(x => x.url.includes("/rest/v1/social_videos"));
   chk("notify-review: only this client's client_review videos", q && q.url.includes("status=eq.client_review") && q.url.includes("client_id=eq." + C1), q && q.url);
@@ -240,6 +240,15 @@ chk("invite-editor: a client's login can't become an editor (and nothing is save
   chk("notify-review: one video → '1 video', no name → 'Hi there,'", one.subject === "You have 1 video ready to review" && one.html.includes("Hi there,"));
   c = world({ ...base, reviewVideos: vids, resend: (b, json) => json({ message: "Rate limited" }, 429) }); r = await call(notifyReview, "opTok", { clientId: C1 });
   chk("notify-review: the email fails → says so", r.status === 502 && /didn't send/.test(r.body.error), r.body);
+  // (Unify Phase 7) Cards waiting for approval, and the bridge signing with the service key.
+  c = world({ ...base, reviewVideos: [], cardVideos: [vids[0], vids[1]] }); r = await call(notifyReview, "opTok", { clientId: C1 });
+  const mc = JSON.parse(c.find(x => x.url.startsWith("https://api.resend.com")).body);
+  chk("notify-review: cards to approve on their own", r.status === 200 && r.body.count === 2 && mc.subject === "You have 2 video cards ready to approve" && mc.html.includes(">Open your portal<"), [r.body, mc.subject]);
+  c = world({ ...base, reviewVideos: [vids[0]], cardVideos: [vids[1]] }); r = await call(notifyReview, "opTok", { clientId: C1 });
+  const mb = JSON.parse(c.find(x => x.url.startsWith("https://api.resend.com")).body);
+  chk("notify-review: both in one email", mb.subject === "You have 1 video to review and 1 video card to approve" && mb.html.includes("Videos to review") && mb.html.includes("Video cards to approve"), mb.subject);
+  c = world({ ...base, reviewVideos: vids }); r = await call(notifyReview, process.env.SUPABASE_SERVICE_ROLE_KEY, { clientId: C1 });
+  chk("notify-review: the bridge signs with the service key", r.status === 200 && !c.some(x => x.url.includes("/auth/v1/user")), [r.status, r.body]);
 }
 
 console.log(`${counts.pass} passed, ${counts.fail} failed`);

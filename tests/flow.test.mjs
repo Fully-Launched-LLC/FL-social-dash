@@ -91,7 +91,7 @@ const idx = Array.from({ length: 30 }, (_, i) => i);
 
 // ── 1. Operator plans 30 ideas with Claude and adds them ──
 let op = track(await OP());
-chk("opens on To Do", $(op, "#view-todo").classList.contains("active"));
+chk("opens on My desk", $(op, "#view-desk").classList.contains("active"));
 await click($(op, "#bulkAddBtn"), "add ideas");
 $(op, "#bkClient").value = FL;
 $(op, "#bkText").value = "Here you go:\n```json\n" + JSON.stringify(plan, null, 2) + "\n```";
@@ -122,29 +122,25 @@ chk(`To film shows only the videos the client films (${clientFilmed.length})`, t
 chk(`we-film ideas sit under To review (${V.switchToUs.length})`, tabCount(cl, "review") === V.switchToUs.length, tabsText(cl));
 const c0 = portalCard(cl, "#listToFilm", title(0));
 chk("to-film card: film-by, hook, script, outline, how to film", c0 && ["Film by " + nice(day(-10)), "Hook 1", "Talking points 1", "- Point A1\n- Point B1", "Film it like this: 1"].every(t => c0.textContent.includes(t)), c0 && c0.textContent);
-chk("to-film card: upload link + only Video has been filmed / Suggest changes", c0 && !!c0.querySelector('a[href="https://drive/fl-footage"]')
-  && Array.from(c0.querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Video has been filmed|Suggest changes", c0 && Array.from(c0.querySelectorAll(".actions button")).map(b => b.textContent));
+chk("to-film card: Upload footage on the card + Video has been filmed / Approve / Request changes (030)", c0 && !!c0.querySelector("[data-upload]")
+  && Array.from(c0.querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Video has been filmed|Approve|Request changes", c0 && Array.from(c0.querySelectorAll(".actions button")).map(b => b.textContent));
 chk("client never sees editing instructions", !cl.d.body.textContent.includes("Cut it like this"));
 
-// Suggestions go back to Tait.
+// Requested changes go back to Scripting (030): the Writer revises, Tait
+// approves the script, the client sees the new version.
 for (const i of V.change) {
-  await sendNote(cl, portalCard(cl, "#listToFilm", title(i)), "Suggest changes", "Make it funnier " + i);
-  await dismissThanks(cl, "rework this idea");
+  await sendNote(cl, portalCard(cl, "#listToFilm", title(i)), "Request changes", "Make it funnier " + i);
+  await dismissThanks(cl, "rework this card");
   const s = await statusOf(title(i));
-  chk(`#${i} back with Tait`, s.status === "concept_pending" && !s.concept_approved_at && s.note === "Make it funnier " + i, s);
+  chk(`#${i} back to Scripting with the client's note`, s.status === "scripting" && !s.concept_approved_at && s.note === "Make it funnier " + i, s);
 }
 if (V.change.length) {
   op = track(await OP());
-  for (const i of V.change) {
-    const row = opRow(op, "#ideasList", title(i));
-    chk(`#${i} shows the client's suggestion`, row && row.textContent.includes("Make it funnier " + i));
-    await click(btn(row, "Edit"), "edit " + i);
-    $(op, '[data-f="hook"]').value = "Funnier hook " + i;
-    $(op, '[data-f="note"]').value = "";
-    await click($(op, "#vfSave"), "save rewrite");
-  }
-  if (V.change.length > 1) await click(btn($(op, "#sendAllWrap"), "Send all"), "send all");
-  else await click(btn(opRow(op, "#ideasList", title(V.change[0])), "Send to client"), "send again");
+  for (const i of V.change) chk(`#${i} in To Do's Scripting stage with the client's note`, opRow(op, "#scriptingList", title(i))?.textContent.includes("Make it funnier " + i));
+  // The Writer's revision (what bridge.py card put + card ready do).
+  for (const i of V.change) await db.query("update social_videos set hook=$2, status='script_review', note=null where title=$1", [title(i), "Funnier hook " + i]);
+  op = track(await OP());
+  for (const i of V.change) await click(btn(opRow(op, "#deskScripts", title(i)), "Approve script"), "approve script " + i);
   cl = track(await CL());
   for (const i of V.change) chk(`client sees rewrite #${i}`, portalCard(cl, "#listToFilm", title(i))?.textContent.includes("Funnier hook " + i));
 }
@@ -174,10 +170,10 @@ if (V.switchToUs.length) {
   const i = V.switchToUs[0];
   await openTab(cl, "review");
   const card = portalCard(cl, "#listReview", title(i));
-  chk("we-film card: no upload, no film-by, Approve idea / Suggest changes", card && !card.querySelector('a[href="https://drive/fl-footage"]') && !card.textContent.includes("Film by")
-    && Array.from(card.querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Approve idea|Suggest changes");
-  await click(btn(card, "Approve idea"), "approve we-film idea");
-  await dismissThanks(cl, "Stay tuned");
+  chk("videographer card: no upload until approved, no film-by, Approve / Request changes", card && !card.querySelector("[data-upload]") && !card.textContent.includes("Film by")
+    && Array.from(card.querySelectorAll(".actions button")).map(b => b.textContent).join("|") === "Approve|Request changes", card && Array.from(card.querySelectorAll(".actions button")).map(b => b.textContent));
+  await click(btn(card, "Approve"), "approve we-film idea");
+  await dismissThanks(cl, "film it with you");
   chk("approved → to film on Tait's side", (await statusOf(title(i))).status === "to_film");
   chk("once approved it leaves To Do; both tabs empty, nothing on the page", !portalCard(cl, "#listReview", title(i)) && tabCount(cl, "film") === 0 && tabCount(cl, "review") === 0 && !$$(cl, "#view-videos .card").length, tabsText(cl));
   op = track(await OP());
@@ -326,9 +322,9 @@ let prem = track(await PREMP());
 chk("premium: To film (0), To review (3), opens on To review, no footage folder link", tabCount(prem, "film") === 0 && tabCount(prem, "review") === 3 && $(prem, "#videoTabs .chip.active").dataset.tab === "review" && !$(prem, "#footageCardLink"), tabsText(prem));
 const pc = portalCard(prem, "#listReview", "Prem 1");
 chk("premium idea card: hook, script, outline, how we'll make it — no upload", pc && ["Prem hook 1", "Prem script 1", "- Prem point 1", "How we'll make itWe film it 1"].every(t => pc.textContent.includes(t)) && !pc.textContent.includes("How to film it") && !pc.querySelector("a[href*='footage']"), pc && pc.textContent);
-await click(btn(pc, "Approve idea"), "premium approve 1"); await dismissThanks(prem, "Stay tuned");
-await click(btn(portalCard(prem, "#listReview", "Prem 2"), "Approve idea"), "premium approve 2"); await dismissThanks(prem, "approve before it posts");
-await sendNote(prem, portalCard(prem, "#listReview", "Prem 3"), "Suggest changes", "Different angle");
+await click(btn(pc, "Approve"), "premium approve 1"); await dismissThanks(prem, "film it with you");
+await click(btn(portalCard(prem, "#listReview", "Prem 2"), "Approve"), "premium approve 2"); await dismissThanks(prem, "approve before it posts");
+await sendNote(prem, portalCard(prem, "#listReview", "Prem 3"), "Request changes", "Different angle");
 await dismissThanks(prem, "rework");
 chk("premium: approved and sent-back ideas all leave To Do; nothing on the page", !portalCard(prem, "#listReview", "Prem 1") && !portalCard(prem, "#listReview", "Prem 2") && !portalCard(prem, "#listReview", "Prem 3") && !$$(prem, "#view-videos .card").length, tabsText(prem));
 chk("premium: 2 approved, 1 back with Tait", (await count("client_id=$1 and status='to_film'", [PREM])) === 2 && (await statusOf("Prem 3")).concept_approved_at === null);

@@ -69,8 +69,10 @@ chk("editor: raw footage opens this video's folder", edLink?.href === "https://d
 
 // A client who films uploads into the video's own folder.
 const cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-grad-gig");
-const up = Array.from(cl.d.querySelectorAll("#listToFilm a")).find(a => a.textContent.includes("Upload footage"));
-chk("client: Upload footage opens this video's folder", up?.href === "https://drive.google.com/drive/folders/own-d" && cl.d.getElementById("listToFilm").textContent.includes("its footage folder"));
+// (030) Footage is uploaded right on the card now; the bridge moves it into
+// the video's own Drive folder (bridge.py move_footage).
+const up = cl.d.querySelector("#listToFilm [data-upload]");
+chk("client: Upload footage is on the card itself (030)", !!up && up.closest("label").textContent.includes("Upload footage") && !cl.d.querySelector("#listToFilm a[href*='drive.google.com']"));
 chk("client: a filmed we-film video reads 'Filmed: editing next'", cl.w.eval("clientStage(VIDEOS.find(v => v.title === 'A own folder'), 'us')") === "Filmed: editing next");
 
 chk("no page errors", ![op, ed, cl].some(p => p.ui.errors.length) && !op.ui.alerts.length, [op.ui.errors, ed.ui.errors, cl.ui.errors, op.ui.alerts]);

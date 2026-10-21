@@ -4,7 +4,27 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Fully Launched — Operator</title>
-<style>/*__SHELL_CSS__*/</style>
+<style>/*__SHELL_CSS__*//* My desk (Unify Phase 2): one tile per queue, then each queue. */
+.desk-tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:22px; }
+.desk-tile { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:12px 14px; cursor:pointer; color:var(--ink); }
+.desk-tile b { display:block; font-size:1.6rem; line-height:1.1; }
+.desk-tile.hot { border-color:var(--gold); }
+.desk-tile span { font-size:0.82rem; color:var(--sub); }
+.desk-item { border-top:1px solid var(--border); padding:12px 0; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.desk-item:first-of-type { border-top:0; }
+.desk-item .brief { font-size:0.86rem; color:var(--sub); margin-top:4px; max-width:640px; }
+.client-tabs { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 16px; }
+.doc-row { display:flex; justify-content:space-between; gap:10px; align-items:center; border-top:1px solid var(--border); padding:10px 0; flex-wrap:wrap; }
+.doc-row:first-of-type { border-top:0; }
+.mood-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; margin-top:12px; }
+.mood-item { border:1px solid var(--border); border-radius:10px; padding:8px; background:var(--white); font-size:0.82rem; }
+.mood-item img, .mood-item video { width:100%; border-radius:6px; display:block; background:#000; aspect-ratio:9/12; object-fit:cover; }
+.mood-drop { border:2px dashed var(--border); border-radius:10px; padding:16px; text-align:center; color:var(--sub); }
+.mood-drop.over { border-color:var(--gold); color:var(--ink); }
+.lib-row { display:flex; align-items:center; gap:10px; border-top:1px solid var(--border); padding:7px 0; flex-wrap:wrap; }
+.lib-row .nm { flex:1; min-width:160px; }
+.lib-row button.on { background:var(--ink); color:var(--white); }
+</style>
 <style>
 /* Content Ideas: two columns, drag a card across to send it */
 .board { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
@@ -22,6 +42,18 @@
 .idea-hook { font-size:0.86rem; margin-top:6px; line-height:1.45; }
 .idea-acts { margin-top:10px; }
 @media (max-width:760px) { .board { grid-template-columns:1fr; } }
+/* Fully AI Social: the AI team as a night-sky graph, its picked member, then the team room */
+.agent-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
+.agent-card { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:6px; }
+.agent-card.stuck { border-color:var(--red); }
+.agent-card.needs { border-color:var(--gold); }
+.agent-card h3 { margin:0; font-size:0.98rem; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.agent-state { font-size:0.7rem; letter-spacing:.06em; text-transform:uppercase; padding:2px 8px; border-radius:99px; border:1px solid var(--border); color:var(--sub); }
+.agent-state.working { color:#1a7f4b; border-color:#1a7f4b; }
+.agent-state.stuck { color:var(--red); border-color:var(--red); }
+.agent-state.paused { color:var(--gold); border-color:var(--gold); }
+.agent-card .what { font-size:0.88rem; }
+.agent-card .line { font-size:0.8rem; color:var(--sub); }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
@@ -36,11 +68,14 @@
   <div class="brand"><img src="/assets/logo-white.png" alt="Fully Launched"></div>
   <div class="sync-badge" id="authUserBadge"></div>
   <div class="nav-group">Workspace</div>
-  <div class="nav-item active" data-view="todo" data-label="To Do">To Do<span class="n" id="navTodoN" hidden></span></div>
-  <div class="nav-item" data-view="calendar" data-label="Content Calendar">Content Calendar</div>
+  <div class="nav-item active" data-view="desk" data-label="My desk">My desk<span class="n" id="navDeskN" hidden></span></div>
   <div class="nav-item" data-view="ideabank" data-label="Content Ideas">Content Ideas<span class="n" id="navBankN" hidden></span></div>
   <div class="nav-item" data-view="clients" data-label="Clients">Clients<span class="n" id="navClientsN" hidden></span></div>
+  <div class="nav-item" data-view="todo" data-label="To Do">To Do<span class="n" id="navTodoN" hidden></span></div>
+  <div class="nav-item" data-view="calendar" data-label="Content Calendar">Content Calendar</div>
+  <div class="nav-item" data-view="library" data-label="Library">Library</div>
   <div class="nav-item" data-view="editors" data-label="Editors">Editors</div>
+  <div class="nav-item" data-view="aiteam" data-label="Agent room">Agent room<span class="n" id="navAgentN" hidden></span></div>
   <a class="nav-item" href="/editor/dashboard.html" target="_blank" rel="noopener" style="text-decoration:none">Editor portal ↗</a>
 </nav>
 
@@ -53,7 +88,35 @@
   <div id="globalClientBanner"></div>
   <div id="loadError"></div>
 
-  <section class="view active" id="view-todo">
+  <section class="view active" id="view-desk">
+    <div class="page-head">
+      <div><h1>My desk</h1><p>Everything waiting on you, and nothing else. Approve it, or send it back with a note.</p></div>
+    </div>
+    <div id="deskNotice"></div>
+    <div class="desk-tiles" id="deskTiles"></div>
+    <div class="card" data-queue="ideas"><h2>Ideas to review <span class="meta">Monthly plans: approve or reject each idea.</span></h2><div id="deskIdeas"></div></div>
+    <div class="card" data-queue="scripts"><h2>Scripts to review <span class="meta">Approve and the client sees the whole card.</span></h2><div id="deskScripts"></div></div>
+    <div class="card" data-queue="docs"><h2>Documents to review <span class="meta">Operator-only, except approved brand guidelines.</span></h2><div id="deskDocs"></div></div>
+    <div class="card" data-queue="videos"><h2>Videos to review</h2><div id="deskVideos"></div></div>
+    <div class="card" data-queue="post"><h2>Videos to post</h2><div id="deskPost"></div></div>
+  </section>
+
+  <section class="view" id="view-client">
+    <div class="page-head">
+      <div><h1 id="cpTitle">Client</h1><p id="cpSub"></p></div>
+      <div class="page-actions"><button onclick="document.querySelector('.nav-item[data-view=clients]').click()">All clients</button><a class="btn accent" id="cpPortal" target="_blank" rel="noopener">Open their portal ↗</a></div>
+    </div>
+    <div class="client-tabs" id="cpTabs"></div>
+    <div id="cpBody"></div>
+  </section>
+
+  <section class="view" id="view-library">
+    <div class="page-head"><div><h1>Library</h1><p>Music and sound effects every client shares, and the house moodboard. Mark favourites and anything never to use: the editor follows it.</p></div></div>
+    <div class="client-tabs" id="libTabs"></div>
+    <div id="libBody"></div>
+  </section>
+
+  <section class="view" id="view-todo">
     <div class="page-head">
       <div><h1>To Do<span class="hot-tag" id="todoHot" hidden></span></h1><p>Every video, by the stage it's in. Pick a stage, or All. Click any video to see its whole card.</p></div>
       <div class="page-actions">
@@ -63,6 +126,7 @@
     </div>
     <div class="chip-row" id="todoTabs"></div>
     <div class="card" data-stage="urgent"><h2>Time sensitive <span style="font-weight:400;color:var(--sub);font-size:0.78rem">What you need to do that's overdue or due in the next 3 days, soonest first.</span></h2><div id="urgentList"></div></div>
+    <div class="card" data-stage="scripting"><h2>Scripting <span style="font-weight:400;color:var(--sub);font-size:0.78rem">The Writer is on it, or it's in your Scripts to review on My desk. The client can't see these yet.</span></h2><div id="scriptingList"></div></div>
     <div class="card" data-stage="sentBack"><h2>Sent back with suggestions <span style="font-weight:400;color:var(--sub);font-size:0.78rem">Edit them, then send them to the client again.</span></h2><div id="sendAllWrap"></div><div id="ideasList"></div></div>
     <div class="card" data-stage="client"><h2>Waiting on the client <span style="font-weight:400;color:var(--sub);font-size:0.78rem">Ideas to approve, videos to film, finished videos to approve.</span></h2><div id="clientWaitingList"></div></div>
     <div class="card" data-stage="toEditor"><h2>Ready for an editor <span style="font-weight:400;color:var(--sub);font-size:0.78rem">Footage the client uploaded, and videos you film.</span></h2><div id="toEditorList"></div></div>
@@ -86,11 +150,16 @@
 
   <section class="view" id="view-ideabank">
     <div class="page-head">
-      <div><h1>Content Ideas</h1><p>Each idea with the format it's paired with. Click a card to edit its hook, script, outline and the rest. Drag it to Sent to client to send it; drag it back to take it off their portal.</p></div>
+      <div><h1>Content Ideas</h1><p>Every idea for every client: yours (from here or Telegram), the research team's, and Sandcastles finds. On the 10th the team builds next month's plan of 20 from here.</p></div>
       <div class="page-actions">
-        <button class="accent" onclick="openBulkAdd(null, true)">Add ideas with Claude</button>
+        <button class="accent" onclick="openIdeaForm(null)">+ Add idea</button>
+        <button onclick="askForPlan()">Ask the team for next month's plan</button>
       </div>
     </div>
+    <div class="client-tabs" id="ideaTabs"></div>
+    <div id="ideaDb"></div>
+    <div id="oldBoardHead" class="page-head" style="display:none"><div><p>Cards made before the idea database: drag one to Sent to client to send it, or back to take it off their portal.</p></div>
+      <div class="page-actions"><button class="accent" onclick="openBulkAdd(null, true)">Add ideas with Claude</button></div></div>
     <div class="board" id="ideaBoard">
       <div class="board-col" data-col="bank"><div class="board-head"><b>Ideas</b> <span class="c" id="bankColN"></span><small>The client can't see these.</small></div><div class="board-list" id="bankList"></div></div>
       <div class="board-col" data-col="sent"><div class="board-head"><b>Sent to client</b> <span class="c" id="sentColN"></span><small>In their portal, waiting to be filmed.</small></div><div class="board-list" id="sentList"></div></div>
@@ -110,6 +179,15 @@
       <div class="auth-error" id="edErr"></div>
     </div>
     <div class="card"><div id="editorsList"></div></div>
+  </section>
+
+  <section class="view" id="view-aiteam">
+    <div class="page-head">
+      <div><h1>Agent room</h1><p>Your AI team, live from Paperclip on your Mac: what each one is doing, what it's stuck on, and what it needs from you.</p></div>
+      <div class="page-actions"><span class="meta" id="agentUpdated"></span></div>
+    </div>
+    <div id="agentNotice"></div>
+    <div class="agent-grid" id="agentGrid"></div>
   </section>
 
   <section class="view" id="view-clients">
@@ -206,6 +284,9 @@ async function loadLiveData() {
   });
   if (globalClientFilter !== "all" && !CLIENT_BY_ID[globalClientFilter]) globalClientFilter = "all";
   await loadFixCounts();
+  await loadAgents();
+  await loadDeskData();
+  await loadStyleData();
   renderAll();
 }
 // For videos with an editor or at Edit review: how many of the comments
@@ -291,7 +372,12 @@ async function sendToEditor(id, btn) {
   const sel = btn.parentElement.querySelector("select");
   const editorId = sel ? sel.value : "";
   if (!editorId) { alert("Pick an editor first."); return; }
-  await updateVideo(id, { editorId, status: "with_editor" });
+  const x = findVideo(id), eb = Object.assign({}, x ? x.video.editorBrief : {});
+  // (Unify Phase 7) The AI Editor (Content Editor in Paperclip): the bridge
+  // on Tait's Mac picks it up. A human editor: the editor's page, as before.
+  if (editorId === "ai") { eb.aiEditor = true; delete eb.humanEditor; await updateVideo(id, { editorId: null, status: "with_editor", editorBrief: eb }); return; }
+  delete eb.aiEditor; eb.humanEditor = true;
+  await updateVideo(id, { editorId, status: "with_editor", editorBrief: eb });
 }
 // Edit review, Frame.io style (openReviewPlayer in shell.js; the video
 // streams from Drive). Tait leaves notes pinned to moments and sends them
@@ -346,8 +432,9 @@ function approveEdit(id) {
   const box = openModal(`
     <h2>${toPost ? "Approve for posting" : "Approve edit — add captions"}</h2>
     <div class="meta" style="margin-bottom:12px">${escapeHtml(x.client.name)} · ${escapeHtml(v.title || "")}. ${toPost ? `They've used both rounds of changes, so this goes straight to <b>Ready to post</b>. Check the captions.` : "The client sees these when they approve it for posting."}</div>
-    ${textField("onScreenCaption", "On-screen caption (text shown on the video)", v.onScreenCaption, 2)}
-    ${textField("caption", "Caption (the post caption)", v.caption, 5)}
+    ${(v.editorBrief || {}).captionDraft && !v.caption ? `<div class="meta" style="margin-bottom:8px">Drafted by the Content Poster. Change anything.${v.editorBrief.captionDraft.cover ? ` Cover idea: ${escapeHtml(v.editorBrief.captionDraft.cover)}` : ""}</div>` : ""}
+    ${textField("onScreenCaption", "On-screen caption (text shown on the video)", v.onScreenCaption || ((v.editorBrief || {}).captionDraft || {}).onScreenCaption, 2)}
+    ${textField("caption", "Caption (the post caption)", v.caption || ((v.editorBrief || {}).captionDraft || {}).caption, 5)}
     ${textField("platform", "Platforms (comma-separated)", (v.platform || []).join(", "))}
     ${dateField("postDate", "Post date", v.postDate)}
     <div class="auth-error" id="aeError"></div>
@@ -553,7 +640,7 @@ function vrowHtml(x, actionsHtml) {
     : filmedByX(x) === "us" && v.status === "to_film" ? "No filming" : "";
   return `<div class="row vrow" data-id="${v.id}">
     <div><b class="video-card title" onclick="openOperatorVideoModal('${v.id}')">${escapeHtml(v.title || "(untitled)")}</b>
-      <div class="sub">${escapeHtml(x.client.name)}${v.assignedEditor && v.status === "with_editor" ? " · Editor: " + escapeHtml(v.assignedEditor) : ""}</div></div>
+      <div class="sub">${escapeHtml(x.client.name)}${v.assignedEditor && v.status === "with_editor" ? " · Editor: " + escapeHtml(v.assignedEditor) : v.status === "with_editor" && (v.editorBrief || {}).aiEditor ? " · AI editor" : ""}${(v.editorBrief || {}).waitingOn && v.status === "ready_to_edit" ? ` · <span style="color:var(--gold)">Waiting on their ${escapeHtml(v.editorBrief.waitingOn)}</span>` : ""}</div></div>
     <div class="when">${v.postDate ? escapeHtml(niceDate(v.postDate)) : "Not set"}${extra ? `<small>${escapeHtml(extra)}</small>` : ""}</div>
     <div>${platformPills(v.platform)}</div>
     <div>${statusDot(v.status, STATUS_LABEL, !!timeSensitive(x))}</div>
@@ -584,10 +671,10 @@ function smallBtn(label, onclick, cls) {
   return `<button class="${cls || ""}" style="font-size:0.78rem;padding:5px 10px" onclick="${onclick}">${escapeHtml(label)}</button>`;
 }
 function editorSelect(selected) {
-  if (!EDITORS.length) return `<span class="meta">No editors set up yet. Invite one on the Editors page.</span>`;
+  if (!EDITORS.length) return `<select style="font-size:0.82rem;padding:5px 6px"><option value="">Pick editor…</option><option value="ai">AI editor</option></select>`;
   const opts = EDITORS.filter(e => e.active || e.id === selected)
     .map(e => `<option value="${e.id}" ${e.id === selected ? "selected" : ""}>${escapeHtml(e.name)}</option>`).join("");
-  return `<select style="font-size:0.82rem;padding:5px 6px"><option value="">Pick editor…</option>${opts}</select>`;
+  return `<select style="font-size:0.82rem;padding:5px 6px"><option value="">Pick editor…</option><option value="ai">AI editor</option>${opts}</select>`;
 }
 // "We film" videos the client has approved: Tait films them (or already
 // has the footage) and sends them to the editor.
@@ -703,6 +790,7 @@ function openVideoForm(id, presetClientId) {
     ${textField("hook", "Hook", v.hook, 2)}
     ${textField("body", "Script", v.body, 8)}
     ${textField("outline", "Outline (bullet points of what to cover, in order)", v.outline, 6)}
+    ${textField("cameraQuestions", "Questions for whoever's filming (or to answer on camera)", v.cameraQuestions, 4)}
     ${textField("filmingDirection", "How to film it", v.filmingDirection, 3)}
     ${textField("onScreenCaption", "On-screen caption", v.onScreenCaption, 2)}
     ${textField("caption", "Caption", v.caption, 3)}
@@ -929,6 +1017,7 @@ function unsentIdeas() {
 const TODO_STAGES = [
   // Its own tab, kept out of All (everything in it is also in a stage below).
   { key: "urgent",     label: "Time sensitive",           match: x => !!timeSensitive(x), apart: true },
+  { key: "scripting",  label: "Scripting",                  match: x => ["scripting", "script_review"].includes(x.video.status) },
   { key: "sentBack",   label: "Sent back with suggestions", match: x => x.video.status === "concept_pending" && !x.video.conceptApprovedAt },
   { key: "client",     label: "Waiting on client",          match: x => isWaitingOnClient(x) },
   { key: "toEditor",   label: "Ready for an editor",        match: x => isReadyForEditor(x) },
@@ -946,6 +1035,7 @@ let todoStage = "all";
 const TIME_SENSITIVE_DAYS = 3;
 function nextTask(x) {
   const v = x.video, approveBy = (calendarEntries(x).find(e => e.kind === "approve") || {}).date;
+  if (v.status === "script_review") return { task: "Review the script", date: (v.editorBrief || {}).scriptDue || v.dueToFilm };
   if (v.status === "concept_pending" && !v.conceptApprovedAt) return { task: "Rework the idea and send it back", date: v.dueToFilm || v.postDate };
   if (isOperatorFilmed(x) && v.status === "to_film" && v.dueToFilm) return { task: "Film it", date: v.dueToFilm };
   if (isReadyForEditor(x)) return { task: "Send it to an editor", date: v.dueToEdit };
@@ -991,6 +1081,7 @@ function renderTodo() {
   const unsent = inStage("sentBack");
   document.getElementById("sendAllWrap").innerHTML = unsent.length > 1
     ? `<div style="margin-bottom:10px">${smallBtn(`Send all ${unsent.length} to the client`, "sendAllToClient(this)", "primary")}</div>` : "";
+  listOrEmpty("scriptingList", inStage("scripting"), x => x.video.status === "script_review" ? smallBtn("Approve script", `approveScript('${x.video.id}')`, "primary") : "", "Nothing being scripted.");
   listOrEmpty("ideasList", unsent, x => smallBtn("Edit", `openVideoForm('${x.video.id}')`) + operatorActionsHtml(x), "Nothing sent back.");
   listOrEmpty("clientWaitingList", inStage("client"), x => operatorActionsHtml(x), "Nothing waiting on a client.");
   listOrEmpty("toEditorList", inStage("toEditor"), x => operatorActionsHtml(x), "Nothing waiting for an editor.");
@@ -1052,14 +1143,14 @@ function renderAllClients() {
     const count = VIDEOS.filter(x => x.client.id === c.id && x.video.status !== "rejected" && !inIdeaBank(x)).length;
     const banked = VIDEOS.filter(x => x.client.id === c.id && inIdeaBank(x)).length;
     const toReview = VIDEOS.filter(x => x.client.id === c.id && x.video.status === "client_review").length;
-    return `<div class="row"><div class="left"><b>${escapeHtml(c.name)}</b>
+    return `<div class="row"><div class="left"><b class="video-card" style="display:inline-block" onclick="openClientPage('${c.id}')">${escapeHtml(c.name)}</b>
       <div class="meta">/clients/${escapeHtml(c.slug)} · ${escapeHtml(WHO_FILMS[c.clientSystem] || c.clientSystem)} · ${count} video(s)${banked ? ` · ${banked} in Content Ideas` : ""}</div>
       ${missing.length ? `<div class="meta" style="color:var(--red)">Missing: ${missing.join(", ")}</div>` : ""}
       <div class="meta">${c.contactName || c.contactEmail || c.contactPhone
         ? "Contact: " + [c.contactName, c.contactEmail, c.contactPhone].filter(Boolean).map(escapeHtml).join(" · ")
         : `<span style="color:var(--red)">No contact yet</span>`}</div>
       ${(() => { const s = onboardingSummary(c.onboarding, c.clientSystem !== "concierge"); return `<div class="meta" style="${s.failed ? "color:var(--red)" : ""}">Onboarding: ${escapeHtml(s.label)}</div>`; })()}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn primary" style="font-size:0.75rem;padding:4px 9px" href="/clients/${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Open portal</a>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="primary" style="font-size:0.75rem;padding:4px 9px" onclick="openClientPage('${c.id}')">Open</button><a class="btn" style="font-size:0.75rem;padding:4px 9px" href="/clients/${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Open portal</a>
       <button style="font-size:0.75rem;padding:4px 9px" onclick="openOnboarding('${c.id}')">Onboarding</button>
       ${INVITES_ENABLED ? `<button style="font-size:0.75rem;padding:4px 9px" onclick="inviteClient('${c.id}', this)">${c.onboarding && c.onboarding.invited_at ? "Resend invite" : "Invite to portal"}</button>` : ""}
       ${toReview ? `<button style="font-size:0.75rem;padding:4px 9px" onclick="notifyReview('${c.id}', ${toReview}, this)">Email: ${toReview} to review</button>` : ""}
@@ -1319,16 +1410,21 @@ document.getElementById("edSend").onclick = async e => {
 async function openOnboarding(clientId) {
   const c = CLIENT_BY_ID[clientId];
   if (!c) return;
-  const [{ data: o }, { data: docs }] = await Promise.all([
+  const [{ data: o }, { data: docs }, recRes] = await Promise.all([
     sbClient.from("social_client_onboarding").select("*").eq("client_id", clientId).maybeSingle(),
     sbClient.from("social_client_generated_docs").select("*").eq("client_id", clientId).order("kind"),
+    sbClient.from("social_onboarding_recordings").select("*").eq("client_id", clientId).order("created_at"),
   ]);
   const ob = o || {};
+  // Recordings and the team's automatic transcripts (migration 027). Before
+  // 027: the old paste-and-build flow.
+  const HAS_027 = !recRes.error, RECS = recRes.data || [];
   const s = onboardingSummary(o, c.clientSystem !== "concierge");
   // What they uploaded (migration 010's 'onboarding' bucket), as links that
   // work for a day.
   const brandFiles = ((ob.brand || {}).uploads || []), footageFiles = ((ob.footage || {}).files || []);
-  const paths = brandFiles.concat(footageFiles).map(f => f.path).concat(ob.voice_memo_path ? [ob.voice_memo_path] : []);
+  const paths = brandFiles.concat(footageFiles).map(f => f.path).concat(ob.voice_memo_path ? [ob.voice_memo_path] : [])
+    .concat(RECS.filter(r => r.kind === "call" && !r.storage_path.includes("/pasted/")).map(r => r.storage_path));
   const SIGNED = {};
   if (paths.length) {
     const { data: signed } = await sbClient.storage.from("onboarding").createSignedUrls(paths, 86400);
@@ -1352,17 +1448,24 @@ async function openOnboarding(clientId) {
       <summary style="cursor:pointer"><b style="display:inline">Their voice memo questions</b> <span class="meta">· ${ownQs ? "their own list" : "the standard list"}, ${myQs.reduce((n, sec) => n + sec.items.length, 0)} questions</span></summary>
       <div class="meta" style="margin:8px 0 6px;line-height:1.5">What they see on their Questions page. Paste the list Claude made for them (the <code>voice-memo-questions</code> skill), or edit it here: <b>## </b> starts a section, <b>Note:</b> under it adds a line, <b>- </b> starts a question, and <b>- [story] </b> marks a story prompt (they name the story on the memo and tell it on camera).</div>
       <textarea id="obQText" rows="14" style="width:100%;font-size:0.85rem">${escapeHtml(questionsToText(myQs))}</textarea>
-      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button id="obQSave">Save their questions</button>${ownQs ? `<button id="obQReset">Go back to the standard questions</button>` : ""}<span class="meta" id="obQMsg" style="align-self:center"></span></div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button id="obQSave">Save their questions</button><button id="obQCopy">Copy to send</button>${ownQs ? `<button id="obQReset">Go back to the standard questions</button>` : ""}<span class="meta" id="obQMsg" style="align-self:center"></span></div>
     </details>
+    ${HAS_027 ? `<div class="modal-field"><b>Recordings</b>
+      <div class="meta" style="margin-bottom:6px">Their voice memo and any call you record. The team transcribes each one on your Mac and then builds their documents, which land on My desk.</div>
+      ${RECS.map(r => `<div class="doc-row"><div>${r.kind === "call" ? "Call" : "Voice memo"}: ${SIGNED[r.storage_path] ? `<a href="${escapeHtml(SIGNED[r.storage_path])}" target="_blank" rel="noopener">${escapeHtml(r.name)}</a>` : escapeHtml(r.name)}
+        <div class="meta">${escapeHtml(niceDate(String(r.created_at).slice(0, 10)))}${r.transcript_error ? " · " + escapeHtml(r.transcript_error) : ""}</div></div>
+        ${statusBadge(r.transcript_status, { waiting: "Waiting to transcribe", transcribing: "Transcribing", done: "Transcribed", failed: "Transcription failed" })}</div>`).join("") || '<div class="empty">No recordings yet.</div>'}
+      <label class="btn" style="margin-top:8px">Upload a call recording<input type="file" id="obCall" accept="audio/*,video/*" hidden></label> <span class="meta" id="obCallMsg"></span>
+    </div>` : ""}
     <div class="modal-field">
-      <b>Voice memo transcript</b>
-      <div class="meta" style="margin-bottom:6px">${ob.voice_memo_path ? "Their voice memo is above: download it and get the transcript. " : ob.voice_memo_sent_at ? "They say they've texted you their voice memo. " : ""}Paste the whole transcript here, then build their Customer Data and Your Voice documents.</div>
+      <b>${HAS_027 ? "Transcript" : "Voice memo transcript"}</b>
+      <div class="meta" style="margin-bottom:6px">${HAS_027 ? "Every transcript lands here on its own. Got one some other way? Paste it and the team builds their documents from it." : `${ob.voice_memo_path ? "Their voice memo is above: download it and get the transcript. " : ob.voice_memo_sent_at ? "They say they've texted you their voice memo. " : ""}Paste the whole transcript here, then build their Customer Data and Your Voice documents.`}</div>
       <textarea id="obTranscript" rows="8" style="width:100%" placeholder="Paste the transcript…">${escapeHtml(ob.transcript || "")}</textarea>
     </div>
     ${ob.docs_error ? `<div class="modal-field"><b>Last build failed</b><div style="color:var(--red)">${escapeHtml(ob.docs_error)}</div></div>` : ""}
     ${(docs || []).map(d => `<details class="modal-field"><summary style="cursor:pointer"><b style="display:inline">${escapeHtml(d.title)}</b></summary><div class="doc-body" style="margin-top:8px">${docBodyHtml(d)}</div></details>`).join("")}
     <div class="modal-actions">
-      <button class="primary" id="obBuild">${built ? "Save and rebuild documents" : "Save and build documents"}</button>
+      <button class="primary" id="obBuild">${HAS_027 ? "Save and ask the team to build documents" : built ? "Save and rebuild documents" : "Save and build documents"}</button>
       <a class="btn" href="/welcome?client=${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Preview their onboarding</a>
       <button onclick="closeVideoModal()">Close</button>
     </div>
@@ -1383,11 +1486,40 @@ async function openOnboarding(clientId) {
   };
   const reset = box.querySelector("#obQReset");
   if (reset) reset.onclick = () => saveQs(null);
+  box.querySelector("#obQCopy").onclick = async () => {
+    const text = questionsToText(questionsFromText(box.querySelector("#obQText").value)).replace(/^## /gm, "").replace(/^Note: /gm, "").replace(/^- \[story\] /gm, "- (Story: just name it) ");
+    try { await navigator.clipboard.writeText(text); box.querySelector("#obQMsg").textContent = "Copied. Paste it in a text or email to them."; }
+    catch (e) { box.querySelector("#obQMsg").textContent = "Couldn't copy: select the text above and copy it."; }
+  };
+  const call = box.querySelector("#obCall");
+  if (call) call.onchange = async e => {
+    const f = e.target.files && e.target.files[0], msg = box.querySelector("#obCallMsg");
+    if (!f) return;
+    try {
+      const path = await uploadToBucket("onboarding", `${clientId}/calls/${Date.now()}-${f.name.replace(/[^\w.\-]+/g, "_")}`, f, pct => { msg.textContent = `Uploading… ${pct}%`; });
+      const { error } = await sbClient.from("social_onboarding_recordings").insert({ client_id: clientId, kind: "call", name: f.name, storage_path: path, uploaded_by_role: "operator" });
+      if (error) throw error;
+      await openOnboarding(clientId);
+    } catch (err) { msg.textContent = "That didn't upload: " + (err.message || err); }
+  };
   const btn = box.querySelector("#obBuild");
   btn.onclick = async () => {
     const err = box.querySelector("#obErr"); err.textContent = "";
     const transcript = box.querySelector("#obTranscript").value.trim();
     if (transcript.length < 200) { err.textContent = transcript ? "That's too short to build documents from. Paste the whole transcript." : "Paste the transcript first."; return; }
+    if (HAS_027) {
+      // The team builds the documents: the bridge on Tait's Mac sees a new
+      // transcript and asks the Account Manager (bridge/bridge.py).
+      const old = (ob.transcript || "").trim();
+      const added = transcript.startsWith(old) ? transcript.slice(old.length).trim() : transcript;
+      btn.disabled = true;
+      const up = await sbClient.from("social_client_onboarding").upsert({ client_id: clientId, transcript }, { onConflict: "client_id" });
+      const rec = added ? await sbClient.from("social_onboarding_recordings").insert({ client_id: clientId, kind: "call", name: "Pasted transcript", storage_path: `${clientId}/pasted/${Date.now()}`, uploaded_by_role: "operator", transcript: added, transcript_status: "done", transcribed_at: new Date().toISOString() }) : {};
+      if (up.error || rec.error) { err.textContent = (up.error || rec.error).message; btn.disabled = false; return; }
+      await loadLiveData();
+      openOnboarding(clientId);
+      return;
+    }
     btn.disabled = true; btn.textContent = "Building… (a minute or two)";
     const { data } = await sbClient.auth.getSession();
     let out = {};
@@ -1402,16 +1534,594 @@ async function openOnboarding(clientId) {
   };
 }
 
+// ---------- Agent room (Unify the System, Phase 8; migrations 026 + 031) ----------
+// social_agent_status, filled from Paperclip by the bridge on Tait's Mac.
+// Try again / Pause / Resume go through social_agent_requests, which the
+// bridge carries out. Each agent's job line comes from team/team.json
+// (baked in by build.py, no client data).
+const AI_TEAM = /*__AI_TEAM__*/null;
+let AGENTS = [], AGENT_REQS = [], HAS_031 = true;
+async function loadAgents() {
+  const [a, r] = await Promise.all([
+    sbClient.from("social_agent_status").select("*").order("agent"),
+    sbClient.from("social_agent_requests").select("*").is("done_at", null),
+  ]);
+  HAS_031 = !r.error;
+  AGENTS = a.error ? [] : (a.data || []); AGENT_REQS = r.error ? [] : (r.data || []);
+}
+const agentJob = name => ((AI_TEAM && AI_TEAM.employees) || []).find(e => e.name === name)?.job || "";
+function agoText(iso) {
+  if (!iso) return "never";
+  const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
+}
+function renderAgentRoom() {
+  const grid = document.getElementById("agentGrid");
+  const newest = AGENTS.map(a => a.updated_at).sort().pop();
+  const stale = !newest || Date.now() - new Date(newest).getTime() > 10 * 60000;
+  document.getElementById("agentUpdated").textContent = newest ? "Updated " + agoText(newest) : "";
+  document.getElementById("agentNotice").innerHTML = !HAS_031 ? `<div class="card" style="border-color:var(--gold)"><b>The Agent room needs migration 031.</b><div class="meta">Run supabase/migrations/031_agent_room.sql in the Supabase SQL Editor.</div></div>`
+    : stale ? `<div class="card" style="border-color:var(--gold)"><b>${AGENTS.length ? "This is out of date." : "Nothing here yet."}</b><div class="meta">The bridge on your Mac fills this in. Start it with <code>bridge/start.sh</code> (it also starts Paperclip).</div></div>` : "";
+  const rank = a => a.status === "stuck" ? 0 : a.needs_from_tait ? 1 : a.status === "working" ? 2 : a.paused ? 4 : 3;
+  const list = AGENTS.slice().sort((x, y) => rank(x) - rank(y) || x.agent.localeCompare(y.agent));
+  const nav = document.getElementById("navAgentN"), stuckN = AGENTS.filter(a => a.status === "stuck" || a.needs_from_tait).length;
+  nav.hidden = !stuckN; nav.textContent = stuckN;
+  grid.innerHTML = list.map(a => {
+    const state = a.paused ? "paused" : a.status, pending = AGENT_REQS.filter(r => r.agent === a.agent);
+    const client = a.client_id && CLIENT_BY_ID[a.client_id] ? CLIENT_BY_ID[a.client_id].name + " · " : "";
+    return `<div class="agent-card${a.status === "stuck" ? " stuck" : a.needs_from_tait ? " needs" : ""}" data-agent="${escapeHtml(a.agent)}">
+      <h3>${escapeHtml(a.agent)} <span class="agent-state ${state}">${escapeHtml(state === "working" ? "Working" : state === "stuck" ? "Stuck" : state === "paused" ? "Paused" : "Idle")}</span></h3>
+      ${agentJob(a.agent) ? `<div class="meta">${escapeHtml(agentJob(a.agent))}</div>` : ""}
+      ${a.working_on ? `<div class="what"><b>Now:</b> ${escapeHtml(client + a.working_on)}${a.paperclip_task ? ` <span class="meta">(${escapeHtml(a.paperclip_task)})</span>` : ""}</div>` : ""}
+      ${a.stuck_on ? `<div class="what" style="color:var(--red)"><b>Stuck:</b> ${escapeHtml(a.stuck_on)}</div>` : ""}
+      ${a.needs_from_tait ? `<div class="what" style="color:var(--gold)"><b>Needs you:</b> ${escapeHtml(a.needs_from_tait)}</div>` : ""}
+      ${a.last_line ? `<div class="line">“${escapeHtml(a.last_line)}”</div>` : ""}
+      <div class="meta">Last ran ${escapeHtml(agoText(a.last_run_at))}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+        ${pending.length ? `<span class="meta">Asked: ${pending.map(r => r.action === "retry" ? "try again" : r.action).join(", ")}. The bridge does it on its next check.</span>`
+          : `${a.status === "stuck" ? smallBtn("Try again", `agentRequest('${escapeHtml(a.agent)}','retry')`, "primary") : ""}${a.paused ? smallBtn("Resume", `agentRequest('${escapeHtml(a.agent)}','resume')`) : smallBtn("Pause", `agentRequest('${escapeHtml(a.agent)}','pause')`)}`}
+      </div></div>`;
+  }).join("") || "";
+}
+async function agentRequest(agent, action) {
+  if (action === "pause" && !confirm(`Pause ${agent}? It won't take new work until you resume it.`)) return;
+  const { error } = await sbClient.from("social_agent_requests").insert({ agent, action });
+  if (error) { alert("Couldn't ask: " + error.message); return; }
+  await loadAgents(); renderAgentRoom();
+}
+
 // A click anywhere on a video's row opens its card, except on its own controls.
 document.getElementById("view-todo").addEventListener("click", e => {
   const row = e.target.closest(".vrow[data-id]");
   if (!row || e.target.closest("button, a, select, input, textarea, .video-card")) return;
   openOperatorVideoModal(row.dataset.id);
 });
+// ---------- Content Idea Database (Unify the System, Phase 5; migrations 026, 029) ----------
+// social_ideas: Tait's ideas (here or by Telegram), research finds, Sandcastles
+// links. The monthly plan (bridge.py, on the 10th) picks 20 for next month.
+let IDEA_VIEW = { tab: "db", status: "open", source: "", q: "" };
+const IDEA_STATUS = { new: "New", in_plan: "In a plan", approved: "Approved", rejected: "Rejected", used: "On a card" };
+const IDEA_SOURCE = { tait: "You", phone: "Telegram", research: "Research", sandcastles: "Sandcastles", client: "Client" };
+async function renderIdeaDb() {
+  const tabs = [["db", "Idea database"], ["cards", "Unsent cards"]];
+  document.getElementById("ideaTabs").innerHTML = tabs.map(([k, l]) => `<div class="chip ${k === IDEA_VIEW.tab ? "active" : ""}" data-it="${k}">${l}</div>`).join("");
+  document.querySelectorAll("#ideaTabs .chip").forEach(el => el.onclick = () => { IDEA_VIEW.tab = el.dataset.it; renderIdeaDb(); });
+  const db = document.getElementById("ideaDb"), cards = IDEA_VIEW.tab === "cards";
+  document.getElementById("ideaBoard").style.display = cards ? "" : "none";
+  document.getElementById("oldBoardHead").style.display = cards ? "" : "none";
+  db.style.display = cards ? "none" : "";
+  if (cards) return;
+  if (!HAS_026) { db.innerHTML = `<div class="card"><div class="meta">Run migration 026 to turn on the idea database.</div></div>`; return; }
+  const mine = IDEAS.filter(i => inClientFilter(i.client_id) && CLIENT_BY_ID[i.client_id]);
+  const shown = mine.filter(i => (IDEA_VIEW.status === "open" ? ["new", "in_plan", "approved"].includes(i.status) : !IDEA_VIEW.status || i.status === IDEA_VIEW.status)
+    && (!IDEA_VIEW.source || i.source === IDEA_VIEW.source)
+    && (!IDEA_VIEW.q || (i.title + " " + (i.body || "")).toLowerCase().includes(IDEA_VIEW.q.toLowerCase())))
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const files = shown.flatMap(i => (i.attachments || []).map(a => a.path));
+  const signed = {};
+  if (files.length) {
+    const { data } = await sbClient.storage.from("ideas").createSignedUrls(files, 3600);
+    (data || []).forEach(x => { if (x && x.signedUrl) signed[x.path] = x.signedUrl; });
+  }
+  const count = s => mine.filter(i => s === "open" ? ["new", "in_plan", "approved"].includes(i.status) : i.status === s).length;
+  db.innerHTML = `<div class="card">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+      <select id="ideaStatus">${[["open", "Open"], ["new", "New"], ["in_plan", "In a plan"], ["approved", "Approved"], ["used", "On a card"], ["rejected", "Rejected"], ["", "All"]].map(([k, l]) => `<option value="${k}" ${k === IDEA_VIEW.status ? "selected" : ""}>${l} (${k ? count(k) : mine.length})</option>`).join("")}</select>
+      <select id="ideaSource"><option value="">Every source</option>${Object.entries(IDEA_SOURCE).map(([k, l]) => `<option value="${k}" ${k === IDEA_VIEW.source ? "selected" : ""}>${l}</option>`).join("")}</select>
+      <input type="search" id="ideaQ" placeholder="Search" value="${escapeHtml(IDEA_VIEW.q)}">
+    </div>
+    ${shown.map(i => `<div class="doc-row" data-idea="${i.id}" style="align-items:flex-start">
+      <div style="flex:1;min-width:220px"><b>${escapeHtml(i.title)}</b> ${i.score ? `<span class="badge">${i.score}/10</span>` : ""}
+        <div class="meta">${[globalClientFilter === "all" && CLIENT_BY_ID[i.client_id].name, IDEA_SOURCE[i.source] + (i.source_detail ? " · " + i.source_detail : ""), i.format && "Format: " + i.format,
+          i.requested_post_date && "Post on " + niceDate(i.requested_post_date), i.planned_post_date && "Planned " + niceDate(i.planned_post_date)].filter(Boolean).map(escapeHtml).join(" · ")}</div>
+        ${i.body ? `<div class="brief">${escapeHtml(i.body).replace(/\n/g, "<br>")}</div>` : ""}
+        ${i.why ? `<div class="meta">Why: ${escapeHtml(i.why)}</div>` : ""}
+        ${(i.links || []).map(l => `<div class="meta"><a href="${escapeHtml(l)}" target="_blank" rel="noopener">${escapeHtml(l)}</a></div>`).join("")}
+        ${(i.attachments || []).map(a => signed[a.path] ? (a.kind === "image" ? `<a href="${escapeHtml(signed[a.path])}" target="_blank" rel="noopener"><img src="${escapeHtml(signed[a.path])}" alt="" style="max-width:160px;border-radius:6px;margin-top:6px"></a>` : `<div class="meta"><a href="${escapeHtml(signed[a.path])}" target="_blank" rel="noopener">${escapeHtml(a.name || "file")}</a></div>`) : "").join("")}
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">${statusBadge(i.status, IDEA_STATUS)}${smallBtn("Edit", `openIdeaForm('${i.id}')`)}${["new", "approved"].includes(i.status) && !i.video_id ? smallBtn("Make a card", `makeCardFromIdea('${i.id}')`, "primary") : ""}${i.status === "rejected" ? smallBtn("Restore", `setIdeaStatus('${i.id}','new')`) : ["new"].includes(i.status) ? smallBtn("Reject", `setIdeaStatus('${i.id}','rejected')`, "reject") : ""}</div></div>`).join("")
+      || `<div class="empty">No ideas here yet. Add one, or text your Telegram bot.</div>`}</div>`;
+  document.getElementById("ideaStatus").onchange = e => { IDEA_VIEW.status = e.target.value; renderIdeaDb(); };
+  document.getElementById("ideaSource").onchange = e => { IDEA_VIEW.source = e.target.value; renderIdeaDb(); };
+  document.getElementById("ideaQ").oninput = e => { IDEA_VIEW.q = e.target.value; clearTimeout(renderIdeaDb.t); renderIdeaDb.t = setTimeout(async () => { await renderIdeaDb(); const q = document.getElementById("ideaQ"); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }, 250); };
+}
+function openIdeaForm(id) {
+  const i = id ? IDEAS.find(x => x.id === id) : null;
+  const clientId = i ? i.client_id : (globalClientFilter !== "all" ? globalClientFilter : "");
+  const box = openModal(`<h2>${i ? "Edit idea" : "Add an idea"}</h2>
+    ${lbl("Client")}<select id="ifClient" style="width:100%;margin-bottom:10px" ${i ? "disabled" : ""}><option value="">Pick a client…</option>${CLIENTS.map(c => `<option value="${c.id}" ${c.id === clientId ? "selected" : ""}>${escapeHtml(c.name)}</option>`).join("")}</select>
+    ${lbl("The idea")}<textarea id="ifBody" rows="5" style="width:100%;margin-bottom:10px" placeholder="What's the video? A hook, a question a customer asked, a story…">${escapeHtml(i ? (i.body || i.title) : "")}</textarea>
+    ${lbl("Links (one per line: Sandcastles, Instagram, YouTube, Reddit…)")}<textarea id="ifLinks" rows="2" style="width:100%;margin-bottom:10px">${escapeHtml(i ? (i.links || []).join("\n") : "")}</textarea>
+    <div class="grid-2">
+      <div>${lbl("Where it's from")}<select id="ifSource" style="width:100%;margin-bottom:10px">${Object.entries(IDEA_SOURCE).map(([k, l]) => `<option value="${k}" ${(i ? i.source : "tait") === k ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+      <div>${lbl("Post it on (special request)")}<input type="date" id="ifDate" value="${escapeHtml(i && i.requested_post_date ? i.requested_post_date : "")}" style="width:100%;margin-bottom:10px"></div>
+    </div>
+    ${lbl("Format (optional)")}<input type="text" id="ifFormat" value="${escapeHtml(i && i.format || "")}" style="width:100%;margin-bottom:10px">
+    ${i ? "" : `${lbl("Screenshots or voice notes (optional)")}<input type="file" id="ifFiles" accept="image/*,audio/*,video/*" multiple style="margin-bottom:10px">`}
+    <div class="modal-actions">${i ? smallBtn("Delete", `deleteIdea('${i.id}')`, "reject") : ""}<button onclick="closeVideoModal()">Cancel</button><button class="primary" id="ifSave">${i ? "Save" : "Add idea"}</button></div>
+    <div class="auth-error" id="ifErr"></div>`);
+  box.querySelector("#ifSave").onclick = async () => {
+    const err = box.querySelector("#ifErr"), body = box.querySelector("#ifBody").value.trim();
+    const links = box.querySelector("#ifLinks").value.split(/\s+/).map(s => s.trim()).filter(s => /^https?:\/\//.test(s));
+    const client = i ? i.client_id : box.querySelector("#ifClient").value;
+    if (!client) { err.textContent = "Pick a client."; return; }
+    if (!body && !links.length) { err.textContent = "Write the idea, or paste a link."; return; }
+    const first = (body.split(/(?<=[.!?])\s|\n/)[0] || links[0] || "").slice(0, 90);
+    const row = { title: first, body: body || null, links, source: box.querySelector("#ifSource").value,
+      requested_post_date: box.querySelector("#ifDate").value || null, format: box.querySelector("#ifFormat").value.trim() || null };
+    const attachments = [];
+    const picked = box.querySelector("#ifFiles");
+    for (const f of picked ? Array.from(picked.files || []) : []) {
+      try {
+        const path = await uploadToBucket("ideas", `${client}/${Date.now()}-${f.name.replace(/[^\w.\-]+/g, "_")}`, f, () => {});
+        attachments.push({ path, kind: /^image\//.test(f.type) ? "image" : /^audio\//.test(f.type) ? "audio" : "file", name: f.name });
+      } catch (e) { err.textContent = `${f.name} didn't upload: ${e.message || e}`; return; }
+    }
+    const { error } = i ? await sbClient.from("social_ideas").update(row).eq("id", i.id)
+      : await sbClient.from("social_ideas").insert(Object.assign(row, { client_id: client, attachments, created_by: "tait" }));
+    if (error) { err.textContent = error.message; return; }
+    closeVideoModal(); await loadLiveData();
+  };
+}
+async function deleteIdea(id) {
+  if (!confirm("Delete this idea for good?")) return;
+  const { error } = await sbClient.from("social_ideas").delete().eq("id", id);
+  if (error) { alert(error.message); return; }
+  closeVideoModal(); await loadLiveData();
+}
+// A plan the team should build now (not waiting for the 10th): a draft
+// plan with no ideas, which the bridge turns into a Team Lead task.
+async function askForPlan() {
+  const clientId = globalClientFilter !== "all" ? globalClientFilter : null;
+  if (!clientId) { alert("Pick a client at the top first."); return; }
+  const d = new Date(), next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+  const month = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-01`;
+  if (PLANS.some(p => p.client_id === clientId && String(p.month).slice(0, 10) === month)) { alert("There's already a plan for next month."); return; }
+  const { error } = await sbClient.from("social_monthly_plans").insert({ client_id: clientId, month, status: "draft" });
+  if (error) { alert(error.message); return; }
+  alert(`Asked the team for ${CLIENT_BY_ID[clientId].name}'s ${next.toLocaleDateString(undefined, { month: "long" })} plan. It lands on My desk when it's ready (the bridge needs to be running on your Mac).`);
+  await loadLiveData();
+}
+
+// ---------- Moodboards + Library (Unify the System, Phase 4; migration 028) ----------
+// A moodboard is what Tait likes (motion graphics, fonts, text styles,
+// colours, video styles) as screenshots, videos and links, per client or for
+// every client (client_id null = the house moodboard). The bridge asks the
+// Content Editor to turn it into the client's editing guidelines.
+let MOOD = [], ASSETS = [], HAS_028 = true, LIB = { tab: "music", folder: "", q: "" };
+async function loadStyleData() {
+  const [m, a] = await Promise.all([
+    sbClient.from("social_moodboard_items").select("*").order("created_at"),
+    sbClient.from("social_style_assets").select("*").order("name"),
+  ]);
+  HAS_028 = !m.error;
+  MOOD = m.data || []; ASSETS = a.error ? [] : (a.data || []);
+}
+const moodKind = f => /^image\//.test(f.type) ? "image" : /^video\//.test(f.type) ? "video" : null;
+async function moodboardHtml(clientId) {
+  const items = MOOD.filter(m => (m.client_id || null) === (clientId || null));
+  const paths = items.filter(m => m.storage_path).map(m => m.storage_path);
+  const signed = {};
+  if (paths.length) {
+    const { data } = await sbClient.storage.from("moodboards").createSignedUrls(paths, 3600);
+    (data || []).forEach(x => { if (x && x.signedUrl) signed[x.path] = x.signedUrl; });
+  }
+  const tile = m => `<div class="mood-item" data-mood="${m.id}">
+      ${m.kind === "image" && signed[m.storage_path] ? `<img src="${escapeHtml(signed[m.storage_path])}" alt="">`
+        : m.kind === "video" && signed[m.storage_path] ? `<video src="${escapeHtml(signed[m.storage_path])}" muted controls preload="metadata"></video>`
+        : m.url ? `<a href="${escapeHtml(m.url)}" target="_blank" rel="noopener">${escapeHtml(m.url)}</a>` : ""}
+      <div style="margin-top:6px"><b>${escapeHtml(m.name || (m.kind === "note" ? "Note" : m.kind))}</b> ${m.used_at ? '<span class="meta">· in the guidelines</span>' : '<span class="meta">· new</span>'}</div>
+      ${m.note ? `<div class="meta">${escapeHtml(m.note)}</div>` : ""}
+      <div style="margin-top:6px;display:flex;gap:4px">${smallBtn("Note", `moodNote('${m.id}')`)}${smallBtn("Remove", `moodRemove('${m.id}')`, "reject")}</div></div>`;
+  const key = clientId || "house";
+  return `<div class="mood-drop" data-mood-drop>Drop screenshots and videos of motion graphics, fonts, text styles, colours and video styles you like
+      <div style="margin-top:8px"><label class="btn">Choose files<input type="file" id="moodPick-${key}" data-mood-pick accept="image/*,video/*" multiple hidden></label>
+      <button onclick="moodLink('${clientId || ""}')">+ Add a link or note</button></div><div class="meta" data-mood-msg style="margin-top:6px"></div></div>
+    <div class="mood-grid">${items.slice().reverse().map(tile).join("") || ""}</div>
+    ${items.length ? "" : '<div class="empty" style="margin-top:10px">Nothing here yet.</div>'}`;
+}
+function wireMoodboard(root, clientId) {
+  const add = async files => {
+    const msg = root.querySelector("[data-mood-msg]");
+    const list = Array.from(files).filter(moodKind);
+    if (!list.length) { msg.textContent = "Add images or videos (or use + Add a link or note)."; return; }
+    for (let i = 0; i < list.length; i++) {
+      const f = list[i];
+      try {
+        const path = await uploadToBucket("moodboards", `${clientId || "house"}/${Date.now()}-${f.name.replace(/[^\w.\-]+/g, "_")}`, f,
+          pct => { msg.textContent = `Uploading ${i + 1} of ${list.length}… ${pct}%`; });
+        const { error } = await sbClient.from("social_moodboard_items").insert({ client_id: clientId || null, kind: moodKind(f), name: f.name, storage_path: path });
+        if (error) throw error;
+      } catch (e) { msg.textContent = `${f.name} didn't upload: ${e.message || e}`; return; }
+    }
+    await loadStyleData(); rerenderMood();
+  };
+  const pick = root.querySelector("[data-mood-pick]"), drop = root.querySelector("[data-mood-drop]");
+  if (pick) pick.onchange = e => add(e.target.files || []);
+  if (drop) {
+    drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+    drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+    drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); add(e.dataTransfer.files || []); });
+  }
+}
+function rerenderMood() {
+  if (document.getElementById("view-client").classList.contains("active")) renderClientPage();
+  if (LIB.tab !== "house" || document.getElementById("view-library").classList.contains("active")) renderLibrary();
+  if (document.getElementById("view-library").classList.contains("active")) renderLibrary();
+}
+function moodLink(clientId) {
+  const box = openModal(`<h2>Add a link or note</h2>
+    ${lbl("Link (Instagram, YouTube, a site…)")}<input type="url" id="mlUrl" style="width:100%;margin-bottom:10px">
+    ${lbl("What you like about it")}<textarea id="mlNote" rows="4" style="width:100%"></textarea>
+    <div class="modal-actions"><button onclick="closeVideoModal()">Cancel</button><button class="primary" id="mlGo">Add</button></div><div class="auth-error" id="mlErr"></div>`);
+  box.querySelector("#mlGo").onclick = async () => {
+    const url = box.querySelector("#mlUrl").value.trim(), note = box.querySelector("#mlNote").value.trim();
+    if (!url && !note) { box.querySelector("#mlErr").textContent = "Add a link or a note."; return; }
+    const { error } = await sbClient.from("social_moodboard_items").insert({ client_id: clientId || null, kind: url ? "link" : "note", url: url || null, note: note || null, name: url ? null : "Note" });
+    if (error) { box.querySelector("#mlErr").textContent = error.message; return; }
+    closeVideoModal(); await loadStyleData(); rerenderMood();
+  };
+}
+async function moodNote(id) {
+  const m = MOOD.find(x => x.id === id);
+  const note = prompt("What do you like about it?", m && m.note || "");
+  if (note === null) return;
+  const { error } = await sbClient.from("social_moodboard_items").update({ note: note.trim() || null }).eq("id", id);
+  if (error) { alert(error.message); return; }
+  await loadStyleData(); rerenderMood();
+}
+async function moodRemove(id) {
+  if (!confirm("Remove this from the moodboard?")) return;
+  const m = MOOD.find(x => x.id === id);
+  const { error } = await sbClient.from("social_moodboard_items").delete().eq("id", id);
+  if (error) { alert(error.message); return; }
+  if (m && m.storage_path) await sbClient.storage.from("moodboards").remove([m.storage_path]);
+  await loadStyleData(); rerenderMood();
+}
+
+function renderLibrary() {
+  const tabs = [["music", "Music"], ["sfx", "Sound effects"], ["house", "House moodboard"]];
+  document.getElementById("libTabs").innerHTML = tabs.map(([k, l]) => `<div class="chip ${k === LIB.tab ? "active" : ""}" data-lib="${k}">${l}</div>`).join("");
+  document.querySelectorAll("#libTabs .chip").forEach(el => el.onclick = () => { LIB = { tab: el.dataset.lib, folder: "", q: "" }; renderLibrary(); });
+  const body = document.getElementById("libBody");
+  if (!HAS_028) { body.innerHTML = `<div class="card" style="border-color:var(--gold)"><b>The Library needs migration 028.</b><div class="meta">Run supabase/migrations/028_moodboards_and_library.sql in the Supabase SQL Editor.</div></div>`; return; }
+  if (LIB.tab === "house") {
+    body.innerHTML = `<div class="card"><h2>House moodboard <span class="meta">Every client's editing guidelines start from this.</span></h2><div id="houseMood">Loading…</div></div>`;
+    moodboardHtml(null).then(html => { const el = document.getElementById("houseMood"); if (el) { el.innerHTML = html; wireMoodboard(el, null); } });
+    return;
+  }
+  const all = ASSETS.filter(a => a.kind === LIB.tab);
+  const folders = [...new Set(all.map(a => a.folder).filter(Boolean))].sort();
+  const shown = all.filter(a => (!LIB.folder || a.folder === LIB.folder) && (!LIB.q || a.name.toLowerCase().includes(LIB.q.toLowerCase())));
+  body.innerHTML = `<div class="card">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <select id="libFolder"><option value="">All folders (${all.length})</option>${folders.map(f => `<option ${f === LIB.folder ? "selected" : ""}>${escapeHtml(f)}</option>`).join("")}</select>
+      <input type="search" id="libQ" placeholder="Search" value="${escapeHtml(LIB.q)}">
+    </div>
+    ${all.length ? "" : `<div class="empty">Nothing here yet. The bridge adds your folders: <code>python3 bridge/bridge.py assets sync</code>.</div>`}
+    ${shown.map(a => `<div class="lib-row" data-asset="${a.id}"><button onclick="libPlay('${a.id}', this)">▶</button>
+      <div class="nm"><b>${escapeHtml(a.name)}</b><div class="meta">${escapeHtml([a.folder, a.duration_s ? Math.round(a.duration_s) + "s" : ""].filter(Boolean).join(" · "))}</div></div>
+      <button class="${a.rating === "favourite" ? "on" : ""}" onclick="libRate('${a.id}','favourite')">★ Favourite</button>
+      <button class="${a.rating === "never" ? "on" : ""}" onclick="libRate('${a.id}','never')">Never use</button></div>`).join("")}
+    </div><audio id="libAudio" hidden></audio>`;
+  document.getElementById("libFolder").onchange = e => { LIB.folder = e.target.value; renderLibrary(); };
+  document.getElementById("libQ").oninput = e => { LIB.q = e.target.value; clearTimeout(renderLibrary.t); renderLibrary.t = setTimeout(() => { renderLibrary(); const q = document.getElementById("libQ"); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }, 250); };
+}
+async function libPlay(id, btn) {
+  const a = ASSETS.find(x => x.id === id), audio = document.getElementById("libAudio");
+  if (!a || !a.preview_path) return;
+  if (audio.dataset.id === id && !audio.paused) { audio.pause(); btn.textContent = "▶"; return; }
+  document.querySelectorAll(".lib-row button").forEach(b => { if (b.textContent === "❚❚") b.textContent = "▶"; });
+  const { data } = await sbClient.storage.from("library").createSignedUrl(a.preview_path, 3600);
+  if (!data || !data.signedUrl) return;
+  audio.src = data.signedUrl; audio.dataset.id = id;
+  audio.onended = () => { btn.textContent = "▶"; };
+  try { await audio.play(); btn.textContent = "❚❚"; } catch (e) {}
+}
+async function libRate(id, rating) {
+  const a = ASSETS.find(x => x.id === id);
+  const next = a && a.rating === rating ? null : rating;
+  const { error } = await sbClient.from("social_style_assets").update({ rating: next }).eq("id", id);
+  if (error) { alert(error.message); return; }
+  if (a) a.rating = next;
+  renderLibrary();
+}
+
+// ---------- My desk + client pages (Unify the System, Phase 2) ----------
+// Migration 026 adds ideas, monthly plans, the 5 client documents and the
+// footage library. Before it's run these just come back empty, and My desk
+// says so; videos work as before.
+let PLANS = [], IDEAS = [], DOCS = [], FOOTAGE = [], HAS_026 = true;
+async function loadDeskData() {
+  const [plansRes, ideasRes, docsRes, footRes] = await Promise.all([
+    sbClient.from("social_monthly_plans").select("*").order("month"),
+    sbClient.from("social_ideas").select("*").order("created_at"),
+    sbClient.from("social_client_generated_docs").select("*"),
+    sbClient.from("social_footage").select("*").order("created_at"),
+  ]);
+  HAS_026 = !plansRes.error && !ideasRes.error && !footRes.error;
+  PLANS = plansRes.data || []; IDEAS = ideasRes.data || []; FOOTAGE = footRes.data || [];
+  DOCS = docsRes.error ? [] : (docsRes.data || []);
+}
+const DOC_KINDS = [
+  { kind: "brand_guidelines", label: "Brand guidelines", note: "The client sees this once you approve it." },
+  { kind: "icp", label: "ICP / Customer data" },
+  { kind: "identity", label: "Identity", note: "Voice, who they are, what they sell, formats that might work." },
+  { kind: "editing_guidelines", label: "Editing guidelines", note: "Captions, motion graphics, pacing: the editor reads this every edit." },
+  { kind: "content_research", label: "Content research", note: "Comes later." },
+];
+const DOC_LABEL = Object.fromEntries(DOC_KINDS.map(d => [d.kind, d.label]));
+const DOC_STATUS = { draft: "Draft", on_desk: "On your desk", approved: "Approved" };
+const inClientFilter = clientId => globalClientFilter === "all" || clientId === globalClientFilter;
+
+function deskQueues() {
+  const vids = workVideos();
+  return {
+    ideas: PLANS.filter(p => p.status === "on_desk" && inClientFilter(p.client_id)),
+    scripts: vids.filter(x => x.video.status === "script_review"),
+    docs: DOCS.filter(d => d.status === "on_desk" && inClientFilter(d.client_id) && CLIENT_BY_ID[d.client_id]),
+    videos: vids.filter(x => x.video.status === "in_review"),
+    post: vids.filter(x => x.video.status === "ready_to_post").sort(byPostDate),
+  };
+}
+function renderDesk() {
+  const q = deskQueues();
+  const tiles = [["ideas", "Ideas to review", q.ideas.reduce((n, p) => n + IDEAS.filter(i => i.plan_id === p.id && i.status === "in_plan").length, 0)],
+    ["scripts", "Scripts to review", q.scripts.length], ["docs", "Documents to review", q.docs.length],
+    ["videos", "Videos to review", q.videos.length], ["post", "Videos to post", q.post.length]];
+  const total = tiles.reduce((n, t) => n + t[2], 0);
+  const nav = document.getElementById("navDeskN"); nav.hidden = !total; nav.textContent = total;
+  document.getElementById("deskTiles").innerHTML = tiles.map(([k, label, n]) =>
+    `<div class="desk-tile${n ? " hot" : ""}" data-go="${k}"><b>${n}</b><span>${escapeHtml(label)}</span></div>`).join("");
+  document.querySelectorAll("#deskTiles .desk-tile").forEach(el => el.onclick = () =>
+    document.querySelector(`#view-desk [data-queue="${el.dataset.go}"]`).scrollIntoView({ behavior: "smooth" }));
+  document.getElementById("deskNotice").innerHTML = HAS_026 ? "" :
+    `<div class="card" style="border-color:var(--gold)"><b>Ideas, documents and footage need migration 026.</b><div class="meta">Run supabase/migrations/026_unified_pipeline.sql in the Supabase SQL Editor. Videos to review and to post work already.</div></div>`;
+
+  document.getElementById("deskIdeas").innerHTML = q.ideas.map(p => {
+    const ideas = IDEAS.filter(i => i.plan_id === p.id);
+    const month = new Date(p.month + "T00:00:00").toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    return `<div class="desk-item" style="display:block"><b>${escapeHtml(CLIENT_BY_ID[p.client_id]?.name || "")} · ${escapeHtml(month)}</b>
+      <span class="meta"> · ${ideas.filter(i => i.status === "approved").length} approved, ${ideas.filter(i => i.status === "in_plan").length} to review</span>
+      ${p.brief_md ? `<div class="brief">${mdToHtml(p.brief_md)}</div>` : ""}
+      ${ideas.map(i => `<div class="doc-row"><div><b>${escapeHtml(i.title)}</b>${i.score ? ` <span class="badge">${i.score}/10</span>` : ""}
+        <div class="meta">${[i.format && "Format: " + i.format, i.source && "From: " + i.source + (i.source_detail ? " (" + i.source_detail + ")" : ""), i.why && "Why: " + i.why].filter(Boolean).map(escapeHtml).join(" · ")}</div>
+        ${i.body ? `<div class="brief">${escapeHtml(i.body)}</div>` : ""}</div>
+        <div>${i.status === "in_plan" ? smallBtn("Approve", `setIdeaStatus('${i.id}','approved')`, "primary") + smallBtn("Reject", `setIdeaStatus('${i.id}','rejected')`, "reject")
+          : statusBadge(i.status, { approved: "Approved", rejected: "Rejected", used: "On a card", new: "New", in_plan: "In plan" })}</div></div>`).join("")}
+      <div style="margin-top:8px">${smallBtn("Approve the rest and close the plan", `approvePlan('${p.id}')`, "primary")}</div></div>`;
+  }).join("") || `<div class="empty">No monthly plan waiting.</div>`;
+
+  document.getElementById("deskScripts").innerHTML = q.scripts.length
+    ? `<div class="vtable">${VROW_HEAD}${q.scripts.map(x => vrowHtml(x, smallBtn("Open", `openOperatorVideoModal('${x.video.id}')`) + smallBtn("Approve script", `approveScript('${x.video.id}')`, "primary") + smallBtn("Send back", `sendBackScript('${x.video.id}')`))).join("")}</div>`
+    : `<div class="empty">No scripts waiting.</div>`;
+
+  const waiting = workVideos().filter(x => x.video.status === "ready_to_edit" && (x.video.editorBrief || {}).waitingOn === "editing guidelines");
+  const waitNote = [...new Set(waiting.map(x => x.client.id))].map(cid => { const n = waiting.filter(x => x.client.id === cid).length;
+    return `<div class="doc-row"><div><b>${n} video${n === 1 ? "" : "s"} waiting</b> on ${escapeHtml(CLIENT_BY_ID[cid].name)}'s editing guidelines <div class="meta">The AI Editor starts as soon as you approve them.</div></div><div>${smallBtn("Open", `openClientPage('${cid}','docs')`)}</div></div>`; }).join("");
+  document.getElementById("deskDocs").innerHTML = waitNote + q.docs.map(d => `<div class="doc-row"><div><b>${escapeHtml(DOC_LABEL[d.kind] || d.title)}</b> · ${escapeHtml(CLIENT_BY_ID[d.client_id].name)}
+      <div class="meta">${[d.built_by && "Built by " + d.built_by, d.sources && "From " + d.sources].filter(Boolean).map(escapeHtml).join(" · ")}</div></div>
+      <div>${smallBtn("Open", `openDoc('${d.client_id}','${d.kind}')`)}${smallBtn("Approve", `setDocStatus('${d.id}','approved')`, "primary")}</div></div>`).join("")
+    || (waitNote ? "" : `<div class="empty">No documents waiting.</div>`);
+
+  document.getElementById("deskVideos").innerHTML = q.videos.length
+    ? `<div class="vtable">${VROW_HEAD}${q.videos.map(x => vrowHtml(x, operatorActionsHtml(x))).join("")}</div>` : `<div class="empty">No videos waiting for your review.</div>`;
+  document.getElementById("deskPost").innerHTML = q.post.map(postCardHtml).join("") || `<div class="empty">Nothing ready to post.</div>`;
+}
+
+async function setIdeaStatus(id, status) {
+  const { error } = await sbClient.from("social_ideas").update({ status }).eq("id", id);
+  if (error) { alert("Couldn't save: " + error.message); return; }
+  await loadLiveData();
+}
+async function approvePlan(planId) {
+  const left = IDEAS.filter(i => i.plan_id === planId && i.status === "in_plan");
+  if (left.length && !confirm(`Approve the ${left.length} idea(s) you haven't reviewed, and close this plan?`)) return;
+  if (left.length) {
+    const { error } = await sbClient.from("social_ideas").update({ status: "approved" }).in("id", left.map(i => i.id));
+    if (error) { alert("Couldn't save: " + error.message); return; }
+  }
+  const { error } = await sbClient.from("social_monthly_plans").update({ status: "approved", approved_at: new Date().toISOString() }).eq("id", planId);
+  if (error) { alert("Couldn't save: " + error.message); return; }
+  // Every approved idea becomes a video card in Scripting; the bridge asks
+  // the Writer for the scripts (Tait, 2026-10-21).
+  const { data: approved } = await sbClient.from("social_ideas").select("*").eq("plan_id", planId).eq("status", "approved");
+  for (const idea of approved || []) { const r = await makeCard(idea); if (r.error) { alert(r.error); break; } }
+  await loadLiveData();
+}
+// An idea → a video card in Scripting, with Tait's timing from its post
+// date P: script approved by P-13, filmed by P-10, edit done by P-7.
+async function makeCard(idea) {
+  if (idea.video_id) return {};
+  const post = idea.planned_post_date || idea.requested_post_date || null;
+  const brief = { format: idea.format || undefined, why: idea.why || undefined, scriptDue: post ? addDaysISO(post, -13) : undefined, ideaSource: idea.source };
+  const row = { client_id: idea.client_id, title: idea.title, concept: idea.body || idea.title, status: "scripting", idea_id: idea.id,
+    post_date: post, due_to_film: post ? addDaysISO(post, -10) : null, due_to_edit: post ? addDaysISO(post, -7) : null,
+    editor_brief: JSON.parse(JSON.stringify(brief)) };
+  const { data, error } = await sbClient.from("social_videos").insert(row).select("id");
+  if (error) return { error: "Couldn't make the card: " + error.message };
+  await sbClient.from("social_ideas").update({ status: "used", video_id: data[0].id }).eq("id", idea.id);
+  return { id: data[0].id };
+}
+async function makeCardFromIdea(id) {
+  const idea = IDEAS.find(i => i.id === id);
+  if (!idea) return;
+  const r = await makeCard(idea);
+  if (r.error) { alert(r.error); return; }
+  await loadLiveData();
+}
+// Approving a script is gate 1: the card goes to the client, who sees the
+// whole card (hook, outline, script, camera questions).
+async function approveScript(id) {
+  const { error } = await sbClient.from("social_videos").update({ status: "concept_pending", concept_approved_at: null, concept_approved_by: null }).eq("id", id);
+  if (error) { alert("Couldn't save: " + error.message); return; }
+  const r = await runVideoAction("approve_concept_owner", id);
+  if (r.error) { alert(r.error); }
+  await loadLiveData();
+}
+function sendBackScript(id) {
+  const x = findVideo(id);
+  if (!x) return;
+  const box = openModal(`<h2>Send the script back</h2>
+    <div class="meta" style="margin-bottom:10px">${escapeHtml(x.client.name)} · ${escapeHtml(x.video.title || "")}</div>
+    ${lbl("What should change?")}<textarea id="sbNote" rows="5" style="width:100%"></textarea>
+    <div class="modal-actions"><button onclick="closeVideoModal()">Cancel</button><button class="primary" id="sbGo">Send back to the Writer</button></div>`);
+  box.querySelector("#sbGo").onclick = async () => {
+    const note = box.querySelector("#sbNote").value.trim();
+    if (!note) { box.querySelector("#sbNote").focus(); return; }
+    const brief = Object.assign({}, x.video.editorBrief);
+    brief.scriptNotes = (brief.scriptNotes || []).concat([{ note, at: new Date().toISOString() }]);
+    closeVideoModal();
+    await updateVideo(id, { status: "scripting", editorBrief: brief, note });
+  };
+}
+
+// ----- documents -----
+function docFor(clientId, kind) { return DOCS.find(d => d.client_id === clientId && d.kind === kind) || null; }
+function openDoc(clientId, kind) {
+  const c = CLIENT_BY_ID[clientId], d = docFor(clientId, kind), meta = DOC_KINDS.find(k => k.kind === kind);
+  const box = openModal(`<h2>${escapeHtml(meta ? meta.label : kind)} · ${escapeHtml(c.name)}</h2>
+    <div class="meta" style="margin-bottom:10px">${d ? escapeHtml(DOC_STATUS[d.status] || d.status) : "Not built yet"}${meta && meta.note ? " · " + escapeHtml(meta.note) : ""}</div>
+    ${d && d.review_note ? `<div class="meta" style="margin-bottom:10px">Your last note: ${escapeHtml(d.review_note)}</div>` : ""}
+    <div id="docView" style="max-height:50vh;overflow:auto;margin-bottom:10px">${d && d.body_md ? mdToHtml(d.body_md) : '<div class="empty">Nothing written yet.</div>'}</div>
+    <textarea id="docEdit" rows="16" style="width:100%;display:none">${escapeHtml(d ? d.body_md : "")}</textarea>
+    <div class="modal-actions">
+      <button onclick="closeVideoModal()">Close</button>
+      <button id="docEditBtn">Edit</button>
+      ${d && d.status !== "draft" ? `<button id="docBack">Send back with a note</button>` : ""}
+      ${d && d.status !== "approved" ? `<button class="primary" id="docApprove">Approve</button>` : ""}
+    </div><div class="auth-error" id="docErr"></div>`);
+  const edit = box.querySelector("#docEdit"), view = box.querySelector("#docView"), btn = box.querySelector("#docEditBtn");
+  btn.onclick = async () => {
+    if (edit.style.display === "none") { edit.style.display = ""; view.style.display = "none"; btn.textContent = "Save"; return; }
+    const row = { body_md: edit.value };
+    const { error } = d
+      ? await sbClient.from("social_client_generated_docs").update(row).eq("id", d.id)
+      : await sbClient.from("social_client_generated_docs").insert(Object.assign(row, { client_id: clientId, kind, title: meta ? meta.label : kind, status: "draft", built_by: "Tait" }));
+    if (error) { box.querySelector("#docErr").textContent = error.message; return; }
+    closeVideoModal(); await loadLiveData();
+  };
+  const ap = box.querySelector("#docApprove");
+  if (ap) ap.onclick = async () => { closeVideoModal(); await setDocStatus(d.id, "approved"); };
+  const back = box.querySelector("#docBack");
+  if (back) back.onclick = async () => {
+    const note = prompt("What should change?");
+    if (!note) return;
+    const { error } = await sbClient.from("social_client_generated_docs").update({ status: "draft", review_note: note, approved_at: null, approved_by: null }).eq("id", d.id);
+    if (error) { box.querySelector("#docErr").textContent = error.message; return; }
+    closeVideoModal(); await loadLiveData();
+  };
+}
+async function setDocStatus(id, status) {
+  const patch = status === "approved" ? { status, approved_at: new Date().toISOString(), approved_by: ME.id, review_note: null } : { status };
+  const { error } = await sbClient.from("social_client_generated_docs").update(patch).eq("id", id);
+  if (error) { alert("Couldn't save: " + error.message); return; }
+  await loadLiveData();
+}
+
+// ----- one client's page -----
+let CLIENT_PAGE = { id: null, tab: "overview" };
+function openClientPage(clientId, tab) {
+  CLIENT_PAGE = { id: clientId, tab: tab || "overview" };
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById("view-client").classList.add("active");
+  document.querySelectorAll(".nav-item[data-view]").forEach(i => i.classList.toggle("active", i.dataset.view === "clients"));
+  document.getElementById("crumbPage").textContent = "Clients";
+  renderClientPage();
+}
+function renderClientPage() {
+  const c = CLIENT_BY_ID[CLIENT_PAGE.id];
+  if (!c) return;
+  document.getElementById("cpTitle").textContent = c.name;
+  document.getElementById("cpSub").textContent = `/clients/${c.slug} · ${WHO_FILMS[c.clientSystem] || c.clientSystem}`;
+  document.getElementById("cpPortal").href = "/clients/" + encodeURIComponent(c.slug);
+  const tabs = [["overview", "Overview"], ["docs", "Documents"], ["moodboard", "Moodboard"], ["footage", "Footage"], ["videos", "Videos"]];
+  document.getElementById("cpTabs").innerHTML = tabs.map(([k, l]) => `<div class="chip ${k === CLIENT_PAGE.tab ? "active" : ""}" data-cptab="${k}">${l}</div>`).join("");
+  document.querySelectorAll("#cpTabs .chip").forEach(el => el.onclick = () => { CLIENT_PAGE.tab = el.dataset.cptab; renderClientPage(); });
+  const body = document.getElementById("cpBody"), f = c.driveFolders;
+  const link = (u, l) => u ? `<a href="${escapeHtml(u)}" target="_blank" rel="noopener">${escapeHtml(l)}</a>` : `<span class="meta">${escapeHtml(l)}: not set</span>`;
+  if (CLIENT_PAGE.tab === "overview") {
+    const s = onboardingSummary(c.onboarding, c.clientSystem !== "concierge");
+    body.innerHTML = `<div class="card">
+      <div class="meta">Contact: ${[c.contactName, c.contactEmail, c.contactPhone].filter(Boolean).map(escapeHtml).join(" · ") || "none yet"}</div>
+      <div class="meta">Onboarding: ${escapeHtml(s.label)}</div>
+      <div class="meta">Folders: ${[link(f.footageUploads, "Raw footage"), link(f.finalEdits, "Finished videos"), link(f.root, "Main folder")].join(" · ")}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
+        <button onclick="openOnboarding('${c.id}')">Onboarding</button>
+        <button onclick="document.querySelector('.nav-item[data-view=clients]').click();openClientPanel('${c.id}')">Edit client</button>
+      </div></div>`;
+  } else if (CLIENT_PAGE.tab === "docs") {
+    body.innerHTML = `<div class="card"><h2>Documents <span class="meta">Operator-only. The client sees brand guidelines once approved.</span></h2>
+      ${HAS_026 ? "" : `<div class="meta" style="color:var(--gold)">Run migration 026 to build and approve these here.</div>`}
+      ${DOC_KINDS.map(k => { const d = docFor(c.id, k.kind);
+        return `<div class="doc-row"><div><b>${escapeHtml(k.label)}</b>${k.note ? `<div class="meta">${escapeHtml(k.note)}</div>` : ""}</div>
+          <div style="display:flex;gap:6px;align-items:center">${d ? statusBadge(d.status, DOC_STATUS) : '<span class="meta">Not built yet</span>'}${HAS_026 ? smallBtn(d ? "Open" : "Write it", `openDoc('${c.id}','${k.kind}')`) : ""}</div></div>`; }).join("")}
+      ${c.documents.length ? `<h2 style="margin-top:16px">Linked documents</h2>${c.documents.map(d => `<div class="doc-row"><a href="${escapeHtml(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.title)}</a></div>`).join("")}` : ""}</div>`;
+  } else if (CLIENT_PAGE.tab === "moodboard") {
+    if (!HAS_028) { body.innerHTML = `<div class="card"><div class="meta" style="color:var(--gold)">Run migration 028 to keep a moodboard here.</div></div>`; return; }
+    body.innerHTML = `<div class="card"><h2>Moodboard <span class="meta">The team turns this into ${escapeHtml(c.name)}'s editing guidelines. Operator only.</span></h2><div id="clientMood">Loading…</div></div>`;
+    const id = c.id;
+    moodboardHtml(id).then(html => { const el = document.getElementById("clientMood"); if (el && CLIENT_PAGE.id === id) { el.innerHTML = html; wireMoodboard(el, id); } });
+  } else if (CLIENT_PAGE.tab === "footage") {
+    const mine = FOOTAGE.filter(x => x.client_id === c.id);
+    const group = (kind, label, note) => { const items = mine.filter(x => x.kind === kind);
+      return `<h2 style="margin-top:14px">${label} <span class="meta">${note}</span></h2>${items.map(x => `<div class="doc-row"><div>${x.drive_url ? `<a href="${escapeHtml(x.drive_url)}" target="_blank" rel="noopener">${escapeHtml(x.name)}</a>` : escapeHtml(x.name)}
+        ${x.video_id && findVideo(x.video_id) ? `<div class="meta">On: ${escapeHtml(findVideo(x.video_id).video.title || "")}</div>` : ""}</div><span class="meta">${escapeHtml(niceDate(x.created_at.slice(0, 10)))}</span></div>`).join("") || '<div class="empty">None yet.</div>'}`; };
+    body.innerHTML = `<div class="card">
+      <div class="meta">Drive folders: ${[link(f.footageUploads, "Raw footage"), link(f.previousContent, "Previous content"), link(f.finalEdits, "Finished videos")].join(" · ")}</div>
+      ${HAS_026 ? `<div style="margin-top:10px">${smallBtn("+ Add footage link", `addFootage('${c.id}')`)}</div>` : `<div class="meta" style="color:var(--gold)">Run migration 026 to keep a footage library here.</div>`}
+      ${group("broll", "B-roll", "the client sees these")}${group("old", "Old footage", "the client sees these")}${group("raw", "Raw footage on cards", "")}${group("finished", "Finished cuts", "operator only")}</div>`;
+  } else {
+    const vids = VIDEOS.filter(x => x.client.id === c.id && x.video.status !== "rejected");
+    body.innerHTML = `<div class="card">${vids.length ? `<div class="vtable">${VROW_HEAD}${vids.map(x => vrowHtml(x, operatorActionsHtml(x))).join("")}</div>` : '<div class="empty">No videos yet.</div>'}</div>`;
+  }
+}
+function addFootage(clientId) {
+  const box = openModal(`<h2>Add footage</h2>
+    ${lbl("What is it")}<select id="afKind" style="width:100%;margin-bottom:10px"><option value="broll">B-roll (client sees it)</option><option value="old">Old footage (client sees it)</option><option value="finished">Finished cut (operator only)</option></select>
+    ${lbl("Name")}<input type="text" id="afName" style="width:100%;margin-bottom:10px">
+    ${lbl("Google Drive link")}<input type="url" id="afUrl" style="width:100%;margin-bottom:10px">
+    <div class="modal-actions"><button onclick="closeVideoModal()">Cancel</button><button class="primary" id="afGo">Add</button></div><div class="auth-error" id="afErr"></div>`);
+  box.querySelector("#afGo").onclick = async () => {
+    const name = box.querySelector("#afName").value.trim(), url = box.querySelector("#afUrl").value.trim();
+    if (!name || !url) { box.querySelector("#afErr").textContent = "Add a name and the Drive link."; return; }
+    const { error } = await sbClient.from("social_footage").insert({ client_id: clientId, kind: box.querySelector("#afKind").value, name, drive_url: url, uploaded_by_role: "operator" });
+    if (error) { box.querySelector("#afErr").textContent = error.message; return; }
+    closeVideoModal(); await loadLiveData();
+  };
+}
+document.getElementById("view-desk").addEventListener("click", e => {
+  const row = e.target.closest(".vrow[data-id]");
+  if (!row || e.target.closest("button, a, select, input, textarea, .video-card")) return;
+  openOperatorVideoModal(row.dataset.id);
+});
+
 function renderAll() {
   const cn = document.getElementById("navClientsN"); cn.hidden = !CLIENTS.length; cn.textContent = CLIENTS.length;
   renderGlobalClientFilter();
-  renderTodo(); renderCalendar(); renderIdeaBank(); renderAllClients(); renderEditors();
+  renderDesk(); renderTodo(); renderCalendar(); renderIdeaBank(); renderIdeaDb(); renderAllClients(); renderEditors(); renderAgentRoom();
+  if (document.getElementById("view-client").classList.contains("active")) renderClientPage();
+  if (LIB.tab !== "house" || document.getElementById("view-library").classList.contains("active")) renderLibrary();
 }
 
 // Only a social_operators login gets past the gate — never an editor or
@@ -1434,7 +2144,7 @@ async function resolveOperatorAccess(sb, user) {
 
 initAuthGate({
   resolveAccess: resolveOperatorAccess,
-  onReady: async (user, access) => { ME = access.roleRow; initRouter("todo"); await loadLiveData(); },
+  onReady: async (user, access) => { ME = access.roleRow; initRouter("desk"); await loadLiveData(); },
 });
 </script>
 </body>

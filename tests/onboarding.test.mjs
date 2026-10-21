@@ -156,8 +156,10 @@ opB.d.getElementById("obTranscript").value = "too short"; opB.d.getElementById("
 chk("a too-short transcript is caught before sending", /too short/.test(opB.d.getElementById("obErr").textContent) && !opB.ui.log.some(l => l.fetch));
 const TR = "Our best customer is a busy parent. ".repeat(10);
 opB.d.getElementById("obTranscript").value = TR; opB.d.getElementById("obBuild").click(); await settle();
-const bd = opB.ui.log.find(l => l.fetch === "/api/build-documents");
-chk("Save and build sends the pasted transcript for this client", bd && JSON.parse(bd.body).clientId === OTHER && JSON.parse(bd.body).transcript === TR.trim(), bd);
+// With migration 027 the team builds the documents: the pasted transcript
+// becomes a done recording that the bridge on Tait's Mac picks up.
+const pr = (await db.query("select transcript_status, transcript from social_onboarding_recordings where client_id=$1 and name='Pasted transcript'", [OTHER])).rows[0];
+chk("Save and ask the team: the pasted transcript is saved for the bridge", pr && pr.transcript_status === "done" && pr.transcript === TR.trim() && !opB.ui.log.some(l => l.fetch === "/api/build-documents"), pr);
 // New client form: email is required; creating sends the invite.
 const opI = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html", {
   fetch: async (u, o) => ({ ok: true, status: 200, json: async () => ({ sent: false, link: "https://supabase/verify?token=abc", reason: "Email sending isn't set up yet (RESEND_API_KEY). Copy the link and send it yourself.", email: "jo@fresh.test" }) }),
