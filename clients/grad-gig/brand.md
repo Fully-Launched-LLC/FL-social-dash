@@ -26,12 +26,14 @@ Orange wordmark "grad gig" (rounded geometric letters, smile-shaped descenders).
 Tait's file: ~/Desktop/Untitled design (1).png. The shirt in the footage has it too.
 
 ## The three looks offered
-- **A · Brand classic:** Futura headline + italic Baskerville accent in orange; Nunito Sans captions with an orange highlight box; cream "gradgig.co" pill.
+- **A · Brand classic:** Futura headline + italic Baskerville accent in orange; Nunito Sans captions with the keyword in orange text (no box: Tait, 2026-10-21); cream "gradgig.co" pill.
 - **B · Editorial (Blatch):** serif headline with an italic orange word, mono section label, bold caption with a highlighted word (yellow in the sample, Blatch's colour; could be orange), plus a quiet serif word under it.
 - **C · Explainer (Kallaway):** split screen on Grad Gig ink, glowing orange step icons and numbers, footage in a rounded card.
 
 ## Chosen (Tait, 2026-10-20)
 - **Main look: C · Explainer (Kallaway)**, Tait's favourite: split screen on Grad Gig ink #252422, glowing orange icons/numbers, footage in a rounded card.
-- **Second look: A · Brand classic**: Futura headline + italic Baskerville accent, Nunito Sans captions with an orange highlight box, cream gradgig.co tag. For moments that stay on full-screen footage.
+- **Second look: A · Brand classic**: Futura headline + italic Baskerville accent, Nunito Sans captions with the keyword in orange text (no box: Tait, 2026-10-21), cream gradgig.co tag. For moments that stay on full-screen footage.
 - **B is out.**
-- **Every accent is Grad Gig orange #F15523**: highlights, keyword boxes, glows, icons, numbers, graph lines, effect colours. No yellow (Blatch's colour) and no other accent colours.
+- **Every accent is Grad Gig orange #F15523**: highlighted keywords (orange text, never a box), glows, icons, numbers, graph lines, effect colours. No yellow (Blatch's colour) and no other accent colours.
+
+**Captions (Tait, 2026-10-21):** heavy bold white sans with tight spacing, 1–2 words at a time, at the seam above Luke (reference: `team/inspo/frames/2026-10-21-caption-style.jpeg`). Keywords are the same font, just Grad Gig orange #F15523.

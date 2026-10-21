@@ -40,10 +40,12 @@ differ from CLAUDE.md's core principles, they apply only to the team's work.
    platforms and times; a human posts.
 10. **Tait starts the work** from Claude Code. Nothing runs on a schedule yet.
 11. **Every client has its own motion graphics library**
-    (`clients/<slug>/graphics/INDEX.md`). The Editor uses only graphics Tait has
-    approved there, plus the shared effects library adapted to the client's
-    brand. It may pitch new graphics, but nothing is built or used before Tait
-    approves (pitch → approve → 2–3 directions → build → final OK).
+    (`clients/<slug>/graphics/INDEX.md`). The Editor and Motion Designer use
+    whatever motion graphics they think fit (Tait, 2026-10-21: "we will learn
+    as we go which ones belong in which parts of the video"), each with a
+    purpose, and log every one used: video, moment, line. Tait's feedback on
+    each (keep / where it belongs / never again) goes in the library, and the
+    team learns which graphics belong in which parts of a video.
 12. **Tait's feedback comes with a why, and the team learns from it.** Every
     note goes in the client's `team-room/feedback-log.md`; the employee involved
     proposes a rule (for this client, or for every client) and Tait approves it.
@@ -51,3 +53,13 @@ differ from CLAUDE.md's core principles, they apply only to the team's work.
     pulls the brand from the logo and website, then shows Tait 2–3 rendered
     look options (colours, fonts, caption style) on the client's own footage.
     Tait picks; the pick goes in `clients/<slug>/brand.md`.
+14. **Every member learns from every one of Tait's prompts.** Whenever Tait gives
+    information (feedback, references, a decision), it goes to every employee it
+    applies to, in their own rules with his words as the why, and is listed in
+    `team/TRAINING-LOG.md`. (Tait, 2026-10-21.)
+15. **Kallaway Marketing is the house style.** Tait: "model all the content after
+    kallaway marketing. i like his stuff." Every employee studies
+    `team/kallaway-style-guide.md` and copies his structure and style, never his
+    words, in each client's own brand. (Tait, 2026-10-21; this is Tait's own rule,
+    not a reference creator's.)
+
