@@ -426,21 +426,21 @@ def ask_for_research(sb, c):
     return give_task("Content Researcher", f"{c['name']}: weekly research", desc)
 
 
-def ask_for_plan(sb, c, month):
+def ask_for_plan(sb, c, month, size=20):
     slug = c["slug"]
     label = dt.date.fromisoformat(month).strftime("%B %Y")
-    desc = f"""Build **{c['name']}'s plan for {label}** (Unify the System stage 4). You run it; Tait's rules: 20 ideas from their Content Idea Database (any mix of Tait's and research), special requests keep their day.
+    desc = f"""Build **{c['name']}'s plan for {label}** (Unify the System stage 4). You run it; Tait's rules: {size} ideas from their Content Idea Database (any mix of Tait's and research), special requests keep their day. If there aren't {size} good ones yet, the Strategist writes the rest from their identity and ICP.
 
-1. **Content Strategist:** pick the 20 strongest ideas from `{bridge_cmd()} ideas list --client {slug} --status new` (ideas with a requested post date must be in), pair each with a format, one line why.
+1. **Content Strategist:** pick the {size} strongest ideas from `{bridge_cmd()} ideas list --client {slug} --status new` (ideas with a requested post date must be in), pair each with a format, one line why.
 2. **Content Expert:** score each 1-10 (Film it / Fix it); swap out anything under 7 for the next best idea.
 3. Write the plan as JSON, `clients/{slug}/team-room/plan-{month[:7]}.json`:
    `[{{"idea_id": "<id>", "format": "...", "why": "...", "score": 8}}, ...]`
    (a brand-new idea instead of an idea_id: `{{"title": "...", "body": "...", "source": "research", "format": "...", "why": "...", "score": 8}}`).
-4. **Content Simplifier:** a short brief for Tait (`clients/{slug}/team-room/plan-{month[:7]}-brief.md`): the 20 in a list, the mix, anything he should know, ending with "What we need from Tait".
+4. **Content Simplifier:** a short brief for Tait (`clients/{slug}/team-room/plan-{month[:7]}-brief.md`): the {size} in a list, the mix, anything he should know, ending with "What we need from Tait".
 5. Put it on Tait's desk (it also spreads the post dates over the month's weekdays and keeps special requests):
    `{bridge_cmd()} plan put --client {slug} --month {month[:7]} --file clients/{slug}/team-room/plan-{month[:7]}.json --brief clients/{slug}/team-room/plan-{month[:7]}-brief.md`
 Timing to keep in mind: scripts approved 13 days before each post, filmed 10 days before, edit done 7 days before."""
-    return give_task("Team Lead", f"{c['name']}: {label} plan (20 ideas)", desc)
+    return give_task("Team Lead", f"{c['name']}: {label} plan ({size} ideas)", desc)
 
 
 # ── scripts (Phase 6) ───────────────────────────────────────────────────
@@ -1134,6 +1134,9 @@ def main(argv=None):
     yt = sub.add_parser("youtube"); yt.add_argument("action", choices=["outliers"]); yt.add_argument("--query", required=True)
     yt.add_argument("--days", type=int, default=180); yt.add_argument("--max", type=int, default=25)
     tgp = sub.add_parser("telegram"); tgp.add_argument("action", choices=["pair"])
+    sj = sub.add_parser("start", help="start a stage by hand for any client (existing ones too)")
+    sj.add_argument("job", choices=["questions", "documents", "style", "research", "plan"]); sj.add_argument("--client", required=True)
+    sj.add_argument("--size", type=int, default=20, help="plan size"); sj.add_argument("--month", help="YYYY-MM (plan; default next month)")
     vd = sub.add_parser("video"); vd.add_argument("action", choices=["deliver"]); vd.add_argument("--id", required=True); vd.add_argument("--file", required=True)
     cp = sub.add_parser("captions"); cp.add_argument("action", choices=["put"]); cp.add_argument("--id", required=True)
     cp.add_argument("--caption"); cp.add_argument("--on-screen"); cp.add_argument("--cover")
@@ -1234,6 +1237,14 @@ def main(argv=None):
         code = f"{uuid.uuid4().int % 1000000:06d}"
         st["telegram_code"] = code; st.pop("telegram_chat", None); STATE.write_text(json.dumps(st, indent=2))
         print(f"In Telegram, open your bot and send:  /start {code}\nThe bridge pairs on its next check.")
+    elif a.cmd == "start":
+        c = client_by_slug(sb, a.client)
+        if a.job == "questions": tid = ask_for_questions(sb, c)
+        elif a.job == "documents": tid = ask_for_documents(sb, c)
+        elif a.job == "style": tid = ask_for_style(sb, c)
+        elif a.job == "research": tid = ask_for_research(sb, c)
+        else: tid = ask_for_plan(sb, c, (a.month + "-01") if a.month else months_ahead(), a.size)
+        print(f"Started {a.job} for {c['name']}: {tid}")
     elif a.cmd == "video":
         v = sb.select("social_videos", f"select=*&id=eq.{a.id}")[0]
         c = sb.select("social_clients", f"select=id,name,slug&id=eq.{v['client_id']}")[0]
