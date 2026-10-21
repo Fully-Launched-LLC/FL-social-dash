@@ -99,3 +99,8 @@ story comes on camera.
    - Verify: `gdoc_sync.py` against a fresh read gives 0 requests.
 5. `grep -c '—'` is 0 on every file. List the pending and To confirm items
    for Tait.
+
+## Put it on Tait's desk (Unify the System, 2026-10-21)
+Save the finished document as `clients/<slug>/sources/identity.md`, then:
+`python3 bridge/bridge.py doc put --client <slug> --kind identity --file clients/<slug>/sources/identity.md --status on_desk --built-by "Account Manager" --sources "<which recordings/files>"`
+It lands in My desk → Documents to review. Operator-only: the client never sees it.

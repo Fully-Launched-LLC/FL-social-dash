@@ -193,3 +193,8 @@ expected: the Docs API can't carry one list across headings.
   (never on `main`). Don't push unless Tait asks.
 - Report to Tait: how many pains, dreams and sources went in, the 5 hook
   phrases, the verify result, and the doc link (same link as before).
+
+## Put it on Tait's desk (Unify the System, 2026-10-21)
+Save the finished document as `clients/<slug>/sources/icp.md`, then:
+`python3 bridge/bridge.py doc put --client <slug> --kind icp --file clients/<slug>/sources/icp.md --status on_desk --built-by "Account Manager" --sources "<which recordings/files>"`
+It lands in My desk → Documents to review. Operator-only: the client never sees it.

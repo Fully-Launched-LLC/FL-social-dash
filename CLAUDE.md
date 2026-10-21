@@ -380,7 +380,10 @@ fully-social-os/
                                social_monthly_plans, 'scripting' and
                                'script_review' card statuses, the 5
                                client documents, social_style_assets,
-                               social_footage, social_agent_status)
+                               social_footage, social_agent_status), 027
+                               (social_onboarding_recordings: voice
+                               memos and call recordings with their
+                               transcripts; questions_/docs_requested_at)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -614,6 +617,23 @@ the changes they sent, read only; "Being changed by the editor" under
 Finished videos to approve).
 
 ## Client onboarding (`/welcome`)
+
+**With the AI team** (Unify Phase 3, Tait 2026-10-21; migration 027 and
+`bridge/`): the bridge on Tait's Mac (`bridge/start.sh` runs Paperclip and
+`bridge/bridge.py watch`) checks every 2 minutes. A new client (created
+after the bridge was set up) with no questions → a Paperclip task for the
+Account Manager to write them (`voice-memo-questions`, now with a brand
+section), saved with `bridge.py questions put`. A voice memo from
+`/welcome`, or a call recording Tait uploads on Clients → Onboarding →
+Recordings → the bridge transcribes it with Groq Whisper (the watch kit's
+key), saves it on `social_onboarding_recordings` and appends it to the
+client's transcript, then asks the Account Manager to build brand
+guidelines (`brand-guidelines-doc`), ICP (`customer-data-doc`) and identity
+(`identity-doc`), each saved with `bridge.py doc put` onto My desk →
+Documents to review. A pasted transcript does the same ("Save and ask the
+team to build documents"). The bridge uses a Supabase service-role key Tait
+keeps in `~/.config/fully-social/bridge.env` (never in this repo). Before
+027 the panel keeps the older `/api/build-documents` flow.
 
 A new client's invite (`api/_email.js`: a white email with one navy box —
 the logo, "Welcome to your Fully Social dashboard", "Hi <first name>, we are

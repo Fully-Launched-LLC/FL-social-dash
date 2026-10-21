@@ -1392,16 +1392,21 @@ document.getElementById("edSend").onclick = async e => {
 async function openOnboarding(clientId) {
   const c = CLIENT_BY_ID[clientId];
   if (!c) return;
-  const [{ data: o }, { data: docs }] = await Promise.all([
+  const [{ data: o }, { data: docs }, recRes] = await Promise.all([
     sbClient.from("social_client_onboarding").select("*").eq("client_id", clientId).maybeSingle(),
     sbClient.from("social_client_generated_docs").select("*").eq("client_id", clientId).order("kind"),
+    sbClient.from("social_onboarding_recordings").select("*").eq("client_id", clientId).order("created_at"),
   ]);
   const ob = o || {};
+  // Recordings and the team's automatic transcripts (migration 027). Before
+  // 027: the old paste-and-build flow.
+  const HAS_027 = !recRes.error, RECS = recRes.data || [];
   const s = onboardingSummary(o, c.clientSystem !== "concierge");
   // What they uploaded (migration 010's 'onboarding' bucket), as links that
   // work for a day.
   const brandFiles = ((ob.brand || {}).uploads || []), footageFiles = ((ob.footage || {}).files || []);
-  const paths = brandFiles.concat(footageFiles).map(f => f.path).concat(ob.voice_memo_path ? [ob.voice_memo_path] : []);
+  const paths = brandFiles.concat(footageFiles).map(f => f.path).concat(ob.voice_memo_path ? [ob.voice_memo_path] : [])
+    .concat(RECS.filter(r => r.kind === "call" && !r.storage_path.includes("/pasted/")).map(r => r.storage_path));
   const SIGNED = {};
   if (paths.length) {
     const { data: signed } = await sbClient.storage.from("onboarding").createSignedUrls(paths, 86400);
@@ -1425,17 +1430,24 @@ async function openOnboarding(clientId) {
       <summary style="cursor:pointer"><b style="display:inline">Their voice memo questions</b> <span class="meta">· ${ownQs ? "their own list" : "the standard list"}, ${myQs.reduce((n, sec) => n + sec.items.length, 0)} questions</span></summary>
       <div class="meta" style="margin:8px 0 6px;line-height:1.5">What they see on their Questions page. Paste the list Claude made for them (the <code>voice-memo-questions</code> skill), or edit it here: <b>## </b> starts a section, <b>Note:</b> under it adds a line, <b>- </b> starts a question, and <b>- [story] </b> marks a story prompt (they name the story on the memo and tell it on camera).</div>
       <textarea id="obQText" rows="14" style="width:100%;font-size:0.85rem">${escapeHtml(questionsToText(myQs))}</textarea>
-      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button id="obQSave">Save their questions</button>${ownQs ? `<button id="obQReset">Go back to the standard questions</button>` : ""}<span class="meta" id="obQMsg" style="align-self:center"></span></div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button id="obQSave">Save their questions</button><button id="obQCopy">Copy to send</button>${ownQs ? `<button id="obQReset">Go back to the standard questions</button>` : ""}<span class="meta" id="obQMsg" style="align-self:center"></span></div>
     </details>
+    ${HAS_027 ? `<div class="modal-field"><b>Recordings</b>
+      <div class="meta" style="margin-bottom:6px">Their voice memo and any call you record. The team transcribes each one on your Mac and then builds their documents, which land on My desk.</div>
+      ${RECS.map(r => `<div class="doc-row"><div>${r.kind === "call" ? "Call" : "Voice memo"}: ${SIGNED[r.storage_path] ? `<a href="${escapeHtml(SIGNED[r.storage_path])}" target="_blank" rel="noopener">${escapeHtml(r.name)}</a>` : escapeHtml(r.name)}
+        <div class="meta">${escapeHtml(niceDate(String(r.created_at).slice(0, 10)))}${r.transcript_error ? " · " + escapeHtml(r.transcript_error) : ""}</div></div>
+        ${statusBadge(r.transcript_status, { waiting: "Waiting to transcribe", transcribing: "Transcribing", done: "Transcribed", failed: "Transcription failed" })}</div>`).join("") || '<div class="empty">No recordings yet.</div>'}
+      <label class="btn" style="margin-top:8px">Upload a call recording<input type="file" id="obCall" accept="audio/*,video/*" hidden></label> <span class="meta" id="obCallMsg"></span>
+    </div>` : ""}
     <div class="modal-field">
-      <b>Voice memo transcript</b>
-      <div class="meta" style="margin-bottom:6px">${ob.voice_memo_path ? "Their voice memo is above: download it and get the transcript. " : ob.voice_memo_sent_at ? "They say they've texted you their voice memo. " : ""}Paste the whole transcript here, then build their Customer Data and Your Voice documents.</div>
+      <b>${HAS_027 ? "Transcript" : "Voice memo transcript"}</b>
+      <div class="meta" style="margin-bottom:6px">${HAS_027 ? "Every transcript lands here on its own. Got one some other way? Paste it and the team builds their documents from it." : `${ob.voice_memo_path ? "Their voice memo is above: download it and get the transcript. " : ob.voice_memo_sent_at ? "They say they've texted you their voice memo. " : ""}Paste the whole transcript here, then build their Customer Data and Your Voice documents.`}</div>
       <textarea id="obTranscript" rows="8" style="width:100%" placeholder="Paste the transcript…">${escapeHtml(ob.transcript || "")}</textarea>
     </div>
     ${ob.docs_error ? `<div class="modal-field"><b>Last build failed</b><div style="color:var(--red)">${escapeHtml(ob.docs_error)}</div></div>` : ""}
     ${(docs || []).map(d => `<details class="modal-field"><summary style="cursor:pointer"><b style="display:inline">${escapeHtml(d.title)}</b></summary><div class="doc-body" style="margin-top:8px">${docBodyHtml(d)}</div></details>`).join("")}
     <div class="modal-actions">
-      <button class="primary" id="obBuild">${built ? "Save and rebuild documents" : "Save and build documents"}</button>
+      <button class="primary" id="obBuild">${HAS_027 ? "Save and ask the team to build documents" : built ? "Save and rebuild documents" : "Save and build documents"}</button>
       <a class="btn" href="/welcome?client=${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Preview their onboarding</a>
       <button onclick="closeVideoModal()">Close</button>
     </div>
@@ -1456,11 +1468,40 @@ async function openOnboarding(clientId) {
   };
   const reset = box.querySelector("#obQReset");
   if (reset) reset.onclick = () => saveQs(null);
+  box.querySelector("#obQCopy").onclick = async () => {
+    const text = questionsToText(questionsFromText(box.querySelector("#obQText").value)).replace(/^## /gm, "").replace(/^Note: /gm, "").replace(/^- \[story\] /gm, "- (Story: just name it) ");
+    try { await navigator.clipboard.writeText(text); box.querySelector("#obQMsg").textContent = "Copied. Paste it in a text or email to them."; }
+    catch (e) { box.querySelector("#obQMsg").textContent = "Couldn't copy: select the text above and copy it."; }
+  };
+  const call = box.querySelector("#obCall");
+  if (call) call.onchange = async e => {
+    const f = e.target.files && e.target.files[0], msg = box.querySelector("#obCallMsg");
+    if (!f) return;
+    try {
+      const path = await uploadToBucket("onboarding", `${clientId}/calls/${Date.now()}-${f.name.replace(/[^\w.\-]+/g, "_")}`, f, pct => { msg.textContent = `Uploading… ${pct}%`; });
+      const { error } = await sbClient.from("social_onboarding_recordings").insert({ client_id: clientId, kind: "call", name: f.name, storage_path: path, uploaded_by_role: "operator" });
+      if (error) throw error;
+      await openOnboarding(clientId);
+    } catch (err) { msg.textContent = "That didn't upload: " + (err.message || err); }
+  };
   const btn = box.querySelector("#obBuild");
   btn.onclick = async () => {
     const err = box.querySelector("#obErr"); err.textContent = "";
     const transcript = box.querySelector("#obTranscript").value.trim();
     if (transcript.length < 200) { err.textContent = transcript ? "That's too short to build documents from. Paste the whole transcript." : "Paste the transcript first."; return; }
+    if (HAS_027) {
+      // The team builds the documents: the bridge on Tait's Mac sees a new
+      // transcript and asks the Account Manager (bridge/bridge.py).
+      const old = (ob.transcript || "").trim();
+      const added = transcript.startsWith(old) ? transcript.slice(old.length).trim() : transcript;
+      btn.disabled = true;
+      const up = await sbClient.from("social_client_onboarding").upsert({ client_id: clientId, transcript }, { onConflict: "client_id" });
+      const rec = added ? await sbClient.from("social_onboarding_recordings").insert({ client_id: clientId, kind: "call", name: "Pasted transcript", storage_path: `${clientId}/pasted/${Date.now()}`, uploaded_by_role: "operator", transcript: added, transcript_status: "done", transcribed_at: new Date().toISOString() }) : {};
+      if (up.error || rec.error) { err.textContent = (up.error || rec.error).message; btn.disabled = false; return; }
+      await loadLiveData();
+      openOnboarding(clientId);
+      return;
+    }
     btn.disabled = true; btn.textContent = "Building… (a minute or two)";
     const { data } = await sbClient.auth.getSession();
     let out = {};
