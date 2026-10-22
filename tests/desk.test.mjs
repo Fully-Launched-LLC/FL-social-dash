@@ -76,7 +76,7 @@ chk("videos to post have Mark posted", d().getElementById("deskPost").textConten
 
 // One client's page.
 d().querySelector('.nav-item[data-view="clients"]').click(); await settle();
-[...d().querySelectorAll("#allClientsList button")].find(b => b.textContent === "Open").click(); await settle();
+d().querySelector("#allClientsList b.video-card").click(); await settle();
 chk("client page opens with tabs", d().getElementById("view-client").classList.contains("active") && [...d().querySelectorAll("#cpTabs .chip")].map(c => c.textContent).join(",") === "Overview,Documents,Moodboard,Footage,Videos");
 chk("Open their portal links to their portal", d().getElementById("cpPortal").getAttribute("href") === "/clients/fl" || d().getElementById("cpPortal").getAttribute("href") === "/clients/gg");
 const openClient = async id => { op.w.openClientPage(id); await settle(); };
