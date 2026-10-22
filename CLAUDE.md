@@ -901,12 +901,11 @@ suggests edit-by 7 days earlier.
 
 ### Look and feel
 
-The sidebar is navy. The operator dashboard and editor portal have a navy
+The sidebar is navy. The operator dashboard, client portal and editor portal have a navy
 work area with white cards (`body.navy-work`; Tait, 2026-10-22: "i want all
-the background to be navy. the video cards can stay white"); the client
-portal and every popup keep the light grey work area with white cards and
+the background to be navy. the video cards can stay white"); every popup keeps the light grey work area with white cards and
 navy text (Tait, 2026-10-01: "too much navy"; the `.main, .modal-backdrop`
-block at the top of shell.css). The operator dashboard is **glass**
+block at the top of shell.css). The operator dashboard and the client portal are **glass** (the portal too: Tait, 2026-10-22, "make sure that the client facing dashboard looks like the operator dashboard")
 (`body.glass`, end of shell.css; Tait, 2026-10-22: "glass morphism… like
 apple design", keeping navy with the gold accent): a softly lit navy
 background, dark frosted sidebar and sticky top bar, light frosted cards,
@@ -977,8 +976,8 @@ gets these. Dates, status and the editor stay on the operator dashboard.
 
 The editor portal's work area is navy like its sidebar, with white
 headings and tabs and white cards (`body.navy-work` in shell.css; Tait,
-2026-10-15); the operator dashboard has the same since 2026-10-22. The
-client portal keeps the light work area. The operator's Documents page in a client portal starts each client
+2026-10-15); the operator dashboard and the client portal have the same
+since 2026-10-22, in glass (below). The operator's Documents page in a client portal starts each client
 with **Brand guidelines** (their colors, logo and font; `brandRow` in
 shell.js), saying so when there isn't one yet. **Editors see no client
 documents** (Tait, 2026-10-15, later the same day, reversing 020: "i dont
