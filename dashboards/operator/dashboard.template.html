@@ -19,6 +19,35 @@
 .lib-row { display:flex; align-items:center; gap:10px; border-top:1px solid var(--border); padding:7px 0; flex-wrap:wrap; }
 .lib-row .nm { flex:1; min-width:160px; }
 .lib-row button.on { background:var(--ink); color:var(--card); }
+/* Assets: folders like Finder (Tait, 2026-10-22). */
+.finder-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+.finder-bar .finder-path { display:flex; align-items:center; gap:6px; flex:1; min-width:0; flex-wrap:wrap; font-size:1.05rem; }
+.finder-bar .finder-path span { color:var(--sub2); }
+.finder-bar .crumb { background:none; border:none; padding:2px 4px; color:var(--sub); font:inherit; cursor:pointer; box-shadow:none; }
+.finder-bar .crumb:hover { color:var(--ink); }
+.finder-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr)); gap:8px 12px; margin-bottom:10px; }
+.finder-folder { display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 6px 10px; background:transparent; border:1px solid transparent; border-radius:12px; cursor:pointer; color:var(--ink); box-shadow:none; }
+.finder-folder:hover, .finder-folder:focus-visible { background:rgba(255,255,255,.07); border-color:var(--border); }
+.finder-folder svg { width:64px; height:52px; }
+.finder-folder .nm { font-size:.85rem; text-align:center; line-height:1.25; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.finder-folder .meta { font-size:.72rem; }
+.lib-row { position:relative; }
+.lib-play, .lib-icon { width:34px; height:34px; flex:0 0 34px; border-radius:999px; display:grid; place-items:center; padding:0; font-size:.85rem; }
+.lib-icon { border:1px solid var(--border); color:var(--sub); }
+.lib-for { color:var(--accent); }
+.asset-menu { position:absolute; right:0; top:100%; z-index:20; display:flex; flex-direction:column; min-width:200px; padding:6px; border-radius:14px;
+  background:var(--card); border:1px solid var(--border); box-shadow:0 12px 32px rgba(0,0,0,.35); }
+.asset-menu button { text-align:left; border:none; background:transparent; box-shadow:none; border-radius:8px; padding:8px 10px; }
+.asset-menu button:hover { background:rgba(255,255,255,.08); }
+.asset-menu button[aria-checked="true"] { color:var(--accent); }
+/* The glass theme rounds every button; folders and the path stay flat, like Finder. */
+html body.glass .main .card .finder-grid button.finder-folder { border-radius:12px; background:transparent; border:1px solid transparent; box-shadow:none; padding:12px 6px 10px; color:var(--ink); }
+html body.glass .main .card .finder-grid button.finder-folder:hover, html body.glass .main .card .finder-grid button.finder-folder:focus-visible { background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.14); }
+html body.glass .main .card .finder-path button.crumb { background:none; border:none; box-shadow:none; padding:2px 4px; color:var(--sub); }
+html body.glass .main .card .finder-path button.crumb:hover { color:#fff; background:none; }
+html body.glass .main .card .asset-menu button { border-radius:8px; background:transparent; border:none; box-shadow:none; text-align:left; }
+html body.glass .main .card .asset-menu button:hover { background:rgba(255,255,255,.08); }
+html body.glass .main .card .asset-menu { background:rgba(10,24,46,.96); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-color:rgba(255,255,255,.16); }
 /* Navy behind the cards (Tait, 2026-10-22: "i want all the background to be
    navy. the video cards can stay white"). body.navy-work (shell.css) makes
    .main navy and every .card white; these are the other white boxes. */
@@ -92,7 +121,7 @@ body.navy-work .main .board-col.drop { background:rgba(255,255,255,.10); }
   <div class="nav-item" data-view="ideabank" data-label="Content Ideas">Content Ideas<span class="n" id="navBankN" hidden></span></div>
   <div class="nav-item" data-view="clients" data-label="Clients">Clients<span class="n" id="navClientsN" hidden></span></div>
   <div class="nav-item" data-view="calendar" data-label="Content Calendar">Content Calendar</div>
-  <div class="nav-item" data-view="library" data-label="Library">Library</div>
+  <div class="nav-item" data-view="library" data-label="Assets">Assets</div>
   <div class="nav-item" data-view="editors" data-label="Editors">Editors</div>
   <div class="nav-item" data-view="aiteam" data-label="Agent room">Agent room<span class="n" id="navAgentN" hidden></span></div>
   <a class="nav-item" href="/editor/dashboard.html" target="_blank" rel="noopener" style="text-decoration:none">Editor portal ↗</a>
@@ -132,7 +161,8 @@ body.navy-work .main .board-col.drop { background:rgba(255,255,255,.10); }
   </section>
 
   <section class="view" id="view-library">
-    <div class="page-head"><div><h1>Library</h1><p>Music and sound effects every client shares, and the house moodboard. Mark favourites and anything never to use: the editor follows it.</p></div></div>
+    <div class="page-head"><div><h1>Assets</h1><p>Every asset across Fully Launched, in folders. Pick a client to see their own: the editors pull from that client's folder.</p></div></div>
+    <div class="client-tabs" id="assetScope"></div>
     <div class="client-tabs" id="libTabs"></div>
     <div id="libBody"></div>
   </section>
@@ -1761,60 +1791,108 @@ async function askForPlan() {
 // colours, video styles) as screenshots, videos and links, per client or for
 // every client (client_id null = the house moodboard). The board itself is
 // shared with the client portal (renderMoodBoard in shell.js, migration 033).
-let MOOD = [], ASSETS = [], HAS_028 = true, LIB = { tab: "music", folder: "", q: "" };
+let MOOD = [], ASSETS = [], CLIENT_ASSETS = [], HAS_028 = true, HAS_036 = true;
 async function loadStyleData() {
-  const [m, a] = await Promise.all([
+  const [m, a, ca] = await Promise.all([
     sbClient.from("social_moodboard_items").select("*").order("created_at"),
     sbClient.from("social_style_assets").select("*").order("name"),
+    sbClient.from("social_client_assets").select("*"),
   ]);
-  HAS_028 = !m.error;
-  MOOD = m.data || []; ASSETS = a.error ? [] : (a.data || []);
+  HAS_028 = !m.error; HAS_036 = !ca.error;
+  MOOD = m.data || []; ASSETS = a.error ? [] : (a.data || []); CLIENT_ASSETS = ca.data || [];
 }
+
+// ---------- Assets (migration 036) ----------
+// Tait, 2026-10-22: "change the name of the library tab to assets... i want
+// the folders to look like apple finder or google drive... see all of the
+// assets across fully launched as a whole, but then also at the top click
+// like grad gig, and it'll show me different folders". Fully Launched shows
+// everything; a client shows only what's been favourited for them (the
+// folder the editors pull from: bridge.py assets export). No house
+// moodboard here: each client's board is in their portal.
+const ASSET_KINDS = [["music", "Music"], ["sfx", "Sound effects"], ["lut", "LUTs / Powergrades"], ["motion", "Motion graphics"], ["font", "Fonts"]];
+let LIB = { scope: "all", kind: "music", path: "", q: "" };
+const assetClients = id => CLIENT_ASSETS.filter(x => x.asset_id === id).map(x => x.client_id);
+const folderIcon = `<svg viewBox="0 0 64 52" aria-hidden="true"><path d="M4 8a4 4 0 0 1 4-4h16l6 6h26a4 4 0 0 1 4 4v4H4z" fill="#8e8e93"/><rect x="4" y="14" width="56" height="34" rx="4" fill="#aeaeb2"/><rect x="4" y="14" width="56" height="5" rx="2" fill="#c7c7cc" opacity=".6"/></svg>`;
+const fileIcon = kind => ({ music: "♪", sfx: "◉", lut: "◐", motion: "▶", font: "Aa" }[kind] || "•");
 function renderLibrary() {
-  const tabs = [["music", "Music"], ["sfx", "Sound effects"], ["house", "House moodboard"]];
-  document.getElementById("libTabs").innerHTML = tabs.map(([k, l]) => `<div class="chip ${k === LIB.tab ? "active" : ""}" data-lib="${k}">${l}</div>`).join("");
-  document.querySelectorAll("#libTabs .chip").forEach(el => el.onclick = () => { LIB = { tab: el.dataset.lib, folder: "", q: "" }; renderLibrary(); });
+  if (LIB.scope !== "all" && !CLIENT_BY_ID[LIB.scope]) LIB.scope = "all";
+  document.getElementById("assetScope").innerHTML = [{ id: "all", name: "Fully Launched" }, ...CLIENTS].map(c => `<div class="chip ${LIB.scope === c.id ? "active" : ""}" data-scope="${c.id}">${escapeHtml(c.name)}</div>`).join("");
+  document.querySelectorAll("#assetScope .chip").forEach(el => el.onclick = () => { LIB = { ...LIB, scope: el.dataset.scope, path: "", q: "" }; renderLibrary(); });
+  const inScope = a => LIB.scope === "all" || assetClients(a.id).includes(LIB.scope);
+  document.getElementById("libTabs").innerHTML = ASSET_KINDS.map(([k, l]) => `<div class="chip ${k === LIB.kind ? "active" : ""}" data-lib="${k}">${chipLabel(l, ASSETS.filter(a => a.kind === k && inScope(a)).length)}</div>`).join("");
+  document.querySelectorAll("#libTabs .chip").forEach(el => el.onclick = () => { LIB = { ...LIB, kind: el.dataset.lib, path: "", q: "" }; renderLibrary(); });
   const body = document.getElementById("libBody");
-  if (!HAS_028) { body.innerHTML = `<div class="card" style="border-color:var(--gold)"><b>The Library needs migration 028.</b><div class="meta">Run supabase/migrations/028_moodboards_and_library.sql in the Supabase SQL Editor.</div></div>`; return; }
-  if (LIB.tab === "house") {
-    body.innerHTML = `<div id="houseMood">Loading…</div>`;
-    renderMoodBoard(document.getElementById("houseMood"), { clientId: null, role: "operator" });
-    return;
-  }
-  const all = ASSETS.filter(a => a.kind === LIB.tab);
-  const folders = [...new Set(all.map(a => a.folder).filter(Boolean))].sort();
-  const shown = all.filter(a => (!LIB.folder || a.folder === LIB.folder) && (!LIB.q || a.name.toLowerCase().includes(LIB.q.toLowerCase())));
-  body.innerHTML = `<div class="card">
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-      <select id="libFolder"><option value="">All folders (${all.length})</option>${folders.map(f => `<option ${f === LIB.folder ? "selected" : ""}>${escapeHtml(f)}</option>`).join("")}</select>
-      <input type="search" id="libQ" placeholder="Search" value="${escapeHtml(LIB.q)}">
-    </div>
-    ${all.length ? "" : `<div class="empty">Nothing here yet. The bridge adds your folders: <code>python3 bridge/bridge.py assets sync</code>.</div>`}
-    ${shown.map(a => `<div class="lib-row" data-asset="${a.id}"><button onclick="libPlay('${a.id}', this)">▶</button>
-      <div class="nm"><b>${escapeHtml(a.name)}</b><div class="meta">${escapeHtml([a.folder, a.duration_s ? Math.round(a.duration_s) + "s" : ""].filter(Boolean).join(" · "))}</div></div>
-      <button class="${a.rating === "favourite" ? "on" : ""}" onclick="libRate('${a.id}','favourite')">★ Favourite</button>
-      <button class="${a.rating === "never" ? "on" : ""}" onclick="libRate('${a.id}','never')">Never use</button></div>`).join("")}
+  if (!HAS_036) { body.innerHTML = `<div class="card" style="border-color:var(--gold)"><b>Assets needs migration 036.</b><div class="meta">Run supabase/migrations/036_assets.sql in the Supabase SQL Editor.</div></div>`; return; }
+  const all = ASSETS.filter(a => a.kind === LIB.kind && inScope(a));
+  const fp = a => a.folder_path || "";
+  const here = LIB.path, under = a => here === "" || fp(a) === here || fp(a).startsWith(here + "/");
+  // Folders one level down from here, with how many files are inside.
+  const sub = {};
+  all.filter(under).forEach(a => { const rest = here ? fp(a).slice(here.length + 1) : fp(a); if (rest) { const top = rest.split("/")[0]; sub[top] = (sub[top] || 0) + 1; } });
+  const files = LIB.q ? all.filter(a => under(a) && (a.name + " " + fp(a)).toLowerCase().includes(LIB.q.toLowerCase())) : all.filter(a => fp(a) === here);
+  const kindLabel = ASSET_KINDS.find(k => k[0] === LIB.kind)[1], scopeName = LIB.scope === "all" ? "" : CLIENT_BY_ID[LIB.scope].name;
+  const crumbs = [[kindLabel, ""]].concat(here ? here.split("/").map((n, i, arr) => [n, arr.slice(0, i + 1).join("/")]) : []);
+  body.innerHTML = `<div class="card finder">
+    <div class="finder-bar"><div class="finder-path">${crumbs.map(([n, pth], i) => i === crumbs.length - 1 ? `<b>${escapeHtml(n)}</b>` : `<button class="crumb" data-path="${escapeHtml(pth)}">${escapeHtml(n)}</button><span>›</span>`).join("")}</div>
+      <input type="search" id="libQ" placeholder="Search ${escapeHtml(kindLabel.toLowerCase())}" value="${escapeHtml(LIB.q)}"></div>
+    ${LIB.q ? "" : `<div class="finder-grid">${Object.keys(sub).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).map(n => `<button class="finder-folder" data-path="${escapeHtml(here ? here + "/" + n : n)}">${folderIcon}<span class="nm">${escapeHtml(n)}</span><span class="meta">${sub[n]}</span></button>`).join("")}</div>`}
+    <div class="finder-files">${files.map(a => {
+      const mine = assetClients(a.id);
+      return `<div class="lib-row" data-asset="${a.id}">
+        ${a.preview_path ? `<button class="lib-play" onclick="assetPreview('${a.id}', this)" aria-label="Preview">${["music", "sfx"].includes(a.kind) ? "▶" : "👁"}</button>` : `<span class="lib-icon">${fileIcon(a.kind)}</span>`}
+        <div class="nm"><b>${escapeHtml(a.name)}</b><div class="meta">${escapeHtml([LIB.q && fp(a), a.file_type && a.file_type.toUpperCase(), a.duration_s ? Math.round(a.duration_s) + "s" : "", a.made_by && "made by the " + a.made_by].filter(Boolean).join(" · "))}${mine.length && LIB.scope === "all" ? ` · <span class="lib-for">♥ ${mine.map(id => escapeHtml(CLIENT_BY_ID[id] ? CLIENT_BY_ID[id].name : "")).join(", ")}</span>` : ""}</div></div>
+        ${LIB.scope === "all" ? `<button onclick="assetForClientMenu('${a.id}', this)">♥ Favorite for…</button>` : `<button onclick="toggleClientAsset('${a.id}','${LIB.scope}')">Remove from ${escapeHtml(scopeName)}</button>`}</div>`;
+    }).join("")}</div>
+    ${!all.length ? `<div class="empty">${LIB.scope === "all" ? `No ${escapeHtml(kindLabel.toLowerCase())} yet. Send them to Claude ("add these to ${escapeHtml(kindLabel.toLowerCase())}"), or put them in the folder on your Mac and run <code>bridge.py assets sync</code>.` : `Nothing favourited for ${escapeHtml(scopeName)} yet. Go to Fully Launched and tap ♥ Favorite for… on anything you like for them.`}</div>`
+      : !files.length && !Object.keys(sub).length ? `<div class="empty">Nothing here.</div>` : ""}
     </div><audio id="libAudio" hidden></audio>`;
-  document.getElementById("libFolder").onchange = e => { LIB.folder = e.target.value; renderLibrary(); };
+  body.querySelectorAll("[data-path]").forEach(b => b.onclick = () => { LIB = { ...LIB, path: b.dataset.path, q: "" }; renderLibrary(); });
   document.getElementById("libQ").oninput = e => { LIB.q = e.target.value; clearTimeout(renderLibrary.t); renderLibrary.t = setTimeout(() => { renderLibrary(); const q = document.getElementById("libQ"); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }, 250); };
+  loadFontPreviews(files);
 }
-async function libPlay(id, btn) {
-  const a = ASSETS.find(x => x.id === id), audio = document.getElementById("libAudio");
+// Fonts show their own name in the font.
+async function loadFontPreviews(files) {
+  for (const a of files.filter(x => x.kind === "font" && x.preview_path)) {
+    const fam = "asset-" + a.id;
+    if (!document.fonts || [...document.fonts].some(f => f.family === fam)) { const el = document.querySelector(`[data-asset="${a.id}"] .nm b`); if (el) el.style.fontFamily = `"${fam}"`; continue; }
+    const { data } = await sbClient.storage.from("library").createSignedUrl(a.preview_path, 3600);
+    if (!data || !data.signedUrl) continue;
+    try { const face = new FontFace(fam, `url(${data.signedUrl})`); await face.load(); document.fonts.add(face); } catch (e) { continue; }
+    const el = document.querySelector(`[data-asset="${a.id}"] .nm b`);
+    if (el) el.style.fontFamily = `"${fam}"`;
+  }
+}
+async function assetPreview(id, btn) {
+  const a = ASSETS.find(x => x.id === id);
   if (!a || !a.preview_path) return;
-  if (audio.dataset.id === id && !audio.paused) { audio.pause(); btn.textContent = "▶"; return; }
-  document.querySelectorAll(".lib-row button").forEach(b => { if (b.textContent === "❚❚") b.textContent = "▶"; });
   const { data } = await sbClient.storage.from("library").createSignedUrl(a.preview_path, 3600);
   if (!data || !data.signedUrl) return;
+  if (a.kind === "motion") { openModal(`<h2>${escapeHtml(a.name)}</h2><video src="${escapeHtml(data.signedUrl)}" controls autoplay muted loop playsinline style="width:100%;border-radius:12px;background:#000"></video><div class="modal-actions"><button onclick="closeVideoModal()">Close</button></div>`); return; }
+  if (a.kind === "font") return;
+  const audio = document.getElementById("libAudio");
+  if (audio.dataset.id === id && !audio.paused) { audio.pause(); btn.textContent = "▶"; return; }
+  document.querySelectorAll(".lib-play").forEach(b => { if (b.textContent === "❚❚") b.textContent = "▶"; });
   audio.src = data.signedUrl; audio.dataset.id = id;
   audio.onended = () => { btn.textContent = "▶"; };
   try { await audio.play(); btn.textContent = "❚❚"; } catch (e) {}
 }
-async function libRate(id, rating) {
-  const a = ASSETS.find(x => x.id === id);
-  const next = a && a.rating === rating ? null : rating;
-  const { error } = await sbClient.from("social_style_assets").update({ rating: next }).eq("id", id);
+// "favorite this sound effect for blank client": a little menu of clients.
+function assetForClientMenu(id, btn) {
+  document.querySelectorAll(".asset-menu").forEach(m => m.remove());
+  const mine = assetClients(id);
+  btn.insertAdjacentHTML("afterend", `<div class="asset-menu" role="menu">${CLIENTS.map(c => `<button role="menuitemcheckbox" aria-checked="${mine.includes(c.id)}" data-c="${c.id}">${mine.includes(c.id) ? "♥" : "♡"} ${escapeHtml(c.name)}</button>`).join("")}</div>`);
+  const menu = btn.nextElementSibling;
+  menu.querySelectorAll("[data-c]").forEach(b => b.onclick = e => { e.stopPropagation(); toggleClientAsset(id, b.dataset.c); });
+  setTimeout(() => document.addEventListener("click", function off(e) { if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener("click", off); } }), 0);
+}
+async function toggleClientAsset(assetId, clientId) {
+  const has = CLIENT_ASSETS.some(x => x.asset_id === assetId && x.client_id === clientId);
+  const { error } = has
+    ? await sbClient.from("social_client_assets").delete().eq("asset_id", assetId).eq("client_id", clientId)
+    : await sbClient.from("social_client_assets").insert({ asset_id: assetId, client_id: clientId, added_by: "tait" });
   if (error) { alert(error.message); return; }
-  if (a) a.rating = next;
+  CLIENT_ASSETS = has ? CLIENT_ASSETS.filter(x => !(x.asset_id === assetId && x.client_id === clientId)) : CLIENT_ASSETS.concat([{ asset_id: assetId, client_id: clientId }]);
   renderLibrary();
 }
 
@@ -2110,7 +2188,7 @@ function renderAll() {
   renderGlobalClientFilter();
   renderDesk(); renderCalendar(); renderIdeaBank(); renderIdeaDb(); renderAllClients(); renderEditors(); renderAgentRoom();
   if (document.getElementById("view-client").classList.contains("active")) renderClientPage();
-  if (LIB.tab !== "house" || document.getElementById("view-library").classList.contains("active")) renderLibrary();
+  renderLibrary();
 }
 
 // Only a social_operators login gets past the gate — never an editor or

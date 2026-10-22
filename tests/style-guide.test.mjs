@@ -1,6 +1,7 @@
-// Unify Phase 4 (migration 028): moodboards (per client and the house
-// moodboard) and the Library of shared music and sound effects. Migration
-// 033: each client's moodboard is shared with the client (portal Documents).
+// Moodboards (028, 033: each client's board is shared with the client) and
+// Assets (036; Tait, 2026-10-22): every asset across Fully Launched in
+// Finder-style folders, five kinds, and each client's own favourites.
+import { readFileSync } from "node:fs";
 import { freshDb, makeHarness, checker, pickFile } from "./harness.mjs";
 
 const db = await freshDb();
@@ -18,7 +19,9 @@ await db.exec(`
     ('music','Arrival of the Birds','editor/public/clients/_music/cinematic/Arrival.mp3','cinematic','music/a.mp3',212),
     ('music','Kung Fu Fighting','editor/public/clients/_music/cinematic/Kung.mp3','cinematic','music/b.mp3',180),
     ('sfx','Deep impact','editor/public/clients/_sfx/library/impacts/Deep impact.wav','impacts','sfx/c.mp3',2.1),
-    ('sfx','Whoosh 3','editor/public/clients/_sfx/library/Whooshes/Whoosh 3.wav','Whooshes','sfx/d.mp3',1.2);
+    ('sfx','Whoosh 3','editor/public/clients/_sfx/library/Whooshes/Whoosh 3.wav','Whooshes','sfx/d.mp3',1.2),
+    ('sfx','Shutter 1','editor/public/clients/_sfx/library/Camera sounds/shutter clicks/Shutter 1.wav','shutter clicks','sfx/e.mp3',0.4),
+    ('sfx','Paper','editor/public/clients/_sfx/library/Paper.wav','library','sfx/f.mp3',0.8);
   insert into social_moodboard_items (client_id, kind, url, note) values (null,'link','https://instagram.com/p/kallaway','the swipes');
 `);
 // Migration 033: a client reads and adds to their own board only.
@@ -27,31 +30,49 @@ chk("client can't add to the house moodboard", !!(await as(CL, `insert into soci
 chk("client can't add as the operator", !!(await as(CL, `insert into social_moodboard_items (client_id,kind,note,added_by_role) values ($1,'note','x','operator')`, [GG])).error);
 chk("bad section refused", !!(await as(OP, `insert into social_moodboard_items (client_id,kind,note,section) values ($1,'note','x','nope')`, [GG])).error);
 chk("client can't read the Library", !(await as(CL, `select * from social_style_assets`)).data.length);
-chk("rating must be favourite or never", !!(await as(OP, `update social_style_assets set rating='maybe'`)).error);
+// 036: folder paths come from where each file sits on the drive.
+await db.exec(`update social_style_assets set folder_path = null`);
+await db.exec(readFileSync(new URL("../supabase/migrations/036_assets.sql", import.meta.url), "utf8"));
+const fps = Object.fromEntries((await db.query(`select name, folder_path from social_style_assets`)).rows.map(r => [r.name, r.folder_path]));
+chk("folder paths from the drive, nested ones kept", fps["Deep impact"] === "impacts" && fps["Shutter 1"] === "Camera sounds/shutter clicks" && fps["Paper"] === "" && fps["Arrival of the Birds"] === "cinematic", fps);
+chk("client can't read anyone's assets list", !(await as(CL, `select * from social_client_assets`)).data.length);
+chk("five kinds", !(await as(OP, `insert into social_style_assets (kind,name) values ('lut','Warm glow'),('motion','Lower third'),('font','Inter')`)).error && !!(await as(OP, `insert into social_style_assets (kind,name) values ('poster','x')`)).error);
 
 const op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
 const d = op.d;
-chk("Library is in the sidebar", !!d.querySelector('.nav-item[data-view="library"]'));
+chk("Assets is in the sidebar (was Library)", d.querySelector('.nav-item[data-view="library"]').textContent === "Assets");
 d.querySelector('.nav-item[data-view="library"]').click(); await settle();
+chk("tabs: Music, Sound effects, LUTs / Powergrades, Motion graphics, Fonts; no house moodboard", [...d.querySelectorAll("#libTabs .chip")].map(c => c.textContent.replace(/\d+$/, "").trim()).join("|") === "Music|Sound effects|LUTs / Powergrades|Motion graphics|Fonts" && !d.getElementById("libBody").textContent.includes("the swipes"), [...d.querySelectorAll("#libTabs .chip")].map(c => c.textContent));
+chk("scope: Fully Launched, then each client", [...d.querySelectorAll("#assetScope .chip")].map(c => c.textContent).join("|") === "Fully Launched|Grad Gig");
 const rows = () => [...d.querySelectorAll("#libBody .lib-row")].map(r => r.querySelector(".nm b").textContent);
-chk("Music tab lists the music", JSON.stringify(rows()) === JSON.stringify(["Arrival of the Birds", "Kung Fu Fighting"]), rows());
+const folders = () => [...d.querySelectorAll("#libBody .finder-folder .nm")].map(f => f.textContent);
 const rowFor = name => [...d.querySelectorAll("#libBody .lib-row")].find(r => r.textContent.includes(name));
-[...rowFor("Arrival").querySelectorAll("button")].find(b => b.textContent.includes("Favourite")).click(); await settle();
-[...rowFor("Kung").querySelectorAll("button")].find(b => b.textContent === "Never use").click(); await settle();
-const rated = (await db.query(`select name, rating from social_style_assets where kind='music' order by name`)).rows;
-chk("Favourite and Never use save", rated[0].rating === "favourite" && rated[1].rating === "never", rated);
-chk("buttons show the rating", rowFor("Arrival").querySelector("button.on").textContent.includes("Favourite"));
-[...rowFor("Arrival").querySelectorAll("button")].find(b => b.textContent.includes("Favourite")).click(); await settle();
-chk("clicking again clears it", (await db.query(`select rating from social_style_assets where name='Arrival of the Birds'`)).rows[0].rating === null);
+chk("Music opens on its folders", JSON.stringify(folders()) === JSON.stringify(["cinematic"]) && !rows().length, folders());
+d.querySelector('#libBody .finder-folder').click(); await settle();
+chk("inside a folder: its files, and the path at the top", JSON.stringify(rows()) === JSON.stringify(["Arrival of the Birds", "Kung Fu Fighting"]) && d.querySelector(".finder-path").textContent.includes("cinematic"), [rows(), d.querySelector(".finder-path").outerHTML]);
 op.w.HTMLMediaElement.prototype.play = async () => {};
-rowFor("Arrival").querySelector("button").click(); await settle();
+rowFor("Arrival").querySelector(".lib-play").click(); await settle(); await new Promise(r => setTimeout(r, 10));
 chk("play loads the preview", (d.getElementById("libAudio").getAttribute("src") || "").includes("music/a.mp3"));
+[...rowFor("Arrival").querySelectorAll("button")].find(b => b.textContent.includes("Favorite for")).click(); await settle();
+d.querySelector('.asset-menu [data-c]').click(); await settle(); await new Promise(r => setTimeout(r, 10));
+chk("♥ Favorite for… Grad Gig saves it to their assets", (await db.query(`select count(*)::int n from social_client_assets where client_id=$1`, [GG])).rows[0].n === 1 && rowFor("Arrival").textContent.includes("♥ Grad Gig"));
 d.querySelector('#libTabs [data-lib="sfx"]').click(); await settle();
-chk("Sound effects tab with folders", rows().length === 2 && d.getElementById("libFolder").textContent.includes("Whooshes"));
-d.getElementById("libFolder").value = "impacts"; d.getElementById("libFolder").dispatchEvent(new op.w.Event("change")); await settle();
-chk("folder filter", JSON.stringify(rows()) === JSON.stringify(["Deep impact"]), rows());
-d.querySelector('#libTabs [data-lib="house"]').click(); await settle();
-chk("House moodboard shows its items", d.getElementById("libBody").textContent.includes("the swipes"));
+chk("Sound effects: folders like the drive, loose files at the top", JSON.stringify(folders()) === JSON.stringify(["Camera sounds", "impacts", "Whooshes"]) && JSON.stringify(rows()) === JSON.stringify(["Paper"]), [folders(), rows()]);
+[...d.querySelectorAll("#libBody .finder-folder")].find(f => f.textContent.includes("Camera sounds")).click(); await settle();
+chk("folders inside folders", JSON.stringify(folders()) === JSON.stringify(["shutter clicks"]) && !rows().length);
+d.querySelector("#libBody .finder-folder").click(); await settle();
+chk("…down to the file", JSON.stringify(rows()) === JSON.stringify(["Shutter 1"]));
+d.querySelector('.finder-path [data-path=""]').click(); await settle();
+chk("the path goes back up", folders().includes("Whooshes"));
+d.getElementById("libQ").value = "shutter"; d.getElementById("libQ").dispatchEvent(new op.w.Event("input")); await new Promise(r => setTimeout(r, 300)); await settle();
+chk("search finds files in any folder", JSON.stringify(rows()) === JSON.stringify(["Shutter 1"]), rows());
+d.querySelector(`#assetScope [data-scope="${GG}"]`).click(); await settle();
+d.querySelector('#libTabs [data-lib="music"]').click(); await settle();
+chk("Grad Gig: only their assets, in their folders", JSON.stringify(folders()) === JSON.stringify(["cinematic"]) && /Sound effects\s*0/.test(d.getElementById("libTabs").textContent), d.getElementById("libTabs").textContent);
+d.querySelector("#libBody .finder-folder").click(); await settle();
+chk("…the favourite is there", JSON.stringify(rows()) === JSON.stringify(["Arrival of the Birds"]));
+[...rowFor("Arrival").querySelectorAll("button")].find(b => b.textContent === "Remove from Grad Gig").click(); await settle();
+chk("Remove from Grad Gig takes it out", !(await db.query(`select 1 from social_client_assets`)).rows.length);
 
 // Client moodboard (shared with the client, migration 033): upload into a
 // section, link, words, note, move between sections, remove.

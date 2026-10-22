@@ -111,6 +111,10 @@ class Supabase:
         q = "&".join(f"{k}=eq.{urllib.parse.quote(str(v))}" for k, v in match.items())
         return self._req("PATCH", f"/rest/v1/{table}?{q}", patch, {"Prefer": "return=representation"})
 
+    def delete(self, table, match):
+        q = "&".join(f"{k}=eq.{urllib.parse.quote(str(v))}" for k, v in match.items())
+        return self._req("DELETE", f"/rest/v1/{table}?{q}")
+
     def download(self, bucket, path):
         return self._req("GET", f"/storage/v1/object/{bucket}/{urllib.parse.quote(path)}", raw=True)
 
@@ -1191,10 +1195,22 @@ def youtube_outliers(key, query, days=180, limit=25):
     return "\n".join(f"{x:.1f}x · {views:,} views · {title} · {ch} · https://youtu.be/{vid}" for x, views, title, ch, vid in rows[:limit])
 
 
-# ── the Library: shared music and sound effects ─────────────────────────
+# ── Assets: every asset across Fully Launched, and each client's own ─────
+# Tait, 2026-10-22: Assets has Music, Sound effects, LUTs/Powergrades,
+# Motion graphics and Fonts, in folders like on the drive; any asset can be
+# a favourite for a client, and the editors pull from a folder of that
+# client's favourites. The files stay on this Mac (editor/public/clients/ is
+# gitignored); the page gets a small preview in the private 'library' bucket.
 REPO = pathlib.Path(__file__).resolve().parents[1]
-LIBRARY_DIRS = [("music", REPO / "editor/public/clients/_music"), ("sfx", REPO / "editor/public/clients/_sfx/library")]
+ASSET_ROOT = REPO / "editor/public/clients"
+LIBRARY_DIRS = [("music", ASSET_ROOT / "_music"), ("sfx", ASSET_ROOT / "_sfx/library"), ("lut", ASSET_ROOT / "_luts"),
+                ("motion", ASSET_ROOT / "_motion"), ("font", ASSET_ROOT / "_fonts")]
+ASSET_LABEL = {"music": "Music", "sfx": "Sound effects", "lut": "LUTs and Powergrades", "motion": "Motion graphics", "font": "Fonts"}
 AUDIO = {".mp3", ".wav", ".m4a", ".aif", ".aiff", ".flac", ".ogg", ".aac"}
+ASSET_EXT = {"music": AUDIO, "sfx": AUDIO, "lut": {".cube", ".3dl", ".drx", ".dpx", ".look", ".lut", ".dctl"},
+             "motion": {".mov", ".mp4", ".webm", ".m4v", ".mogrt", ".gif", ".png", ".json", ".aep", ".drfx", ".setting"},
+             "font": {".ttf", ".otf", ".woff", ".woff2"}}
+FONT_MIME = {".ttf": "font/ttf", ".otf": "font/otf", ".woff": "font/woff", ".woff2": "font/woff2"}
 
 
 def audio_seconds(path):
@@ -1206,32 +1222,91 @@ def audio_seconds(path):
         return None
 
 
+def asset_preview(sb, kind, f, rel):
+    """A small preview the page can play or show: audio as MP3 (music: the
+    first 60 s; sound effects: up to 15 s), motion as a short MP4, a font
+    file as itself. LUTs and project files have none."""
+    ext = f.suffix.lower()
+    key = uuid.uuid5(uuid.NAMESPACE_URL, rel).hex
+    if kind in ("music", "sfx"):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = pathlib.Path(tmp) / "p.mp3"
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(f), "-t", "60" if kind == "music" else "15", "-ac", "2", "-b:a", "96k", str(out)], check=True)
+            sb.upload("library", f"{kind}/{key}.mp3", out.read_bytes(), "audio/mpeg")
+        return f"{kind}/{key}.mp3"
+    if kind == "motion" and ext in {".mov", ".mp4", ".webm", ".m4v", ".gif"}:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = pathlib.Path(tmp) / "p.mp4"
+            r = subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(f), "-t", "10", "-vf", "scale=480:-2", "-an", "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                                "-movflags", "+faststart", str(out)], capture_output=True)
+            if r.returncode == 0:
+                sb.upload("library", f"motion/{key}.mp4", out.read_bytes(), "video/mp4")
+                return f"motion/{key}.mp4"
+    if kind == "font" and ext in FONT_MIME:
+        sb.upload("library", f"font/{key}{ext}", f.read_bytes(), FONT_MIME[ext])
+        return f"font/{key}{ext}"
+    return None
+
+
+def index_asset(sb, kind, root, f, made_by=None):
+    rel = str(f.relative_to(REPO))
+    folder_path = str(f.parent.relative_to(root)) if f.parent != root else ""
+    row = {"kind": kind, "name": f.stem, "path": rel, "folder": f.parent.name if folder_path else root.name,
+           "folder_path": folder_path, "file_type": f.suffix.lower().lstrip("."), "preview_path": asset_preview(sb, kind, f, rel),
+           "duration_s": audio_seconds(f) if kind in ("music", "sfx", "motion") else None}
+    if made_by:
+        row["made_by"] = made_by
+    return sb.insert("social_style_assets", row)[0]
+
+
 def sync_assets(sb):
-    """Index the shared music and sound effects folders into
-    social_style_assets, with a small MP3 preview in the 'library' bucket
-    (music: the first 60 s; sound effects: all of it, up to 15 s)."""
+    """Index every asset folder into social_style_assets (new files only)."""
     known = {r["path"] for r in sb.select("social_style_assets", "select=path")}
     added = 0
     for kind, root in LIBRARY_DIRS:
-        if not root.exists():
-            continue
+        root.mkdir(parents=True, exist_ok=True)
         for f in sorted(root.rglob("*")):
-            if f.suffix.lower() not in AUDIO or f.name.startswith("._"):
+            if not f.is_file() or f.suffix.lower() not in ASSET_EXT[kind] or f.name.startswith("._"):
                 continue
-            rel = str(f.relative_to(REPO))
-            if rel in known:
+            if str(f.relative_to(REPO)) in known:
                 continue
-            folder = f.parent.name if f.parent != root else root.name
-            preview = f"{kind}/{uuid.uuid5(uuid.NAMESPACE_URL, rel).hex}.mp3"
-            with tempfile.TemporaryDirectory() as tmp:
-                out = pathlib.Path(tmp) / "p.mp3"
-                cut = ["-t", "60"] if kind == "music" else ["-t", "15"]
-                subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(f), *cut, "-ac", "2", "-b:a", "96k", str(out)], check=True)
-                sb.upload("library", preview, out.read_bytes(), "audio/mpeg")
-            sb.insert("social_style_assets", {"kind": kind, "name": f.stem, "path": rel, "folder": folder,
-                                              "preview_path": preview, "duration_s": audio_seconds(f)})
+            index_asset(sb, kind, root, f)
             added += 1
-    return f"Library: {added} new file(s) added ({len(known) + added} in all)."
+    return f"Assets: {added} new file(s) added ({len(known) + added} in all)."
+
+
+def find_asset(sb, ref):
+    """An asset by id, path, or name (a name has to match just one)."""
+    q = urllib.parse.quote(ref)
+    if re.fullmatch(r"[0-9a-f-]{36}", ref):
+        rows = sb.select("social_style_assets", f"select=*&id=eq.{ref}")
+    else:
+        rows = sb.select("social_style_assets", f"select=*&path=eq.{q}") or sb.select("social_style_assets", f"select=*&name=ilike.{q}")
+    if len(rows) != 1:
+        sys.exit(f"{'No asset' if not rows else str(len(rows)) + ' assets'} matching '{ref}'." + (" Use its id or path:\n" + "\n".join(f"  {r['id']} {r['path']}" for r in rows[:10]) if rows else ""))
+    return rows[0]
+
+
+def export_client_assets(sb, c):
+    """editor/public/clients/<slug>/_assets/<Kind>/<folder>/<file>: links to
+    every asset that's a favourite for the client, rebuilt each time, so an
+    editor opens one folder of just that client's assets."""
+    out = ASSET_ROOT / c["slug"] / "_assets"
+    if out.exists():
+        for p in sorted(out.rglob("*"), reverse=True):
+            p.unlink() if p.is_symlink() or p.is_file() else p.rmdir()
+    ids = [r["asset_id"] for r in sb.select("social_client_assets", f"select=asset_id&client_id=eq.{c['id']}")]
+    rows = sb.select("social_style_assets", f"select=kind,folder_path,path&id=in.({','.join(ids)})") if ids else []
+    n = 0
+    for r in rows:
+        src = REPO / r["path"]
+        if not src.exists():
+            continue
+        dest = out / ASSET_LABEL.get(r["kind"], r["kind"]) / (r.get("folder_path") or "") / src.name
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.symlink_to(src)
+        n += 1
+    return out, n
 
 
 # ── commands agents use ─────────────────────────────────────────────────
@@ -1257,7 +1332,13 @@ def main(argv=None):
     dg = sub.add_parser("doc-get"); dg.add_argument("--client", required=True); dg.add_argument("--kind", required=True, choices=DOC_KINDS)
     m = sub.add_parser("moodboard"); m.add_argument("action", choices=["get", "used", "place"]); m.add_argument("--client", required=True, help="a portal address, or 'house'")
     m.add_argument("--id", help="place: the item's id"); m.add_argument("--section", choices=MOOD_SECTIONS, help="place: its group")
-    s = sub.add_parser("assets"); s.add_argument("action", choices=["sync", "list"]); s.add_argument("--kind", choices=["music", "sfx"])
+    s = sub.add_parser("assets", help="the Assets library: sync, list, add a file, favourite one for a client, build a client's folder")
+    s.add_argument("action", choices=["sync", "list", "add", "favorite", "unfavorite", "export"]); s.add_argument("--kind", choices=["music", "sfx", "lut", "motion", "font"])
+    s.add_argument("--client", help="a portal address: list/favorite/unfavorite/export for that client")
+    s.add_argument("--asset", help="favorite/unfavorite: the asset's id, path or name")
+    s.add_argument("--file", help="add: the file to put in the library")
+    s.add_argument("--into", default="", help="add: the folder inside the category, e.g. 'Whooshes' or 'Camera sounds/shutter clicks'")
+    s.add_argument("--by", help="add: who made it, e.g. 'Sound Designer'")
     s.add_argument("--folder"); s.add_argument("--favourites", action="store_true")
     ia = sub.add_parser("idea"); ia.add_argument("action", choices=["add"]); ia.add_argument("--client", required=True)
     ia.add_argument("--title", required=True); ia.add_argument("--body"); ia.add_argument("--source", default="research", choices=["tait", "phone", "research", "sandcastles", "client"])
@@ -1501,6 +1582,47 @@ def main(argv=None):
     elif a.cmd == "assets":
         if a.action == "sync":
             print(sync_assets(sb))
+        elif a.action == "add":
+            if not (a.kind and a.file):
+                sys.exit("add needs --kind and --file (and --into for the folder).")
+            src, root = pathlib.Path(a.file).expanduser(), dict(LIBRARY_DIRS)[a.kind]
+            if src.suffix.lower() not in ASSET_EXT[a.kind]:
+                sys.exit(f"{src.suffix or 'That file'} isn't a {ASSET_LABEL[a.kind]} file ({', '.join(sorted(ASSET_EXT[a.kind]))}).")
+            dest = root / a.into.strip("/") / src.name
+            if dest.exists():
+                sys.exit(f"There's already a {dest.name} in {ASSET_LABEL[a.kind]}/{a.into}.")
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            import shutil
+            shutil.copy2(src, dest)
+            r = index_asset(sb, a.kind, root, dest, made_by=a.by)
+            print(f"Added {dest.name} to {ASSET_LABEL[a.kind]}/{a.into or ''} ({r['id']}).")
+            if a.client:
+                c = client_by_slug(sb, a.client)
+                sb.insert("social_client_assets", {"client_id": c["id"], "asset_id": r["id"], "added_by": a.by or "tait"}, upsert_on="client_id,asset_id")
+                out, n = export_client_assets(sb, c)
+                print(f"…and to {c['name']}'s assets ({n} in {out.relative_to(REPO)}).")
+        elif a.action in ("favorite", "unfavorite"):
+            if not (a.client and a.asset):
+                sys.exit(f"{a.action} needs --client and --asset.")
+            c, r = client_by_slug(sb, a.client), find_asset(sb, a.asset)
+            if a.action == "favorite":
+                sb.insert("social_client_assets", {"client_id": c["id"], "asset_id": r["id"], "added_by": a.by or "tait"}, upsert_on="client_id,asset_id")
+            else:
+                sb.delete("social_client_assets", {"client_id": c["id"], "asset_id": r["id"]})
+            out, n = export_client_assets(sb, c)
+            print(f"{'Added' if a.action == 'favorite' else 'Removed'} {r['name']} ({ASSET_LABEL.get(r['kind'], r['kind'])}) {'to' if a.action == 'favorite' else 'from'} {c['name']}'s assets. Their folder: {out.relative_to(REPO)} ({n} files).")
+        elif a.action == "export":
+            for c in ([client_by_slug(sb, a.client)] if a.client else sb.select("social_clients", "select=*")):
+                out, n = export_client_assets(sb, c)
+                print(f"{c['name']}: {n} file(s) in {out.relative_to(REPO)}")
+        elif a.client:
+            c = client_by_slug(sb, a.client)
+            ids = [r["asset_id"] for r in sb.select("social_client_assets", f"select=asset_id&client_id=eq.{c['id']}")]
+            rows = sb.select("social_style_assets", f"select=kind,name,folder_path,path&id=in.({','.join(ids)})&order=kind,folder_path,name") if ids else []
+            for r in rows:
+                if not a.kind or r["kind"] == a.kind:
+                    print(f"{ASSET_LABEL.get(r['kind'], r['kind'])} · {r.get('folder_path') or ''} · {r['name']} · {r['path']}")
+            print(f"{len(rows)} asset(s) for {c['name']}.", file=sys.stderr)
         else:
             q = "select=kind,name,folder,path,tags,rating,duration_s&order=folder,name&rating=not.eq.never"
             q = q.replace("&rating=not.eq.never", "") + "&or=(rating.is.null,rating.eq.favourite)"

@@ -70,7 +70,7 @@
       "color": "#2DD4BF",
       "status": "training",
       "agent": "motion-designer.md",
-      "job": "Showreel-level motion graphics across 51 styles (Swiss, kinetic type, split-flap, glassmorphism, isometric, paper collage…), picking the right style for each moment and growing each client's approved graphics library."
+      "job": "Showreel-level motion graphics across 51 styles (Swiss, kinetic type, split-flap, glassmorphism, isometric, paper collage\u2026), picking the right style for each moment and growing each client's approved graphics library."
     },
     {
       "id": "content-reviewer",
@@ -111,6 +111,14 @@
       "status": "live",
       "agent": "art-director.md",
       "job": "Reads each client's moodboard (built by Tait and the client) and tells the Editor and Motion Designer how to edit and animate in that style."
+    },
+    {
+      "id": "sound-designer",
+      "name": "Sound Designer",
+      "color": "#9FB4FF",
+      "status": "live",
+      "agent": "sound-designer.md",
+      "job": "Keeps the sound effects organised by type, makes new sound effects from the library, and files each in the right folder."
     }
   ],
   "handoffs": [
@@ -193,6 +201,14 @@
     [
       "content-editor",
       "color-grader"
+    ],
+    [
+      "sound-designer",
+      "content-editor"
+    ],
+    [
+      "content-editor",
+      "sound-designer"
     ]
   ]
 }
