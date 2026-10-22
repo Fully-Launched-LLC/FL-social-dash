@@ -1571,17 +1571,13 @@ function openCarouselGuide(md) {
 // edit in this style (bridge.py). clientId null = the house moodboard
 // (operators only). Used on the operator's client page and Library, and on
 // the portal's Documents page.
+// The groups the Art Director sorts drops into (unlabelled on the board):
+// fonts, colours, motion graphics, style… New drops have no group yet.
 const MOOD_SECTIONS = [
-  ["look", "Look & feel", "Emotive images: the feeling, light and colour grade"],
-  ["colour", "Colour palette", "Screenshots with colours you love. We pull out the swatches"],
-  ["type", "Typography", "Fonts, captions and text on screen"],
-  ["motion", "Motion graphics", "Graphics, animations and transitions"],
-  ["editing", "Editing style", "Videos and links edited the way you like"],
-  ["texture", "Textures & materials", "Paper, grain, film, light, surfaces"],
-  ["brand", "Logo & brand", "Logo, icons and brand marks"],
-  ["words", "Words & phrases", "How it should feel, in a few words"],
+  ["look", "Look & feel"], ["colour", "Colour"], ["type", "Fonts & text"], ["motion", "Motion graphics"],
+  ["editing", "Editing style"], ["texture", "Textures"], ["brand", "Logo & brand"], ["words", "Words"],
 ];
-const moodSectionOf = m => m.section || (m.kind === "note" ? "words" : m.kind === "image" ? "look" : "editing");
+const moodSectionOf = m => m.section || (m.kind === "note" && m.name === "Words" ? "words" : null);
 const moodFileKind = f => /^image\//.test(f.type) ? "image" : /^video\//.test(f.type) ? "video" : null;
 
 // The 5 main colours of an image file (null where there's no canvas).
@@ -1656,39 +1652,52 @@ async function renderMoodBoard(root, opts) {
 }
 function moodCanEdit(st, m) { return st.role === "operator" || (m.added_by && m.added_by === st.uid); }
 function moodWho(st, m) { return m.added_by_role === "client" ? (st.role === "client" ? "You" : st.clientName || "Client") : "Tait"; }
+// A steady little tilt and size per item, so the board looks pinned up by
+// hand but doesn't jump around between visits.
+function moodHash(id) { let h = 0; for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) | 0; return Math.abs(h); }
 function moodTileHtml(st, m) {
+  const h = moodHash(m.id), rot = ((h % 9) - 4) * 0.7, w = [92, 100, 84, 96, 88][h % 5], x = [0, 6, 3, 10, 1][h % 5], tape = h % 3 === 0;
   const src = m.storage_path && st.signed[m.storage_path];
-  const media = m.kind === "image" && src ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(m.name || "")}" loading="lazy">`
+  const edit = moodCanEdit(st, m);
+  const tools = edit ? `<span class="mb-tools">${st.role === "operator" ? `<select data-mb-move="${m.id}" title="Move to a group"><option value="">Group…</option>${MOOD_SECTIONS.map(([k, l]) => `<option value="${k}" ${m.section === k ? "selected" : ""}>${escapeHtml(l)}</option>`).join("")}</select>` : ""}<button type="button" data-mb-note="${m.id}">Note</button><button type="button" data-mb-remove="${m.id}">Remove</button></span>` : "";
+  if (m.kind === "note") {
+    return `<div class="mb-word${(m.note || m.name || "").length > 40 ? " long" : ""}" data-mb-id="${m.id}" style="--r:${rot * 1.6}deg">${escapeHtml(m.note || m.name || "")}${tools}</div>`;
+  }
+  const media = m.kind === "image" && src ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(m.note || m.name || "")}" loading="lazy">`
     : m.kind === "video" && src ? `<video src="${escapeHtml(src)}" muted loop autoplay playsinline preload="metadata"></video>`
     : m.url ? `<a class="mb-link" href="${escapeHtml(m.url)}" target="_blank" rel="noopener"><b>${escapeHtml((m.url.match(/^https?:\/\/(?:www\.)?([^/]+)/) || [])[1] || "Link")}</b><span>${escapeHtml(m.url)}</span></a>` : "";
-  const swatches = moodSectionOf(m) === "colour" && (m.palette || []).length
-    ? `<div class="mb-swatches">${m.palette.map(h => `<i style="background:${escapeHtml(h)}" title="${escapeHtml(h)}"></i>`).join("")}</div>` : "";
-  const edit = moodCanEdit(st, m);
-  return `<figure class="mb-tile" data-mb-id="${m.id}"${edit ? ' draggable="true"' : ""}>${media}${swatches}
-    <figcaption>${m.note ? `<span class="mb-note">${escapeHtml(m.note)}</span>` : ""}<span class="mb-who">${escapeHtml(moodWho(st, m))}</span>
-      ${edit ? `<span class="mb-tools"><button type="button" data-mb-note="${m.id}">Note</button><button type="button" data-mb-remove="${m.id}">Remove</button></span>` : ""}</figcaption></figure>`;
+  const chips = m.section === "colour" && (m.palette || []).length
+    ? `<div class="mb-chips">${m.palette.slice(0, 3).map(hx => `<span class="mb-chip"><i style="background:${escapeHtml(hx)}"></i><em>${escapeHtml(hx.toUpperCase())}</em></span>`).join("")}</div>` : "";
+  return `<figure class="mb-tile${tape ? " taped" : ""}" data-mb-id="${m.id}" style="--r:${rot}deg;--w:${w}%;--x:${x}%">${media}
+    ${m.note ? `<figcaption class="mb-hand">${escapeHtml(m.note)}</figcaption>` : ""}${chips}
+    <span class="mb-who">${escapeHtml(moodWho(st, m))}</span>${tools}</figure>`;
 }
+// One big board, like a moodboard pinned up on paper: no labels, no
+// buckets. Each group (fonts, colours, motion…) is a loose cluster; new
+// drops sit in their own cluster until the Art Director groups them.
 function moodBoardHtml(st) {
-  const by = {}; st.items.forEach(m => (by[moodSectionOf(m)] = by[moodSectionOf(m)] || []).push(m));
+  // One collage: each group's items sit together (new drops first, then
+  // look, colour + its swatches, fonts, motion…), no labels.
+  const order = [null, ...MOOD_SECTIONS.map(x => x[0])];
+  const items = st.items.slice().sort((p, q) => order.indexOf(moodSectionOf(p)) - order.indexOf(moodSectionOf(q)) || (q.created_at || "").localeCompare(p.created_at || ""));
   const pal = moodBoardPalette(st.items);
-  const title = st.clientId ? st.clientName || "Client" : "House";
-  const words = m => `<div class="mb-word${(m.note || m.name || "").length > 40 ? " long" : ""}" data-mb-id="${m.id}"${moodCanEdit(st, m) ? ' draggable="true"' : ""}>${escapeHtml(m.note || m.name || "")}
-      ${moodCanEdit(st, m) ? `<button type="button" data-mb-remove="${m.id}" title="Remove">×</button>` : ""}</div>`;
+  const swatches = pal.length ? `<div class="mb-swatches-block">${pal.slice(0, 6).map((hx, i) => `<span class="mb-chip big" style="--r:${(i % 3 - 1) * 2}deg"><i style="background:${hx}"></i><em>${hx.toUpperCase()}</em></span>`).join("")}</div>` : "";
+  const firstAfterColour = items.findIndex(m => order.indexOf(moodSectionOf(m)) > order.indexOf("colour"));
+  const at = firstAfterColour === -1 ? items.length : firstAfterColour;
+  const tiles = items.map(m => moodTileHtml(st, m));
+  if (swatches) tiles.splice(at, 0, swatches);
   return `<div class="mb">
-    <div class="mb-head">
-      <div><div class="mb-title">${escapeHtml(title)} moodboard</div>
-        <div class="mb-sub">Drag screenshots and videos onto a section (or paste them). ${st.role === "client" ? "We build this together: it's how we design your editing style and motion graphics." : "The client can add to it too; the Art Director turns it into their editing guidelines."}</div></div>
+    <div class="mb-bar">
+      <div class="mb-sub">${st.role === "client" ? "Drop in screenshots of anything you love: fonts, colours, videos, graphics, styles. We'll sort them and build your editing style from it." : `Drop or paste screenshots anywhere. The Art Director groups each one${st.clientId ? ", and the client can add to it too" : ""}.`}</div>
       <div class="mb-actions"><label class="btn">Add images or videos<input type="file" id="mbPick-${st.clientId || "house"}" data-mb-pick accept="image/*,video/*" multiple hidden></label>
         <button type="button" data-mb-link>Add a link</button><button type="button" data-mb-words>Add words</button></div>
     </div>
     <div class="mb-msg" data-mb-msg></div>
-    ${pal.length ? `<div class="mb-palette">${pal.map(h => `<div style="background:${h}"><span>${h.toUpperCase()}</span></div>`).join("")}</div>` : ""}
-    ${MOOD_SECTIONS.map(([k, label, hint]) => `<section class="mb-sec" data-mb-sec="${k}">
-      <div class="mb-label"><b>${escapeHtml(label)}</b><span>${escapeHtml(hint)}</span></div>
-      ${k === "words"
-        ? `<div class="mb-words">${(by[k] || []).map(words).join("") || `<div class="mb-empty">Add words: e.g. warm, honest, hopeful</div>`}</div>`
-        : `<div class="mb-collage">${(by[k] || []).slice().reverse().map(m => moodTileHtml(st, m)).join("") || `<div class="mb-empty">Drop here</div>`}</div>`}
-    </section>`).join("")}
+    <div class="mb-paper" data-mb-drop>
+      ${tiles.length ? `<div class="mb-canvas">${tiles.join("")}</div>`
+        : `<div class="mb-empty-paper"><span class="mb-hand big">Drop screenshots here</span><span class="mb-hand">fonts · colours · motion graphics · the vibe</span></div>`}
+      <div class="mb-dropzone">Drop to add to the moodboard</div>
+    </div>
   </div>`;
 }
 function wireMoodBoard(root) {
@@ -1704,7 +1713,7 @@ function wireMoodBoard(root) {
         const path = await uploadToBucket("moodboards", `${s.clientId || "house"}/${Date.now()}-${name}`, f, pct => msg(`Adding ${i + 1} of ${list.length}… ${pct}%`));
         const palette = kind === "image" ? await moodPalette(f) : null;
         const { error } = await sbClient.from("social_moodboard_items").insert({ client_id: s.clientId || null, kind, name: f.name || "Pasted image", storage_path: path,
-          section: section || (kind === "video" ? "editing" : "look"), palette, added_by_role: s.role });
+          section: section || null, palette, added_by_role: s.role });
         if (error) throw error;
       } catch (e) { msg(`${f.name || "That file"} didn't upload: ${e.message || e}`); return; }
     }
@@ -1720,7 +1729,6 @@ function wireMoodBoard(root) {
     const box = openModal(`<h2>${escapeHtml(title)}</h2>
       ${field ? `<label class="mb-flabel">Link (Instagram, YouTube, a site…)</label><input type="url" id="mbUrl" style="width:100%;margin-bottom:10px">` : ""}
       <label class="mb-flabel">${escapeHtml(label)}</label><textarea id="mbText" rows="3" style="width:100%"></textarea>
-      ${field ? `<label class="mb-flabel">Section</label><select id="mbSec" style="width:100%">${MOOD_SECTIONS.filter(s => s[0] !== "words").map(([k, l]) => `<option value="${k}" ${k === "editing" ? "selected" : ""}>${escapeHtml(l)}</option>`).join("")}</select>` : ""}
       <div class="modal-actions"><button onclick="closeVideoModal()">Cancel</button><button class="primary" id="mbGo">Add</button></div><div class="auth-error" id="mbErr"></div>`);
     box.querySelector("#mbGo").onclick = async () => {
       const r = await onSave(box);
@@ -1734,7 +1742,7 @@ function wireMoodBoard(root) {
     if (t.hasAttribute("data-mb-link")) textBox("Add a link", "What you like about it", true, async box => {
       const url = box.querySelector("#mbUrl").value.trim(), note = box.querySelector("#mbText").value.trim();
       if (!/^https?:\/\//.test(url)) return "Paste a link that starts with https://";
-      return (await insertRow({ kind: "link", url, note: note || null, section: box.querySelector("#mbSec").value })) || "Couldn't add it.";
+      return (await insertRow({ kind: "link", url, note: note || null, section: null })) || "Couldn't add it.";
     });
     if (t.hasAttribute("data-mb-words")) textBox("Add words", "A few words, one per line (warm, honest, hopeful…)", false, async box => {
       const words = box.querySelector("#mbText").value.split(/\n|,/).map(w => w.trim()).filter(Boolean);
@@ -1763,37 +1771,31 @@ function wireMoodBoard(root) {
       await renderMoodBoard(root, {});
     }
   });
-  root.addEventListener("change", e => { if (e.target.matches("[data-mb-pick]")) add(e.target.files, st().lastSection); }, true);
-  // Drag a tile to another section, or drop files from the computer.
-  root.addEventListener("dragstart", e => {
-    const tile = e.target.closest && e.target.closest("[data-mb-id]");
-    if (tile && e.dataTransfer) { e.dataTransfer.setData("text/x-mood-id", tile.dataset.mbId); e.dataTransfer.effectAllowed = "move"; }
-  });
-  const secOf = e => e.target.closest && e.target.closest("[data-mb-sec]");
-  root.addEventListener("dragover", e => { const sec = secOf(e); if (!sec) return; e.preventDefault(); root.querySelectorAll(".mb-sec.over").forEach(x => x !== sec && x.classList.remove("over")); sec.classList.add("over"); });
-  root.addEventListener("dragleave", e => { const sec = secOf(e); if (sec && !sec.contains(e.relatedTarget)) sec.classList.remove("over"); });
+  root.addEventListener("change", e => { if (e.target.matches("[data-mb-pick]")) add(e.target.files, null); }, true);
+  // Drop files (or a link) anywhere on the paper: no buckets to choose.
+  const paperOf = e => e.target.closest && e.target.closest("[data-mb-drop]");
+  root.addEventListener("dragover", e => { const p = paperOf(e); if (!p) return; e.preventDefault(); p.classList.add("over"); });
+  root.addEventListener("dragleave", e => { const p = paperOf(e); if (p && !p.contains(e.relatedTarget)) p.classList.remove("over"); });
   root.addEventListener("drop", async e => {
-    const sec = secOf(e); if (!sec) return;
-    e.preventDefault(); sec.classList.remove("over");
-    const k = sec.dataset.mbSec, dt = e.dataTransfer || {}, id = dt.getData && dt.getData("text/x-mood-id");
-    st().lastSection = k;
-    if (id) {
-      const m = st().items.find(x => x.id === id);
-      if (!m || moodSectionOf(m) === k) return;
-      if (k === "words" && m.kind !== "note") { msg("Words & phrases holds words; add them with Add words."); return; }
-      const { error } = await sbClient.from("social_moodboard_items").update({ section: k }).eq("id", id);
-      if (error) { msg(error.message); return; }
-      await renderMoodBoard(root, {}); return;
-    }
-    if (dt.files && dt.files.length) return add(dt.files, k === "words" ? null : k);
+    const p = paperOf(e); if (!p) return;
+    e.preventDefault(); p.classList.remove("over");
+    const dt = e.dataTransfer || {};
+    if (dt.files && dt.files.length) return add(dt.files, null);
     const url = dt.getData && (dt.getData("text/uri-list") || dt.getData("text/plain"));
-    if (url && /^https?:\/\//.test(url.trim())) insertRow({ kind: "link", url: url.trim().split("\n")[0], section: k === "words" ? "editing" : k });
+    if (url && /^https?:\/\//.test(url.trim())) insertRow({ kind: "link", url: url.trim().split("\n")[0], section: null });
   });
-  root.addEventListener("mouseover", e => { const sec = secOf(e); if (sec) st().lastSection = sec.dataset.mbSec; });
+  // Tait can move a drop to another group by hand.
+  root.addEventListener("change", async e => {
+    const sel = e.target.closest && e.target.closest("[data-mb-move]");
+    if (!sel || !sel.value) return;
+    const { error } = await sbClient.from("social_moodboard_items").update({ section: sel.value }).eq("id", sel.dataset.mbMove);
+    if (error) { msg(error.message); return; }
+    await renderMoodBoard(root, {});
+  }, true);
   // Paste a screenshot (⌘V) into the section under the pointer.
   document.addEventListener("paste", e => {
     if (!document.body.contains(root) || !root.offsetParent || e.target.closest && e.target.closest("input, textarea")) return;
     const files = Array.from((e.clipboardData && e.clipboardData.files) || []);
-    if (files.length) { e.preventDefault(); add(files, st().lastSection && st().lastSection !== "words" ? st().lastSection : null); }
+    if (files.length) { e.preventDefault(); add(files, null); }
   });
 }

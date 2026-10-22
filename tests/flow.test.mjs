@@ -115,7 +115,7 @@ const clientFilmed = idx.filter(i => !V.switchToUs.includes(i));
 // ── 2. Client (films their own) ──
 let cl = track(await CL());
 const shownNav = p => $$(p, ".nav-item").filter(n => n.style.display !== "none").map(n => n.textContent.trim());
-chk("client nav: To Do, Calendar and Documents (their moodboard; no Drive, no footage folder)", shownNav(cl).join("|") === "To Do|Content Calendar|Documents", shownNav(cl));
+chk("client nav: To Do, Calendar and Moodboard (no Documents, no Drive, no footage folder)", shownNav(cl).join("|") === "To Do|Content Calendar|Moodboard", shownNav(cl));
 chk("no footage folder card", !$(cl, "#footageCard") && !$(cl, "#footageCardLink"));
 chk("To Do is exactly two tabs, To film and To review", $$(cl, "#videoTabs .chip").map(c => c.dataset.tab).join() === "film,review" && !$(cl, "#nextStep"), tabsText(cl));
 chk("it opens on To film", $(cl, "#videoTabs .chip.active").dataset.tab === "film" && $(cl, '[data-panel="film"]').style.display !== "none");

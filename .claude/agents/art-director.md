@@ -14,6 +14,9 @@ wins, playbook.md has the method); the house style
 Motion Designer's `team/motion-designer/STYLES.md` and skill prompts.
 
 ## Your job
+0. **Group new drops.** Clients and Tait just drop screenshots on the board,
+   with no group. When the bridge asks, look at each new item and place it:
+   `python3 bridge/bridge.py moodboard place --client <slug> --id <id> --section <look|colour|type|motion|editing|texture|brand|words>`.
 1. **Read the whole board.** `python3 bridge/bridge.py moodboard get --client <slug>`
    downloads every item with its section, its colours, and who added it
    (Tait or the client) and their note. Look at every image (Read it); watch

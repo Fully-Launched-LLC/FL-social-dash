@@ -33,10 +33,10 @@ op.d.getElementById("cpSave").click(); await settle();
 let docs = (await db.query("select title, url, position from social_client_documents order by position")).rows;
 chk("saved in order; the empty row is ignored", docs.map(d => d.title + "@" + d.position).join() === "Brand Voice@0,Customer Data@1", docs);
 
-// The client's Documents page holds only their moodboard (033): no documents, no links to them.
+// The client's portal has no Documents page and no links to them.
 let cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
 const navs = Array.from(cl.d.querySelectorAll(".nav-item")).map(n => n.textContent.trim());
-chk("no documents or document links for the client (Documents is just their moodboard)", cl.d.getElementById("docsCard").style.display === "none" && !cl.d.querySelector("#docsList .row") && !cl.d.querySelector('a[href^="https://docs.google.com"]'), navs);
+chk("no Documents page or document links for the client", cl.d.getElementById("docsNav").style.display === "none" && !cl.d.querySelector("#docsList .row") && !cl.d.querySelector('a[href^="https://docs.google.com"]'), navs);
 // The operator viewing the same portal sees every document, on Documents.
 let opPortal = await openPage("clients/portal.html", OP, "https://fl.test/clients/test-fully-launched");
 const opDocs = () => Array.from(opPortal.d.querySelectorAll("#docsList .row")).map(r => r.querySelector("b").textContent);

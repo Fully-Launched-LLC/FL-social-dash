@@ -1,7 +1,7 @@
 """Tests for the bridge's decisions (no network): python3 bridge/test_bridge.py"""
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from bridge import plan_jobs, plan_style_jobs, questions_from_text, timeline, plan_dates, match_client, idea_title, months_ahead, plan_script_jobs, script_signature, card_folder_name, plan_edit_jobs, edit_signature, desk_message, agent_rows, needs_from_error, is_idea, strip_idea
+from bridge import plan_jobs, plan_style_jobs, plan_mood_sorts, questions_from_text, timeline, plan_dates, match_client, idea_title, months_ahead, plan_script_jobs, script_signature, card_folder_name, plan_edit_jobs, edit_signature, desk_message, agent_rows, needs_from_error, is_idea, strip_idea
 import datetime as dt
 
 SINCE = "2026-10-21T12:00:00+00:00"
@@ -65,6 +65,12 @@ check("items already there when it was asked aren't a new update", j["update"] =
 j = plan_style_jobs([gg], [{"client_id": "a", "style_requested_at": "2026-10-21T15:00:00"}], [brand_ok, guide], [mb_old, mb_new])
 check("new moodboard items update the guidelines", [c["id"] for c in j["update"]] == ["a"])
 j = plan_style_jobs([gg], [], [brand_ok, guide], [{"client_id": None, "created_at": "x", "used_at": None}])
+
+# Moodboard groups (2026-10-22): new ungrouped drops → one sort job, not twice.
+mb = [{"client_id": "a", "created_at": "2026-10-22T10:00", "section": None}, {"client_id": "a", "created_at": "2026-10-22T09:00", "section": "type"}]
+check("ungrouped drop asks the Art Director", [c["id"] for c, _ in plan_mood_sorts([gg], mb, {})] == ["a"])
+check("not asked twice for the same drops", plan_mood_sorts([gg], mb, {"a": "2026-10-22T10:00"}) == [])
+check("grouped items need no sort", plan_mood_sorts([gg], mb[1:], {}) == [])
 check("house moodboard items update the house style", j["house"] is True and j["update"] == [])
 
 # ── ideas (Phase 5) ──

@@ -770,15 +770,17 @@ list), plus **Open their portal**. The old To Do page was removed
 **Style guides** (Unify Phase 4, Tait 2026-10-21; migrations 028 + 033):
 each client's page has a **Moodboard** tab, and **Library → House moodboard**
 holds one for every client. Since 2026-10-22 the client's board is
-**shared with the client** (their portal's **Documents** page): Tait and the
-client both drag in (or paste) screenshots, videos, links and words. One
-board component, `renderMoodBoard` in shell.js, laid out like a brand
-moodboard: 8 sections (Look & feel, Colour palette, Typography, Motion
-graphics, Editing style, Textures & materials, Logo & brand, Words &
-phrases; `MOOD_SECTIONS`), each a collage; tiles drag between sections; the
-colours of every image (`moodPalette`, stored in `palette`) make the strip
-at the top; live updates through Supabase realtime. A client sees the whole
-board but moves or removes only what they added (`added_by`). Once a
+**shared with the client** on its own **Moodboard** tab in their portal
+(Tait: "one big moodboard where clients can drag and drop screenshots"). One
+board component, `renderMoodBoard` in shell.js: a paper board like a pinned-up
+moodboard (photos with white borders at a slight tilt, tape, handwritten
+notes, paint-chip swatches from the images' colours), no labels and no
+buckets. Anyone drops or pastes anywhere; new drops have no `section`, and the
+bridge asks the **Art Director** to group them (look, colour, type, motion,
+editing, texture, brand, words; `bridge.py moodboard place`), so each group's
+items sit together on the board. Tait can also move one by hand. A client
+moves or removes only what they added (`added_by`); live updates through
+Supabase realtime. Once a
 client's brand guidelines are approved, the bridge asks the **Art
 Director** (new 2026-10-22) to turn the moodboard into their
 **editing guidelines**, with a brief for the Content Editor and one for the

@@ -58,44 +58,45 @@ chk("House moodboard shows its items", d.getElementById("libBody").textContent.i
 op.w.openClientPage(GG, "moodboard"); await settle();
 chk("client page has a Moodboard tab", [...d.querySelectorAll("#cpTabs .chip")].map(c => c.textContent).includes("Moodboard"));
 const board = () => d.getElementById("clientMood");
-chk("the board has the 8 sections", [...board().querySelectorAll("[data-mb-sec]")].map(x => x.dataset.mbSec).join() === "look,colour,type,motion,editing,texture,brand,words");
+chk("one big board: a paper drop area, no section labels", !!board().querySelector("[data-mb-drop]") && !board().querySelector("[data-mb-sec]"));
 pickFile(op, "mbPick-" + GG, "funnel.png", "image/png"); await settle(); await new Promise(r => setTimeout(r, 50)); await settle();
 const up = (await db.query(`select client_id, kind, name, storage_path, section, added_by_role from social_moodboard_items where client_id=$1`, [GG])).rows[0];
-chk("chosen image saved to the client's board, Look & feel, added by the operator", up && up.kind === "image" && up.storage_path.startsWith(GG + "/") && up.section === "look" && up.added_by_role === "operator", up);
+chk("chosen image saved to the client's board, no group yet (the Art Director groups it), added by the operator", up && up.kind === "image" && up.storage_path.startsWith(GG + "/") && up.section === null && up.added_by_role === "operator", up);
 chk("uploaded to the moodboards bucket", op.ui.log.some(l => l.upload && l.upload.bucket === "moodboards"));
-chk("tile shows the image, by Tait", board().querySelector('[data-mb-sec="look"] .mb-tile img') && board().querySelector('[data-mb-sec="look"] .mb-who').textContent === "Tait");
+chk("tile shows the image, by Tait", board().querySelector('.mb-tile img') && board().querySelector('.mb-tile .mb-who').textContent === "Tait");
 const btnIn = (root, label) => [...root.querySelectorAll("button")].find(b => b.textContent === label);
 btnIn(board().querySelector(".mb-tile"), "Note").click(); await settle();
 d.getElementById("mbText").value = "Love the funnel narrowing to one face"; d.getElementById("mbGo").click(); await settle();
 chk("note saved", (await db.query(`select note from social_moodboard_items where client_id=$1`, [GG])).rows[0].note === "Love the funnel narrowing to one face");
-// Drag the tile onto Colour palette.
+// Tait can move a drop to another group by hand (the Art Director usually does).
 const id1 = (await db.query(`select id from social_moodboard_items where client_id=$1`, [GG])).rows[0].id;
-const dragTo = async (id, sec) => {
-  const data = { "text/x-mood-id": id }, dt = { setData: (k, v) => { data[k] = v; }, getData: k => data[k] || "", files: [] };
-  const ev = new op.w.Event("drop", { bubbles: true, cancelable: true }); ev.dataTransfer = dt;
-  board().querySelector(`[data-mb-sec="${sec}"]`).dispatchEvent(ev); await settle();
-};
-await dragTo(id1, "colour");
-chk("dragged to Colour palette", (await db.query(`select section from social_moodboard_items where id=$1`, [id1])).rows[0].section === "colour");
+const mv = board().querySelector(`[data-mb-move="${id1}"]`); mv.value = "colour"; mv.dispatchEvent(new op.w.Event("change", { bubbles: true })); await settle();
+chk("moved to the colour group", (await db.query(`select section from social_moodboard_items where id=$1`, [id1])).rows[0].section === "colour");
 btnIn(board(), "Add a link").click(); await settle();
 d.getElementById("mbUrl").value = "https://www.instagram.com/reel/abc"; d.getElementById("mbText").value = "caption font";
-d.getElementById("mbSec").value = "type"; d.getElementById("mbGo").click(); await settle();
-chk("link added to Typography", (await db.query(`select section from social_moodboard_items where client_id=$1 and kind='link'`, [GG])).rows[0]?.section === "type");
+d.getElementById("mbGo").click(); await settle();
+const lk = (await db.query(`select section from social_moodboard_items where client_id=$1 and kind='link'`, [GG])).rows[0];
+chk("link added, no group to pick", lk && lk.section === null, lk);
 btnIn(board(), "Add words").click(); await settle();
 d.getElementById("mbText").value = "warm\nhonest, hopeful"; d.getElementById("mbGo").click(); await settle();
 chk("words added, one each", (await db.query(`select string_agg(note, ',' order by note) w from social_moodboard_items where client_id=$1 and section='words'`, [GG])).rows[0].w === "honest,hopeful,warm");
-chk("words show in Words & phrases", board().querySelector('[data-mb-sec="words"]').textContent.includes("hopeful"));
+chk("words show on the board", [...board().querySelectorAll(".mb-word")].some(w => w.textContent.includes("hopeful")));
 btnIn([...board().querySelectorAll(".mb-tile")].find(x => x.textContent.includes("instagram.com")), "Remove").click(); await settle();
 chk("remove takes it off", !(await db.query(`select 1 from social_moodboard_items where client_id=$1 and kind='link'`, [GG])).rows.length);
 
-// The client, in their portal's Documents: sees the board, adds to it, and
-// can only move or remove what they added.
+// The client, on their portal's own Moodboard tab: sees the board, drops
+// in without choosing a group, and can only remove what they added.
 const cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/gg");
-cl.d.querySelector('.nav-item[data-view="documents"]').click(); await settle();
-const cb = () => cl.d.getElementById("docsMood");
-chk("client portal: Documents in the nav, documents themselves hidden", !!cl.d.querySelector('.nav-item[data-view="documents"]') && cl.d.getElementById("docsCard").style.display === "none");
-chk("client sees the board with Tait's image and words", !!cb().querySelector('[data-mb-sec="colour"] .mb-tile img') && cb().textContent.includes("hopeful"));
-chk("no Remove or Note on Tait's items", !cb().querySelector('[data-mb-sec="colour"] .mb-tile button'));
+cl.d.querySelector('.nav-item[data-view="moodboard"]').click(); await settle();
+const cb = () => cl.d.getElementById("portalMood");
+chk("client portal: a Moodboard tab; Documents stays hidden", !!cl.d.querySelector('.nav-item[data-view="moodboard"]') && cl.d.getElementById("docsNav").style.display === "none");
+chk("client sees the board with Tait's image and words", !!cb().querySelector('.mb-tile img') && cb().textContent.includes("hopeful"));
+chk("no Remove, Note or group picker on Tait's items", !cb().querySelector(`[data-mb-id="${id1}"] button`) && !cb().querySelector("[data-mb-move]"));
+// A file dropped on the paper.
+{ const f = new cl.w.File(["x"], "drop.png", { type: "image/png" }), ev = new cl.w.Event("drop", { bubbles: true, cancelable: true });
+  ev.dataTransfer = { files: [f], getData: () => "" }; cb().querySelector("[data-mb-drop]").dispatchEvent(ev); await settle(); await new Promise(r => setTimeout(r, 50)); await settle(); }
+const dropped = (await db.query(`select section, added_by_role from social_moodboard_items where name='drop.png'`)).rows[0];
+chk("client drops a screenshot anywhere: saved as theirs, no group yet", dropped && dropped.section === null && dropped.added_by_role === "client", dropped);
 pickFile(cl, "mbPick-" + GG, "grade.jpg", "image/jpeg"); await settle(); await new Promise(r => setTimeout(r, 50)); await settle();
 const mine = (await db.query(`select id, section, added_by, added_by_role from social_moodboard_items where name='grade.jpg'`)).rows[0];
 chk("client's upload saved as theirs", mine && mine.added_by === CL && mine.added_by_role === "client", mine);
@@ -105,7 +106,7 @@ chk("client can't remove Tait's item", (await as(CL, `delete from social_moodboa
 btnIn([...cb().querySelectorAll(".mb-tile")].find(t => t.querySelector(".mb-who").textContent === "You"), "Remove").click(); await settle();
 chk("client removes their own", !(await db.query(`select 1 from social_moodboard_items where name='grade.jpg'`)).rows.length);
 chk("Tait sees the client's additions as theirs", (await (async () => { await as(CL, `insert into social_moodboard_items (client_id,kind,note,section,added_by_role) values ($1,'note','cosy','words','client')`, [GG]);
-  op.w.openClientPage(GG, "moodboard"); await settle(); return board().querySelector('[data-mb-sec="words"]').textContent.includes("COSY") || board().querySelector('[data-mb-sec="words"]').textContent.includes("cosy"); })()));
+  op.w.openClientPage(GG, "moodboard"); await settle(); return board().textContent.includes("cosy"); })()));
 chk("no client page errors", !cl.ui.errors.length, cl.ui.errors);
 chk("no page errors", !op.ui.errors.length, op.ui.errors);
 console.log(`${counts.pass} passed, ${counts.fail} failed`);
