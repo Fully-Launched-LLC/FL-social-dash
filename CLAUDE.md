@@ -644,7 +644,9 @@ team to build documents"). The bridge uses a Supabase service-role key Tait
 keeps in `~/.config/fully-social/bridge.env` (never in this repo). Before
 027 the panel keeps the older `/api/build-documents` flow.
 
-A new client's invite (`api/_email.js`: a white email with one navy box —
+A new client's invite (`api/_email.js`, in the dashboard's liquid glass since
+2026-10-22: a navy page, the platinum logo moving (`/assets/motion/logo-platinum.gif`),
+one glass card with a gold pill button —
 the logo, "Welcome to your Fully Social dashboard", "Hi <first name>, we are
 excited to start working with <company>.", and one **Start here** button at
 the bottom; replies go to tait@fullylaunched.com) lands on `/welcome`. The
@@ -912,7 +914,10 @@ block at the top of shell.css). The operator dashboard and the client portal are
 apple design", keeping navy with the gold accent): a softly lit navy
 background, dark frosted sidebar and sticky top bar, light frosted cards,
 frosted pop-ups that scale in, Apple's system font, press feedback, solid
-fallbacks for reduced transparency and motion. Built with the apple-design
+fallbacks for reduced transparency and motion. Onboarding (`/welcome`) and the sign-in screen are glass too, and the
+platinum logo animation (`dashboards/template/motion/`, copied to
+`/assets/motion/`) plays on sign-in, at the top of onboarding and when My
+desk or a client's To Do is empty. Built with the apple-design
 and impeccable skills. Navy `#04101f` and white do the work; gold/tan `#C4AB82` from
 fullylaunched.com is a rare accent, used only for what needs attention
 (Time sensitive when it has something in it, overdue, today on the

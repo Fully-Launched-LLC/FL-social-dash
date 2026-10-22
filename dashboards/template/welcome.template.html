@@ -9,11 +9,12 @@
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <script src="/supabase/config.js"></script>
 </head>
-<body style="display:block">
+<body class="glass" style="display:block">
 
 <div id="authGate" class="auth-gate"></div>
 <div id="appShell" class="hidden" style="display:block">
   <div class="welcome">
+    <div class="welcome-mark"></div>
     <div class="brand"><img src="/assets/logo-white.png" alt="Fully Launched" style="width:180px"></div>
     <div id="opBanner"></div>
     <nav class="steps" id="steps" aria-label="Onboarding steps"></nav>
@@ -48,6 +49,8 @@
 // (nothing they do there changes their own password).
 
 const params = new URLSearchParams(location.search);
+// The platinum logo in motion at the top of onboarding (Tait, 2026-10-22).
+document.querySelector(".welcome-mark").innerHTML = logoMotionHtml("fl-motion-welcome");
 const RESET = params.get("mode") === "reset";
 const BUCKET = "onboarding";
 let ME = null, ROLE = null, CLIENT = null, OB = null;
