@@ -23,13 +23,16 @@ const status = async t => (await db.query("select status, editor_brief from soci
 const idOf = async t => (await db.query("select id from social_videos where title=$1", [t])).rows[0].id;
 
 let op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
-const tabs = () => Object.fromEntries(Array.from(op.d.querySelectorAll("#todoTabs .chip")).map(c => [c.dataset.stageTab, c.textContent.trim().replace(/\s+(\d+)$/, " ($1)")]));
-const shown = () => Array.from(op.d.querySelectorAll("#view-todo [data-stage]")).filter(el => el.style.display !== "none").map(el => el.dataset.stage);
+// Grad Gig's Videos tab (Clients → Open → Videos): its videos, then Abandoned.
+const videosTab = () => { op.w.openClientPage(GG, "videos"); return op.d.getElementById("cpBody"); };
+const abandoned = () => Array.from(videosTab().querySelectorAll(".card")).find(c => (c.querySelector("h2") || {}).textContent?.startsWith("Abandoned"));
+const mainList = () => videosTab().querySelector(".card").textContent;
+const abandonedBtn = label => Array.from(abandoned().querySelectorAll("button")).find(b => b.textContent === label);
 const modalBtn = label => Array.from(op.d.querySelectorAll("#videoModalBox button")).find(b => b.textContent.trim() === label);
 const calTitles = () => Object.values(op.w.eval("calendarByDay(filteredVideos(), calState)")).flat().map(e => e.x.video.title);
 
 chk("both calendars' source: every scheduled video has its post date", ["Keep me", "Maybe not", "Delete me"].every(t => calTitles().includes(t)), calTitles());
-chk("Abandoned tab exists, empty, and isn't part of All", tabs().abandoned === "Abandoned (0)" && tabs().all === "All (3)" && !shown().includes("abandoned"), tabs());
+chk("no Abandoned list while nothing is abandoned; all three in the videos", !abandoned() && ["Keep me", "Maybe not", "Delete me"].every(t => mainList().includes(t)));
 
 // Abandon from the video card.
 op.w.openOperatorVideoModal(await idOf("Maybe not")); await settle();
@@ -38,13 +41,9 @@ modalBtn("Abandon").click(); await settle();
 let s = await status("Maybe not");
 chk("abandoned: status rejected, where it was remembered", s.status === "rejected" && s.editor_brief.abandonedFrom === "to_film" && s.editor_brief.instructions === "Talking head", s);
 chk("abandoned: off the calendar", !calTitles().includes("Maybe not") && calTitles().includes("Keep me"));
-chk("abandoned: counts move to the Abandoned tab", tabs().abandoned === "Abandoned (1)" && tabs().all === "All (2)", tabs());
-op.d.querySelector('[data-stage-tab="abandoned"]').click(); await settle();
-chk("Abandoned tab shows it alone, with Restore and Delete", shown().join() === "abandoned"
-  && op.d.querySelector('[data-stage="abandoned"]').textContent.includes("Maybe not")
-  && ["Restore", "Delete"].every(l => Array.from(op.d.querySelectorAll('[data-stage="abandoned"] button')).some(b => b.textContent === l)));
-op.d.querySelector('[data-stage-tab="all"]').click(); await settle();
-chk("All doesn't show abandoned ideas", !shown().includes("abandoned") && !op.d.getElementById("view-todo").querySelector('[data-stage="toEditor"]').textContent.includes("Maybe not"));
+chk("abandoned: listed under Abandoned on the client's Videos tab, with Restore and Delete", abandoned()?.textContent.includes("Maybe not")
+  && !!abandonedBtn("Restore") && !!abandonedBtn("Delete"));
+chk("abandoned: out of the client's main video list", !mainList().includes("Maybe not") && mainList().includes("Keep me"));
 
 // The client never sees it, on My Videos or the calendar.
 let cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-grad-gig");
@@ -52,11 +51,10 @@ const clTitles = cl.w.eval("VIDEOS").map(v => v.title);
 chk("client portal: abandoned idea hidden, the others there (and on its calendar)", !clTitles.includes("Maybe not") && clTitles.includes("Keep me") && cl.w.eval("VIDEOS").find(v => v.title === "Keep me").postDate === "2026-10-05", clTitles);
 
 // Restore puts it back where it was.
-op.d.querySelector('[data-stage-tab="abandoned"]').click(); await settle();
-Array.from(op.d.querySelectorAll('[data-stage="abandoned"] button')).find(b => b.textContent === "Restore").click(); await settle();
+abandonedBtn("Restore").click(); await settle();
 s = await status("Maybe not");
 chk("restored to To film, back on the calendar", s.status === "to_film" && !("abandonedFrom" in s.editor_brief) && s.editor_brief.instructions === "Talking head" && calTitles().includes("Maybe not"), s);
-chk("Abandoned tab empty again", tabs().abandoned === "Abandoned (0)" && tabs().all === "All (3)", tabs());
+chk("Abandoned list gone again, back in the videos", !abandoned() && mainList().includes("Maybe not"));
 
 // Delete from the card: gone for good.
 op.w.openOperatorVideoModal(await idOf("Delete me")); await settle();
@@ -66,9 +64,8 @@ chk("deleted from the card", !(await status("Delete me")) && !calTitles().includ
 // Delete an abandoned idea from the Abandoned tab.
 op.w.openOperatorVideoModal(await idOf("Maybe not")); await settle();
 modalBtn("Abandon").click(); await settle();
-op.d.querySelector('[data-stage-tab="abandoned"]').click(); await settle();
-Array.from(op.d.querySelectorAll('[data-stage="abandoned"] button')).find(b => b.textContent === "Delete").click(); await settle();
-chk("deleted from the Abandoned tab", !(await status("Maybe not")) && tabs().abandoned === "Abandoned (0)");
+abandonedBtn("Delete").click(); await settle();
+chk("deleted from the Abandoned list", !(await status("Maybe not")) && !abandoned());
 
 // Delete still works from the Edit form, and editing an abandoned idea keeps it abandoned.
 op.w.openOperatorVideoModal(await idOf("Keep me")); await settle();

@@ -42,8 +42,8 @@ d.querySelector('.nav-item[data-view="ideabank"]').click(); await settle();
 [...[...d.querySelectorAll("#ideaDb [data-idea]")].find(r => r.textContent.includes("Smallest job")).querySelectorAll("button")].find(b => b.textContent === "Make a card").click(); await settle();
 const sj = (await db.query(`select status, post_date::text from social_videos where title='Smallest job'`)).rows[0];
 chk("Make a card: Scripting, with the requested post date", sj && sj.status === "scripting" && sj.post_date === P2, sj);
-d.querySelector('.nav-item[data-view="todo"]').click(); await settle();
-chk("To Do has a Scripting stage", d.getElementById("scriptingList").textContent.includes("Smallest job"));
+op.w.openClientPage(GG, "videos"); await settle();
+chk("the client's Videos tab shows the Scripting card", d.getElementById("cpBody").textContent.includes("Smallest job"));
 chk("client can't see Scripting cards", !(await as(CL, `select id from social_videos`)).data.length);
 
 // The Writer's work, then Tait approves the script.

@@ -25,7 +25,8 @@ await db.exec(`
 // Operator dashboard links to the editor portal.
 const op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
 chk("sidebar links to editor portal", !!op.d.querySelector('a.nav-item[href="/editor/dashboard.html"]'));
-const opRow = t => Array.from(op.d.querySelectorAll(".row")).find(r => (r.querySelector("b.video-card") || {}).textContent === t);
+op.w.openClientPage(FL, "videos");
+const opRow = t => Array.from(op.d.querySelectorAll("#cpBody .row")).find(r => (r.querySelector("b.video-card") || {}).textContent === t);
 opRow("Morgan edits this").querySelector("b.video-card").click(); await settle();
 const link = op.d.querySelector(`#videoModalBox a[href="/editor/dashboard.html?editor=${ED}"]`);
 chk("popup links to that editor's portal", !!link);
@@ -68,7 +69,8 @@ chk("operator finished their own video", r.status === "in_review", r);
 await db.exec(`insert into social_drive_folder_links (client_id, final_edits) values ('${FL}','https://drive/fl-final');
   update social_videos set final_cut_url = 'https://drive/exact' where title = 'Tait edits this';`);
 const op2 = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
-const w = t => Array.from(op2.d.querySelectorAll("#editsList .row")).find(r => r.querySelector("b.video-card").textContent === t);
+op2.w.openClientPage(FL, "videos");
+const w = t => Array.from(op2.d.querySelectorAll("#cpBody .row")).find(r => r.querySelector("b.video-card").textContent === t);
 chk("Watch opens the exact file when set", !!w("Tait edits this")?.querySelector('a[href="https://drive/exact"]'));
 chk("otherwise Watch opens the Final edits folder", !!w("Morgan edits this")?.querySelector('a[href="https://drive/fl-final"]'));
 

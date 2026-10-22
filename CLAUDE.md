@@ -738,7 +738,7 @@ back one piece at a time:
    editor and shows in the same Revisions needed section). Clients can't
    edit anything on a card. Every client step ends in a short thank-you message, never a
    browser pop-up.
-7. To Do's Ready to post stage lists it by post date with the captions and finished video;
+7. My desk → Videos to post lists it by post date with the captions and finished video;
    whoever posts marks it posted. Posting stays manual (principle 6).
 
 ### Operator dashboard — `/` → `/operator/dashboard.html`
@@ -757,8 +757,9 @@ opens one client's page: Overview, Documents (brand guidelines, ICP,
 identity, editing guidelines, content research: write, edit, approve, send
 back; only approved brand guidelines reach the client), Footage (b-roll and
 old footage the client sees, raw footage on cards, finished cuts) and
-Videos, plus **Open their portal**. To Do (every video by stage) stays as a
-secondary page.
+Videos (every video for that client, with its buttons, plus an **Abandoned**
+list), plus **Open their portal**. The old To Do page was removed
+(Tait, 2026-10-22: "that is just my desk now").
 
 **Style guides** (Unify Phase 4, Tait 2026-10-21; migration 028): each
 client's page has a **Moodboard** tab, and **Library → House moodboard**
@@ -774,21 +775,11 @@ sound effects (`bridge.py assets sync` indexes the folders and uploads short
 previews): play, ★ Favourite, Never use. The Editor picks from it with
 `bridge.py assets list` and never uses a track marked Never.
 
-Nav: **To Do** (every video by stage, one tab each plus All, with counts:
-sent back with suggestions → waiting on client → ready for an editor → with
-an editor → edits to review → ready to post, plus an **Abandoned** tab
-kept out of All, and **⏰ Time sensitive** right after All (also kept out of
-it): Tait's next task on each video, from `nextTask` (re-send an idea,
-film it, send it to an editor, chase the editor, review the edit, nudge the
-client to approve, post it), when its date is overdue or within
-`TIME_SENSITIVE_DAYS` (3), soonest first; "Add ideas with Claude" and "+ New idea"
-buttons; within each stage, videos grouped by status in pipeline order,
-then by post date) →
-**Content Calendar** (one chip per platform on each post date, in that
+Nav (sidebar order: My desk, Content Ideas, Clients, Content Calendar, Library, Editors, Agent room, Editor portal ↗): **Content Calendar** (one chip per platform on each post date, in that
 platform's color, plus ✅ approve-by, ✂️ edit-due and 🎬 film-by deadlines
 until they're met; overdue ones turn red; filter by platform and by kind.
 Approve by is 3 days before posting, `APPROVE_DAYS_BEFORE_POST` in
-shell.js. Also "Add ideas with Claude" and "+ New idea", as on To Do) → **Content Ideas** (Tait,
+shell.js. Also "Add ideas with Claude" and "+ New idea") → **Content Ideas** (Tait,
 2026-10-19: a two-column board, ideas the client hasn't seen and ideas
 sent to them; see below) → **Clients** (name, portal
 address, who films, raw footage folder, finished video folder) → **Library** → **Editors** → **Agent room** (the AI content team, below) → **Editor
@@ -827,14 +818,14 @@ the private `footage` bucket; the bridge moves each clip into the card's
 Google Drive folder (`01 Footage Uploads/NN. Title (posts Mon D)`, found
 with Google Drive for desktop) and deletes the temporary copy. Video has
 been filmed: on time keeps the post date and the edit is due P−7; late
-falls back to 7 + 7. To Do has a Scripting stage.
+falls back to 7 + 7. Scripting cards show on the client's Videos tab.
 
 **Editing and reviews** (Unify Phase 7, Tait 2026-10-21; no migration):
 the **AI Editor first, humans as backup**. When a card's footage is in (every
 clip moved to Drive) and the client's editing guidelines are approved, the
 bridge moves it to `with_editor` with `editor_brief.aiEditor` and gives the
 Content Editor the edit (Motion Designer and Reviewer with it); without
-approved guidelines it waits (`editor_brief.waitingOn`, shown on To Do and My
+approved guidelines it waits (`editor_brief.waitingOn`, shown on the client's Videos tab and My
 desk). **Send to editor** offers **AI editor** next to the human editors (a
 human sets `humanEditor`, which the bridge leaves alone). `bridge.py video
 deliver` uploads a review copy (the `review` bucket, a new
@@ -863,7 +854,7 @@ opener + payoff", from the outlier research; the Format field in Edit,
 it, plus `editor_brief.ideaBank = { from, postDate, dueToFilm, dueToEdit }`
 (where it was and its old dates; dates are cleared while banked), which
 keeps it apart from ideas sent back with suggestions. Banked ideas are off
-To Do, the calendar and the client's portal (`workVideos()` / `inIdeaBank`).
+My desk, the calendar and the client's portal (`workVideos()` / `inIdeaBank`).
 Sending stamps gate 1 through `social_operator_approve_concept`, removes
 the marker, and puts a we-film idea that was To film back there. **Move
 back to Ideas** is on the card of any Idea or To film video; "Add ideas
@@ -879,14 +870,14 @@ Upload footage button (operator rows and card, editor, client) there, and
 falls back to the client's raw footage folder when it's empty. Folders are
 made by hand or by Claude in Drive, inside the client's raw footage folder,
 named "NN. Title (posts Mon D)". **✓ Mark filmed** on a we-film video
-(to_film → filmed) clears its film-by deadline; it stays in Ready for an
-editor.
+(to_film → filmed) clears its film-by deadline; it stays ready for an
+editor (Send to editor on its row).
 
 Click any video for its card. **Abandon** (an idea that won't happen)
 sets status `rejected`, remembers where it was in `editor_brief.abandonedFrom`,
 and takes it off the calendar, the client's portal and the editor's page;
-To Do → Abandoned lists it with **Restore** (back where it was) and
-**Delete**. **🗑 Delete** (card, Abandoned tab, or the Edit form) removes the
+the client's Videos tab → Abandoned lists it with **Restore** (back where it was) and
+**Delete**. **🗑 Delete** (card, Abandoned list, or the Edit form) removes the
 row and its status history for good. "Edit" opens the full form (any status, the
 dates (Month · Day · Year dropdowns, `dateSelectHtml` in shell.js), editor, the idea fields, caption, note, and one "Editing
 instructions" field stored as `editor_brief.instructions` — older videos'
@@ -908,7 +899,7 @@ platforms are color-coded, filled pills (YouTube red, Instagram purple,
 Facebook blue, LinkedIn green, TikTok cyan; Tait's call, 2026-10-01). One typeface,
 Hanken Grotesk, with weight for headings. No emoji. Layout: a top bar
 (where you are, and the client switch on the right); filter tabs as one
-segmented bar with count bubbles (`chipLabel`); To Do's stages as tables
+segmented bar with count bubbles (`chipLabel`); video lists as tables
 (Video · Posts · Platforms · Status · Actions, `vrowHtml`), where clicking
 a row or its title opens the video's card and its own buttons don't. Only the sidebar tabs
 are raised (white offset shadows). On phones the sidebar becomes a top bar.
@@ -1170,7 +1161,7 @@ As of 2026-09-23:
 | Editor dashboard (brief, footage, brand voice, deliver) | ✅ Live, scoped per editor by RLS. |
 | Owner review (gate 2), client review (gate 3) | ✅ Live. |
 | 7-day edit-to-post rule | ✅ As a suggestion when entering a post date; always editable. |
-| Posting database with caption | ✅ To Do → Ready to post, with copy-caption. Posting stays manual (principle 6). |
+| Posting database with caption | ✅ My desk → Videos to post, with copy-caption. Posting stays manual (principle 6). |
 | Analytics / monthly performance loop | ❌ Not built — off the client nav. |
 | Competitors + Poppy on the client portal | ❌ Not built. |
 

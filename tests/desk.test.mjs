@@ -30,7 +30,7 @@ await db.query(`insert into social_footage (client_id,kind,name,drive_url) value
 let op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
 const d = () => op.d;
 chk("My desk is the home page", d().getElementById("view-desk").classList.contains("active") && d().getElementById("crumbPage").textContent === "My desk");
-chk("sidebar order: My desk first, then Content Ideas, Clients, To Do", [...d().querySelectorAll(".nav-item[data-view]")].map(n => n.dataset.view).join(",").startsWith("desk,ideabank,clients,todo"));
+chk("sidebar order: My desk first, then Content Ideas, Clients, Content Calendar; no To Do page", [...d().querySelectorAll(".nav-item[data-view]")].map(n => n.dataset.view).join(",").startsWith("desk,ideabank,clients,calendar") && !d().getElementById("view-todo"));
 const tiles = () => [...d().querySelectorAll("#deskTiles .desk-tile")].map(t => t.textContent.trim());
 chk("5 queues with counts (all clients)", JSON.stringify(tiles()) === JSON.stringify(["2Ideas to review", "2Scripts to review", "1Documents to review", "2Videos to review", "1Videos to post"]), tiles());
 chk("nav shows the desk total", d().getElementById("navDeskN").textContent === "8");

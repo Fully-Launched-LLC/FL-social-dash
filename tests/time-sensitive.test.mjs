@@ -1,4 +1,4 @@
-// To Do → Time sensitive: Tait's next task on each video, when it's overdue
+// Time sensitive: Tait's next task on each video, when it's overdue
 // or due within 3 days, soonest first. Plus the client's video card facts:
 // post date, stage and platforms.
 import { freshDb, makeHarness, checker } from "./harness.mjs";
@@ -30,19 +30,15 @@ await db.exec(`
 `);
 
 const op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
-const tabs = () => Object.fromEntries(Array.from(op.d.querySelectorAll("#todoTabs .chip")).map(c => [c.dataset.stageTab, c.textContent.trim().replace(/\s+(\d+)$/, " ($1)")]));
-const shown = () => Array.from(op.d.querySelectorAll("#view-todo [data-stage]")).filter(el => el.style.display !== "none").map(el => el.dataset.stage);
-chk("Time sensitive tab right after All, with its count", Object.keys(tabs())[1] === "urgent" && tabs().urgent === "Time sensitive (4)", tabs());
-chk("not shown under All", !shown().includes("urgent"));
-op.d.querySelector('[data-stage-tab="urgent"]').click(); await settle();
-const rows = Array.from(op.d.querySelectorAll('[data-stage="urgent"] .row'));
-const titles = rows.map(r => r.querySelector("b.video-card").textContent);
+// Time sensitive (the red dot on a video's row): Tait's next task on it,
+// when that's overdue or due within 3 days.
+const urgent = op.w.eval(`workVideos().filter(x => timeSensitive(x)).sort((a, b) => timeSensitive(a).date.localeCompare(timeSensitive(b).date))
+  .map(x => [x.video.title, timeSensitive(x).task])`);
+const titles = urgent.map(u => u[0]);
 chk("only Tait's tasks due within 3 days or overdue, soonest first", titles.join() === "Edit overdue,Review now,Post today,Film soon", titles);
-const text = t => rows.find(r => r.textContent.includes(t)).textContent;
-chk("each says what to do", text("Review now").includes("Review the edit") && text("Edit overdue").includes("Chase the editor") && text("Post today").includes("Post it") && text("Film soon").includes("Film it"));
-chk("overdue and today are called out", text("Edit overdue").includes("overdue since") && text("Post today").includes("today,"));
+const task = t => urgent.find(u => u[0] === t)[1];
+chk("each says what to do", task("Review now") === "Review the edit" && task("Edit overdue").startsWith("Chase the editor") && task("Post today") === "Post it" && task("Film soon") === "Film it");
 chk("client's own tasks, far-off ones and abandoned ideas stay out", !["Client idea", "Film later", "Gone"].some(t => titles.includes(t)));
-chk("the stage's buttons are there (send to editor on a we-film video)", !!Array.from(rows.find(r => r.textContent.includes("Film soon")).querySelectorAll("button")).find(b => b.textContent === "Send to editor"));
 
 // Calendar days list their items in title order, numbers in order.
 await db.exec(`insert into social_videos (client_id,title,status,filmed_by,concept_approved_at,due_to_film,post_date,platform) values
