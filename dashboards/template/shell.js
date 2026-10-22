@@ -1494,8 +1494,8 @@ function brandRow(url, missing) {
 // Operators write the copy and review on a client portal's Carousels page;
 // editors build them on the editor portal's Carousels page and upload the
 // slides (the private 'carousels' bucket: <client id>/<carousel id>/<file>).
-const CAROUSEL_STATUS = { idea: "Idea", with_editor: "With editor", to_review: "To review", changes: "Sent back", approved: "Approved", posted: "Posted" };
-const CAROUSEL_ORDER = ["to_review", "with_editor", "changes", "idea", "approved", "posted"];
+const CAROUSEL_STATUS = { idea: "Idea", with_editor: "With editor", to_review: "To review", client_review: "With the client", changes: "Sent back", approved: "Approved", posted: "Posted" };
+const CAROUSEL_ORDER = ["to_review", "with_editor", "changes", "client_review", "idea", "approved", "posted"];
 
 // One slide's copy: line breaks kept, *words* in gold italic (the accent).
 function carouselTextHtml(text) {
