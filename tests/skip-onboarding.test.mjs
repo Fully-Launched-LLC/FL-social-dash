@@ -21,9 +21,10 @@ await db.exec(`
 `);
 const ob = async () => (await db.query(`select password_set_at, completed_at, started_at from social_client_onboarding where client_id='${HE}'`)).rows[0];
 
-// The operator turns it on: Clients → Edit → Already onboarded.
+// The operator turns it on: the client's page → Edit client → Already onboarded.
 const op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html#clients");
-Array.from(op.d.querySelectorAll("#allClientsList button")).find(b => b.textContent === "Edit").click(); await settle();
+op.d.querySelector("#allClientsList b.video-card").click(); await settle();
+Array.from(op.d.querySelectorAll("button")).find(b => b.textContent === "Edit client").click(); await settle();
 const box = op.d.getElementById("cpSkipOnboarding");
 chk("Clients → Edit has an 'Already onboarded' option, off by default", !!box && !box.checked && box.closest("label").textContent.includes("only asks for a password"));
 box.checked = true;

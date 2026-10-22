@@ -18,7 +18,7 @@ await db.exec(`
 `);
 
 let op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
-const openEdit = async () => { Array.from(op.d.querySelectorAll("#allClientsList button")).find(b => b.textContent === "Edit").click(); await settle(); };
+const openEdit = async () => { op.d.querySelector("#allClientsList b.video-card").click(); await settle(); Array.from(op.d.querySelectorAll("button")).find(b => b.textContent === "Edit client").click(); await settle(); };
 const rows = () => Array.from(op.d.querySelectorAll("#cpDocs .doc-row"));
 const setRow = (r, title, url) => { r.querySelector('[data-doc="title"]').value = title; r.querySelector('[data-doc="url"]').value = url; };
 await openEdit();

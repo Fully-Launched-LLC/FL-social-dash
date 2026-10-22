@@ -458,7 +458,7 @@ def ask_for_plan(sb, c, month, size=20):
     label = dt.date.fromisoformat(month).strftime("%B %Y")
     desc = f"""Build **{c['name']}'s plan for {label}** (Unify the System stage 4). You run it; Tait's rules: {size} ideas from their Content Idea Database (any mix of Tait's and research), special requests keep their day. If there aren't {size} good ones yet, the Strategist writes the rest from their identity and ICP.
 
-1. **Content Strategist:** pick the {size} strongest ideas from `{bridge_cmd()} ideas list --client {slug} --status new` (ideas with a requested post date must be in), pair each with a format, one line why.
+1. **Content Strategist:** pick the {size} strongest ideas from `{bridge_cmd()} ideas list --client {slug} --status new`. **Tait's starred ideas go in first** (`"starred": true`; Tait, 2026-10-22: "i want to be able to star the ideas i really like and need to be posted soon"), then ideas with a requested post date, then the rest. Pair each with a format, one line why.
 2. **Content Expert:** score each 1-10 (Film it / Fix it); swap out anything under 7 for the next best idea.
 3. Write the plan as JSON, `clients/{slug}/team-room/plan-{month[:7]}.json`:
    `[{{"idea_id": "<id>", "format": "...", "why": "...", "score": 8}}, ...]`
@@ -1263,7 +1263,12 @@ def main(argv=None):
     ia.add_argument("--title", required=True); ia.add_argument("--body"); ia.add_argument("--source", default="research", choices=["tait", "phone", "research", "sandcastles", "client"])
     ia.add_argument("--source-detail"); ia.add_argument("--format"); ia.add_argument("--why"); ia.add_argument("--link", action="append", default=[])
     ia.add_argument("--requested-post-date"); ia.add_argument("--by", default=None)
-    il = sub.add_parser("ideas"); il.add_argument("action", choices=["list"]); il.add_argument("--client", required=True); il.add_argument("--status")
+    iv = sub.add_parser("invite", help="invite a client's contact to their portal, or resend it (Tait asks in chat or Telegram)")
+    iv.add_argument("--client", required=True, help="the portal address, e.g. grad-gig")
+    iv.add_argument("--email", help="their email (saved as the client's contact)"); iv.add_argument("--name", help="the contact's name")
+    iv.add_argument("--new", metavar="CLIENT_NAME", help="set up a new client with this name and portal address first")
+    iv.add_argument("--films", choices=["self-serve", "concierge"], default="self-serve", help="new client: self-serve = client films, concierge = we film")
+    il = sub.add_parser("ideas"); il.add_argument("action", choices=["list"]); il.add_argument("--client", required=True); il.add_argument("--status"); il.add_argument("--starred", action="store_true", help="only Tait's starred ideas")
     pp = sub.add_parser("plan"); pp.add_argument("action", choices=["put"]); pp.add_argument("--client", required=True)
     pp.add_argument("--month", required=True, help="YYYY-MM"); pp.add_argument("--file", required=True); pp.add_argument("--brief")
     yt = sub.add_parser("youtube"); yt.add_argument("action", choices=["outliers"]); yt.add_argument("--query", required=True)
@@ -1323,6 +1328,35 @@ def main(argv=None):
             sys.exit("No questions found: use ## Section and - question lines")
         sb.update("social_clients", {"id": c["id"]}, {"onboarding_questions": qs})
         print(f"Saved {sum(len(s['items']) for s in qs)} questions in {len(qs)} sections for {c['name']}.")
+    elif a.cmd == "invite":
+        # Tait, 2026-10-22: "i can just message claude and say invite so and
+        # so email address to the portal and set them up with their unique
+        # portal. then i can message claude if i need to resend the email".
+        # Same as the old dashboard button: /api/invite makes the sign-in link
+        # and sends the welcome email (or a short sign-in email once they've
+        # finished onboarding).
+        if a.new:
+            if sb.select("social_clients", f"select=id&slug=eq.{urllib.parse.quote(a.client)}"):
+                sys.exit(f"'{a.client}' is already a client's portal address; drop --new to invite them.")
+            if not re.fullmatch(r"[a-z0-9-]+", a.client):
+                sys.exit("The portal address can only use lowercase letters, digits and hyphens.")
+            sb.insert("social_clients", {"name": a.new, "slug": a.client, "client_system": a.films})
+            print(f"Set up {a.new}: {SITE}/clients/{a.client}")
+        c = client_by_slug(sb, a.client)
+        contact = {k: v for k, v in (("contact_email", a.email and a.email.strip().lower()), ("contact_name", a.name)) if v}
+        if contact:
+            sb.update("social_clients", {"id": c["id"]}, contact)
+        req = urllib.request.Request(SITE + "/api/invite", data=json.dumps({"clientId": c["id"]}).encode(), method="POST",
+                                     headers={"Content-Type": "application/json", "Authorization": f"Bearer {sb.key}"})
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                out = json.loads(r.read() or b"{}")
+        except urllib.error.HTTPError as e:
+            sys.exit(f"The invite didn't go out: {json.loads(e.read() or b'{}').get('error', e)}")
+        if out.get("sent"):
+            print(f"{'Sign-in' if out.get('returning') else 'Welcome'} email sent to {out['email']} for {c['name']}.")
+        else:
+            print(f"Not emailed ({out.get('reason')}). Send them this link yourself: {out.get('link')}")
     elif a.cmd == "idea":
         c = client_by_slug(sb, a.client)
         row = {"client_id": c["id"], "title": a.title, "body": a.body, "source": a.source, "source_detail": a.source_detail,
@@ -1333,8 +1367,9 @@ def main(argv=None):
         print(f"Added idea {r[0]['id']} to {c['name']}.")
     elif a.cmd == "ideas":
         c = client_by_slug(sb, a.client)
-        q = f"select=id,title,body,source,source_detail,format,why,status,score,requested_post_date,special_request,links,created_at&client_id=eq.{c['id']}&order=created_at"
+        q = f"select=*&client_id=eq.{c['id']}&order=created_at"  # * so starred shows once 034 is run
         if a.status: q += f"&status=eq.{a.status}"
+        if a.starred: q += "&starred=is.true"
         rows = sb.select("social_ideas", q)
         for r in rows:
             print(json.dumps(r, default=str))
