@@ -43,7 +43,7 @@ const d = op.d;
 chk("Assets is in the sidebar (was Library)", d.querySelector('.nav-item[data-view="library"]').textContent === "Assets");
 d.querySelector('.nav-item[data-view="library"]').click(); await settle();
 chk("tabs: Music, Sound effects, LUTs / Powergrades, Motion graphics, Fonts; no house moodboard", [...d.querySelectorAll("#libTabs .chip")].map(c => c.textContent.replace(/\d+$/, "").trim()).join("|") === "Music|Sound effects|LUTs / Powergrades|Motion graphics|Fonts" && !d.getElementById("libBody").textContent.includes("the swipes"), [...d.querySelectorAll("#libTabs .chip")].map(c => c.textContent));
-chk("scope: Fully Launched, then each client", [...d.querySelectorAll("#assetScope .chip")].map(c => c.textContent).join("|") === "Fully Launched|Grad Gig");
+chk("no second client row and no banner: the top-right picker chooses (Tait, 2026-10-22)", !d.getElementById("assetScope") && !d.getElementById("globalClientBanner") && !d.querySelector("#view-library .page-head p"));
 const rows = () => [...d.querySelectorAll("#libBody .lib-row")].map(r => r.querySelector(".nm b").textContent);
 const folders = () => [...d.querySelectorAll("#libBody .finder-folder .nm")].map(f => f.textContent);
 const rowFor = name => [...d.querySelectorAll("#libBody .lib-row")].find(r => r.textContent.includes(name));
@@ -66,13 +66,16 @@ d.querySelector('.finder-path [data-path=""]').click(); await settle();
 chk("the path goes back up", folders().includes("Whooshes"));
 d.getElementById("libQ").value = "shutter"; d.getElementById("libQ").dispatchEvent(new op.w.Event("input")); await new Promise(r => setTimeout(r, 300)); await settle();
 chk("search finds files in any folder", JSON.stringify(rows()) === JSON.stringify(["Shutter 1"]), rows());
-d.querySelector(`#assetScope [data-scope="${GG}"]`).click(); await settle();
+d.querySelector(`#globalClientFilter [data-c="${GG}"]`).click(); await settle();
+d.querySelector('.nav-item[data-view="library"]').click(); await settle();
 d.querySelector('#libTabs [data-lib="music"]').click(); await settle();
 chk("Grad Gig: only their assets, in their folders", JSON.stringify(folders()) === JSON.stringify(["cinematic"]) && /Sound effects\s*0/.test(d.getElementById("libTabs").textContent), d.getElementById("libTabs").textContent);
 d.querySelector("#libBody .finder-folder").click(); await settle();
 chk("…the favourite is there", JSON.stringify(rows()) === JSON.stringify(["Arrival of the Birds"]));
 [...rowFor("Arrival").querySelectorAll("button")].find(b => b.textContent === "Remove from Grad Gig").click(); await settle();
 chk("Remove from Grad Gig takes it out", !(await db.query(`select 1 from social_client_assets`)).rows.length);
+d.querySelector('#globalClientFilter [data-c="all"]').click(); await settle();
+chk("All clients at the top right shows everything again", /Music\s*2/.test(d.getElementById("libTabs").textContent), d.getElementById("libTabs").textContent);
 
 // Client moodboard (shared with the client, migration 033): upload into a
 // section, link, words, note, move between sections, remove.
