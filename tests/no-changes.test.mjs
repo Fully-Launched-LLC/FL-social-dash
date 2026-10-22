@@ -43,7 +43,7 @@ ed.d.querySelectorAll(".chip").forEach(c => { if (/^To edit/.test(c.textContent.
 chk("a first cut doesn't get the button", !!card("First cut") && !btn(card("First cut"), /No changes needed/) && !!btn(card("First cut"), /Finished/));
 
 const op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
-chk("Tait sees it in Edits to review", op.d.querySelector('[data-stage="edits"]').textContent.includes("How to Sign up"));
+chk("Tait sees it in Videos to review on My desk", op.d.getElementById("deskVideos").textContent.includes("How to Sign up"));
 
 chk("no page errors", !ed.ui.errors.length && !op.ui.errors.length, [ed.ui.errors, op.ui.errors]);
 console.log(`${counts.pass} passed, ${counts.fail} failed`);
