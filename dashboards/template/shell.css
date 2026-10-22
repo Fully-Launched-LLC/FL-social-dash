@@ -234,6 +234,17 @@ tr:hover td { color:var(--ink); }
 .cal-block.cal-overdue { box-shadow:0 0 0 3px var(--gold); }
 .cal-block.cal-done { background:#e6eaf0; color:var(--sub); }
 .cal-block.cal-done .plat-pill { background:rgba(4,16,31,.08); color:var(--sub); }
+/* Urgent (Tait, 2026-10-22: "if a video is a week out from posting make
+   sure its red so that the client knows its urgent"): a true red, since
+   --red is gold in the navy theme. */
+.cal-block.cal-urgent { --kc:#e5484d; box-shadow:0 0 0 2px rgba(255,138,140,.55); }
+.cal-cell.has-urgent, .cal-wcol.has-urgent .cal-dayhead { border-color:#e5484d; box-shadow:0 0 0 1px #e5484d; }
+.cal-cell.has-urgent .daynum { background:#e5484d; color:#ffffff; }
+.cal-key { display:inline-flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--sub); }
+.cal-key i { width:10px; height:10px; border-radius:3px; background:var(--kc); display:inline-block; }
+.next-step { border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin:12px 0 4px; line-height:1.5; }
+.next-step.urgent { border-color:#e5484d; background:rgba(229,72,77,.12); }
+.next-step .when { color:#ff8a8c; font-weight:600; }
 .cal-more { display:block; width:100%; border:none; background:transparent; color:var(--sub); font-size:0.72rem; font-weight:600; text-align:left; padding:2px 4px; cursor:pointer; }
 .cal-more:hover { color:var(--ink); }
 .cal-wcol { min-width:0; display:flex; flex-direction:column; gap:8px; }
