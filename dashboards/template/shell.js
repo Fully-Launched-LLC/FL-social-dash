@@ -1798,3 +1798,13 @@ function wireMoodBoard(root) {
     if (files.length) { e.preventDefault(); add(files, null); }
   });
 }
+
+// ---------- The logo in motion (Tait, 2026-10-22: the platinum logo) ----------
+// The chrome rocket on black; mix-blend-mode: screen drops the black, so on
+// the navy only the light sweeping over the logo shows. Used where it earns
+// it: the sign-in screen and the "all caught up" moments. People who ask
+// for less motion get the still frame.
+function logoMotionHtml(cls, caption) {
+  const still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return `<div class="fl-motion ${cls || ""}"><video class="fl-logo-motion" src="/assets/motion/logo-platinum.mp4" poster="/assets/motion/logo-platinum.jpg" muted loop playsinline ${still ? "" : "autoplay"} aria-hidden="true"></video>${caption ? `<div class="fl-motion-caption">${caption}</div>` : ""}</div>`;
+}

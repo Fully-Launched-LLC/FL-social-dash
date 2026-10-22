@@ -113,6 +113,7 @@ body.navy-work .main .board-col.drop { background:rgba(255,255,255,.10); }
     </div>
     <div id="deskNotice"></div>
     <div class="desk-tiles" id="deskTiles"></div>
+    <div id="deskAllClear"></div>
     <div class="card" data-queue="due" id="deskDueCard"><h2>Due soon <span class="meta">Your next step on each video, overdue or due in the next 3 days, soonest first.</span></h2><div id="deskDue"></div></div>
     <div class="card" data-queue="ideas"><h2>Ideas to review <span class="meta">Monthly plans: approve or reject each idea.</span></h2><div id="deskIdeas"></div></div>
     <div class="card" data-queue="scripts"><h2>Scripts to review <span class="meta">Approve and the client sees the whole card.</span></h2><div id="deskScripts"></div></div>
@@ -1867,6 +1868,11 @@ function renderDesk() {
     ["scripts", "Scripts to review", q.scripts.length], ["docs", "Documents to review", q.docs.length],
     ["videos", "Videos to review", q.videos.length], ["post", "Videos to post", q.post.length]];
   const total = tiles.reduce((n, t) => n + t[2], 0);
+  // Nothing waiting and nothing due: the logo, and a breath.
+  const clear = !total && !q.due.length;
+  const ac = document.getElementById("deskAllClear");
+  if (clear && !ac.firstChild) ac.innerHTML = logoMotionHtml("fl-motion-clear", "You're all caught up.");
+  if (!clear) ac.innerHTML = "";
   const nav = document.getElementById("navDeskN"); nav.hidden = !total; nav.textContent = total;
   document.getElementById("deskTiles").innerHTML = tiles.map(([k, label, n]) =>
     `<div class="desk-tile${n ? " hot" : ""}" data-go="${k}"><b>${n}</b><span>${escapeHtml(label)}</span></div>`).join("");
