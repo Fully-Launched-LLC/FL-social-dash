@@ -969,6 +969,53 @@ def check(sb, verbose=True):
     return log
 
 
+# ── Telegram as Tait's main channel (Tait, 2026-10-21) ──────────────────
+# "i want to use telegram as my main source of communication, not just a
+# place to generate video ideas." A message that starts with "idea" (or 💡)
+# is filed as a content idea; everything else goes to Claude's inbox, which
+# the Claude session working with Tait reads and answers through the bot.
+INBOX = HOME / ".config" / "fully-social" / "telegram-inbox.jsonl"
+
+
+def is_idea(text):
+    return bool(re.match(r"^\s*(idea\b|💡)", text or "", flags=re.I))
+
+
+def strip_idea(text):
+    return re.sub(r"^\s*(idea\b\s*[:\-—]?\s*|💡\s*)", "", text or "", flags=re.I).strip()
+
+
+def to_inbox(entry):
+    INBOX.parent.mkdir(parents=True, exist_ok=True)
+    with INBOX.open("a") as f:
+        f.write(json.dumps(dict(entry, at=now(), read=False)) + "\n")
+
+
+def read_inbox(mark=True):
+    if not INBOX.exists():
+        return []
+    rows = [json.loads(l) for l in INBOX.read_text().splitlines() if l.strip()]
+    unread = [r for r in rows if not r.get("read")]
+    if mark and unread:
+        for r in rows:
+            r["read"] = True
+        INBOX.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return unread
+
+
+def telegram_send(text, photo=None):
+    env, st = read_env(CONFIG), load_state()
+    token, chat = env.get("TELEGRAM_BOT_TOKEN"), st.get("telegram_chat")
+    if not token or not chat:
+        raise RuntimeError("Telegram isn't paired yet (bridge.py telegram pair).")
+    if photo:
+        subprocess.run(["curl", "-s", "-F", f"chat_id={chat}", "-F", f"photo=@{photo}", "-F", f"caption={text[:1000]}",
+                        f"https://api.telegram.org/bot{token}/sendPhoto"], check=True, capture_output=True)
+    else:
+        for i in range(0, len(text), 4000):
+            tg("sendMessage", token, {"chat_id": chat, "text": text[i:i + 4000]})
+
+
 # ── Telegram: text ideas from the phone ─────────────────────────────────
 def tg(method, token, params=None, raw_url=None):
     url = raw_url or f"https://api.telegram.org/bot{token}/{method}"
@@ -1005,11 +1052,44 @@ def handle_telegram(sb, st, verbose=True):
             if st.get("telegram_code") and text.endswith(st["telegram_code"]):
                 st["telegram_chat"] = owner = chat
                 st.pop("telegram_code", None)
-                reply("Paired. Text me ideas like:\nGrad Gig: snow shovelling for seniors\nVoice notes, screenshots and links work too.")
+                reply("Paired. Text me anything and Claude reads it. For a content idea, start with idea, e.g.\nidea Grad Gig: snow shovelling for seniors")
             continue
         if chat != owner:
             continue
-        pending = st.pop("telegram_pending", None)
+        spoken = None
+        if (msg.get("voice") or msg.get("audio")) and not text:
+            try:   # voice notes: transcribe first, then route like text
+                fid = (msg.get("voice") or msg.get("audio"))["file_id"]
+                name, data = tg_file(token, fid)
+                CACHE.mkdir(parents=True, exist_ok=True)
+                local = CACHE / f"tg-{fid[-12:]}-{name}"
+                local.write_bytes(data)
+                spoken = transcribe_file(local)
+            except Exception as e:
+                reply(f"I couldn't hear that voice note: {e}")
+                continue
+        said = text or spoken or ""
+        pending = st.get("telegram_pending")
+        if not is_idea(said) and not pending:
+            files = []
+            if msg.get("photo") or msg.get("document"):
+                try:
+                    fid = msg["photo"][-1]["file_id"] if msg.get("photo") else msg["document"]["file_id"]
+                    name, data = tg_file(token, fid)
+                    CACHE.mkdir(parents=True, exist_ok=True)
+                    local = CACHE / f"tg-{fid[-12:]}-{name}"
+                    local.write_bytes(data)
+                    files.append(str(local))
+                except Exception:
+                    pass
+            to_inbox({"text": said, "voice": bool(spoken), "files": files})
+            reply("Got it, Claude has your message.")
+            log.append("telegram: message for Claude")
+            continue
+        st.pop("telegram_pending", None)
+        if spoken and not text:
+            msg = dict(msg); msg.pop("voice", None); msg.pop("audio", None)
+        text = strip_idea(said) if is_idea(said) else said
         client, body = match_client(text, clients)
         if not client and pending:
             client, _ = match_client(text + ": x", clients)
@@ -1040,10 +1120,11 @@ def handle_telegram(sb, st, verbose=True):
             continue
         if not client:
             st["telegram_pending"] = {"body": body, "msg": msg}
-            reply("Which client is this for? Reply with the name: " + ", ".join(c["name"] for c in clients))
+            st["telegram_pending"] = {"body": body, "msg": msg}
+            reply("Which client is this idea for? Reply with the name: " + ", ".join(c["name"] for c in clients))
             continue
         if not (body or attachments or links):
-            reply("Send the idea after the client's name, e.g. Grad Gig: snow shovelling for seniors")
+            reply("Send the idea after the client's name, e.g. idea Grad Gig: snow shovelling for seniors")
             continue
         sb.insert("social_ideas", {"client_id": client["id"], "title": idea_title(body) if body else "Idea from Telegram",
                                    "body": body or None, "links": links, "attachments": attachments,
@@ -1153,7 +1234,8 @@ def main(argv=None):
     pp.add_argument("--month", required=True, help="YYYY-MM"); pp.add_argument("--file", required=True); pp.add_argument("--brief")
     yt = sub.add_parser("youtube"); yt.add_argument("action", choices=["outliers"]); yt.add_argument("--query", required=True)
     yt.add_argument("--days", type=int, default=180); yt.add_argument("--max", type=int, default=25)
-    tgp = sub.add_parser("telegram"); tgp.add_argument("action", choices=["pair"])
+    tgp = sub.add_parser("telegram"); tgp.add_argument("action", choices=["pair", "send", "inbox"])
+    tgp.add_argument("text", nargs="?"); tgp.add_argument("--photo")
     sj = sub.add_parser("start", help="start a stage by hand for any client (existing ones too)")
     sj.add_argument("job", choices=["questions", "documents", "style", "research", "plan"]); sj.add_argument("--client", required=True)
     sj.add_argument("--size", type=int, default=20, help="plan size"); sj.add_argument("--month", help="YYYY-MM (plan; default next month)")
@@ -1252,6 +1334,11 @@ def main(argv=None):
         key = read_env(CONFIG).get("YOUTUBE_API_KEY")
         if not key: sys.exit(f"Add YOUTUBE_API_KEY to {CONFIG} (a free key from Google Cloud).")
         print(youtube_outliers(key, a.query, a.days, a.max))
+    elif a.cmd == "telegram" and a.action == "send":
+        telegram_send(a.text or sys.stdin.read(), a.photo); print("sent")
+    elif a.cmd == "telegram" and a.action == "inbox":
+        msgs = read_inbox()
+        print("\n\n".join(f"[{m['at'][:16]}]{' (voice)' if m.get('voice') else ''} {m['text']}" + "".join(f"\n  file: {f}" for f in m.get("files", [])) for m in msgs) or "No new messages.")
     elif a.cmd == "telegram":
         st = load_state()
         code = f"{uuid.uuid4().int % 1000000:06d}"

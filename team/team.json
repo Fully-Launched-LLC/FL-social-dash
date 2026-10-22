@@ -95,6 +95,14 @@
       "status": "live",
       "agent": "content-simplifier.md",
       "job": "Turns the team's long documents into one short, plain brief for Tait: what the team made and what he needs to review and approve."
+    },
+    {
+      "id": "color-grader",
+      "name": "Color Grader",
+      "color": "#FFB070",
+      "status": "live",
+      "agent": "color-grader.md",
+      "job": "Grades every client's footage: corrects flat footage, then builds and applies the client's look (Hesedea: a warm glow)."
     }
   ],
   "handoffs": [
@@ -169,6 +177,14 @@
     [
       "content-simplifier",
       "tait"
+    ],
+    [
+      "color-grader",
+      "content-editor"
+    ],
+    [
+      "content-editor",
+      "color-grader"
     ]
   ]
 }
