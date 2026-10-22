@@ -521,7 +521,8 @@ function carouselCardsHtml(list) {
     return `<div class="card" data-carcard="${escapeHtml(c.id)}">
       <div class="row" style="padding-top:0"><div class="left"><b>${escapeHtml(c.title)}</b><div class="meta">${[client, c.format, c.category, ROLE === "operator" ? (EDITOR_BY_ID[c.editor_id] || {}).name : ""].filter(Boolean).map(escapeHtml).join(" · ")}</div></div>
         <div>${carouselDueBadge(c)} ${statusDot(c.status, CAROUSEL_STATUS, c.status === "changes")}</div></div>
-      ${c.status === "changes" && c.review_note ? `<div class="car-note"><b>Tait sent it back:</b> ${escapeHtml(c.review_note)}</div>` : ""}
+      ${c.status === "changes" && (c.client_notes || []).length ? `<div class="car-note"><b>The client asked for changes:</b>${c.client_notes.filter(n => n && n.note).map(n => `<div>${n.slide ? "Slide " + n.slide : "Overall"}: ${escapeHtml(n.note)}</div>`).join("")}</div>`
+        : c.status === "changes" && c.review_note ? `<div class="car-note"><b>Tait sent it back:</b> ${escapeHtml(c.review_note)}</div>` : ""}
       ${c.status === "to_review" ? `<p class="meta">With Tait for review. It comes back here if he wants changes.</p>` : ""}
       ${c.notes ? `<div class="car-note"><b>Note:</b> ${escapeHtml(c.notes)}</div>` : ""}
       ${carouselSlidesHtml(c)}

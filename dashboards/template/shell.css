@@ -657,6 +657,15 @@ body.navy-work .main .chip-row { box-shadow:none; }
 .car-copy { padding:4px 10px; font-size:12px; }
 .car-text { font-size:15px; line-height:1.5; }
 .car-photo { font-size:13px; color:var(--sub); margin-top:8px; }
+/* Carousels in the client portal (Tait, 2026-10-22): a strip of the first
+   slides on the card; the review is each slide big with a note under it. */
+.car-strip { display:flex; gap:6px; margin:8px 0 10px; overflow:hidden; }
+.car-strip img { width:72px; aspect-ratio:4/5; object-fit:cover; border-radius:8px; border:1px solid var(--border); }
+.car-review { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap:16px; margin:10px 0; }
+.car-review-slide { margin:0; display:flex; flex-direction:column; gap:8px; }
+.car-review-slide img { width:100%; border-radius:12px; border:1px solid var(--border); display:block; }
+.car-review-slide figcaption { display:flex; flex-direction:column; gap:6px; }
+.car-review-slide textarea { width:100%; }
 .car-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:10px; margin:10px 0; }
 .car-thumb { margin:0; }
 .car-thumb img { width:100%; aspect-ratio:4/5; object-fit:cover; border-radius:8px; border:1px solid var(--border); display:block; }

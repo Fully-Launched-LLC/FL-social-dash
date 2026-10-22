@@ -32,13 +32,13 @@ const d = () => op.d;
 chk("My desk is the home page", d().getElementById("view-desk").classList.contains("active") && d().getElementById("crumbPage").textContent === "My desk");
 chk("sidebar order: My desk first, then Content Ideas, Clients, Content Calendar; no To Do page", [...d().querySelectorAll(".nav-item[data-view]")].map(n => n.dataset.view).join(",").startsWith("desk,ideabank,clients,calendar") && !d().getElementById("view-todo"));
 const tiles = () => [...d().querySelectorAll("#deskTiles .desk-tile")].map(t => t.textContent.trim());
-chk("5 queues with counts (all clients)", JSON.stringify(tiles()) === JSON.stringify(["2Ideas to review", "2Scripts to review", "1Documents to review", "2Videos to review", "1Videos to post"]), tiles());
+chk("6 queues with counts (all clients)", JSON.stringify(tiles()) === JSON.stringify(["2Ideas to review", "2Scripts to review", "1Documents to review", "2Videos to review", "0Carousels to review", "1Videos to post"]), tiles());
 chk("nav shows the desk total", d().getElementById("navDeskN").textContent === "8");
 chk("plan shows its brief and ideas", d().getElementById("deskIdeas").textContent.includes("20 ideas") && d().getElementById("deskIdeas").textContent.includes("Format: Local guide"));
 
 // Client filter narrows the desk.
 d().querySelector(`#globalClientFilter .chip[data-c="${FL}"]`).click(); await settle();
-chk("client filter narrows the queues", JSON.stringify(tiles()) === JSON.stringify(["0Ideas to review", "0Scripts to review", "0Documents to review", "1Videos to review", "0Videos to post"]), tiles());
+chk("client filter narrows the queues", JSON.stringify(tiles()) === JSON.stringify(["0Ideas to review", "0Scripts to review", "0Documents to review", "1Videos to review", "0Carousels to review", "0Videos to post"]), tiles());
 d().querySelector(`#globalClientFilter .chip[data-c="all"]`).click(); await settle();
 
 // Ideas: approve one, reject one.
@@ -77,7 +77,7 @@ chk("videos to post have Mark posted", d().getElementById("deskPost").textConten
 // One client's page.
 d().querySelector('.nav-item[data-view="clients"]').click(); await settle();
 [...d().querySelectorAll("#allClientsList button")].find(b => b.textContent === "Open").click(); await settle();
-chk("client page opens with tabs", d().getElementById("view-client").classList.contains("active") && [...d().querySelectorAll("#cpTabs .chip")].map(c => c.textContent).join(",") === "Overview,Documents,Moodboard,Footage,Videos");
+chk("client page opens with tabs", d().getElementById("view-client").classList.contains("active") && [...d().querySelectorAll("#cpTabs .chip")].map(c => c.textContent).join(",") === "Overview,Documents,Moodboard,Footage,Videos,Carousels");
 chk("Open their portal links to their portal", d().getElementById("cpPortal").getAttribute("href") === "/clients/fl" || d().getElementById("cpPortal").getAttribute("href") === "/clients/gg");
 const openClient = async id => { op.w.openClientPage(id); await settle(); };
 await openClient(GG);

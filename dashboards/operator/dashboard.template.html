@@ -119,6 +119,7 @@ body.navy-work .main .board-col.drop { background:rgba(255,255,255,.10); }
     <div class="card" data-queue="scripts"><h2>Scripts to review <span class="meta">Approve and the client sees the whole card.</span></h2><div id="deskScripts"></div></div>
     <div class="card" data-queue="docs"><h2>Documents to review <span class="meta">Operator-only, except approved brand guidelines.</span></h2><div id="deskDocs"></div></div>
     <div class="card" data-queue="videos"><h2>Videos to review</h2><div id="deskVideos"></div></div>
+    <div class="card" data-queue="carousels"><h2>Carousels to review</h2><div id="deskCarousels"></div></div>
     <div class="card" data-queue="post"><h2>Videos to post</h2><div id="deskPost"></div></div>
   </section>
 
@@ -290,6 +291,7 @@ async function loadLiveData() {
   await loadAgents();
   await loadDeskData();
   await loadStyleData();
+  await loadCarouselData();
   renderAll();
 }
 // For videos with an editor or at Edit review: how many of the comments
@@ -1750,6 +1752,149 @@ async function askForPlan() {
   await loadLiveData();
 }
 
+// ---------- Carousels (migrations 022, 023, 035) ----------
+// Tait, 2026-10-22: carousels work like videos. The editor uploads the
+// slides; Tait reviews them on My desk (to_review); Approve sends them to
+// the client's To review (client_review), who approves or asks for changes
+// slide by slide; then approved → posted. The copy, the guide and the editor
+// live on the client's Carousels tab here (they used to be a Carousels page
+// in the portal, which clients never saw).
+let CAROUSELS = [], CAR_GUIDES = {}, CAR_UPLOADS = {}, CAR_TAB = "all";
+async function loadCarouselData() {
+  const [res, guides] = await Promise.all([
+    sbClient.from("social_carousels").select("*").order("position"),
+    sbClient.from("social_carousel_guides").select("client_id,body_md"),
+  ]);
+  CAROUSELS = res.error ? [] : (res.data || []).filter(c => CLIENT_BY_ID[c.client_id]);
+  CAR_GUIDES = {};
+  (guides.data || []).forEach(g => { CAR_GUIDES[g.client_id] = g.body_md || ""; });
+  CAR_UPLOADS = await loadCarouselUploads(CAROUSELS.filter(c => c.status !== "idea").map(c => c.id));
+}
+function clientCarouselsHtml(c) {
+  const mine = CAROUSELS.filter(x => x.client_id === c.id);
+  const order = ["to_review", "changes", "with_editor", "client_review", "idea", "approved", "posted"];
+  const count = k => mine.filter(x => x.status === k).length;
+  const tabs = [["all", "All", mine.length]].concat(order.map(k => [k, CAROUSEL_STATUS[k], count(k)]));
+  const list = mine.filter(x => CAR_TAB === "all" || x.status === CAR_TAB);
+  const editorName = id => (EDITOR_BY_ID[id] || {}).name;
+  return `<div class="card"><div class="row"><div class="left"><b>Carousel guide</b><div class="meta">The style, the photos and the steps. Editors read it on every carousel.</div></div>
+      <div><button class="primary" data-car-guide="read">Read</button> <button data-car-guide="edit">Edit</button></div></div></div>
+    <div class="chip-row">${tabs.map(([k, l, n]) => `<button class="chip${CAR_TAB === k ? " active" : ""}${!n ? " zero" : ""}${k === "to_review" && n ? " urgent" : ""}" data-cartab="${k}">${chipLabel(l, n)}</button>`).join("")}</div>
+    <div class="card">${list.map(x => `<div class="row" data-car="${escapeHtml(x.id)}" style="cursor:pointer">
+      <div class="left"><b>${x.position ? x.position + ". " : ""}${escapeHtml(x.title)}</b>
+        <div class="meta">${[x.format, x.category, editorName(x.editor_id), x.due_to_edit && "edit by " + niceDate(x.due_to_edit), x.post_date && "posts " + niceDate(x.post_date)].filter(Boolean).map(escapeHtml).join(" · ")}</div></div>
+      <div>${statusDot(x.status, CAROUSEL_STATUS, x.status === "to_review")}</div></div>`).join("") || `<div class="empty">${mine.length ? "None here." : "No carousels yet."}</div>`}</div>`;
+}
+function wireClientCarousels(body, c) {
+  body.querySelectorAll("[data-cartab]").forEach(b => b.onclick = () => { CAR_TAB = b.dataset.cartab; renderClientPage(); });
+  body.querySelectorAll("[data-car]").forEach(r => r.onclick = () => openCarousel(r.dataset.car));
+  body.querySelector('[data-car-guide="read"]').onclick = () => openCarouselGuide(CAR_GUIDES[c.id] || "");
+  body.querySelector('[data-car-guide="edit"]').onclick = () => {
+    const box = openModal(`<h2>Edit the carousel guide</h2>
+      <p class="meta">Markdown: # headings, - lists, **bold**, *italic*. Editors see it on their Carousels page.</p>
+      <textarea id="cgBody" rows="24" style="width:100%">${escapeHtml(CAR_GUIDES[c.id] || "")}</textarea>
+      <div class="modal-actions"><button class="primary" id="cgSave">Save</button><button onclick="closeVideoModal()">Cancel</button></div>`);
+    box.classList.add("modal-wide");
+    box.querySelector("#cgSave").onclick = async e => {
+      e.target.disabled = true;
+      const md = box.querySelector("#cgBody").value;
+      const { error } = await sbClient.from("social_carousel_guides").upsert({ client_id: c.id, body_md: md }, { onConflict: "client_id" });
+      if (error) { e.target.disabled = false; alert("Couldn't save: " + error.message); return; }
+      CAR_GUIDES[c.id] = md;
+      closeVideoModal();
+    };
+  };
+}
+// The client's notes, slide by slide (slide 0 = the whole carousel).
+function carouselClientNotesHtml(c) {
+  const notes = Array.isArray(c.client_notes) ? c.client_notes.filter(n => n && n.note) : [];
+  return notes.length ? `<div class="card"><h2>The client asked for changes</h2>${notes.map(n => `<div class="doc-row"><div><b>${n.slide ? "Slide " + n.slide : "Overall"}</b><div>${escapeHtml(n.note)}</div></div></div>`).join("")}</div>` : "";
+}
+// One carousel: review what the editor sent, edit the copy, give it to an editor.
+function openCarousel(id) {
+  const c = CAROUSELS.find(x => x.id === id);
+  if (!c) return;
+  const slides = Array.isArray(c.slides) ? c.slides.map(s => ({ text: s.text || "", photo: s.photo || "" })) : [];
+  const ups = CAR_UPLOADS[c.id] || [];
+  const editors = EDITORS.filter(e => e.active);
+  const field = (key, label) => `<label class="modal-field"><b>${label}</b><input type="text" data-f="${key}" value="${escapeHtml(c[key] || "")}" style="width:100%"></label>`;
+  const editorOpts = `<option value="">No editor yet</option>` + editors.map(e => `<option value="${escapeHtml(e.id)}"${e.id === c.editor_id ? " selected" : ""}>${escapeHtml(e.name)}</option>`).join("");
+  const review = c.status === "to_review" ? `
+    <div class="card"><h2>The editor sent this for review</h2>${carouselGalleryHtml(ups, false)}
+      <div class="modal-field"><b>Posts on</b>${dateSelectHtml("post_date", c.post_date || "")}</div>
+      <label class="modal-field"><b>Changes to make (if you send it back)</b><textarea id="carNote" rows="3" style="width:100%">${escapeHtml(c.review_note || "")}</textarea></label>
+      <div class="modal-actions"><button class="accent" id="carApprove">Approve and send to ${escapeHtml(CLIENT_BY_ID[c.client_id].name)}</button><button id="carBack">Send back with the note</button></div></div>`
+    : ups.length ? `<div class="car-section"><b class="car-label">Uploaded slides</b>${carouselGalleryHtml(ups, false)}</div>` : "";
+  const box = openModal(`
+    <h2>${c.position ? c.position + ". " : ""}${escapeHtml(c.title)}</h2>
+    <div class="modal-meta">${escapeHtml(CLIENT_BY_ID[c.client_id].name)} · ${statusDot(c.status, CAROUSEL_STATUS)}${c.status === "changes" && c.review_note ? ` · sent back: ${escapeHtml(c.review_note)}` : ""}</div>
+    ${carouselClientNotesHtml(c)}
+    ${review}
+    <div class="car-section"><b class="car-label">Preview</b>${carouselSlidesHtml(c)}</div>
+    <h3>Edit the copy</h3>
+    ${field("title", "Title")}${field("format", "Format")}${field("category", "Category")}${field("answers", "Answers (from Content Research)")}${field("perspective", "Perspective")}${field("cta", "Call to action (caption only)")}
+    <div class="car-section"><b class="car-label">Slides</b><p class="meta">Put *stars* around the words that go in gold italic.</p><div id="carSlideEdit"></div><button type="button" id="carAddSlide">+ Add a slide</button></div>
+    <label class="modal-field"><b>Caption</b><textarea data-f="caption" rows="5" style="width:100%">${escapeHtml(c.caption || "")}</textarea></label>
+    <label class="modal-field"><b>Notes for the editor</b><textarea data-f="notes" rows="2" style="width:100%">${escapeHtml(c.notes || "")}</textarea></label>
+    ${carouselSourcesHtml(c)}
+    <label class="modal-field"><b>Editor</b><select id="carEditor" style="width:100%">${editorOpts}</select></label>
+    <div class="modal-field"><b>Edit by</b>${dateSelectHtml("due_to_edit", c.due_to_edit || "")}</div>
+    ${c.status === "to_review" ? "" : `<div class="modal-field"><b>Posts on</b>${dateSelectHtml("post_date", c.post_date || "")}</div>`}
+    <div class="modal-actions">
+      <button class="primary" id="carSave">Save</button>
+      ${["idea", "changes"].includes(c.status) ? `<button id="carSend">Save and send to the editor</button>` : ""}
+      ${c.status === "approved" ? `<button id="carPosted">Mark posted</button>` : ""}
+      <button onclick="closeVideoModal()">Close</button>
+    </div>`);
+  box.classList.add("modal-wide");
+  wireCarouselCopy(box);
+  const drawSlides = () => {
+    box.querySelector("#carSlideEdit").innerHTML = slides.map((s, i) => `
+      <div class="car-edit-slide"><div class="car-slide-head"><b>Slide ${i + 1}</b><button type="button" data-del-slide="${i}">Remove</button></div>
+        <textarea data-slide="${i}" data-k="text" rows="4" placeholder="What the slide says">${escapeHtml(s.text)}</textarea>
+        <textarea data-slide="${i}" data-k="photo" rows="2" placeholder="The photo: what it shows and where to find it">${escapeHtml(s.photo)}</textarea></div>`).join("");
+    box.querySelectorAll("[data-slide]").forEach(t => t.oninput = () => { slides[t.dataset.slide][t.dataset.k] = t.value; });
+    box.querySelectorAll("[data-del-slide]").forEach(b => b.onclick = () => { slides.splice(Number(b.dataset.delSlide), 1); drawSlides(); });
+  };
+  drawSlides();
+  box.querySelector("#carAddSlide").onclick = () => { slides.push({ text: "", photo: "" }); drawSlides(); };
+  const values = () => {
+    const v = { slides: slides.filter(s => s.text.trim() || s.photo.trim()), editor_id: box.querySelector("#carEditor").value || null };
+    box.querySelectorAll("[data-f]").forEach(el => { v[el.dataset.f] = el.value; });
+    v.due_to_edit = v.due_to_edit || null;
+    v.post_date = v.post_date || null;
+    return v;
+  };
+  const save = async (extra, btn) => {
+    if (btn) btn.disabled = true;
+    const { data, error } = await sbClient.from("social_carousels").update({ ...values(), ...extra }).eq("id", c.id).select("*");
+    if (error || !data || !data.length) { if (btn) btn.disabled = false; alert("Couldn't save: " + ((error && error.message) || "not found")); return false; }
+    Object.assign(c, data[0]);
+    closeVideoModal();
+    renderAll();
+    return true;
+  };
+  box.querySelector("#carSave").onclick = e => save({}, e.target);
+  const send = box.querySelector("#carSend");
+  if (send) send.onclick = e => {
+    if (!box.querySelector("#carEditor").value) { alert("Pick an editor first."); return; }
+    save({ status: "with_editor", review_note: c.status === "changes" ? c.review_note : null }, e.target);
+  };
+  const posted = box.querySelector("#carPosted");
+  if (posted) posted.onclick = e => save({ status: "posted" }, e.target);
+  const approve = box.querySelector("#carApprove");
+  if (approve) approve.onclick = e => {
+    if (!values().post_date) { alert("Pick the day it posts first, so it lands on the client's calendar."); return; }
+    save({ status: "client_review", approved_at: new Date().toISOString(), review_note: null, client_notes: [] }, e.target);
+  };
+  const back = box.querySelector("#carBack");
+  if (back) back.onclick = e => {
+    const note = box.querySelector("#carNote").value.trim();
+    if (!note) { alert("Write what to change first."); return; }
+    save({ status: "changes", review_note: note }, e.target);
+  };
+}
+
 // ---------- Moodboards + Library (Unify the System, Phase 4; migration 028) ----------
 // A moodboard is what Tait likes (motion graphics, fonts, text styles,
 // colours, video styles) as screenshots, videos and links, per client or for
@@ -1846,6 +1991,7 @@ function deskQueues() {
     scripts: vids.filter(x => x.video.status === "script_review"),
     docs: DOCS.filter(d => d.status === "on_desk" && inClientFilter(d.client_id) && CLIENT_BY_ID[d.client_id]),
     videos: vids.filter(x => x.video.status === "in_review"),
+    carousels: CAROUSELS.filter(c => c.status === "to_review" && inClientFilter(c.client_id) && CLIENT_BY_ID[c.client_id]),
     post: vids.filter(x => x.video.status === "ready_to_post").sort(byPostDate),
     due: vids.filter(x => timeSensitive(x)).sort((a, b) => timeSensitive(a).date.localeCompare(timeSensitive(b).date)),
   };
@@ -1860,7 +2006,7 @@ function renderDesk() {
   const q = deskQueues();
   const tiles = [["ideas", "Ideas to review", q.ideas.reduce((n, p) => n + IDEAS.filter(i => i.plan_id === p.id && i.status === "in_plan").length, 0)],
     ["scripts", "Scripts to review", q.scripts.length], ["docs", "Documents to review", q.docs.length],
-    ["videos", "Videos to review", q.videos.length], ["post", "Videos to post", q.post.length]];
+    ["videos", "Videos to review", q.videos.length], ["carousels", "Carousels to review", q.carousels.length], ["post", "Videos to post", q.post.length]];
   const total = tiles.reduce((n, t) => n + t[2], 0);
   // Nothing waiting and nothing due: the logo, and a breath.
   const clear = !total && !q.due.length;
@@ -1903,6 +2049,9 @@ function renderDesk() {
 
   document.getElementById("deskVideos").innerHTML = q.videos.length
     ? `<div class="vtable">${VROW_HEAD}${q.videos.map(x => vrowHtml(x, operatorActionsHtml(x))).join("")}</div>` : `<div class="empty">No videos waiting for your review.</div>`;
+  document.getElementById("deskCarousels").innerHTML = q.carousels.map(c => `<div class="doc-row"><div><b>${escapeHtml(c.title)}</b> · ${escapeHtml(CLIENT_BY_ID[c.client_id].name)}
+      <div class="meta">${[(CAR_UPLOADS[c.id] || []).length + " slides", c.post_date && "Posts " + niceDate(c.post_date)].filter(Boolean).map(escapeHtml).join(" · ")}</div></div>
+      <div>${smallBtn("Review", `openCarousel('${c.id}')`, "primary")}</div></div>`).join("") || `<div class="empty">No carousels waiting for your review.</div>`;
   document.getElementById("deskPost").innerHTML = q.post.map(postCardHtml).join("") || `<div class="empty">Nothing ready to post.</div>`;
   // Due soon (Tait, 2026-10-22): what To Do's Time sensitive list used to show.
   document.getElementById("deskDueCard").classList.toggle("due-hot", q.due.length > 0);
@@ -2036,7 +2185,7 @@ function renderClientPage() {
   document.getElementById("cpTitle").textContent = c.name;
   document.getElementById("cpSub").textContent = `/clients/${c.slug} · ${WHO_FILMS[c.clientSystem] || c.clientSystem}`;
   document.getElementById("cpPortal").href = "/clients/" + encodeURIComponent(c.slug);
-  const tabs = [["overview", "Overview"], ["docs", "Documents"], ["moodboard", "Moodboard"], ["footage", "Footage"], ["videos", "Videos"]];
+  const tabs = [["overview", "Overview"], ["docs", "Documents"], ["moodboard", "Moodboard"], ["footage", "Footage"], ["videos", "Videos"], ["carousels", "Carousels"]];
   document.getElementById("cpTabs").innerHTML = tabs.map(([k, l]) => `<div class="chip ${k === CLIENT_PAGE.tab ? "active" : ""}" data-cptab="${k}">${l}</div>`).join("");
   document.querySelectorAll("#cpTabs .chip").forEach(el => el.onclick = () => { CLIENT_PAGE.tab = el.dataset.cptab; renderClientPage(); });
   const body = document.getElementById("cpBody"), f = c.driveFolders;
@@ -2071,6 +2220,9 @@ function renderClientPage() {
       <div class="meta">Drive folders: ${[link(f.footageUploads, "Raw footage"), link(f.previousContent, "Previous content"), link(f.finalEdits, "Finished videos")].join(" · ")}</div>
       ${HAS_026 ? `<div style="margin-top:10px">${smallBtn("+ Add footage link", `addFootage('${c.id}')`)}</div>` : `<div class="meta" style="color:var(--gold)">Run migration 026 to keep a footage library here.</div>`}
       ${group("broll", "B-roll", "the client sees these")}${group("old", "Old footage", "the client sees these")}${group("raw", "Raw footage on cards", "")}${group("finished", "Finished cuts", "operator only")}</div>`;
+  } else if (CLIENT_PAGE.tab === "carousels") {
+    body.innerHTML = clientCarouselsHtml(c);
+    wireClientCarousels(body, c);
   } else {
     const vids = VIDEOS.filter(x => x.client.id === c.id && x.video.status !== "rejected");
     const gone = VIDEOS.filter(x => x.client.id === c.id && x.video.status === "rejected");
