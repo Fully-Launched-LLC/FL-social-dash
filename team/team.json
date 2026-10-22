@@ -103,6 +103,14 @@
       "status": "live",
       "agent": "color-grader.md",
       "job": "Grades every client's footage: corrects flat footage, then builds and applies the client's look (Hesedea: a warm glow)."
+    },
+    {
+      "id": "art-director",
+      "name": "Art Director",
+      "color": "#7FD8BE",
+      "status": "live",
+      "agent": "art-director.md",
+      "job": "Reads each client's moodboard (built by Tait and the client) and tells the Editor and Motion Designer how to edit and animate in that style."
     }
   ],
   "handoffs": [

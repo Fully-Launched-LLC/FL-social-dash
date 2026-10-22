@@ -388,15 +388,15 @@ def ask_for_documents(sb, c):
 def ask_for_style(sb, c, update=False):
     slug = c["slug"]
     what = "update their editing guidelines with the new moodboard items" if update else "build their editing guidelines"
-    desc = f"""**{c['name']}**: {what} (Unify the System stage 3: the client's style guide). You lead; bring in the **Motion Graphics Designer** (motion graphics, text styles) and the **Content Strategist** (video types, pacing) as you need them.
+    desc = f"""**{c['name']}**: {what} (the client's style guide). You lead (Tait, 2026-10-22: the Art Director views the moodboard and tells the editor and motion graphics designer how to do it in the style Tait and the client want). Bring in the **Content Strategist** (video types, pacing) as you need.
 
 1. Read: their approved brand guidelines `{bridge_cmd()} doc get --client {slug} --kind brand_guidelines`, their identity `--kind identity`, the house style `team/content-editor/house-style.md`, their `clients/{slug}/style-profile.md` and `team-room/feedback-log.md` if they exist.
-2. Their moodboard: `{bridge_cmd()} moodboard get --client {slug}` downloads every screenshot and video Tait dropped in and prints his notes and links. Look at every image; watch every video (`watch` skill). Pull out the motion graphics, fonts, text styles, colours, layouts and video styles.
-3. Write the guidelines with the `editing-guidelines-doc` skill, save as `clients/{slug}/sources/editing_guidelines.md`, then
-   `{bridge_cmd()} doc put --client {slug} --kind editing_guidelines --file clients/{slug}/sources/editing_guidelines.md --status on_desk --built-by "Content Editor" --sources "moodboard (N items), brand guidelines"`
+2. Their moodboard (Tait and the client build it together, in sections): `{bridge_cmd()} moodboard get --client {slug}` downloads every item with its section, colours, who added it and their note. Look at every image; watch every video and reel (`watch` skill).
+3. Write the guidelines with the `editing-guidelines-doc` skill (including **For the Content Editor** and **For the Motion Graphics Designer**), save as `clients/{slug}/sources/editing_guidelines.md`, then
+   `{bridge_cmd()} doc put --client {slug} --kind editing_guidelines --file clients/{slug}/sources/editing_guidelines.md --status on_desk --built-by "Art Director" --sources "moodboard (N items), brand guidelines"`
    and `{bridge_cmd()} moodboard used --client {slug}`.
-4. Tait approves it on My desk. **No edit for this client starts until it's approved** (Tait's rule)."""
-    tid = give_task("Content Editor", f"{c['name']}: {what}", desc)
+4. Post the two briefs to the Content Editor and the Motion Graphics Designer. Tait approves the guidelines on My desk. **No edit for this client starts until they're approved** (Tait's rule)."""
+    tid = give_task("Art Director", f"{c['name']}: {what}", desc)
     sb.insert("social_client_onboarding", {"client_id": c["id"], "style_requested_at": now()}, upsert_on="client_id")
     return tid
 
@@ -405,9 +405,9 @@ def ask_for_house_style(sb):
     desc = f"""Tait added items to the **house moodboard** (every client). Fold them into the house style.
 
 1. `{bridge_cmd()} moodboard get --client house` downloads them with Tait's notes. Look at every image; watch every video.
-2. Update `team/content-editor/house-style.md` (the defaults every client's editing guidelines start from): motion graphics, fonts, text styles, colours, video styles. Add only what the items show; Tait is the rule maker, so list anything that would change an existing rule as a question for him.
+2. Update `team/content-editor/house-style.md` (the defaults every client's editing guidelines start from): motion graphics, fonts, text styles, colours, video styles. Add only what the items show; Tait is the rule maker, so list anything that would change an existing rule as a question for him. Tell the Content Editor and the Motion Graphics Designer what changed.
 3. `{bridge_cmd()} moodboard used --client house`, then post one line here."""
-    tid = give_task("Content Editor", "House moodboard: fold new items into the house style", desc)
+    tid = give_task("Art Director", "House moodboard: fold new items into the house style", desc)
     return tid
 
 
@@ -1440,7 +1440,8 @@ def main(argv=None):
         folder = HOME / ".cache" / "fully-social" / "moodboards" / a.client
         folder.mkdir(parents=True, exist_ok=True)
         for it in items:
-            line = f"- [{it['kind']}] {it.get('name') or ''}"
+            sec = it.get("section") or ("words" if it["kind"] == "note" else "look" if it["kind"] == "image" else "editing")
+            line = f"- [{sec} · {it['kind']}] {it.get('name') or ''}"
             if it.get("storage_path"):
                 local = folder / pathlib.Path(it["storage_path"]).name
                 if not local.exists():
@@ -1448,8 +1449,12 @@ def main(argv=None):
                 line += f" -> {local}"
             if it.get("url"):
                 line += f" -> {it['url']}"
+            if it.get("palette"):
+                line += f"\n    colours: {' '.join(it['palette'])}"
             if it.get("note"):
-                line += f"\n    Tait: {it['note']}"
+                line += f"\n    {'Client' if it.get('added_by_role') == 'client' else 'Tait'}: {it['note']}"
+            elif it.get("added_by_role") == "client":
+                line += "\n    (added by the client)"
             if not it.get("used_at"):
                 line += "  (new)"
             print(line)

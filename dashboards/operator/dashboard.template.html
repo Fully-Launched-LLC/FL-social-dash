@@ -16,18 +16,13 @@
 .client-tabs { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 16px; }
 .doc-row { display:flex; justify-content:space-between; gap:10px; align-items:center; border-top:1px solid var(--border); padding:10px 0; flex-wrap:wrap; }
 .doc-row:first-of-type { border-top:0; }
-.mood-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; margin-top:12px; }
-.mood-item { border:1px solid var(--border); border-radius:10px; padding:8px; background:var(--card); font-size:0.82rem; }
-.mood-item img, .mood-item video { width:100%; border-radius:6px; display:block; background:#000; aspect-ratio:9/12; object-fit:cover; }
-.mood-drop { border:2px dashed var(--border); border-radius:10px; padding:16px; text-align:center; color:var(--sub); }
-.mood-drop.over { border-color:var(--gold); color:var(--ink); }
 .lib-row { display:flex; align-items:center; gap:10px; border-top:1px solid var(--border); padding:7px 0; flex-wrap:wrap; }
 .lib-row .nm { flex:1; min-width:160px; }
 .lib-row button.on { background:var(--ink); color:var(--card); }
 /* Navy behind the cards (Tait, 2026-10-22: "i want all the background to be
    navy. the video cards can stay white"). body.navy-work (shell.css) makes
    .main navy and every .card white; these are the other white boxes. */
-body.navy-work .main :is(.desk-tile, .agent-card, .idea-card, .mood-item) {
+body.navy-work .main :is(.desk-tile, .agent-card, .idea-card) {
   --navy:#ffffff; --white:#04101f; --gold:#a8884f;
   --bg:#f3f5f8; --card:#ffffff; --card2:#ffffff;
   --border:rgba(4,16,31,.10); --line-2:rgba(4,16,31,.18); --line-strong:rgba(4,16,31,.38);
@@ -36,7 +31,7 @@ body.navy-work .main :is(.desk-tile, .agent-card, .idea-card, .mood-item) {
   --green:#a8884f; --red:#a8884f; --amber:#a8884f; --purple:#a8884f;
   color-scheme:light; color:var(--ink); border-color:transparent;
 }
-body.navy-work .main .desk-tile.hot { border-color:#C4AB82; }
+body.navy-work .main .desk-tile.hot, body.navy-work .main .card.due-hot { border-color:#C4AB82; }
 body.navy-work .main .board-col { background:rgba(255,255,255,.04); }
 body.navy-work .main .board-col.drop { background:rgba(255,255,255,.10); }
 </style>
@@ -118,6 +113,7 @@ body.navy-work .main .board-col.drop { background:rgba(255,255,255,.10); }
     </div>
     <div id="deskNotice"></div>
     <div class="desk-tiles" id="deskTiles"></div>
+    <div class="card" data-queue="due" id="deskDueCard"><h2>Due soon <span class="meta">Your next step on each video, overdue or due in the next 3 days, soonest first.</span></h2><div id="deskDue"></div></div>
     <div class="card" data-queue="ideas"><h2>Ideas to review <span class="meta">Monthly plans: approve or reject each idea.</span></h2><div id="deskIdeas"></div></div>
     <div class="card" data-queue="scripts"><h2>Scripts to review <span class="meta">Approve and the client sees the whole card.</span></h2><div id="deskScripts"></div></div>
     <div class="card" data-queue="docs"><h2>Documents to review <span class="meta">Operator-only, except approved brand guidelines.</span></h2><div id="deskDocs"></div></div>
@@ -1012,7 +1008,7 @@ function renderGlobalClientFilter() {
 function unsentIdeas() {
   return workVideos().filter(x => x.video.status === "concept_pending" && !x.video.conceptApprovedAt);
 }
-// Time sensitive: the next thing Tait has to do on a video, and by when,
+// Time sensitive (My desk → Due soon, and the dot on a row): the next thing Tait has to do on a video, and by when,
 // if that's overdue or within TIME_SENSITIVE_DAYS. Waiting on the client
 // counts only at final approval (nudge them before the approve-by date).
 const TIME_SENSITIVE_DAYS = 3;
@@ -1762,8 +1758,8 @@ async function askForPlan() {
 // ---------- Moodboards + Library (Unify the System, Phase 4; migration 028) ----------
 // A moodboard is what Tait likes (motion graphics, fonts, text styles,
 // colours, video styles) as screenshots, videos and links, per client or for
-// every client (client_id null = the house moodboard). The bridge asks the
-// Content Editor to turn it into the client's editing guidelines.
+// every client (client_id null = the house moodboard). The board itself is
+// shared with the client portal (renderMoodBoard in shell.js, migration 033).
 let MOOD = [], ASSETS = [], HAS_028 = true, LIB = { tab: "music", folder: "", q: "" };
 async function loadStyleData() {
   const [m, a] = await Promise.all([
@@ -1773,88 +1769,6 @@ async function loadStyleData() {
   HAS_028 = !m.error;
   MOOD = m.data || []; ASSETS = a.error ? [] : (a.data || []);
 }
-const moodKind = f => /^image\//.test(f.type) ? "image" : /^video\//.test(f.type) ? "video" : null;
-async function moodboardHtml(clientId) {
-  const items = MOOD.filter(m => (m.client_id || null) === (clientId || null));
-  const paths = items.filter(m => m.storage_path).map(m => m.storage_path);
-  const signed = {};
-  if (paths.length) {
-    const { data } = await sbClient.storage.from("moodboards").createSignedUrls(paths, 3600);
-    (data || []).forEach(x => { if (x && x.signedUrl) signed[x.path] = x.signedUrl; });
-  }
-  const tile = m => `<div class="mood-item" data-mood="${m.id}">
-      ${m.kind === "image" && signed[m.storage_path] ? `<img src="${escapeHtml(signed[m.storage_path])}" alt="">`
-        : m.kind === "video" && signed[m.storage_path] ? `<video src="${escapeHtml(signed[m.storage_path])}" muted controls preload="metadata"></video>`
-        : m.url ? `<a href="${escapeHtml(m.url)}" target="_blank" rel="noopener">${escapeHtml(m.url)}</a>` : ""}
-      <div style="margin-top:6px"><b>${escapeHtml(m.name || (m.kind === "note" ? "Note" : m.kind))}</b> ${m.used_at ? '<span class="meta">· in the guidelines</span>' : '<span class="meta">· new</span>'}</div>
-      ${m.note ? `<div class="meta">${escapeHtml(m.note)}</div>` : ""}
-      <div style="margin-top:6px;display:flex;gap:4px">${smallBtn("Note", `moodNote('${m.id}')`)}${smallBtn("Remove", `moodRemove('${m.id}')`, "reject")}</div></div>`;
-  const key = clientId || "house";
-  return `<div class="mood-drop" data-mood-drop>Drop screenshots and videos of motion graphics, fonts, text styles, colours and video styles you like
-      <div style="margin-top:8px"><label class="btn">Choose files<input type="file" id="moodPick-${key}" data-mood-pick accept="image/*,video/*" multiple hidden></label>
-      <button onclick="moodLink('${clientId || ""}')">+ Add a link or note</button></div><div class="meta" data-mood-msg style="margin-top:6px"></div></div>
-    <div class="mood-grid">${items.slice().reverse().map(tile).join("") || ""}</div>
-    ${items.length ? "" : '<div class="empty" style="margin-top:10px">Nothing here yet.</div>'}`;
-}
-function wireMoodboard(root, clientId) {
-  const add = async files => {
-    const msg = root.querySelector("[data-mood-msg]");
-    const list = Array.from(files).filter(moodKind);
-    if (!list.length) { msg.textContent = "Add images or videos (or use + Add a link or note)."; return; }
-    for (let i = 0; i < list.length; i++) {
-      const f = list[i];
-      try {
-        const path = await uploadToBucket("moodboards", `${clientId || "house"}/${Date.now()}-${f.name.replace(/[^\w.\-]+/g, "_")}`, f,
-          pct => { msg.textContent = `Uploading ${i + 1} of ${list.length}… ${pct}%`; });
-        const { error } = await sbClient.from("social_moodboard_items").insert({ client_id: clientId || null, kind: moodKind(f), name: f.name, storage_path: path });
-        if (error) throw error;
-      } catch (e) { msg.textContent = `${f.name} didn't upload: ${e.message || e}`; return; }
-    }
-    await loadStyleData(); rerenderMood();
-  };
-  const pick = root.querySelector("[data-mood-pick]"), drop = root.querySelector("[data-mood-drop]");
-  if (pick) pick.onchange = e => add(e.target.files || []);
-  if (drop) {
-    drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
-    drop.addEventListener("dragleave", () => drop.classList.remove("over"));
-    drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); add(e.dataTransfer.files || []); });
-  }
-}
-function rerenderMood() {
-  if (document.getElementById("view-client").classList.contains("active")) renderClientPage();
-  if (LIB.tab !== "house" || document.getElementById("view-library").classList.contains("active")) renderLibrary();
-  if (document.getElementById("view-library").classList.contains("active")) renderLibrary();
-}
-function moodLink(clientId) {
-  const box = openModal(`<h2>Add a link or note</h2>
-    ${lbl("Link (Instagram, YouTube, a site…)")}<input type="url" id="mlUrl" style="width:100%;margin-bottom:10px">
-    ${lbl("What you like about it")}<textarea id="mlNote" rows="4" style="width:100%"></textarea>
-    <div class="modal-actions"><button onclick="closeVideoModal()">Cancel</button><button class="primary" id="mlGo">Add</button></div><div class="auth-error" id="mlErr"></div>`);
-  box.querySelector("#mlGo").onclick = async () => {
-    const url = box.querySelector("#mlUrl").value.trim(), note = box.querySelector("#mlNote").value.trim();
-    if (!url && !note) { box.querySelector("#mlErr").textContent = "Add a link or a note."; return; }
-    const { error } = await sbClient.from("social_moodboard_items").insert({ client_id: clientId || null, kind: url ? "link" : "note", url: url || null, note: note || null, name: url ? null : "Note" });
-    if (error) { box.querySelector("#mlErr").textContent = error.message; return; }
-    closeVideoModal(); await loadStyleData(); rerenderMood();
-  };
-}
-async function moodNote(id) {
-  const m = MOOD.find(x => x.id === id);
-  const note = prompt("What do you like about it?", m && m.note || "");
-  if (note === null) return;
-  const { error } = await sbClient.from("social_moodboard_items").update({ note: note.trim() || null }).eq("id", id);
-  if (error) { alert(error.message); return; }
-  await loadStyleData(); rerenderMood();
-}
-async function moodRemove(id) {
-  if (!confirm("Remove this from the moodboard?")) return;
-  const m = MOOD.find(x => x.id === id);
-  const { error } = await sbClient.from("social_moodboard_items").delete().eq("id", id);
-  if (error) { alert(error.message); return; }
-  if (m && m.storage_path) await sbClient.storage.from("moodboards").remove([m.storage_path]);
-  await loadStyleData(); rerenderMood();
-}
-
 function renderLibrary() {
   const tabs = [["music", "Music"], ["sfx", "Sound effects"], ["house", "House moodboard"]];
   document.getElementById("libTabs").innerHTML = tabs.map(([k, l]) => `<div class="chip ${k === LIB.tab ? "active" : ""}" data-lib="${k}">${l}</div>`).join("");
@@ -1862,8 +1776,8 @@ function renderLibrary() {
   const body = document.getElementById("libBody");
   if (!HAS_028) { body.innerHTML = `<div class="card" style="border-color:var(--gold)"><b>The Library needs migration 028.</b><div class="meta">Run supabase/migrations/028_moodboards_and_library.sql in the Supabase SQL Editor.</div></div>`; return; }
   if (LIB.tab === "house") {
-    body.innerHTML = `<div class="card"><h2>House moodboard <span class="meta">Every client's editing guidelines start from this.</span></h2><div id="houseMood">Loading…</div></div>`;
-    moodboardHtml(null).then(html => { const el = document.getElementById("houseMood"); if (el) { el.innerHTML = html; wireMoodboard(el, null); } });
+    body.innerHTML = `<div id="houseMood">Loading…</div>`;
+    renderMoodBoard(document.getElementById("houseMood"), { clientId: null, role: "operator" });
     return;
   }
   const all = ASSETS.filter(a => a.kind === LIB.tab);
@@ -1938,7 +1852,14 @@ function deskQueues() {
     docs: DOCS.filter(d => d.status === "on_desk" && inClientFilter(d.client_id) && CLIENT_BY_ID[d.client_id]),
     videos: vids.filter(x => x.video.status === "in_review"),
     post: vids.filter(x => x.video.status === "ready_to_post").sort(byPostDate),
+    due: vids.filter(x => timeSensitive(x)).sort((a, b) => timeSensitive(a).date.localeCompare(timeSensitive(b).date)),
   };
+}
+// "Review the edit · overdue since Mon, Oct 19" (gold when late).
+function dueBadge(t) {
+  const late = t.date < todayISO();
+  const when = new Date(t.date + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  return `<span class="badge" style="background:var(--card2);color:${late ? "var(--red)" : "var(--ink)"}">${escapeHtml(t.task)} · ${late ? "overdue since " : t.date === todayISO() ? "today, " : "by "}${escapeHtml(when)}</span>`;
 }
 function renderDesk() {
   const q = deskQueues();
@@ -1983,6 +1904,10 @@ function renderDesk() {
   document.getElementById("deskVideos").innerHTML = q.videos.length
     ? `<div class="vtable">${VROW_HEAD}${q.videos.map(x => vrowHtml(x, operatorActionsHtml(x))).join("")}</div>` : `<div class="empty">No videos waiting for your review.</div>`;
   document.getElementById("deskPost").innerHTML = q.post.map(postCardHtml).join("") || `<div class="empty">Nothing ready to post.</div>`;
+  // Due soon (Tait, 2026-10-22): what To Do's Time sensitive list used to show.
+  document.getElementById("deskDueCard").classList.toggle("due-hot", q.due.length > 0);
+  document.getElementById("deskDue").innerHTML = q.due.length
+    ? `<div class="vtable">${VROW_HEAD}${q.due.map(x => vrowHtml(x, dueBadge(timeSensitive(x)) + operatorActionsHtml(x))).join("")}</div>` : `<div class="empty">Nothing due in the next 3 days. You're on top of it.</div>`;
 }
 
 async function setIdeaStatus(id, status) {
@@ -2135,9 +2060,8 @@ function renderClientPage() {
       ${c.documents.length ? `<h2 style="margin-top:16px">Linked documents</h2>${c.documents.map(d => `<div class="doc-row"><a href="${escapeHtml(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.title)}</a></div>`).join("")}` : ""}</div>`;
   } else if (CLIENT_PAGE.tab === "moodboard") {
     if (!HAS_028) { body.innerHTML = `<div class="card"><div class="meta" style="color:var(--gold)">Run migration 028 to keep a moodboard here.</div></div>`; return; }
-    body.innerHTML = `<div class="card"><h2>Moodboard <span class="meta">The team turns this into ${escapeHtml(c.name)}'s editing guidelines. Operator only.</span></h2><div id="clientMood">Loading…</div></div>`;
-    const id = c.id;
-    moodboardHtml(id).then(html => { const el = document.getElementById("clientMood"); if (el && CLIENT_PAGE.id === id) { el.innerHTML = html; wireMoodboard(el, id); } });
+    body.innerHTML = `<div id="clientMood">Loading…</div>`;
+    renderMoodBoard(document.getElementById("clientMood"), { clientId: c.id, clientName: c.name, role: "operator" });
   } else if (CLIENT_PAGE.tab === "footage") {
     const mine = FOOTAGE.filter(x => x.client_id === c.id);
     const group = (kind, label, note) => { const items = mine.filter(x => x.kind === kind);

@@ -1,6 +1,6 @@
 ---
 name: editing-guidelines-doc
-description: Turn a client's moodboard (screenshots and videos of motion graphics, fonts, text styles, colours and video styles Tait dropped in) plus their brand guidelines into their Editing guidelines, the style guide the Content Editor reads before every edit. Use when the bridge asks for a client's editing guidelines, when new moodboard items arrive, or when Tait asks for a client's editing style.
+description: Turn a client's moodboard (the sectioned board Tait and the client build together: look & feel, colour palette, typography, motion graphics, editing style, textures, logo, words) plus their brand guidelines into their Editing guidelines, the style guide the Content Editor and Motion Graphics Designer follow on every edit. Run by the Art Director. Use when the bridge asks for a client's editing guidelines, when new moodboard items arrive, or when Tait asks for a client's editing style.
 ---
 
 # editing-guidelines-doc
@@ -12,9 +12,10 @@ before every edit, and **no edit starts until Tait approves it**.
 
 ## Inputs (read all of them)
 1. **The moodboard:** `python3 bridge/bridge.py moodboard get --client <slug>`
-   downloads every item and prints Tait's notes. Look at every image (Read
-   it), watch every video (`watch` skill). Tait's note on an item outranks
-   your reading of it.
+   downloads every item with its section, its colours and who added it (Tait
+   or the client) and their note. Look at every image (Read it), watch every
+   video (`watch` skill). Tait's note outranks the client's; both outrank
+   your reading. Tait and the client disagreeing → a question for Tait.
 2. **House style:** `team/content-editor/house-style.md` (the starting point).
 3. **Brand guidelines** (approved): `bridge.py doc get --client <slug> --kind brand_guidelines`.
 4. **Identity:** `--kind identity` (who they are, what they sell, formats).
@@ -44,6 +45,8 @@ Built from: moodboard (N items, dates), brand guidelines (approved <date>), hous
 ## Reusable lines     (CTA wording, sign-offs, recurring on-screen lines, from their identity)
 ## Don'ts
 ## Moodboard notes    (one line per item: what we took from it)
+## For the Content Editor            (the brief: how to cut, caption, grade, score this client, step by step)
+## For the Motion Graphics Designer  (the brief: which skills/STYLES, type pairings, hex colours, motion, 2-3 example moments)
 ```
 Differences from the house style are marked **(this client)**. Nothing
 invented about the client: their facts, CTAs and colours come from their
@@ -51,5 +54,5 @@ documents.
 
 ## Save it
 `clients/<slug>/sources/editing_guidelines.md`, then
-`python3 bridge/bridge.py doc put --client <slug> --kind editing_guidelines --file clients/<slug>/sources/editing_guidelines.md --status on_desk --built-by "Content Editor" --sources "moodboard (N items), brand guidelines"`
+`python3 bridge/bridge.py doc put --client <slug> --kind editing_guidelines --file clients/<slug>/sources/editing_guidelines.md --status on_desk --built-by "Art Director" --sources "moodboard (N items), brand guidelines"`
 and `python3 bridge/bridge.py moodboard used --client <slug>`.

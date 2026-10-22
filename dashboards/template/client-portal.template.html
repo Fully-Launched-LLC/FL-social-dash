@@ -19,7 +19,7 @@
   <div class="sync-badge" id="operatorBadge" style="display:none">Viewing as operator</div>
   <div class="nav-item active" data-view="videos">To Do</div>
   <div class="nav-item" data-view="calendar">Content Calendar</div>
-  <div class="nav-item" data-view="documents" id="docsNav" style="display:none">Documents</div>
+  <div class="nav-item" data-view="documents" id="docsNav">Documents</div>
   <div class="nav-item" data-view="carousels" id="carouselsNav" style="display:none">Carousels</div>
 </nav>
 
@@ -45,10 +45,13 @@
     </div>
   </section>
 
-  <!-- Operators only (Tait, 2026-10-15): clients never see documents. -->
+  <!-- Documents: the moodboard for everyone (Tait, 2026-10-22: "each client
+       to have access to a moodboard… in their documents section"); the
+       documents themselves stay operators only (Tait, 2026-10-15; 019). -->
   <section class="view" id="view-documents">
-    <div class="page-head"><h1>Documents</h1><p>Only you can see this page. The client's portal has no Documents page, and their login can't read these (migration 019).</p></div>
-    <div class="card"><div id="docsList"></div></div>
+    <div class="page-head"><h1>Documents</h1><p id="docsHelp">Your moodboard: drop in screenshots of styles you love, and we'll build your editing style and motion graphics from it.</p></div>
+    <div class="card" id="docsCard" style="display:none"><div id="docsList"></div></div>
+    <div id="docsMood"></div>
   </section>
 
   <!-- Operators only (Tait, 2026-10-15): the carousel copy, the editor's
@@ -853,7 +856,8 @@ async function startApp(user, access) {
     ]);
     DOCUMENTS = docs || [];
     GEN_DOCS = gen || [];
-    document.getElementById("docsNav").style.display = "";
+    document.getElementById("docsCard").style.display = "";
+    document.getElementById("docsHelp").textContent = "The moodboard is shared with the client. The documents in the card above are only for you: their login can't read them (migration 019).";
     renderDocuments();
     document.getElementById("carouselsNav").style.display = "";
     loadCarousels();
@@ -866,6 +870,7 @@ async function startApp(user, access) {
     return;
   }
   renderOnboardBanner();
+  renderMoodBoard(document.getElementById("docsMood"), { clientId: CLIENT.id, clientName: CLIENT.name, role: IS_OPERATOR ? "operator" : "client" });
 
   initRouter("videos");
   await loadVideos();

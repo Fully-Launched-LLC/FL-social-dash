@@ -388,7 +388,11 @@ fully-social-os/
                                the private 'library' bucket, ratings), 029
                                (social_ideas: requested_post_date,
                                planned_post_date, special_request; the
-                               private 'ideas' bucket)
+                               private 'ideas' bucket), 030-032
+                               (scripting, agent room, hand-offs), 033
+                               (shared moodboards: sections, palette,
+                               added_by; clients read/add to their own
+                               board, change only what they added)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -745,7 +749,9 @@ back one piece at a time:
 
 **My desk** (Unify the System Phase 2, Tait 2026-10-21; migration 026) is
 the home page: everything waiting on Tait in 5 queues with counts, narrowed
-by the top client filter. **Ideas to review** (monthly plans with status
+by the top client filter, plus **Due soon** (Tait, 2026-10-22: his next
+step on each video, `nextTask`/`timeSensitive`, overdue or due within 3
+days, soonest first). **Ideas to review** (monthly plans with status
 `on_desk`: approve or reject each idea, then close the plan), **Scripts to
 review** (cards in `script_review`: Approve script runs gate 1 so the client
 sees the whole card, hook, outline, script and camera questions; Send back
@@ -761,13 +767,22 @@ Videos (every video for that client, with its buttons, plus an **Abandoned**
 list), plus **Open their portal**. The old To Do page was removed
 (Tait, 2026-10-22: "that is just my desk now").
 
-**Style guides** (Unify Phase 4, Tait 2026-10-21; migration 028): each
-client's page has a **Moodboard** tab, and **Library → House moodboard**
-holds one for every client. Tait drops in screenshots, videos and links of
-motion graphics, fonts, text styles, colours and video styles. Once a
-client's brand guidelines are approved, the bridge asks the Content Editor
-(with the Motion Designer and Strategist) to turn the moodboard into their
-**editing guidelines** (skill `editing-guidelines-doc`, starting from
+**Style guides** (Unify Phase 4, Tait 2026-10-21; migrations 028 + 033):
+each client's page has a **Moodboard** tab, and **Library → House moodboard**
+holds one for every client. Since 2026-10-22 the client's board is
+**shared with the client** (their portal's **Documents** page): Tait and the
+client both drag in (or paste) screenshots, videos, links and words. One
+board component, `renderMoodBoard` in shell.js, laid out like a brand
+moodboard: 8 sections (Look & feel, Colour palette, Typography, Motion
+graphics, Editing style, Textures & materials, Logo & brand, Words &
+phrases; `MOOD_SECTIONS`), each a collage; tiles drag between sections; the
+colours of every image (`moodPalette`, stored in `palette`) make the strip
+at the top; live updates through Supabase realtime. A client sees the whole
+board but moves or removes only what they added (`added_by`). Once a
+client's brand guidelines are approved, the bridge asks the **Art
+Director** (new 2026-10-22) to turn the moodboard into their
+**editing guidelines**, with a brief for the Content Editor and one for the
+Motion Graphics Designer (skill `editing-guidelines-doc`, starting from
 `team/content-editor/house-style.md`), which land on My desk; new moodboard
 items update them. **No edit starts until a client's editing guidelines are
 approved** (Tait's rule). **Library** (sidebar) lists the shared music and
@@ -886,10 +901,12 @@ suggests edit-by 7 days earlier.
 
 ### Look and feel
 
-The sidebar is navy; everything to its right (and every popup) is a light
-grey work area with white cards and navy text (Tait, 2026-10-01: "too much
-navy"; the `.main, .modal-backdrop` block at the top of shell.css flips the
-colors there). Navy `#04101f` and white do the work; gold/tan `#C4AB82` from
+The sidebar is navy. The operator dashboard and editor portal have a navy
+work area with white cards (`body.navy-work`; Tait, 2026-10-22: "i want all
+the background to be navy. the video cards can stay white"); the client
+portal and every popup keep the light grey work area with white cards and
+navy text (Tait, 2026-10-01: "too much navy"; the `.main, .modal-backdrop`
+block at the top of shell.css). Navy `#04101f` and white do the work; gold/tan `#C4AB82` from
 fullylaunched.com is a rare accent, used only for what needs attention
 (Time sensitive when it has something in it, overdue, today on the
 calendar) and the one main action on a page (`.accent`: "Add ideas with
@@ -906,8 +923,8 @@ are raised (white offset shadows). On phones the sidebar becomes a top bar.
 
 ### Client portal — `/clients/<slug>`
 
-One shared file; the slug comes from the URL. Two pages: **To Do** and
-**Content Calendar** (Tait, 2026-10-15: "a super simple view where they
+One shared file; the slug comes from the URL. Three pages: **To Do**,
+**Content Calendar** and **Documents** (just their moodboard, 2026-10-22) (Tait, 2026-10-15: "a super simple view where they
 only see the things they need to do"). No footage folder link and no
 Google Drive for clients. An operator viewing the portal also gets a
 **Documents** page: every document for that client, Team only ones marked,
@@ -954,8 +971,8 @@ gets these. Dates, status and the editor stay on the operator dashboard.
 
 The editor portal's work area is navy like its sidebar, with white
 headings and tabs and white cards (`body.navy-work` in shell.css; Tait,
-2026-10-15). The operator dashboard and client portal keep the light work
-area. The operator's Documents page in a client portal starts each client
+2026-10-15); the operator dashboard has the same since 2026-10-22. The
+client portal keeps the light work area. The operator's Documents page in a client portal starts each client
 with **Brand guidelines** (their colors, logo and font; `brandRow` in
 shell.js), saying so when there isn't one yet. **Editors see no client
 documents** (Tait, 2026-10-15, later the same day, reversing 020: "i dont

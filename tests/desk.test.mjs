@@ -94,5 +94,16 @@ d().querySelector('#cpTabs [data-cptab="videos"]').click(); await settle();
 chk("Videos tab lists this client's videos only", d().getElementById("cpBody").textContent.includes("Edit me") && !d().getElementById("cpBody").textContent.includes("FL edit"));
 chk("no page errors", !op.ui.errors.length, op.ui.errors);
 
+// Due soon (Tait, 2026-10-22): Tait's next step on each video, overdue or
+// due within 3 days, soonest first; the rest stay out.
+await db.query(`insert into social_videos (client_id,title,status,post_date) values
+  ($1,'Post today','ready_to_post',current_date),($1,'Post later','ready_to_post',current_date + 20),($1,'Late post','ready_to_post',current_date - 2)`, [GG]);
+op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
+const dueTitles = [...d().querySelectorAll("#deskDue .vrow b.video-card")].map(b => b.textContent);
+chk("Due soon lists overdue and due-now videos, soonest first", dueTitles.join() === "Late post,Post today", dueTitles);
+chk("each says what to do and when", d().getElementById("deskDue").textContent.includes("Post it · overdue since") && d().getElementById("deskDue").textContent.includes("Post it · today,"));
+chk("Due soon is marked when it has something", d().getElementById("deskDueCard").classList.contains("due-hot"));
+chk("no page errors after Due soon", !op.ui.errors.length, op.ui.errors);
+
 console.log(`${counts.pass} passed, ${counts.fail} failed`);
 process.exit(counts.fail ? 1 : 0);

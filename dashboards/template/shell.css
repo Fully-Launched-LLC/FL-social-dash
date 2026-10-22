@@ -652,3 +652,51 @@ body.navy-work .main .chip-row { box-shadow:none; }
 .doc-body a { color:inherit; text-decoration:underline; }
 .md-gallery.md-embeds { grid-template-columns:repeat(auto-fill, minmax(326px, 1fr)); }
 .md-ig { width:100%; min-width:326px; height:640px; border:1px solid var(--border); border-radius:12px; background:#fff; }
+
+/* ---------- Moodboard (migration 033; Tait, 2026-10-22) ----------
+   A dark canvas in every theme, laid out like a brand moodboard: big
+   section labels on the left, a tight collage on the right, the palette
+   pulled from the images across the top. */
+.mb { background:#0b1626; color:#fff; border-radius:16px; padding:28px; border:1px solid rgba(255,255,255,.08); }
+.mb .btn, .mb button { background:transparent; color:#fff; border:1px solid rgba(255,255,255,.25); }
+.mb .btn:hover, .mb button:hover { border-color:#C4AB82; }
+.mb-head { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; padding-bottom:18px; border-bottom:1px solid rgba(255,255,255,.1); }
+.mb-kicker { font-size:11px; letter-spacing:.32em; text-transform:uppercase; color:rgba(255,255,255,.55); }
+.mb-title { font-size:clamp(32px, 5vw, 56px); font-weight:700; letter-spacing:-.02em; line-height:1.05; margin:4px 0 6px; }
+.mb-sub { font-size:13px; color:rgba(255,255,255,.62); max-width:560px; }
+.mb-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.mb-msg { font-size:12px; color:#C4AB82; min-height:16px; margin:8px 0 0; }
+.mb-palette { display:flex; height:84px; border-radius:10px; overflow:hidden; margin:14px 0 6px; }
+.mb-palette div { flex:1; display:flex; align-items:flex-end; justify-content:center; padding-bottom:8px; }
+.mb-palette span { font-size:10px; letter-spacing:.08em; color:#fff; mix-blend-mode:difference; }
+.mb-sec { display:grid; grid-template-columns:200px 1fr; gap:20px; padding:22px 0; border-bottom:1px solid rgba(255,255,255,.07); border-radius:10px; transition:background .15s; }
+.mb-sec:last-child { border-bottom:0; }
+.mb-sec.over { background:rgba(196,171,130,.12); outline:2px dashed #C4AB82; outline-offset:4px; }
+.mb-label b { display:block; font-size:22px; font-weight:400; line-height:1.15; letter-spacing:-.01em; }
+.mb-label span { display:block; font-size:12px; color:rgba(255,255,255,.5); margin-top:6px; }
+.mb-collage { columns:4 150px; column-gap:8px; min-height:60px; }
+.mb-tile { break-inside:avoid; margin:0 0 8px; position:relative; border-radius:8px; overflow:hidden; background:#04101f; cursor:grab; }
+.mb-tile img, .mb-tile video { width:100%; display:block; }
+.mb-tile figcaption { position:absolute; inset:auto 0 0 0; padding:24px 8px 6px; background:linear-gradient(transparent, rgba(4,16,31,.88)); font-size:11px; display:flex; flex-wrap:wrap; gap:4px 8px; align-items:flex-end; opacity:0; transition:opacity .15s; }
+.mb-tile:hover figcaption, .mb-tile:focus-within figcaption { opacity:1; }
+.mb-tile .mb-note { flex-basis:100%; }
+.mb-tile .mb-who { color:rgba(255,255,255,.6); }
+.mb-tile .mb-tools { margin-left:auto; display:flex; gap:4px; }
+.mb-tile .mb-tools button { font-size:10px; padding:2px 7px; border-radius:6px; background:rgba(4,16,31,.6); }
+.mb-swatches { display:flex; height:22px; }
+.mb-swatches i { flex:1; }
+.mb-link { display:block; padding:14px 12px; min-height:90px; text-decoration:none; background:linear-gradient(135deg,#12233a,#0b1626); }
+.mb-link b { display:block; font-size:13px; }
+.mb-link span { display:block; font-size:11px; color:rgba(255,255,255,.5); word-break:break-all; margin-top:4px; }
+.mb-link + figcaption, .mb-tile:has(.mb-link) figcaption { position:static; opacity:1; background:none; padding:6px 8px; }
+.mb-words { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); border-top:1px solid rgba(255,255,255,.25); }
+.mb-word { padding:12px 10px; border-bottom:1px solid rgba(255,255,255,.25); font-size:13px; letter-spacing:.24em; text-transform:uppercase; display:flex; justify-content:space-between; gap:6px; cursor:grab; }
+.mb-word button { border:0; padding:0 4px; opacity:.5; }
+.mb-word.long { grid-column:1 / -1; letter-spacing:0; text-transform:none; font-size:14px; line-height:1.5; color:rgba(255,255,255,.8); }
+.mb-empty { border:1px dashed rgba(255,255,255,.18); border-radius:8px; padding:22px; text-align:center; color:rgba(255,255,255,.4); font-size:12px; break-inside:avoid; }
+.mb-flabel { display:block; font-size:0.72rem; text-transform:uppercase; color:var(--sub); margin:10px 0 4px; }
+@media (max-width: 700px) {
+  .mb { padding:18px; }
+  .mb-sec { grid-template-columns:1fr; gap:10px; }
+  .mb-collage { columns:2 120px; }
+}
