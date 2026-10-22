@@ -801,3 +801,84 @@ html body.glass ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.2); bor
 html body.glass .main .card ::-webkit-scrollbar-thumb, html body.glass .modal-box ::-webkit-scrollbar-thumb { background:rgba(4,16,31,.22); background-clip:padding-box; }
 html body.glass :is(.nav-item, button, .btn, .chip, a, input, select, textarea):focus-visible { outline:2px solid #C4AB82; outline-offset:2px; }
 html body.glass .desk-tile b, html body.glass .vtable, html body.glass .badge { font-variant-numeric:tabular-nums; }
+
+/* ---------- Liquid glass (Tait, 2026-10-22: "give me some more
+   glassmorphism… i want my tabs and things to look like these
+   screenshots") ----------
+   Everything that floats on the navy is a glass pill: a top-lit gradient
+   fill, a bright hairline edge, an inner highlight where light catches the
+   top, and a soft offset shadow. Selected = a brighter, thicker pane, not a
+   solid white block. Gold stays the one accent. Inside white cards and
+   pop-ups the controls stay solid (never light glass on light glass). */
+html body.glass {
+  --glass-fill:linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.04));
+  --glass-sel:linear-gradient(180deg, rgba(255,255,255,.30), rgba(255,255,255,.12));
+  --glass-edge:rgba(255,255,255,.16);
+  --glass-edge-sel:rgba(255,255,255,.34);
+  --glass-hi:inset 0 1px 0 rgba(255,255,255,.30), inset 0 -1px 0 rgba(255,255,255,.04);
+  --glass-drop:0 6px 18px rgba(0,0,0,.30);
+  --glass-blur:blur(22px) saturate(180%);
+}
+html body.glass .sidebar { background:linear-gradient(180deg, rgba(14,30,54,.55), rgba(4,14,28,.45)); }
+/* Sidebar: the selected tab is a lit pane. */
+html body.glass .nav-item.active, html body.glass .nav-item.active:hover {
+  background:var(--glass-sel); color:#fff; font-weight:600;
+  box-shadow:var(--glass-hi), var(--glass-drop); outline:1px solid var(--glass-edge-sel); outline-offset:-1px;
+}
+html body.glass .nav-item .n { background:rgba(255,255,255,.12); box-shadow:inset 0 1px 0 rgba(255,255,255,.18); }
+html body.glass .nav-item.active .n { background:#C4AB82; color:#04101f; box-shadow:0 1px 4px rgba(196,171,130,.45); }
+/* Tab bars: one floating glass capsule, the active tab a brighter pill. */
+html body.glass .main :is(.chip-row, .seg, .client-tabs):not(.card *) {
+  background:var(--glass-fill); border:1px solid var(--glass-edge); border-radius:999px; padding:5px; gap:4px;
+  -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+  box-shadow:var(--glass-hi), var(--glass-drop); width:fit-content; max-width:100%;
+}
+html body.glass .main :is(.chip-row, .seg, .client-tabs):not(.card *) :is(.chip, [data-cptab], [data-lib]) {
+  border-radius:999px; padding:7px 15px; color:rgba(255,255,255,.72); background:transparent; border:1px solid transparent;
+}
+html body.glass .main :is(.chip-row, .seg, .client-tabs):not(.card *) :is(.chip, [data-cptab], [data-lib]):hover { color:#fff; background:rgba(255,255,255,.06); }
+html body.glass .main :is(.chip-row, .seg, .client-tabs):not(.card *) .chip.active {
+  background:var(--glass-sel); color:#fff; font-weight:600; border-color:var(--glass-edge-sel);
+  box-shadow:var(--glass-hi), 0 3px 10px rgba(0,0,0,.28);
+}
+html body.glass .main :is(.chip-row, .seg, .client-tabs):not(.card *) .chip .c { border-color:rgba(255,255,255,.22); color:rgba(255,255,255,.8); }
+html body.glass .main :is(.chip-row, .seg, .client-tabs):not(.card *) .chip.active .c { background:#C4AB82; border-color:#C4AB82; color:#04101f; opacity:1; }
+html body.glass .topbar .seg { background:var(--glass-fill); border:1px solid var(--glass-edge); box-shadow:var(--glass-hi); padding:4px; }
+html body.glass .topbar .seg .chip { color:rgba(255,255,255,.72); }
+html body.glass .topbar .seg .chip.active { background:var(--glass-sel); color:#fff; box-shadow:var(--glass-hi), 0 3px 10px rgba(0,0,0,.28); }
+/* Buttons on the navy: glass pills. Gold keeps the one main action. */
+html body.glass .main :is(button, .btn):not(.card *):not(.mb *):not(.chip) {
+  border-radius:999px; padding:9px 18px; color:#fff; background:var(--glass-fill); border:1px solid var(--glass-edge);
+  -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); box-shadow:var(--glass-hi), var(--glass-drop);
+}
+html body.glass .main :is(button, .btn):not(.card *):not(.mb *):not(.chip):hover { background:var(--glass-sel); border-color:var(--glass-edge-sel); }
+html body.glass .main :is(button, .btn).accent:not(.card *):not(.mb *) {
+  background:linear-gradient(180deg, #dcc7a1, #C4AB82 55%, #b3976a); color:#04101f; border-color:rgba(255,236,200,.7);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55), 0 6px 18px rgba(196,171,130,.28), 0 6px 18px rgba(0,0,0,.25);
+}
+html body.glass .main :is(button, .btn).accent:not(.card *):not(.mb *):hover { filter:brightness(1.06); }
+/* The moodboard's own buttons: the same glass. */
+html body.glass .mb :is(button, .btn) { border-radius:999px; background:var(--glass-fill); border-color:var(--glass-edge); box-shadow:var(--glass-hi); }
+html body.glass .mb .mb-tools button { box-shadow:none; }
+/* Inside white cards: solid pills that still catch the light. */
+html body.glass .main .card :is(button, .btn), html body.glass .modal-box :is(button, .btn) { border-radius:999px; box-shadow:inset 0 1px 0 rgba(255,255,255,.7); }
+html body.glass .main .card :is(button, .btn).primary, html body.glass .modal-box :is(button, .btn).primary {
+  background:linear-gradient(180deg, #1b2c44, #04101f); border-color:#04101f; color:#fff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 3px 8px rgba(4,16,31,.25);
+}
+html body.glass .main .card :is(button, .btn).primary:hover, html body.glass .modal-box :is(button, .btn).primary:hover { background:linear-gradient(180deg, #24395a, #0b1a2e); color:#fff; }
+/* My desk counts: dark glass widgets, like the reference's tiles. */
+html body.glass .main .desk-tile {
+  --ink:#fff; --sub:rgba(255,255,255,.66);
+  background:var(--glass-fill); border:1px solid var(--glass-edge); color:#fff; border-radius:18px;
+  -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); box-shadow:var(--glass-hi), var(--glass-drop);
+}
+html body.glass .main .desk-tile b { font-size:30px; font-weight:600; letter-spacing:-.02em; }
+html body.glass .main .desk-tile:hover { background:var(--glass-sel); border-color:var(--glass-edge-sel); }
+html body.glass .main .desk-tile.hot { border-color:rgba(196,171,130,.75); box-shadow:var(--glass-hi), 0 6px 22px rgba(196,171,130,.18), var(--glass-drop); }
+html body.glass .main .desk-tile.hot b { color:#E3CFA8; }
+@media (prefers-reduced-transparency: reduce) {
+  html body.glass .main :is(.chip-row, .seg, .client-tabs):not(.card *), html body.glass .main :is(button, .btn):not(.card *):not(.mb *):not(.chip), html body.glass .main .desk-tile {
+    background:#142a48; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  html body.glass .nav-item.active { background:#1f3a60; }
+}
