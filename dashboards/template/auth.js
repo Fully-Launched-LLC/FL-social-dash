@@ -43,6 +43,7 @@ function authRenderForm() {
   if (!gate || gate.dataset.rendered) return;
   gate.dataset.rendered = "1";
   gate.innerHTML = `
+    ${typeof logoMotionHtml === "function" ? logoMotionHtml("fl-motion-auth") : ""}
     <div class="auth-card">
       <div class="brand" style="margin-bottom:18px;align-items:center"><img src="/assets/logo-white.png" alt="Fully Launched" style="width:190px"></div>
       <form id="authForm">

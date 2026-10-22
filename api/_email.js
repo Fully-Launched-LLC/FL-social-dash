@@ -1,7 +1,11 @@
-// The Fully Launched emails: navy, white and a touch of tan, with the
-// logo. Plain tables and inline styles, because that's what email apps
-// render reliably. Two emails use the same frame: the portal invite, and
-// "here are your important documents" once Tait has made them.
+// The Fully Launched emails, in the dashboard's liquid glass (Tait,
+// 2026-10-22: "make sure the onboarding process and emails have the same
+// liquid glass design as the dashboard"): a navy page, the platinum logo
+// moving at the top (an animated GIF), and one glass card: a lit navy
+// gradient with a bright rim, white text, gold pill buttons. Email apps
+// can't blur, so the glass is drawn with gradients and borders; Gmail drops
+// the gradients and keeps the solid navy. Plain tables and inline styles,
+// because that's what email apps render reliably.
 
 const { env } = require("./_lib");
 
@@ -14,17 +18,22 @@ const firstName = contactName => String(contactName || "").trim().split(/\s+/)[0
 
 const BODY = "font:15px/1.6 Helvetica,Arial,sans-serif;color:#ffffff";
 const SMALL = "font:12px/1.5 Helvetica,Arial,sans-serif;color:rgba(255,255,255,.6)";
-const button = (href, label) => `<a href="${esc(href)}" style="display:inline-block;background:#C4AB82;color:#04101f;font:700 15px Helvetica,Arial,sans-serif;text-decoration:none;padding:13px 24px;border-radius:10px">${esc(label)}</a>`;
+// A gold glass pill: the one action in every email.
+const GOLD_PILL = "display:inline-block;background:#C4AB82;background-image:linear-gradient(180deg,#dcc7a1,#C4AB82 55%,#b3976a);color:#04101f;text-decoration:none;border-radius:999px;border:1px solid #e6d6b4;box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 6px 18px rgba(0,0,0,.35)";
+const button = (href, label, big) => `<a href="${esc(href)}" style="${GOLD_PILL};font:700 ${big ? 18 : 15}px Helvetica,Arial,sans-serif;padding:${big ? "16px 40px" : "13px 28px"}">${esc(label)}</a>`;
 
-// The shared frame: a white page with one navy box holding the logo, the
-// title, then the email's own rows (and a footer link unless footer:false).
+// The shared frame: a navy page, the logo in motion and the wordmark, then
+// one glass card holding the title and the email's own rows (and a footer
+// link unless footer:false).
 function frame({ portal, title, rows, footer = true }) {
-  return `<!doctype html><html><body style="margin:0;padding:0;background:#ffffff">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;padding:32px 12px">
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"></head>
+  <body style="margin:0;padding:0;background:#04101f" bgcolor="#04101f">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#04101f" style="background:#04101f;background-image:radial-gradient(900px 600px at 10% -10%,#1c3a68,#04101f 62%);padding:28px 12px 36px">
     <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#04101f;border-radius:16px">
-        <tr><td style="padding:32px 32px 8px"><img src="${esc(portal)}/assets/logo-white.png" alt="Fully Launched" width="170" style="display:block;border:0"></td></tr>
-        <tr><td style="padding:14px 32px 4px;font:700 24px/1.3 Helvetica,Arial,sans-serif;color:#ffffff">${esc(title)}</td></tr>
+      <img src="${esc(portal)}/assets/motion/logo-platinum.gif" alt="" width="110" height="110" style="display:block;border:0;margin:0 auto">
+      <img src="${esc(portal)}/assets/logo-white.png" alt="Fully Launched" width="170" style="display:block;border:0;margin:2px auto 22px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#11233d" style="max-width:560px;background:#11233d;background-image:linear-gradient(145deg,#22385a,#0e1f37 55%,#183052);border:1px solid #3d5070;border-top-color:#6d7f9c;border-left-color:#5a6d8c;border-radius:24px;box-shadow:inset 1px 1px 0 rgba(255,255,255,.35),0 18px 40px rgba(0,0,0,.45)">
+        <tr><td style="padding:30px 32px 4px;font:700 24px/1.3 Helvetica,Arial,sans-serif;color:#ffffff;letter-spacing:-.01em">${esc(title)}</td></tr>
         ${rows}
         ${footer ? `<tr><td style="padding:16px 32px 24px;border-top:1px solid rgba(255,255,255,.12);${SMALL}">Fully Launched · <a href="https://fullylaunched.com" style="color:rgba(255,255,255,.8)">fullylaunched.com</a></td></tr>` : ""}
       </table>
@@ -44,7 +53,7 @@ function inviteEmail({ contactName, clientName, link, portal, returning }) {
     const html = frame({ portal, title: subject, footer: false, rows: `
         <tr><td style="padding:10px 32px 4px;${BODY};font-size:16px">${esc(hi)}<br><br>We are excited to start working with ${esc(clientName)}.</td></tr>
         <tr><td style="padding:14px 32px 6px;${SMALL}">Click below to set up your account. This link only works once.</td></tr>
-        <tr><td style="padding:12px 32px 32px"><a href="${esc(link)}" style="display:inline-block;background:#C4AB82;color:#04101f;font:700 18px Helvetica,Arial,sans-serif;text-decoration:none;padding:16px 40px;border-radius:12px">Start here</a></td></tr>` });
+        <tr><td style="padding:12px 32px 32px">${button(link, "Start here", true)}</td></tr>` });
     const text = `Welcome to your Fully Social dashboard\n\n${hi}\n\nWe are excited to start working with ${clientName}.\n\nClick below to set up your account. This link only works once.\n\nStart here: ${link}`;
     return { subject, html, text };
   }
@@ -66,7 +75,7 @@ function editorInviteEmail({ name, link, portal }) {
   const html = frame({ portal, title: subject, footer: false, rows: `
         <tr><td style="padding:10px 32px 4px;${BODY};font-size:16px">${esc(hi)}<br><br>We are excited to have you on the team.</td></tr>
         <tr><td style="padding:14px 32px 6px;${SMALL}">Click below to create your password and see around your dashboard. This link only works once.</td></tr>
-        <tr><td style="padding:12px 32px 32px"><a href="${esc(link)}" style="display:inline-block;background:#C4AB82;color:#04101f;font:700 18px Helvetica,Arial,sans-serif;text-decoration:none;padding:16px 32px;border-radius:12px">Click to set up your dashboard</a></td></tr>` });
+        <tr><td style="padding:12px 32px 32px">${button(link, "Click to set up your dashboard", true)}</td></tr>` });
   const text = `${subject}\n\n${hi}\n\nWe are excited to have you on the team.\n\nClick below to create your password and see around your dashboard. This link only works once.\n\nClick to set up your dashboard: ${link}`;
   return { subject, html, text };
 }

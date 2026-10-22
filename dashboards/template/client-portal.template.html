@@ -33,6 +33,7 @@
     <div id="onboardBanner"></div>
     <div class="page-head"><h1>To Do</h1></div>
     <div class="chip-row" id="videoTabs"></div>
+    <div id="allClear"></div>
 
     <div data-panel="film">
       <p class="meta panel-help" style="margin:8px 0 12px">Film each one your way: read the script, follow the outline, or just answer its question. Then tap <b>Upload footage</b>, add the clips, and tap <b>Video has been filmed</b>.</p>
@@ -572,6 +573,10 @@ function renderVideoTabs() {
   document.getElementById("videoTabs").innerHTML = TABS.map(t =>
     `<div class="chip ${t.key === activeTab ? "active" : ""}${videosInTab(t.key).length ? "" : " zero"}" data-tab="${t.key}">${chipLabel(t.label, videosInTab(t.key).length)}</div>`).join("");
   document.querySelectorAll("#videoTabs .chip").forEach(c => c.onclick = () => { activeTab = c.dataset.tab; renderVideoTabs(); });
+  // Nothing to film or review: the logo, instead of an empty page.
+  const clear = TABS.every(t => !videosInTab(t.key).length), ac = document.getElementById("allClear");
+  if (clear && !ac.firstChild) ac.innerHTML = logoMotionHtml("fl-motion-clear", "You're all caught up. We'll let you know when there's something new.");
+  if (!clear) ac.innerHTML = "";
   // The tab's short how-to only when there's something in it.
   document.querySelectorAll("[data-panel]").forEach(p => {
     p.style.display = p.dataset.panel === activeTab ? "" : "none";
