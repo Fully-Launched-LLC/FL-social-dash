@@ -21,7 +21,6 @@
   <div class="nav-item" data-view="calendar">Content Calendar</div>
   <div class="nav-item" data-view="moodboard">Moodboard</div>
   <div class="nav-item" data-view="documents" id="docsNav" style="display:none">Documents</div>
-  <div class="nav-item" data-view="carousels" id="carouselsNav" style="display:none">Carousels</div>
 </nav>
 
 <main class="main">
@@ -61,21 +60,11 @@
     <div class="card"><div id="docsList"></div></div>
   </section>
 
-  <!-- Operators only (Tait, 2026-10-15): the carousel copy, the editor's
-       guide, and reviewing what editors upload (migration 022). -->
-  <section class="view" id="view-carousels">
-    <div class="page-head"><h1>Carousels</h1><p>Only you can see this page. Editors see the carousels you give them, with the guide, on their own Carousels page.</p></div>
-    <div class="card"><div class="row"><div class="left"><b>Carousel guide</b><div class="meta">The style, the photos and the steps. Editors read it on every carousel.</div></div>
-      <div><button class="primary" id="carGuideRead">Read</button> <button id="carGuideEdit">Edit</button></div></div></div>
-    <div class="chip-row" id="carTabs"></div>
-    <div class="card"><div id="carList"></div></div>
-  </section>
 
   <section class="view" id="view-calendar">
-    <div class="page-head"><h1>Content Calendar</h1><p>Every video on the day it posts<span id="calFilmNote"> (green blocks show when to film it)</span>. Click one to see where it's at, and to watch it once it's ready.</p></div>
-    <div class="chip-row" id="calLegend" style="margin-bottom:10px"></div>
+    <div class="page-head"><h1>Content Calendar</h1><p>Every video on the day it posts. Click one to see where it's at and what's next.</p></div>
+    <div class="chip-row" id="calKey" style="margin-bottom:10px;gap:16px"></div>
     <div class="card"><div class="cal-grid" id="calGrid"></div></div>
-    <div class="card"><h2 id="agendaTitle">What posts each day</h2><div id="calAgenda"></div></div>
   </section>
 
 </main>
@@ -134,7 +123,10 @@ const TABS = [
   { key: "film",   label: "To film",   match: needsFilming },
   { key: "review", label: "To review", match: toReview },
 ];
-function videosInTab(key) { return VIDEOS.filter(TABS.find(t => t.key === key).match); }
+function videosInTab(key) {
+  const vids = VIDEOS.filter(TABS.find(t => t.key === key).match);
+  return key === "review" ? vids.concat(CAROUSELS.filter(c => c.status === "client_review")) : vids;
+}
 
 // One shared file serves every client — which one comes from the URL
 // (/clients/<slug>, or the older /clients/<slug>/portal.html; see
@@ -161,6 +153,7 @@ async function loadVideos() {
   const clips = ids.length ? await sbClient.from("social_footage").select("*").eq("kind", "raw").in("video_id", ids) : { data: [] };
   CLIPS = {};
   (clips.error ? [] : clips.data || []).forEach(f => { (CLIPS[f.video_id] = CLIPS[f.video_id] || []).push(f); });
+  await loadClientCarousels();
   renderAll();
 }
 
@@ -445,6 +438,63 @@ async function openClientWatch(video) {
     which: sending ? "sent" : "open", notesBy: ["client"], canNote: false, buttons: [],
   });
 }
+// ---------- Carousels (migration 035) ----------
+// Tait, 2026-10-22: no Carousels page; a carousel is just like a video card.
+// Once Tait approves the editor's slides it lands in To review: the client
+// looks at each slide, writes a note on any that need changing, and
+// approves or sends the changes (social_client_review_carousel). Approved
+// and posted ones stay on the calendar on their post date.
+let CAROUSELS = [], CAR_SLIDES = {};
+async function loadClientCarousels() {
+  const { data, error } = await sbClient.from("social_carousels").select("*").eq("client_id", CLIENT.id)
+    .in("status", ["client_review", "approved", "posted"]).order("post_date");
+  CAROUSELS = (error ? [] : data || []).map(c => ({ isCarousel: true, id: c.id, title: c.title, status: c.status, postDate: c.post_date, caption: c.caption, row: c }));
+  CAR_SLIDES = await loadCarouselUploads(CAROUSELS.map(c => c.id));
+}
+const carouselStage = c => ({ client_review: "Finished: ready for your approval", approved: "Approved: ready to post", posted: "Posted" }[c.status] || "");
+function carouselCard(c) {
+  const card = document.createElement("div");
+  card.className = "card";
+  const n = (CAR_SLIDES[c.id] || []).length;
+  card.innerHTML = `<b class="video-card" style="display:inline-block;margin-bottom:8px;font-family:var(--font-serif);font-weight:400;font-size:1.05rem" data-open>${escapeHtml(c.title)}</b>
+    <div class="card-facts"><span class="meta">Carousel · ${n} slide${n === 1 ? "" : "s"}</span><span class="meta">·</span><span class="meta">${c.postDate ? "Posts <b>" + escapeHtml(niceDate(c.postDate)) + "</b>" : "Post date to be set"}</span></div>
+    ${n ? `<div class="car-strip">${CAR_SLIDES[c.id].slice(0, 4).map((u, i) => `<img src="${escapeHtml(u.url)}" alt="Slide ${i + 1}" loading="lazy">`).join("")}</div>` : ""}
+    <div class="actions"><button class="primary" data-review>${c.status === "client_review" ? "Review the slides" : "See the slides"}</button></div>`;
+  card.querySelector("[data-open]").onclick = card.querySelector("[data-review]").onclick = () => openCarouselReview(c.id);
+  return card;
+}
+// Slide by slide: each slide big, a note box under it. Approve, or send the
+// notes back (only the slides with a note change).
+function openCarouselReview(id) {
+  const c = CAROUSELS.find(x => x.id === id);
+  if (!c) return;
+  const slides = CAR_SLIDES[c.id] || [], reviewing = c.status === "client_review";
+  const box = openModal(`<h2>${escapeHtml(c.title)}</h2>
+    <div class="card-facts"><span class="meta">Carousel · ${slides.length} slides</span><span class="meta">·</span><span class="meta">${c.postDate ? "Posts <b>" + escapeHtml(niceDate(c.postDate)) + "</b>" : ""}</span><span class="meta">·</span><span class="meta">${escapeHtml(carouselStage(c))}</span></div>
+    ${reviewing ? `<p class="meta" style="margin:6px 0 12px">Look through each slide. If one needs changing, write it under that slide. Then approve, or send the changes.</p>` : ""}
+    <div class="car-review">${slides.map((u, i) => `<figure class="car-review-slide"><img src="${escapeHtml(u.url)}" alt="Slide ${i + 1}">
+      <figcaption><b>Slide ${i + 1}</b>${reviewing ? `<textarea data-slide-note="${i + 1}" rows="2" placeholder="What to change on this slide (leave empty if it's good)"></textarea>` : ""}</figcaption></figure>`).join("") || `<div class="empty">The slides are on their way.</div>`}</div>
+    ${c.caption ? fieldRow("Caption", c.caption) : ""}
+    ${reviewing ? `<label class="modal-field"><b>Anything else (optional)</b><textarea data-slide-note="0" rows="2" style="width:100%"></textarea></label>` : ""}
+    <div class="auth-error" id="carErr"></div>
+    <div class="modal-actions">${reviewing ? `<button class="primary" data-approve>Approve</button><button data-changes>Send the changes</button>` : ""}<button data-close>Close</button></div>`);
+  box.classList.add("modal-wide");
+  box.querySelector("[data-close]").onclick = closeVideoModal;
+  if (!reviewing) return;
+  const notes = () => [...box.querySelectorAll("[data-slide-note]")].map(t => ({ slide: Number(t.dataset.slideNote), note: t.value.trim() })).filter(n => n.note);
+  const send = async (approve, btn) => {
+    const err = box.querySelector("#carErr");
+    if (IS_OPERATOR) { err.textContent = "Your client approves or sends changes here. You're previewing their portal."; return; }
+    if (!approve && !notes().length) { err.textContent = "Write what to change under at least one slide."; return; }
+    btn.disabled = true;
+    const { error } = await sbClient.rpc("social_client_review_carousel", { p_id: c.id, p_approve: approve, p_notes: approve ? [] : notes() });
+    if (error) { btn.disabled = false; err.textContent = error.message; return; }
+    closeVideoModal();
+    await loadClientCarousels(); renderAll();
+  };
+  box.querySelector("[data-approve]").onclick = e => send(true, e.target);
+  box.querySelector("[data-changes]").onclick = e => send(false, e.target);
+}
 function videoCard(video) {
   const card = document.createElement("div");
   card.className = "card";
@@ -469,7 +519,7 @@ const OP_EDIT_FIELDS = [
 ];
 function openOperatorEdit(videoId) {
   const video = VIDEOS.find(v => v.id === videoId);
-  if (!video) return;
+  if (!video) { if (CAROUSELS.some(c => c.id === videoId)) openCarouselReview(videoId); return; }
   const rows = (val, min) => Math.max(min, String(val || "").split("\n").length + 1);
   const box = openModal(`<h2>Edit: ${escapeHtml(video.title || "(untitled)")}</h2>
     <div class="meta" style="margin-bottom:10px">Only you see this. The client sees the card with your changes once you save.</div>
@@ -527,7 +577,7 @@ function renderVideos() {
   const fill = (elId, vids) => {
     const el = document.getElementById(elId);
     el.innerHTML = "";
-    vids.forEach(v => el.appendChild(videoCard(v)));
+    vids.forEach(v => el.appendChild(v.isCarousel ? carouselCard(v) : videoCard(v)));
   };
   renderToFilm(byFilmDate, byPostDate, fill);
   // Finished videos first (closest to posting), then ideas.
@@ -584,42 +634,37 @@ function renderVideoTabs() {
   });
 }
 
+// Tait, 2026-10-22: "i want the calendar to be a simple view of all the
+// content scheduled... make some sort of indicator on the calendar showing
+// which days need action steps so if a video is a week out from posting make
+// sure its red so that the client knows its urgent." Red = the client has
+// something to do on it and it posts (or must be filmed) within a week.
+const URGENT_DAYS = 7;
+const daysUntil = iso => Math.round((new Date(iso + "T00:00:00") - new Date(todayISO() + "T00:00:00")) / 86400000);
+const inDays = n => n < 0 ? `${-n} day${n === -1 ? "" : "s"} late` : n === 0 ? "today" : n === 1 ? "tomorrow" : `in ${n} days`;
+// What the client has to do on a video, if anything, and where it is on To Do.
+function clientAction(v) {
+  if (needsFilming(v)) return { text: v.dueToFilm ? `Film it by ${niceDate(v.dueToFilm)}` : "Film it", short: "Film it", tab: "film", by: v.dueToFilm || v.postDate };
+  if (ideaToApprove(v)) return { text: "Give the idea your OK", short: "OK the idea", tab: "review", by: v.postDate };
+  if (v.status === "client_review") return { text: "Watch the finished video and approve it", short: "Review it", tab: "review", by: v.postDate };
+  return null;
+}
+const isUrgent = v => { const a = clientAction(v); return !!(a && a.by && daysUntil(a.by) <= URGENT_DAYS); };
 function renderCalendar() {
   const byDay = {};
   VIDEOS.forEach(v => {
-    if (v.dueToFilm && filmedBy(v) === "client" && ["concept_pending", "to_film", "filmed"].includes(v.status)) (byDay[v.dueToFilm] = byDay[v.dueToFilm] || []).push({ v, kind: "Film: " });
+    if (v.dueToFilm && needsFilming(v)) (byDay[v.dueToFilm] = byDay[v.dueToFilm] || []).push({ v, kind: "film" });
     if (v.postDate) (byDay[v.postDate] = byDay[v.postDate] || []).push({ v, kind: "" });
   });
-  document.getElementById("calFilmNote").style.display = VIDEOS.some(v => filmedBy(v) === "client") ? "" : "none";
-  // Which platforms this client posts on, as a key above the calendar.
-  const used = [...new Set(VIDEOS.flatMap(v => (v.platform || []).map(normPlatform)))];
-  document.getElementById("calLegend").innerHTML = used.length ? `<span class="meta" style="margin-right:4px">Posts on:</span>` + platformPills(used, true) : "";
-  // Each day: the video's title, then the platforms it goes out on.
-  renderMonthCalendar(document.getElementById("calGrid"), byDay, ({ v, kind }) => kind
-    ? `<div class="cal-block cal-item k-film video-card" title="Film by: ${escapeHtml(v.title || "")}" onclick="openCalendarVideo('${v.id}')"><div class="t">${escapeHtml(v.title || "(untitled)")}</div><div class="s">Film by</div></div>`
-    : `<div class="cal-block cal-item k-post video-card ${v.status === "posted" ? "cal-done" : ""}" title="${escapeHtml((v.title || "") + " · " + (v.platform || []).map(p => (PLATFORMS[normPlatform(p)] || { name: p }).name).join(", "))}" onclick="openCalendarVideo('${v.id}')">
-        <div class="t">${v.status === "posted" ? "✓ " : ""}${escapeHtml(v.title || "(untitled)")}</div><div class="s">${v.status === "posted" ? "Posted" : "Posts"}</div>${platformPills(v.platform)}</div>`,
-    calState, renderCalendar);
-  renderAgenda();
-}
-
-// Under the calendar: every post going out in the next 30 days, as a list
-// (Tait, 2026-10-15), whatever month the grid shows.
-const AGENDA_DAYS = 30;
-function renderAgenda() {
-  const from = todayISO(), to = addDaysISO(from, AGENDA_DAYS);
-  document.getElementById("agendaTitle").textContent = "Posting in the next 30 days";
-  const posts = VIDEOS.filter(v => v.postDate && v.postDate >= from && v.postDate <= to).sort((a, b) => a.postDate.localeCompare(b.postDate));
-  const days = {};
-  posts.forEach(v => (days[v.postDate] = days[v.postDate] || []).push(v));
-  document.getElementById("calAgenda").innerHTML = posts.length ? Object.entries(days).map(([d, vs]) => `
-    <div class="agenda-day"><h3>${escapeHtml(new Date(d + "T00:00:00").toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }))}</h3>
-      ${vs.map(v => `<div class="agenda-post video-card" onclick="openCalendarVideo('${v.id}')">
-        <b>${v.status === "posted" ? "✓ " : ""}${escapeHtml(v.title || "(untitled)")}</b>
-        <div class="meta">${escapeHtml(clientStage(v, filmedBy(v)))}</div>
-        ${v.hook ? `<div class="hook">“${escapeHtml(v.hook)}”</div>` : ""}
-        <div>${platformPills(v.platform, true) || `<span class="meta">No platforms set yet</span>`}</div></div>`).join("")}
-    </div>`).join("") : `<div class="empty">Nothing posts in the next 30 days.</div>`;
+  CAROUSELS.forEach(c => { if (c.postDate) (byDay[c.postDate] = byDay[c.postDate] || []).push({ v: c, kind: "" }); });
+  const films = VIDEOS.some(needsFilming);
+  document.getElementById("calKey").innerHTML = `<span class="cal-key k-post"><i></i>Posts</span>${films ? `<span class="cal-key k-film"><i></i>Film by</span>` : ""}<span class="cal-key"><i style="background:#e5484d"></i>Needs you this week</span>`;
+  renderMonthCalendar(document.getElementById("calGrid"), byDay, ({ v, kind }) => {
+    const act = clientAction(v), urgent = isUrgent(v), done = v.status === "posted";
+    const sub = kind ? "Film by" : done ? "Posted" : urgent ? `${act.short} · posts ${inDays(daysUntil(v.postDate))}` : act ? `${act.short} · posts` : "Posts";
+    return `<div class="cal-block cal-item ${kind ? "k-film" : "k-post"} video-card ${done ? "cal-done" : ""} ${urgent ? "cal-urgent" : ""}" title="${escapeHtml((v.title || "") + (act ? " · " + act.text : ""))}" onclick="openCalendarVideo('${v.id}')">
+      <div class="t">${done ? "✓ " : urgent ? "! " : ""}${escapeHtml(v.title || "(untitled)")}</div><div class="s">${escapeHtml(sub)}</div>${kind ? "" : platformPills(v.platform)}</div>`;
+  }, calState, renderCalendar);
 }
 
 // Where a video is in the process, as steps (the calendar's video popup).
@@ -634,155 +679,35 @@ function processHtml(v) {
 // Read only: where it's at, when it posts, the hook, and the video once
 // there's one for them to watch (after Tait approves it, or the cut they
 // sent changes on). Doing anything happens in To Do.
+// The popup's "what's next": the client's step (red when it's this week),
+// or what we're doing, so they know where it's at without asking.
+function nextStepHtml(v) {
+  const act = clientAction(v), n = act && act.by ? daysUntil(act.by) : null, posts = v.postDate ? daysUntil(v.postDate) : null;
+  if (act) return `<div class="next-step ${isUrgent(v) ? "urgent" : ""}"><b>Your next step:</b> ${escapeHtml(act.text)}.${posts !== null ? ` <span class="${isUrgent(v) ? "when" : "meta"}">It posts ${escapeHtml(inDays(posts))}${n !== null && n <= URGENT_DAYS ? ", so this is urgent" : ""}.</span>` : ""}</div>`;
+  const ours = { concept_pending: "We're getting it ready.", to_film: "We're filming it.", filmed: "It's filmed; editing is next.", ready_to_edit: "It's being edited.", with_editor: "It's being edited.",
+    in_review: "It's being edited.", ready_to_post: "You approved it. We'll post it on the day.", posted: "It's live." }[v.status] || "";
+  return `<div class="next-step"><b>Nothing needed from you.</b> ${escapeHtml(ours)}</div>`;
+}
 const hasFileToWatch = v => ["client_review", "ready_to_post", "posted"].includes(v.status) || canWatch(v);
 function openCalendarVideo(videoId) {
   const video = VIDEOS.find(v => v.id === videoId);
   if (!video) return;
-  const todo = needsFilming(video) || toReview(video);
+  const act = clientAction(video);
   const box = openModal(`<h2>${escapeHtml(video.title || "(untitled)")}</h2>
     ${cardFacts(video, filmedBy(video))}
     ${processHtml(video)}
     ${fieldRow("Hook", video.hook)}
-    ${todo ? `<div class="meta" style="margin-top:10px">This one needs you: it's in <b>${needsFilming(video) ? "To film" : "To review"}</b> on your To Do.</div>` : ""}
-    <div class="modal-actions">${hasFileToWatch(video) ? `<button class="primary" data-watch>Watch the video</button>` : ""}${IS_OPERATOR ? `<button data-op-edit>Edit</button>` : ""}<button data-close>Close</button></div>`);
+    ${nextStepHtml(video)}
+    <div class="modal-actions">${act ? `<button class="primary" data-do>${act.tab === "film" ? "Go to To film" : "Go to To review"}</button>` : ""}${hasFileToWatch(video) ? `<button class="${act ? "" : "primary"}" data-watch>Watch the video</button>` : ""}${IS_OPERATOR ? `<button data-op-edit>Edit</button>` : ""}<button data-close>Close</button></div>`);
   box.querySelector("[data-close]").onclick = closeVideoModal;
+  const go = box.querySelector("[data-do]");
+  if (go) go.onclick = () => { closeVideoModal(); activeTab = act.tab; document.querySelector('.nav-item[data-view="videos"]').click(); renderVideoTabs(); };
   if (IS_OPERATOR) box.querySelector("[data-op-edit]").onclick = () => openOperatorEdit(videoId);
   const w = box.querySelector("[data-watch]");
   if (w) w.onclick = () => canWatch(video) ? openClientWatch(video) : openReviewPlayer(video, {
     folders: DRIVE_FOLDERS, which: "open", notesBy: ["client"], canNote: false, buttons: [],
     intro: video.status === "client_review" ? "To approve it or ask for changes, open it from To review on your To Do." : "The finished video.",
   });
-}
-
-// ---------- Carousels (operators only; migration 022) ----------
-let CAROUSELS = [], CAR_GUIDE = "", CAR_EDITORS = [], CAR_UPLOADS = {}, carTab = "all";
-
-async function loadCarousels() {
-  const [res, guide, eds] = await Promise.all([
-    sbClient.from("social_carousels").select("*").eq("client_id", CLIENT.id).order("position"),
-    sbClient.from("social_carousel_guides").select("body_md").eq("client_id", CLIENT.id).maybeSingle(),
-    sbClient.from("social_editors").select("id,name,active").order("name"),
-  ]);
-  if (res.error) {
-    document.getElementById("carList").innerHTML = `<div class="empty">Couldn't load the carousels: ${escapeHtml(res.error.message)}</div>`;
-    return;
-  }
-  CAROUSELS = res.data || [];
-  CAR_GUIDE = (guide.data && guide.data.body_md) || "";
-  CAR_EDITORS = (eds.data || []).filter(e => e.active);
-  CAR_UPLOADS = await loadCarouselUploads(CAROUSELS.filter(c => c.status !== "idea").map(c => c.id));
-  renderCarousels();
-}
-
-function renderCarousels() {
-  const count = k => CAROUSELS.filter(c => c.status === k).length;
-  const tabs = [["all", "All", CAROUSELS.length]].concat(CAROUSEL_ORDER.map(k => [k, CAROUSEL_STATUS[k], count(k)]));
-  document.getElementById("carTabs").innerHTML = tabs.map(([k, label, n]) =>
-    `<button class="chip${carTab === k ? " active" : ""}${!n ? " zero" : ""}${k === "to_review" && n ? " urgent" : ""}" data-cartab="${k}">${chipLabel(label, n)}</button>`).join("");
-  document.querySelectorAll("[data-cartab]").forEach(b => b.onclick = () => { carTab = b.dataset.cartab; renderCarousels(); });
-  const editorName = id => (CAR_EDITORS.find(e => e.id === id) || {}).name;
-  const list = CAROUSELS.filter(c => carTab === "all" || c.status === carTab);
-  document.getElementById("carList").innerHTML = list.map(c => `
-    <div class="row" data-car="${escapeHtml(c.id)}" style="cursor:pointer">
-      <div class="left"><b>${c.position ? c.position + ". " : ""}${escapeHtml(c.title)}</b>
-        <div class="meta">${[c.format, c.category, editorName(c.editor_id), c.due_to_edit ? "edit by " + niceDate(c.due_to_edit) : ""].filter(Boolean).map(escapeHtml).join(" · ")}</div></div>
-      <div>${statusDot(c.status, CAROUSEL_STATUS, c.status === "to_review")} <button data-car-open="${escapeHtml(c.id)}">Open</button></div>
-    </div>`).join("") || `<div class="empty">${CAROUSELS.length ? "None here." : "No carousels yet."}</div>`;
-  document.querySelectorAll("#carList [data-car]").forEach(r => r.onclick = () => openCarousel(r.dataset.car));
-}
-
-document.getElementById("carGuideRead").onclick = () => openCarouselGuide(CAR_GUIDE);
-document.getElementById("carGuideEdit").onclick = () => {
-  const box = openModal(`<h2>Edit the carousel guide</h2>
-    <p class="meta">Markdown: # headings, - lists, **bold**, *italic*. Editors see it on their Carousels page.</p>
-    <textarea id="cgBody" rows="24" style="width:100%">${escapeHtml(CAR_GUIDE)}</textarea>
-    <div class="modal-actions"><button class="primary" id="cgSave">Save</button><button onclick="closeVideoModal()">Cancel</button></div>`);
-  box.classList.add("modal-wide");
-  box.querySelector("#cgSave").onclick = async e => {
-    e.target.disabled = true;
-    const body = box.querySelector("#cgBody").value;
-    const { error } = await sbClient.from("social_carousel_guides").upsert({ client_id: CLIENT.id, body_md: body }, { onConflict: "client_id" });
-    if (error) { e.target.disabled = false; alert("Couldn't save: " + error.message); return; }
-    CAR_GUIDE = body;
-    closeVideoModal();
-  };
-};
-
-// One carousel: review what the editor sent, edit the copy, give it to an editor.
-function openCarousel(id) {
-  const c = CAROUSELS.find(x => x.id === id);
-  if (!c) return;
-  const slides = Array.isArray(c.slides) ? c.slides.map(s => ({ text: s.text || "", photo: s.photo || "" })) : [];
-  const ups = CAR_UPLOADS[c.id] || [];
-  const field = (key, label) => `<label class="modal-field"><b>${label}</b><input type="text" data-f="${key}" value="${escapeHtml(c[key] || "")}" style="width:100%"></label>`;
-  const editorOpts = `<option value="">No editor yet</option>` + CAR_EDITORS.map(e => `<option value="${escapeHtml(e.id)}"${e.id === c.editor_id ? " selected" : ""}>${escapeHtml(e.name)}</option>`).join("");
-  const review = c.status === "to_review" ? `
-    <div class="card"><h2>The editor sent this for review</h2>${carouselGalleryHtml(ups, false)}
-      <label class="modal-field"><b>Changes to make (if you send it back)</b><textarea id="carNote" rows="3" style="width:100%">${escapeHtml(c.review_note || "")}</textarea></label>
-      <div class="modal-actions"><button class="accent" id="carApprove">Approve</button><button id="carBack">Send back with the note</button></div></div>`
-    : ups.length ? `<div class="car-section"><b class="car-label">Uploaded slides</b>${carouselGalleryHtml(ups, false)}</div>` : "";
-  const box = openModal(`
-    <h2>${c.position ? c.position + ". " : ""}${escapeHtml(c.title)}</h2>
-    <div class="modal-meta">${statusDot(c.status, CAROUSEL_STATUS)}${c.status === "changes" && c.review_note ? ` · sent back: ${escapeHtml(c.review_note)}` : ""}</div>
-    ${review}
-    <div class="car-section"><b class="car-label">Preview</b>${carouselSlidesHtml(c)}</div>
-    <h3>Edit the copy</h3>
-    ${field("title", "Title")}${field("format", "Format")}${field("category", "Category")}${field("answers", "Answers (from Content Research)")}${field("perspective", "Perspective")}${field("cta", "Call to action (caption only)")}
-    <div class="car-section"><b class="car-label">Slides</b><p class="meta">Put *stars* around the words that go in gold italic.</p><div id="carSlideEdit"></div><button type="button" id="carAddSlide">+ Add a slide</button></div>
-    <label class="modal-field"><b>Caption</b><textarea data-f="caption" rows="5" style="width:100%">${escapeHtml(c.caption || "")}</textarea></label>
-    <label class="modal-field"><b>Notes for the editor</b><textarea data-f="notes" rows="2" style="width:100%">${escapeHtml(c.notes || "")}</textarea></label>
-    ${carouselSourcesHtml(c)}
-    <label class="modal-field"><b>Editor</b><select id="carEditor" style="width:100%">${editorOpts}</select></label>
-    <div class="modal-field"><b>Edit by</b>${dateSelectHtml("due_to_edit", c.due_to_edit || "")}</div>
-    <div class="modal-actions">
-      <button class="primary" id="carSave">Save</button>
-      ${["idea", "changes"].includes(c.status) ? `<button id="carSend">Save and send to the editor</button>` : ""}
-      ${c.status === "approved" ? `<button id="carPosted">Mark posted</button>` : ""}
-      <button onclick="closeVideoModal()">Close</button>
-    </div>`);
-  box.classList.add("modal-wide");
-  wireCarouselCopy(box);
-  const drawSlides = () => {
-    box.querySelector("#carSlideEdit").innerHTML = slides.map((s, i) => `
-      <div class="car-edit-slide"><div class="car-slide-head"><b>Slide ${i + 1}</b><button type="button" data-del-slide="${i}">Remove</button></div>
-        <textarea data-slide="${i}" data-k="text" rows="4" placeholder="What the slide says">${escapeHtml(s.text)}</textarea>
-        <textarea data-slide="${i}" data-k="photo" rows="2" placeholder="The photo: what it shows and where to find it">${escapeHtml(s.photo)}</textarea></div>`).join("");
-    box.querySelectorAll("[data-slide]").forEach(t => t.oninput = () => { slides[t.dataset.slide][t.dataset.k] = t.value; });
-    box.querySelectorAll("[data-del-slide]").forEach(b => b.onclick = () => { slides.splice(Number(b.dataset.delSlide), 1); drawSlides(); });
-  };
-  drawSlides();
-  box.querySelector("#carAddSlide").onclick = () => { slides.push({ text: "", photo: "" }); drawSlides(); };
-  const values = () => {
-    const v = { slides: slides.filter(s => s.text.trim() || s.photo.trim()), editor_id: box.querySelector("#carEditor").value || null };
-    box.querySelectorAll("[data-f]").forEach(el => { v[el.dataset.f] = el.value; });
-    v.due_to_edit = v.due_to_edit || null;
-    return v;
-  };
-  const save = async (extra, btn) => {
-    if (btn) btn.disabled = true;
-    const { data, error } = await sbClient.from("social_carousels").update({ ...values(), ...extra }).eq("id", c.id).select("*");
-    if (error || !data || !data.length) { if (btn) btn.disabled = false; alert("Couldn't save: " + ((error && error.message) || "not found")); return false; }
-    Object.assign(c, data[0]);
-    closeVideoModal();
-    renderCarousels();
-    return true;
-  };
-  box.querySelector("#carSave").onclick = e => save({}, e.target);
-  const send = box.querySelector("#carSend");
-  if (send) send.onclick = e => {
-    if (!box.querySelector("#carEditor").value) { alert("Pick an editor first."); return; }
-    save({ status: "with_editor", review_note: c.status === "changes" ? c.review_note : null }, e.target);
-  };
-  const posted = box.querySelector("#carPosted");
-  if (posted) posted.onclick = e => save({ status: "posted" }, e.target);
-  const approve = box.querySelector("#carApprove");
-  if (approve) approve.onclick = e => save({ status: "approved", approved_at: new Date().toISOString(), review_note: null }, e.target);
-  const back = box.querySelector("#carBack");
-  if (back) back.onclick = e => {
-    const note = box.querySelector("#carNote").value.trim();
-    if (!note) { alert("Write what to change first."); return; }
-    save({ status: "changes", review_note: note }, e.target);
-  };
 }
 
 // Operator only: every document for this client, Team only ones marked.
@@ -869,8 +794,6 @@ async function startApp(user, access) {
     GEN_DOCS = gen || [];
     document.getElementById("docsNav").style.display = "";
     renderDocuments();
-    document.getElementById("carouselsNav").style.display = "";
-    loadCarousels();
   }
   // Invited but no password yet: the password page first. Nothing here
   // shows until they've made one. (Not for clients who finished the older
@@ -976,7 +899,7 @@ const TOUR = [
   { modal: true, go: tourOpenReview, el: inReview(".rv-version"),
     title: "When it comes back", html: () => "Your editor makes the changes and the new cut comes back to you here as the next version (v2). Until then you can still watch the video from its card. Pick an earlier version to see the comments you left on it, which ones were fixed, and your editor's replies. Then review it again the same way." },
   { go: () => tourGo("calendar"), el: () => document.querySelector('.nav-item[data-view="calendar"]'),
-    title: "Content Calendar", html: () => "Every video on the day it posts, and a list of everything posting in the next 30 days. Click one to see where it's at in the process, and to watch it once it's ready." },
+    title: "Content Calendar", html: () => "Every video on the day it posts. Red means it needs you this week. Click one to see where it's at and what's next." },
 ];
 function startTour() {
   history.replaceState(null, "", location.pathname + location.hash);

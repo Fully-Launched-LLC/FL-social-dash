@@ -94,7 +94,7 @@ const idx = Array.from({ length: 30 }, (_, i) => i);
 // ── 1. Operator plans 30 ideas with Claude and adds them ──
 let op = track(await OP());
 chk("opens on My desk", $(op, "#view-desk").classList.contains("active"));
-await click($(op, "#bulkAddBtn"), "add ideas");
+op.w.openBulkAdd(null); await settle(); // the calendar button is gone (Tait, 2026-10-22); Claude adds plans now
 $(op, "#bkClient").value = FL;
 $(op, "#bkText").value = "Here you go:\n```json\n" + JSON.stringify(plan, null, 2) + "\n```";
 $(op, "#bkText").dispatchEvent(new op.w.Event("input"));
@@ -355,10 +355,11 @@ await click($(op, "#cpSave"), "create client");
 const nc = (await db.query("select id, slug, contact_name, contact_phone, contact_email, client_system from social_clients where name='Grad Gig Test'")).rows[0];
 chk("new client saved with contact details", nc && nc.slug === "grad-gig-test" && nc.contact_name === "Pat Client" && nc.contact_phone === "555-0100" && nc.contact_email === "pat@gradgig.test" && nc.client_system === "self-serve", nc);
 const ncRow = $$(op, "#allClientsList .row").find(r => r.textContent.includes("Grad Gig Test"));
-chk("client list shows the contact", ncRow && ncRow.textContent.includes("Pat Client") && ncRow.textContent.includes("555-0100"));
-await click(btn(ncRow, "Invite to portal"), "invite");
+chk("client list shows them, not invited yet", ncRow && ncRow.textContent.includes("Not invited yet"));
+// Invites now go through Claude (bridge.py invite → /api/invite); same call.
+await op.w.sendInvite(nc.id); await settle();
 const inv0 = op.ui.log.find(l => l.fetch === "/api/invite");
-chk("Invite asks the invite service to email this client", inv0 && JSON.parse(inv0.body).clientId === nc.id && op.ui.confirms.at(-1).includes("pat@gradgig.test"), inv0);
+chk("Invite asks the invite service to email this client", inv0 && JSON.parse(inv0.body).clientId === nc.id, inv0);
 chk("…and says it's on its way", modal(op).textContent.includes("Invite sent") && modal(op).textContent.includes("pat@gradgig.test"));
 op.w.closeVideoModal();
 // The invited contact signs in for the first time (confirmed email) and is linked to their portal.

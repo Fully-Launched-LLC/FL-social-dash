@@ -1,7 +1,9 @@
-// Carousels (migration 022): the operator writes and assigns them on a
-// client portal's Carousels page; the editor builds them, uploads the
-// slides on the editor portal's Carousels page and sends them for review;
-// the operator approves or sends them back. Clients see none of it.
+// Carousels (migrations 022, 035): the operator writes and assigns them on
+// the client's Carousels tab (operator dashboard); the editor builds them,
+// uploads the slides and sends them for review; Tait reviews on My desk and
+// approves (to the client) or sends them back; the client reviews slide by
+// slide in To review (Tait, 2026-10-22: "treat it the same way as the video
+// cards"). Clients never see the copy work before that.
 import { freshDb, makeHarness, checker } from "./harness.mjs";
 
 const db = await freshDb();
@@ -41,10 +43,11 @@ const count = async (uid, table) => (await readAs(uid, `select count(*)::int n f
 chk("an editor reads no carousel that isn't theirs", (await count(ED, "social_carousels")) === 0 && (await count(ED, "social_carousel_guides")) === 0);
 chk("a client's login reads no carousels or guide", (await count(CL, "social_carousels")) === 0 && (await count(CL, "social_carousel_guides")) === 0);
 
-// ── The operator's Carousels page, in the client portal ────────────────
-let op = await openPage("clients/portal.html", OP, "https://fl.test/clients/test-fully-launched");
-chk("operator: a Carousels page in the client portal", op.d.getElementById("carouselsNav").style.display === "" && op.d.querySelectorAll("#carList [data-car]").length === 2);
-op.d.getElementById("carGuideRead").click(); await settle();
+// ── The operator: the client's Carousels tab on the dashboard ─────────
+const opCarousels = async () => { const o = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html"); o.w.openClientPage(FL, "carousels"); await settle(); return o; };
+let op = await opCarousels();
+chk("operator: a Carousels tab on the client's page", op.d.querySelector('#cpTabs [data-cptab="carousels"]').classList.contains("active") && op.d.querySelectorAll("#cpBody [data-car]").length === 2);
+op.d.querySelector('[data-car-guide="read"]').click(); await settle();
 chk("the guide opens, Markdown rendered", op.d.getElementById("videoModalBox").textContent.includes("Navy") && !!op.d.querySelector("#videoModalBox code"));
 const gImgs = Array.from(op.d.querySelectorAll("#videoModalBox .md-gallery img")).map(i => i.getAttribute("src"));
 chk("…with the example slides side by side, captioned", gImgs.join() === "/assets/carousel-examples/founder-1-hook.jpg,/assets/carousel-examples/founder-2-story.jpg"
@@ -55,7 +58,7 @@ const gLinks = Array.from(op.d.querySelectorAll("#videoModalBox .doc-body a")).m
 chk("…and links to the real posts; only https links work", gLinks.includes("https://www.instagram.com/p/DdR361EjDyJ/") && !gLinks.some(h => /^javascript/.test(h)), gLinks);
 op.w.closeVideoModal();
 
-op.d.querySelector(`#carList [data-car="${C1}"]`).click(); await settle();
+op.d.querySelector(`#cpBody [data-car="${C1}"]`).click(); await settle();
 let box = op.d.getElementById("videoModalBox");
 chk("the preview shows every slide, the accent in gold italic, with Copy buttons", box.querySelectorAll(".car-slide").length === 2 && box.querySelector(".gold-i").textContent === "£1 billion" && box.querySelectorAll("[data-copy]").length === 2);
 chk("Copy copies the words without the accent stars", box.querySelector("[data-copy]").dataset.copy.includes("£1 billion") && !box.querySelector("[data-copy]").dataset.copy.includes("*"));
@@ -110,9 +113,10 @@ chk("…and it leaves To Do's Carousels to edit (count 0)", todoTab().textConten
 chk("…then the editor can't upload more", !card().querySelector("[data-upload]") && !!(await readAs(ED, `insert into social_carousel_uploads (carousel_id, storage_path) values ('${C1}', '${FL}/${C1}/late.png')`)).error);
 
 // ── Tait reviews: send it back, then approve ──────────────────────────
-op = await openPage("clients/portal.html", OP, "https://fl.test/clients/test-fully-launched");
-chk("operator: To review has a count", /To review\s*1/.test(op.d.getElementById("carTabs").textContent.replace(/\s+/g, " ")));
-op.d.querySelector(`#carList [data-car="${C1}"]`).click(); await settle();
+op = await opCarousels();
+chk("operator: To review has a count", /To review\s*1/.test(op.d.getElementById("cpBody").textContent.replace(/\s+/g, " ")));
+chk("…and it's on My desk: Carousels to review", op.d.getElementById("deskCarousels").textContent.includes("Gymshark started in a garage") && [...op.d.querySelectorAll("#deskTiles .desk-tile")].some(t => t.textContent === "1Carousels to review"));
+op.d.querySelector(`#cpBody [data-car="${C1}"]`).click(); await settle();
 box = op.d.getElementById("videoModalBox");
 chk("the review shows the uploaded slides", box.querySelectorAll(".car-thumb img").length === 1 && box.querySelector(".car-thumb img").src.startsWith("https://signed/"));
 box.querySelector("#carBack").click(); await settle();
@@ -127,25 +131,57 @@ chk("the editor sees the note at the top and can upload again", card().querySele
 card().querySelector("[data-submit]").click(); await settle();
 chk("…and send it again", (await db.query(`select status from social_carousels where id='${C1}'`)).rows[0].status === "to_review");
 
-op = await openPage("clients/portal.html", OP, "https://fl.test/clients/test-fully-launched");
-op.d.querySelector(`#carList [data-car="${C1}"]`).click(); await settle();
+op = await opCarousels();
+op.d.querySelector("#deskCarousels button").click(); await settle();
 op.d.getElementById("carApprove").click(); await settle();
-row = (await db.query(`select status, approved_at, review_note from social_carousels where id='${C1}'`)).rows[0];
-chk("Approve", row.status === "approved" && !!row.approved_at && row.review_note === null, row);
-op.d.querySelector(`#carList [data-car="${C1}"]`).click(); await settle();
+chk("Approve needs the post date", op.ui.alerts.some(a => /day it posts/.test(a)) && (await db.query(`select status from social_carousels where id='${C1}'`)).rows[0].status === "to_review");
+const POST = (() => { const t = new Date(); t.setDate(t.getDate() + 3); return t.toISOString().slice(0, 10); })();
+op.d.querySelector("#videoModalBox [data-f=post_date]").setDate(POST); await settle();
+op.d.getElementById("carApprove").click(); await settle();
+row = (await db.query(`select status, approved_at, review_note, post_date::text pd from social_carousels where id='${C1}'`)).rows[0];
+chk("Approve sends it to the client, with its post date", row.status === "client_review" && !!row.approved_at && row.review_note === null && row.pd === POST, row);
+chk("a client's login now reads that one carousel and its slides, nothing else", (await count(CL, "social_carousels")) === 1 && (await count(CL, "social_carousel_uploads")) === 1 && (await count(CL, "social_carousel_guides")) === 0);
+
+// ── The client reviews it slide by slide ───────────────────────────────
+let cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
+chk("the client: no Carousels page", !cl.d.querySelector('.nav-item[data-view="carousels"]') && !cl.d.getElementById("view-carousels"));
+const crd = () => [...cl.d.querySelectorAll("#listReview .card")].find(c => c.textContent.includes("Gymshark"));
+chk("it's in To review like a video card, with its slides and post date", !!crd() && crd().textContent.includes("Carousel · 1 slide") && crd().querySelectorAll(".car-strip img").length === 1 && /To review\s*1/.test(cl.d.getElementById("videoTabs").textContent.replace(/\s+/g, " ")));
+chk("…and on the calendar on its post date, red (it needs them this week)", [...cl.d.querySelectorAll("#calGrid .cal-item")].some(b => b.textContent.includes("Gymshark") && b.classList.contains("cal-urgent")));
+crd().querySelector("[data-review]").click(); await settle();
+box = cl.d.getElementById("videoModalBox");
+chk("the review: each slide big with a note box", box.querySelectorAll(".car-review-slide img").length === 1 && box.querySelectorAll('[data-slide-note="1"]').length === 1);
+box.querySelector("[data-changes]").click(); await settle();
+chk("Send the changes needs a note", /at least one slide/.test(box.querySelector("#carErr").textContent));
+box.querySelector('[data-slide-note="1"]').value = "Use a brighter photo.";
+box.querySelector("[data-changes]").click(); await settle();
+row = (await db.query(`select status, client_notes from social_carousels where id='${C1}'`)).rows[0];
+chk("changes go back to the editor with the note on slide 1", row.status === "changes" && row.client_notes[0].slide === 1 && row.client_notes[0].note === "Use a brighter photo.", row);
+ed = await openPage("editor/dashboard.html", ED, "https://fl.test/editor/dashboard.html");
+chk("the editor sees the client's slide notes", card().querySelector(".car-note").textContent.includes("Slide 1: Use a brighter photo."));
+card().querySelector("[data-submit]").click(); await settle();
+op = await opCarousels();
+op.d.querySelector("#deskCarousels button").click(); await settle();
+chk("Tait sees what the client asked for", op.d.getElementById("videoModalBox").textContent.includes("Use a brighter photo."));
+op.d.getElementById("carApprove").click(); await settle();
+cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
+crd().querySelector("[data-review]").click(); await settle();
+cl.d.querySelector("#videoModalBox [data-approve]").click(); await settle();
+row = (await db.query(`select status, client_approved_at from social_carousels where id='${C1}'`)).rows[0];
+chk("the client approves it", row.status === "approved" && !!row.client_approved_at, row);
+chk("…and it leaves To review", !crd());
+chk("a client can't review a carousel that isn't waiting for them", /isn't waiting/.test((await readAs(CL, `select social_client_review_carousel('${C1}', true, '[]')`)).error || ""));
+op = await opCarousels();
+op.d.querySelector(`#cpBody [data-car="${C1}"]`).click(); await settle();
 op.d.getElementById("carPosted").click(); await settle();
 chk("then Mark posted", (await db.query(`select status from social_carousels where id='${C1}'`)).rows[0].status === "posted");
 
 // The guide can be edited.
-op.d.getElementById("carGuideEdit").click(); await settle();
+op.d.querySelector('[data-car-guide="edit"]').click(); await settle();
 op.d.getElementById("cgBody").value = "# Carousel guide\n\nNew rules.";
 op.d.getElementById("cgSave").click(); await settle();
 chk("operator edits the guide", (await db.query(`select body_md from social_carousel_guides where client_id='${FL}'`)).rows[0].body_md.includes("New rules."));
 
-// ── The client sees none of it ─────────────────────────────────────────
-const cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
-chk("the client: no Carousels page, and the page never asks for carousels", cl.d.getElementById("carouselsNav").style.display === "none"
-  && !cl.ui.log.some(l => /carousel/.test(l.table || "")), cl.ui.log.filter(l => l.table).map(l => l.table));
 
 // ── Time sensitive: due in the next 7 days (or late), soonest first ──
 const iso = d => { const t = new Date(); t.setDate(t.getDate() + d); return t.toISOString().slice(0, 10); };

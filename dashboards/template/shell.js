@@ -54,9 +54,9 @@ function renderMonthCalendar(container, byDay, chipHtml, state, rerender) {
     </div>`;
   if (week) {
     html += days.map(d => {
-      const iso = localISODate(d), items = byDay[iso] || [];
-      return `<div class="cal-wcol"><div class="cal-dayhead ${iso === today ? "today" : ""}">${d.toLocaleDateString(undefined, { weekday: "short" })} <b>${d.getDate()}</b></div>
-        <div class="cal-wbody">${items.map(chipHtml).join("") || '<div class="cal-none">Nothing</div>'}</div></div>`;
+      const iso = localISODate(d), chips = (byDay[iso] || []).map(chipHtml), urgent = chips.some(h => h.includes("cal-urgent"));
+      return `<div class="cal-wcol ${urgent ? "has-urgent" : ""}"><div class="cal-dayhead ${iso === today ? "today" : ""}">${d.toLocaleDateString(undefined, { weekday: "short" })} <b>${d.getDate()}</b></div>
+        <div class="cal-wbody">${chips.join("") || '<div class="cal-none">Nothing</div>'}</div></div>`;
     }).join("");
   } else {
     html += ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => `<div class="cal-dow">${d}</div>`).join("");
@@ -65,7 +65,9 @@ function renderMonthCalendar(container, byDay, chipHtml, state, rerender) {
       const iso = localISODate(d), items = byDay[iso] || [];
       const more = items.length > CAL_MONTH_MAX ? items.length - (CAL_MONTH_MAX - 1) : 0;
       const shown = more ? items.slice(0, CAL_MONTH_MAX - 1) : items;
-      html += `<div class="cal-cell ${iso === today ? "today" : ""}"><div class="daynum">${d.getDate()}</div>${shown.map(chipHtml).join("")}${more ? `<button class="cal-more" data-calweek="${iso}">+${more} more</button>` : ""}</div>`;
+      // A red day: something on it needs doing soon (a chip marked cal-urgent).
+      const urgent = items.some(e => chipHtml(e).includes("cal-urgent"));
+      html += `<div class="cal-cell ${iso === today ? "today" : ""} ${urgent ? "has-urgent" : ""}"><div class="daynum">${d.getDate()}</div>${shown.map(chipHtml).join("")}${more ? `<button class="cal-more" data-calweek="${iso}">+${more} more</button>` : ""}</div>`;
     });
   }
   container.innerHTML = html;
@@ -1492,8 +1494,8 @@ function brandRow(url, missing) {
 // Operators write the copy and review on a client portal's Carousels page;
 // editors build them on the editor portal's Carousels page and upload the
 // slides (the private 'carousels' bucket: <client id>/<carousel id>/<file>).
-const CAROUSEL_STATUS = { idea: "Idea", with_editor: "With editor", to_review: "To review", changes: "Sent back", approved: "Approved", posted: "Posted" };
-const CAROUSEL_ORDER = ["to_review", "with_editor", "changes", "idea", "approved", "posted"];
+const CAROUSEL_STATUS = { idea: "Idea", with_editor: "With editor", to_review: "To review", client_review: "With the client", changes: "Sent back", approved: "Approved", posted: "Posted" };
+const CAROUSEL_ORDER = ["to_review", "with_editor", "changes", "client_review", "idea", "approved", "posted"];
 
 // One slide's copy: line breaks kept, *words* in gold italic (the accent).
 function carouselTextHtml(text) {
