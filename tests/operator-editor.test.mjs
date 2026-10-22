@@ -24,7 +24,8 @@ await db.exec(`
 
 // Operator dashboard links to the editor portal.
 const op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
-chk("sidebar links to editor portal", !!op.d.querySelector('a.nav-item[href="/editor/dashboard.html"]'));
+chk("no separate Editor portal tab: each editor has View <name>'s portal on Editors (Tait, 2026-10-22)", !op.d.querySelector('a.nav-item[href^="/editor/"]')
+  && [...op.d.querySelectorAll("#editorsList a.btn")].every(a => /^View .+'s portal ↗$/.test(a.textContent) && a.getAttribute("href").startsWith("/editor/dashboard.html?editor=")) && op.d.querySelectorAll("#editorsList a.btn").length > 0);
 op.w.openClientPage(FL, "videos");
 const opRow = t => Array.from(op.d.querySelectorAll("#cpBody .row")).find(r => (r.querySelector("b.video-card") || {}).textContent === t);
 opRow("Morgan edits this").querySelector("b.video-card").click(); await settle();
