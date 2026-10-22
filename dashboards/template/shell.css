@@ -661,7 +661,6 @@ body.navy-work .main .chip-row { box-shadow:none; }
 .mb .btn, .mb button { background:transparent; color:#fff; border:1px solid rgba(255,255,255,.25); }
 .mb .btn:hover, .mb button:hover { border-color:#C4AB82; }
 .mb-head { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; padding-bottom:18px; border-bottom:1px solid rgba(255,255,255,.1); }
-.mb-kicker { font-size:11px; letter-spacing:.32em; text-transform:uppercase; color:rgba(255,255,255,.55); }
 .mb-title { font-size:clamp(32px, 5vw, 56px); font-weight:700; letter-spacing:-.02em; line-height:1.05; margin:4px 0 6px; }
 .mb-sub { font-size:13px; color:rgba(255,255,255,.62); max-width:560px; }
 .mb-actions { display:flex; gap:8px; flex-wrap:wrap; }
@@ -700,3 +699,105 @@ body.navy-work .main .chip-row { box-shadow:none; }
   .mb-sec { grid-template-columns:1fr; gap:10px; }
   .mb-collage { columns:2 120px; }
 }
+
+/* ---------- Glass (Tait, 2026-10-22: "make the entire dashboard glass
+   morphism… like apple design"; the apple-design skill) ----------
+   Translucent materials over a softly lit navy: a dark, heavier glass for
+   structure (sidebar, top bar), light frosted glass for the cards (they
+   stay "white"), never light glass on light glass. Apple's system font with
+   size-specific tracking, instant press feedback, and solid fallbacks for
+   reduced transparency / motion. Opt in with body.glass. */
+html body.glass {
+  --font-body:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Hanken Grotesk", system-ui, sans-serif;
+  --font-serif:-apple-system, BlinkMacSystemFont, "SF Pro Display", "Hanken Grotesk", system-ui, sans-serif;
+  font-family:var(--font-body); letter-spacing:-.003em;
+  background-color:#04101f;
+  background-image:
+    radial-gradient(1000px 700px at 8% -12%, rgba(28,58,104,.75), transparent 62%),
+    radial-gradient(900px 700px at 105% 6%, rgba(196,171,130,.24), transparent 58%),
+    radial-gradient(1100px 900px at 55% 118%, rgba(20,44,84,.8), transparent 62%);
+  background-attachment:fixed;
+}
+html body.glass .main { background:transparent; }
+html body.glass .sidebar {
+  background:rgba(6,16,32,.42); border-right:1px solid rgba(255,255,255,.07);
+  -webkit-backdrop-filter:blur(30px) saturate(180%); backdrop-filter:blur(30px) saturate(180%);
+}
+html body.glass .nav-item {
+  border:0; background:transparent; box-shadow:none; margin:0 0 4px; padding:9px 12px; border-radius:10px;
+  color:rgba(255,255,255,.84); font-weight:500; transition:background .15s, transform .1s ease-out;
+}
+html body.glass .nav-item:hover { background:rgba(255,255,255,.08); transform:none; box-shadow:none; }
+html body.glass .nav-item:active { transform:scale(.98); box-shadow:none; }
+html body.glass .nav-item.active, html body.glass .nav-item.active:hover {
+  background:rgba(255,255,255,.92); color:#04101f; font-weight:600; transform:none;
+  box-shadow:0 1px 3px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.7);
+}
+html body.glass .nav-item .n { border:0; background:rgba(255,255,255,.14); }
+html body.glass .nav-item.active .n { background:#C4AB82; color:#04101f; }
+html body.glass .topbar {
+  position:sticky; top:0; z-index:50; margin:-22px -32px 22px; padding:14px 32px; border-bottom:0;
+  background:rgba(4,16,31,.32); -webkit-backdrop-filter:blur(22px) saturate(180%); backdrop-filter:blur(22px) saturate(180%);
+  -webkit-mask-image:linear-gradient(#000 85%, transparent); mask-image:linear-gradient(#000 85%, transparent);
+}
+html body.glass .page-head h1 { font-size:32px; line-height:1.08; letter-spacing:-.025em; font-weight:700; }
+html body.glass .page-head p { letter-spacing:0; }
+/* Light frosted glass: the cards, tiles and boxes that sit on the navy. */
+html body.glass .main :is(.card, .desk-tile, .agent-card, .idea-card) {
+  background:rgba(255,255,255,.88); border:1px solid rgba(255,255,255,.6); border-radius:20px;
+  -webkit-backdrop-filter:blur(24px) saturate(180%); backdrop-filter:blur(24px) saturate(180%);
+  box-shadow:0 12px 40px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.75);
+}
+html body.glass .main .desk-tile { border-radius:16px; box-shadow:0 6px 20px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.75); transition:transform .1s ease-out; }
+html body.glass .main .desk-tile:active { transform:scale(.98); }
+html body.glass .main .desk-tile.hot, html body.glass .main .card.due-hot { border-color:rgba(196,171,130,.95); }
+html body.glass .main .card .card, html body.glass .main .card .idea-card { box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; background:#fff; }
+/* Dark glass for the tab bars on the navy. */
+html body.glass .main .chip-row, html body.glass .main .seg, html body.glass .main .client-tabs {
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.09); border-radius:14px;
+  -webkit-backdrop-filter:blur(20px) saturate(160%); backdrop-filter:blur(20px) saturate(160%);
+}
+html body.glass .main .seg { border-radius:999px; }
+html body.glass .main .card .chip-row { background:rgba(4,16,31,.04); border-color:rgba(4,16,31,.08); }
+html body.glass .chip { transition:background .15s, color .15s, transform .1s ease-out; }
+html body.glass .chip:active { transform:scale(.97); }
+html body.glass .chip.active { box-shadow:0 1px 3px rgba(0,0,0,.2); }
+html body.glass button, html body.glass .btn { border-radius:10px; transition:border-color .15s, background .15s, color .15s, transform .1s ease-out; }
+html body.glass button:active, html body.glass .btn:active { transform:scale(.97); }
+html body.glass input, html body.glass select, html body.glass textarea { border-radius:10px; }
+html body.glass .mb { background:rgba(9,20,36,.55); border-color:rgba(255,255,255,.09); border-radius:22px;
+  -webkit-backdrop-filter:blur(24px) saturate(160%); backdrop-filter:blur(24px) saturate(160%); box-shadow:0 12px 40px rgba(0,0,0,.3); }
+html body.glass .ai-sky { border:1px solid rgba(255,255,255,.08); box-shadow:0 12px 40px rgba(0,0,0,.3); border-radius:22px; }
+/* Pop-ups: dim and blur what's behind, then a frosted sheet that
+   materialises (scale + blur together), not a plain fade. */
+html body.glass .modal-backdrop { background:rgba(4,16,31,.42); -webkit-backdrop-filter:blur(14px) saturate(140%); backdrop-filter:blur(14px) saturate(140%); }
+html body.glass .modal-box {
+  background:rgba(255,255,255,.86); border:1px solid rgba(255,255,255,.6); border-radius:22px;
+  -webkit-backdrop-filter:blur(30px) saturate(180%); backdrop-filter:blur(30px) saturate(180%);
+  box-shadow:0 30px 80px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.8);
+  animation:glass-in .26s cubic-bezier(.2,.8,.2,1);
+}
+html body.glass .modal-close { background:rgba(4,16,31,.06); border:0; border-radius:999px; }
+@keyframes glass-in { from { opacity:0; transform:scale(.97); filter:blur(6px); } to { opacity:1; transform:none; filter:none; } }
+@media (max-width:760px) {
+  html body.glass .topbar { margin:-22px -16px 18px; padding:12px 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html body.glass .modal-box { animation:none; }
+  html body.glass :is(button, .btn, .chip, .nav-item, .desk-tile):active { transform:none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  html body.glass { background-image:none; }
+  html body.glass .sidebar, html body.glass .topbar { background:#04101f; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  html body.glass .main :is(.card, .desk-tile, .agent-card, .idea-card), html body.glass .modal-box { background:#fff; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  html body.glass .main .chip-row, html body.glass .main .seg, html body.glass .main .client-tabs, html body.glass .mb { background:#0b1626; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  html body.glass .modal-backdrop { background:rgba(4,16,31,.9); -webkit-backdrop-filter:none; backdrop-filter:none; }
+}
+/* The parts the browser draws carry the design too. */
+html body.glass ::selection { background:rgba(196,171,130,.45); color:inherit; }
+html body.glass { caret-color:#C4AB82; scrollbar-color:rgba(255,255,255,.22) transparent; }
+html body.glass ::-webkit-scrollbar { width:10px; height:10px; }
+html body.glass ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.2); border-radius:999px; border:3px solid transparent; background-clip:padding-box; }
+html body.glass .main .card ::-webkit-scrollbar-thumb, html body.glass .modal-box ::-webkit-scrollbar-thumb { background:rgba(4,16,31,.22); background-clip:padding-box; }
+html body.glass :is(.nav-item, button, .btn, .chip, a, input, select, textarea):focus-visible { outline:2px solid #C4AB82; outline-offset:2px; }
+html body.glass .desk-tile b, html body.glass .vtable, html body.glass .badge { font-variant-numeric:tabular-nums; }

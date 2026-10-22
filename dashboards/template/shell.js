@@ -1671,12 +1671,12 @@ function moodTileHtml(st, m) {
 function moodBoardHtml(st) {
   const by = {}; st.items.forEach(m => (by[moodSectionOf(m)] = by[moodSectionOf(m)] || []).push(m));
   const pal = moodBoardPalette(st.items);
-  const title = st.clientId ? st.clientName || "Moodboard" : "House style";
+  const title = st.clientId ? st.clientName || "Client" : "House";
   const words = m => `<div class="mb-word${(m.note || m.name || "").length > 40 ? " long" : ""}" data-mb-id="${m.id}"${moodCanEdit(st, m) ? ' draggable="true"' : ""}>${escapeHtml(m.note || m.name || "")}
       ${moodCanEdit(st, m) ? `<button type="button" data-mb-remove="${m.id}" title="Remove">×</button>` : ""}</div>`;
   return `<div class="mb">
     <div class="mb-head">
-      <div><div class="mb-kicker">Moodboard</div><div class="mb-title">${escapeHtml(title)}</div>
+      <div><div class="mb-title">${escapeHtml(title)} moodboard</div>
         <div class="mb-sub">Drag screenshots and videos onto a section (or paste them). ${st.role === "client" ? "We build this together: it's how we design your editing style and motion graphics." : "The client can add to it too; the Art Director turns it into their editing guidelines."}</div></div>
       <div class="mb-actions"><label class="btn">Add images or videos<input type="file" id="mbPick-${st.clientId || "house"}" data-mb-pick accept="image/*,video/*" multiple hidden></label>
         <button type="button" data-mb-link>Add a link</button><button type="button" data-mb-words>Add words</button></div>

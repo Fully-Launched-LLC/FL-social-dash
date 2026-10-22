@@ -906,7 +906,13 @@ work area with white cards (`body.navy-work`; Tait, 2026-10-22: "i want all
 the background to be navy. the video cards can stay white"); the client
 portal and every popup keep the light grey work area with white cards and
 navy text (Tait, 2026-10-01: "too much navy"; the `.main, .modal-backdrop`
-block at the top of shell.css). Navy `#04101f` and white do the work; gold/tan `#C4AB82` from
+block at the top of shell.css). The operator dashboard is **glass**
+(`body.glass`, end of shell.css; Tait, 2026-10-22: "glass morphism… like
+apple design", keeping navy with the gold accent): a softly lit navy
+background, dark frosted sidebar and sticky top bar, light frosted cards,
+frosted pop-ups that scale in, Apple's system font, press feedback, solid
+fallbacks for reduced transparency and motion. Built with the apple-design
+and impeccable skills. Navy `#04101f` and white do the work; gold/tan `#C4AB82` from
 fullylaunched.com is a rare accent, used only for what needs attention
 (Time sensitive when it has something in it, overdue, today on the
 calendar) and the one main action on a page (`.accent`: "Add ideas with
