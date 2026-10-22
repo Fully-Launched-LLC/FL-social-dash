@@ -64,8 +64,10 @@ a { color:inherit; }
 }
 .brand { display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:6px 8px 10px; }
 .brand img { width:150px; max-width:100%; height:auto; display:block; }
-/* The logo in the corner: the platinum rocket turning (Tait, 2026-10-22:
-   "add that same animation up here in the top left") beside the wordmark.
+/* The logo in the corner: the platinum rocket shimmering in the light
+   (the first half of his platinum video; Tait, 2026-10-22:
+   "add that same animation up here in the top left", then "i want the logo
+   to spin in the light and shimmer") beside the wordmark.
    An animated image with a see-through background (a video's black can't
    be blended away inside the glass sidebar); still for less motion. */
 .brand .brand-mark { display:flex; align-items:center; gap:4px; height:30px; }
