@@ -154,10 +154,6 @@ body.navy-work .main .board-col.drop { background:rgba(255,255,255,.10); }
   <section class="view" id="view-calendar">
     <div class="page-head">
       <div><h1>Content Calendar</h1><p>What posts where each day, and what has to be filmed, edited and approved by when.</p></div>
-      <div class="page-actions">
-        <button class="accent" id="bulkAddBtn">Add ideas with Claude</button>
-        <button id="newVideoBtn">+ New idea</button>
-      </div>
     </div>
     <div id="calFilters"></div>
     <div class="card"><div class="cal-grid" id="calGrid"></div></div>
@@ -792,7 +788,6 @@ function openVideoForm(id, presetClientId) {
   const del = box.querySelector("#vfDelete");
   if (del) del.onclick = () => deleteVideo(x.video.id);
 }
-document.getElementById("newVideoBtn").onclick = () => openVideoForm(null);
 
 // ---------- add ideas with Claude ----------
 // Creates many ideas in one insert. They show in the client's portal right
@@ -899,7 +894,6 @@ function openBulkAdd(presetClientId, toBank) {
       : `Added ${data.length} idea(s). They're on the calendar and in ${CLIENT_BY_ID[clientId].name}'s portal now.`);
   };
 }
-document.getElementById("bulkAddBtn").onclick = () => openBulkAdd(null);
 
 // ---------- client filter ----------
 function renderGlobalClientFilter() {
