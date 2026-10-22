@@ -621,12 +621,15 @@ def ask_for_edit(sb, c, v, revise=False, notes=None):
     what = "revise the edit" if revise else "edit the video"
     fix = ""
     if revise:
-        fix = "\n**What to fix** (fix exactly these, change nothing else):\n" + (notes or "(read the comments on the latest version)") + "\n"
+        fix = ("\n**What to fix** (fix exactly these, change nothing else):\n" + (notes or "(read the comments on the latest version)") + "\n"
+               # Tait, 2026-10-22: "when i am reviewing video if i say i like this music or i like this font or motion
+               # graphic, add whatever i said i liked to the favorite section for the client you are editing the video for."
+               + f"\n**Anything Tait says he likes** (this music, this sound, this font, this motion graphic, this look): find it in `clients/{slug}/team-room/assets-used/{v['id']}.md` and add it to {c['name']}'s assets: `{bridge_cmd()} assets favorite --client {slug} --asset \"<its path>\"`. If it isn't in the library yet (a graphic you built), add it first: `{bridge_cmd()} assets add --kind <music|sfx|lut|motion|font> --file <file> --into \"<folder>\" --client {slug}`. Say what you added when you deliver.\n")
     desc = f"""**{c['name']}**: {what} for **{v.get('title')}** (card `{v['id']}`). Unify the System stage 7. You lead; the **Motion Graphics Designer** builds graphics, the **Content Reviewer** checks every render (their checklist) before it goes to Tait.
 {fix}
 1. `{bridge_cmd()} card get --id {v['id']}` (the script, outline, hook, dates) and the client's **approved** editing guidelines: `{bridge_cmd()} doc get --client {slug} --kind editing_guidelines`, plus brand guidelines and the feedback log.
 2. The raw footage is in Google Drive on this Mac: `{bridge_cmd()} footage where --id {v['id']}` prints the folder.
-3. Edit in Remotion (`editor/`), music and sound effects from the Library (`{bridge_cmd()} assets list --kind music`; never one marked never). Render to `editor/out/{slug}/{v['id']}.mp4`.
+3. Edit in Remotion (`editor/`). Assets: **{c['name']}'s own first** (`editor/public/clients/{slug}/_assets/`, or `{bridge_cmd()} assets list --client {slug}`), then the whole library (`{bridge_cmd()} assets list --kind music`; never one marked never). Write every asset you used (music, sound effects, fonts, motion graphics, LUTs), with its library path, in `clients/{slug}/team-room/assets-used/{v['id']}.md`, so anything Tait likes can be added to their assets. Render to `editor/out/{slug}/{v['id']}.mp4`.
 4. Content Reviewer ⇄ you until it passes.
 5. Deliver it to Tait's desk: `{bridge_cmd()} video deliver --id {v['id']} --file editor/out/{slug}/{v['id']}.mp4` (a review copy for the player, a copy in their Final Edits Drive folder, and the card moves to Tait's Videos to review).
 The edit is due {v.get('due_to_edit') or 'soon'} (7 days before the post date)."""

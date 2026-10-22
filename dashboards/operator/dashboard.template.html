@@ -146,7 +146,6 @@ body.navy-work .main .board-col.drop { background:rgba(255,255,255,.10); }
     <div class="crumbs">Operator / <b id="crumbPage">My desk</b></div>
     <div class="seg" id="globalClientFilter" role="group" aria-label="Client"></div>
   </div>
-  <div id="globalClientBanner"></div>
   <div id="loadError"></div>
 
   <section class="view active" id="view-desk">
@@ -175,8 +174,7 @@ body.navy-work .main .board-col.drop { background:rgba(255,255,255,.10); }
   </section>
 
   <section class="view" id="view-library">
-    <div class="page-head"><div><h1>Assets</h1><p>Every asset across Fully Launched, in folders. Pick a client to see their own: the editors pull from that client's folder.</p></div></div>
-    <div class="client-tabs" id="assetScope"></div>
+    <div class="page-head"><div><h1>Assets</h1></div></div>
     <div class="client-tabs" id="libTabs"></div>
     <div id="libBody"></div>
   </section>
@@ -932,17 +930,6 @@ function renderGlobalClientFilter() {
   document.getElementById("globalClientFilter").innerHTML = chips.map(c =>
     `<div class="chip ${globalClientFilter === c.id ? "active" : ""}" data-c="${c.id}">${escapeHtml(c.name)}</div>`).join("");
   document.querySelectorAll("#globalClientFilter .chip").forEach(el => el.onclick = () => { globalClientFilter = el.dataset.c; renderAll(); });
-
-  const banner = document.getElementById("globalClientBanner");
-  const client = CLIENT_BY_ID[globalClientFilter];
-  if (!client) { banner.innerHTML = ""; return; }
-  banner.innerHTML = `
-    <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px">
-      <div><b>${escapeHtml(client.name)}</b><div class="meta">${escapeHtml(WHO_FILMS[client.clientSystem] || client.clientSystem)} · every page below shows just this client</div></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <a class="btn" href="/clients/${encodeURIComponent(client.slug)}" target="_blank" rel="noopener">Open portal</a>
-      </div>
-    </div>`;
 }
 
 // ---------- Time sensitive ----------
@@ -1829,14 +1816,14 @@ async function loadStyleData() {
 // folder the editors pull from: bridge.py assets export). No house
 // moodboard here: each client's board is in their portal.
 const ASSET_KINDS = [["music", "Music"], ["sfx", "Sound effects"], ["lut", "LUTs / Powergrades"], ["motion", "Motion graphics"], ["font", "Fonts"]];
-let LIB = { scope: "all", kind: "music", path: "", q: "" };
+let LIB = { scope: "all", kind: "music", path: "", q: "" };   // scope follows globalClientFilter
 const assetClients = id => CLIENT_ASSETS.filter(x => x.asset_id === id).map(x => x.client_id);
 const folderIcon = `<svg viewBox="0 0 64 52" aria-hidden="true"><path d="M4 8a4 4 0 0 1 4-4h16l6 6h26a4 4 0 0 1 4 4v4H4z" fill="#8e8e93"/><rect x="4" y="14" width="56" height="34" rx="4" fill="#aeaeb2"/><rect x="4" y="14" width="56" height="5" rx="2" fill="#c7c7cc" opacity=".6"/></svg>`;
 const fileIcon = kind => ({ music: "♪", sfx: "◉", lut: "◐", motion: "▶", font: "Aa" }[kind] || "•");
 function renderLibrary() {
-  if (LIB.scope !== "all" && !CLIENT_BY_ID[LIB.scope]) LIB.scope = "all";
-  document.getElementById("assetScope").innerHTML = [{ id: "all", name: "Fully Launched" }, ...CLIENTS].map(c => `<div class="chip ${LIB.scope === c.id ? "active" : ""}" data-scope="${c.id}">${escapeHtml(c.name)}</div>`).join("");
-  document.querySelectorAll("#assetScope .chip").forEach(el => el.onclick = () => { LIB = { ...LIB, scope: el.dataset.scope, path: "", q: "" }; renderLibrary(); });
+  // The client picker at the top right (Tait, 2026-10-22): All clients shows
+  // every asset; a client shows only the ones favourited for them.
+  if (LIB.scope !== globalClientFilter) LIB = { ...LIB, scope: CLIENT_BY_ID[globalClientFilter] ? globalClientFilter : "all", path: "", q: "" };
   const inScope = a => LIB.scope === "all" || assetClients(a.id).includes(LIB.scope);
   document.getElementById("libTabs").innerHTML = ASSET_KINDS.map(([k, l]) => `<div class="chip ${k === LIB.kind ? "active" : ""}" data-lib="${k}">${chipLabel(l, ASSETS.filter(a => a.kind === k && inScope(a)).length)}</div>`).join("");
   document.querySelectorAll("#libTabs .chip").forEach(el => el.onclick = () => { LIB = { ...LIB, kind: el.dataset.lib, path: "", q: "" }; renderLibrary(); });
@@ -1862,7 +1849,7 @@ function renderLibrary() {
         <div class="nm"><b>${escapeHtml(a.name)}</b><div class="meta">${escapeHtml([LIB.q && fp(a), a.file_type && a.file_type.toUpperCase(), a.duration_s ? Math.round(a.duration_s) + "s" : "", a.made_by && "made by the " + a.made_by].filter(Boolean).join(" · "))}${mine.length && LIB.scope === "all" ? ` · <span class="lib-for">♥ ${mine.map(id => escapeHtml(CLIENT_BY_ID[id] ? CLIENT_BY_ID[id].name : "")).join(", ")}</span>` : ""}</div></div>
         ${LIB.scope === "all" ? `<button onclick="assetForClientMenu('${a.id}', this)">♥ Favorite for…</button>` : `<button onclick="toggleClientAsset('${a.id}','${LIB.scope}')">Remove from ${escapeHtml(scopeName)}</button>`}</div>`;
     }).join("")}</div>
-    ${!all.length ? `<div class="empty">${LIB.scope === "all" ? `No ${escapeHtml(kindLabel.toLowerCase())} yet. Send them to Claude ("add these to ${escapeHtml(kindLabel.toLowerCase())}"), or put them in the folder on your Mac and run <code>bridge.py assets sync</code>.` : `Nothing favourited for ${escapeHtml(scopeName)} yet. Go to Fully Launched and tap ♥ Favorite for… on anything you like for them.`}</div>`
+    ${!all.length ? `<div class="empty">${LIB.scope === "all" ? `No ${escapeHtml(kindLabel.toLowerCase())} yet. Send them to Claude ("add these to ${escapeHtml(kindLabel.toLowerCase())}"), or put them in the folder on your Mac and run <code>bridge.py assets sync</code>.` : `Nothing favourited for ${escapeHtml(scopeName)} yet. Pick All clients at the top right and tap ♥ Favorite for… on anything you like for them.`}</div>`
       : !files.length && !Object.keys(sub).length ? `<div class="empty">Nothing here.</div>` : ""}
     </div><audio id="libAudio" hidden></audio>`;
   body.querySelectorAll("[data-path]").forEach(b => b.onclick = () => { LIB = { ...LIB, path: b.dataset.path, q: "" }; renderLibrary(); });
