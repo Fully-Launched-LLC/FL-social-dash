@@ -882,3 +882,26 @@ html body.glass .main .desk-tile.hot b { color:#E3CFA8; }
     background:#142a48; -webkit-backdrop-filter:none; backdrop-filter:none; }
   html body.glass .nav-item.active { background:#1f3a60; }
 }
+
+/* Liquid glass, take 2 (Tait, 2026-10-22: "i want all of these sections to
+   look like this liquid glass", the silver glass button reference): a
+   silvery see-through fill, a bright rim where light hits the top-left
+   edge, a softer rim bottom-right, a faint inner glow, and a deep soft
+   shadow, so each pane reads as thick glass rather than a flat tint. */
+html body.glass {
+  --glass-fill:linear-gradient(145deg, rgba(255,255,255,.26), rgba(255,255,255,.07) 48%, rgba(255,255,255,.13));
+  --glass-sel:linear-gradient(145deg, rgba(255,255,255,.42), rgba(255,255,255,.16) 50%, rgba(255,255,255,.24));
+  --glass-edge:rgba(255,255,255,.28);
+  --glass-edge-sel:rgba(255,255,255,.5);
+  --glass-hi:inset 1px 1px 0 rgba(255,255,255,.55), inset -1px -1px 0 rgba(255,255,255,.12), inset 0 0 18px rgba(255,255,255,.07);
+  --glass-drop:0 10px 28px rgba(0,0,0,.34);
+}
+html body.glass .main .desk-tile {
+  border-radius:22px; padding:16px 18px;
+  box-shadow:inset 1.5px 1.5px 0 rgba(255,255,255,.6), inset -1px -1px 0 rgba(255,255,255,.14), inset 0 0 28px rgba(255,255,255,.08), 0 14px 34px rgba(0,0,0,.38);
+}
+html body.glass .main .desk-tile span { color:rgba(255,255,255,.78); }
+html body.glass .main .desk-tile.hot {
+  border-color:rgba(226,204,160,.8);
+  box-shadow:inset 1.5px 1.5px 0 rgba(255,240,210,.7), inset -1px -1px 0 rgba(196,171,130,.25), inset 0 0 28px rgba(196,171,130,.14), 0 14px 34px rgba(0,0,0,.38);
+}
