@@ -1688,7 +1688,6 @@ function moodBoardHtml(st) {
   if (swatches) tiles.splice(at, 0, swatches);
   return `<div class="mb">
     <div class="mb-bar">
-      <div class="mb-sub">${st.role === "client" ? "Drop in screenshots of anything you love: fonts, colours, videos, graphics, styles. We'll sort them and build your editing style from it." : `Drop or paste screenshots anywhere. The Art Director groups each one${st.clientId ? ", and the client can add to it too" : ""}.`}</div>
       <div class="mb-actions"><label class="btn">Add images or videos<input type="file" id="mbPick-${st.clientId || "house"}" data-mb-pick accept="image/*,video/*" multiple hidden></label>
         <button type="button" data-mb-link>Add a link</button><button type="button" data-mb-words>Add words</button></div>
     </div>
