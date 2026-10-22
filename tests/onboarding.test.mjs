@@ -136,8 +136,9 @@ await db.exec(`insert into social_client_documents (client_id, title, url, posit
 // ── Operator: progress, what they sent, preview ──
 const op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
 const ncRow = Array.from(op.d.querySelectorAll("#allClientsList .row")).find(r => r.textContent.includes("NewCo"));
-chk("Clients list shows onboarding progress", ncRow.textContent.includes("Onboarding done") && Array.from(ncRow.querySelectorAll("button")).some(b => b.textContent === "Resend invite"), ncRow.textContent);
-Array.from(ncRow.querySelectorAll("button")).find(b => b.textContent === "Onboarding").click(); await settle();
+chk("Clients list shows onboarding progress, and only Open portal", ncRow.textContent.includes("✓ Onboarding complete") && ncRow.querySelectorAll(".ob-bar span.on").length === 6 && !ncRow.querySelector("button") && [...ncRow.querySelectorAll("a.btn")].map(a => a.textContent).join() === "Open portal", ncRow.textContent);
+ncRow.querySelector("b.video-card").click(); await settle();
+Array.from(op.d.querySelectorAll("#view-client button")).find(b => b.textContent === "Onboarding").click(); await settle();
 const box = op.d.getElementById("videoModalBox").textContent;
 chk("Onboarding view: brand files, voice memo player, footage and Drive link, transcript, preview", box.includes("Brand files (2)") && !!op.d.querySelector('#videoModalBox a[href^="https://signed/' + NC + '/brand/"]') && !!op.d.querySelector('#videoModalBox audio[src^="https://signed/' + NC + '/voice-memo/"]') && box.includes("Download the voice memo") && box.includes("https://drive.google.com/drive/folders/abc") && box.includes("1 file uploaded") && !op.d.getElementById("obSendDocs")
   && op.d.getElementById("obTranscript").value === "we never have time" && !!op.d.querySelector('#videoModalBox a[href="/welcome?client=newco"]'), box.slice(0, 300));
@@ -237,7 +238,8 @@ chk("…and says to check the inbox", /Check your inbox/.test(login.d.getElement
 // Before migration 008 is run: saving a client still works (the new folder columns are skipped).
 await db.exec(`alter table social_drive_folder_links drop column root, drop column important_documents, drop column previous_content`);
 const old = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
-Array.from(old.d.querySelectorAll("#allClientsList .row")).find(r => r.textContent.includes("OtherCo")).querySelector("button:last-child").click(); await settle();
+Array.from(old.d.querySelectorAll("#allClientsList .row")).find(r => r.textContent.includes("OtherCo")).querySelector("b.video-card").click(); await settle();
+Array.from(old.d.querySelectorAll("button")).find(b => b.textContent === "Edit client").click(); await settle();
 old.d.getElementById("cpFootage").value = "https://drive/other-raw"; old.d.getElementById("cpImportant").value = "https://drive/x";
 old.d.getElementById("cpSave").click(); await settle();
 chk("before migration 008, editing a client still saves", (await db.query(`select footage_uploads from social_drive_folder_links where client_id='${OTHER}'`)).rows[0]?.footage_uploads === "https://drive/other-raw" && !old.d.getElementById("cpError").textContent, old.d.getElementById("cpError").textContent);
