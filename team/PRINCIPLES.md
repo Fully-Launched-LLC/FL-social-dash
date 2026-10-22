@@ -68,3 +68,10 @@ differ from CLAUDE.md's core principles, they apply only to the team's work.
     Story videos (e.g. Hesedea): Tait's 5-part story. "Not every video needs
     that type of structure. We will learn as we go based on each type of
     video." See `team/viral-structure.md`. (Tait, 2026-10-22)
+
+17. **Work by the 20 rules for content in 2026.** Tait shared Roberto Nickson's
+    "20 Rules for Content in 2026" (https://rpn.beehiiv.com/p/20-rules-for-content-in-2026)
+    as "very helpful info for my content designers". Everyone who builds
+    content, from ideas to posting, works by it; the team's notes are in
+    `team/content-rules-2026.md`. Where it touches one of Tait's earlier
+    rules, Tait's rule wins and the question goes to him. (Tait, 2026-10-22.)
