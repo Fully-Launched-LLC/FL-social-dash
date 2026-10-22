@@ -193,6 +193,23 @@ def plan_style_jobs(clients, onboardings, docs, moodboard):
     return jobs
 
 
+MOOD_SECTIONS = ("look", "colour", "type", "motion", "editing", "texture", "brand", "words")
+
+
+def plan_mood_sorts(clients, moodboard, asked):
+    """Moodboard (Tait, 2026-10-22): clients and Tait just drop screenshots;
+    the Art Director groups each one (fonts, colours, motion graphics,
+    style…). A client with items that have no group, newer than when we last
+    asked, gets a sort job. asked = {client_id: created_at of the newest
+    item already asked about}."""
+    out = []
+    for c in clients:
+        new = [m.get("created_at") or "" for m in moodboard if m.get("client_id") == c["id"] and not m.get("section")]
+        if new and max(new) > asked.get(c["id"], ""):
+            out.append((c, max(new)))
+    return out
+
+
 # ── ideas: dates, phone messages (pure, tested) ─────────────────────────
 def timeline(post):
     """Tait's timing (2026-10-21) from a post date: script approved by P-13,
@@ -399,6 +416,16 @@ def ask_for_style(sb, c, update=False):
     tid = give_task("Art Director", f"{c['name']}: {what}", desc)
     sb.insert("social_client_onboarding", {"client_id": c["id"], "style_requested_at": now()}, upsert_on="client_id")
     return tid
+
+
+def ask_for_mood_sort(sb, c):
+    slug = c["slug"]
+    desc = f"""**{c['name']}**: new things were dropped on their moodboard. Group them (Tait, 2026-10-22: "i want my ai agent to organize the moodboard into groupings of fonts, colors, motion graphics, style… i dont want the client to have to organize the file they drop in").
+
+1. `{bridge_cmd()} moodboard get --client {slug}` downloads every item; the new ones say `[new · …]`. Look at each one (Read the image; `watch` a video or reel).
+2. Put each new item in its group: `{bridge_cmd()} moodboard place --client {slug} --id <item id> --section <group>`, where group is one of: look (feeling, light, grade, people, places), colour (palettes, colour-led images), type (fonts, captions, text on screen), motion (motion graphics, animation, transitions), editing (how videos are cut and paced), texture (paper, grain, film, surfaces), brand (logos, icons, marks), words (words and phrases). Pick the one thing it's mainly there for.
+3. If the new items change the client's style, say so here in one line (the editing guidelines update runs on its own)."""
+    return give_task("Art Director", f"{c['name']}: group the new moodboard items", desc)
 
 
 def ask_for_house_style(sb):
@@ -857,7 +884,7 @@ def check(sb, verbose=True):
         log.append(f"documents: {c['name']} -> {ask_for_documents(sb, c)}")
     try:
         docs = sb.select("social_client_generated_docs", "select=client_id,kind,status")
-        mood = sb.select("social_moodboard_items", "select=id,client_id,used_at,created_at")
+        mood = sb.select("social_moodboard_items", "select=id,client_id,used_at,created_at,section")
         obs2 = sb.select("social_client_onboarding", "select=client_id,style_requested_at")
     except RuntimeError:
         mood = None   # migration 028 not run yet
@@ -867,6 +894,12 @@ def check(sb, verbose=True):
             log.append(f"editing guidelines: {c['name']} -> {ask_for_style(sb, c)}")
         for c in sj["update"]:
             log.append(f"editing guidelines update: {c['name']} -> {ask_for_style(sb, c, update=True)}")
+        asked = st.get("mood_sort_asked", {})
+        for c, newest in plan_mood_sorts(clients, mood, asked):
+            log.append(f"moodboard groups: {c['name']} -> {ask_for_mood_sort(sb, c)}")
+            asked[c["id"]] = newest
+            st["mood_sort_asked"] = asked
+            STATE.write_text(json.dumps(st, indent=2))
         if sj["house"] and not st.get("house_asked_open"):
             log.append(f"house style -> {ask_for_house_style(sb)}")
             st["house_asked_open"] = True
@@ -1222,7 +1255,8 @@ def main(argv=None):
     d.add_argument("--kind", required=True, choices=DOC_KINDS); d.add_argument("--file", required=True)
     d.add_argument("--status", default="on_desk", choices=["draft", "on_desk"]); d.add_argument("--built-by", default=None); d.add_argument("--sources", default=None)
     dg = sub.add_parser("doc-get"); dg.add_argument("--client", required=True); dg.add_argument("--kind", required=True, choices=DOC_KINDS)
-    m = sub.add_parser("moodboard"); m.add_argument("action", choices=["get", "used"]); m.add_argument("--client", required=True, help="a portal address, or 'house'")
+    m = sub.add_parser("moodboard"); m.add_argument("action", choices=["get", "used", "place"]); m.add_argument("--client", required=True, help="a portal address, or 'house'")
+    m.add_argument("--id", help="place: the item's id"); m.add_argument("--section", choices=MOOD_SECTIONS, help="place: its group")
     s = sub.add_parser("assets"); s.add_argument("action", choices=["sync", "list"]); s.add_argument("--kind", choices=["music", "sfx"])
     s.add_argument("--folder"); s.add_argument("--favourites", action="store_true")
     ia = sub.add_parser("idea"); ia.add_argument("action", choices=["add"]); ia.add_argument("--client", required=True)
@@ -1436,12 +1470,17 @@ def main(argv=None):
             if house:
                 st = load_state(); st.pop("house_asked_open", None); STATE.write_text(json.dumps(st, indent=2))
             print("Marked used."); return
+        if a.action == "place":
+            if not (a.id and a.section):
+                sys.exit("place needs --id and --section")
+            sb._req("PATCH", f"/rest/v1/social_moodboard_items?id=eq.{a.id}&{filt}", {"section": a.section}, {"Prefer": "return=minimal"})
+            print(f"Placed in {a.section}."); return
         items = sb.select("social_moodboard_items", f"select=*&{filt}&order=created_at")
         folder = HOME / ".cache" / "fully-social" / "moodboards" / a.client
         folder.mkdir(parents=True, exist_ok=True)
         for it in items:
-            sec = it.get("section") or ("words" if it["kind"] == "note" else "look" if it["kind"] == "image" else "editing")
-            line = f"- [{sec} · {it['kind']}] {it.get('name') or ''}"
+            sec = it.get("section") or "new"
+            line = f"- [{sec} · {it['kind']}] {it.get('name') or ''}  id={it['id']}"
             if it.get("storage_path"):
                 local = folder / pathlib.Path(it["storage_path"]).name
                 if not local.exists():

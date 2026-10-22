@@ -179,7 +179,7 @@ chk("no email service yet: the link is there to copy", opI.d.getElementById("vid
 await db.exec(`update social_client_onboarding set completed_at=null where client_id='${NC}'`);
 const cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/newco");
 chk("unfinished onboarding: a Continue card on To Do", cl.d.getElementById("onboardBanner").textContent.includes("Finish setting up") && cl.d.querySelector('#onboardBanner a[href="/welcome"]'));
-chk("the client portal's Documents shows no documents, just their moodboard (2026-10-15, 033)", cl.d.getElementById("docsCard").style.display === "none" && !cl.d.querySelector("#docsList .row"));
+chk("no Documents page in the client portal (operators only, 2026-10-15)", cl.d.getElementById("docsNav").style.display === "none" && !cl.d.querySelector("#docsList .row"));
 
 // Straight from onboarding: the walkthrough, then "bookmark this page".
 // One video they film themselves, with its own footage folder.

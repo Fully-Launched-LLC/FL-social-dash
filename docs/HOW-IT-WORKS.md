@@ -16,7 +16,7 @@ team's work and saves it back. If the Mac is off, everything waits.
 | 1 | **Interview questions** for a new client (voice, customer, story, offer, brand) | Account Manager | Clients → client → Onboarding (Copy to send) |
 | 2 | **Answers** (client's voice memo, or a recorded call) are transcribed on the Mac | Bridge | Onboarding → Recordings |
 | 3 | **Documents**: brand guidelines, ICP, identity | Account Manager | My desk → Documents to review |
-| 4 | **Moodboard → editing guidelines** (Tait and the client build the board together; after brand guidelines are approved) | Art Director (briefs the Editor + Motion Designer) | Client → Moodboard (client: portal → Documents); My desk → Documents |
+| 4 | **Moodboard → editing guidelines** (Tait and the client build the board together; after brand guidelines are approved) | Art Director (briefs the Editor + Motion Designer) | Client → Moodboard (client: portal → Moodboard tab; they just drop screenshots, the Art Director groups them); My desk → Documents |
 | 5 | **Ideas**: Tait's (dashboard or Telegram), research for new clients (weekly), Sandcastles links | Tait, Researcher | Content Ideas |
 | 6 | **Monthly plan of 20** on the 10th for next month (or "Ask the team for next month's plan") | Team Lead, Strategist, Expert, Simplifier | My desk → Ideas to review |
 | 7 | **Scripts** on each card (hook, outline, script, camera questions) | Writer, Expert, Simplifier | My desk → Scripts to review |
@@ -39,7 +39,7 @@ edit done by P−7.
 
 ## What clients see
 Only their **video cards** (approve, request changes, upload footage), their
-**moodboard** (Documents: they add screenshots too), their
+**moodboard** (its own tab: they drop screenshots in), their
 **videos to review** (approve or leave notes), their approved **brand
 guidelines** and their **b-roll library**. Never documents, research, ideas,
 agents, other clients or unapproved revisions: the database enforces it.
