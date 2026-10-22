@@ -16,14 +16,24 @@
 .client-tabs { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 16px; }
 .doc-row { display:flex; justify-content:space-between; gap:10px; align-items:center; border-top:1px solid var(--border); padding:10px 0; flex-wrap:wrap; }
 .doc-row:first-of-type { border-top:0; }
-.mood-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; margin-top:12px; }
-.mood-item { border:1px solid var(--border); border-radius:10px; padding:8px; background:var(--card); font-size:0.82rem; }
-.mood-item img, .mood-item video { width:100%; border-radius:6px; display:block; background:#000; aspect-ratio:9/12; object-fit:cover; }
-.mood-drop { border:2px dashed var(--border); border-radius:10px; padding:16px; text-align:center; color:var(--sub); }
-.mood-drop.over { border-color:var(--gold); color:var(--ink); }
 .lib-row { display:flex; align-items:center; gap:10px; border-top:1px solid var(--border); padding:7px 0; flex-wrap:wrap; }
 .lib-row .nm { flex:1; min-width:160px; }
 .lib-row button.on { background:var(--ink); color:var(--card); }
+/* Navy behind the cards (Tait, 2026-10-22: "i want all the background to be
+   navy. the video cards can stay white"). body.navy-work (shell.css) makes
+   .main navy and every .card white; these are the other white boxes. */
+body.navy-work .main :is(.desk-tile, .agent-card, .idea-card) {
+  --navy:#ffffff; --white:#04101f; --gold:#a8884f;
+  --bg:#f3f5f8; --card:#ffffff; --card2:#ffffff;
+  --border:rgba(4,16,31,.10); --line-2:rgba(4,16,31,.18); --line-strong:rgba(4,16,31,.38);
+  --ink:#04101f; --sub:rgba(4,16,31,.68); --sub2:rgba(4,16,31,.48);
+  --accent:#a8884f; --accent-ink:#ffffff;
+  --green:#a8884f; --red:#a8884f; --amber:#a8884f; --purple:#a8884f;
+  color-scheme:light; color:var(--ink); border-color:transparent;
+}
+body.navy-work .main .desk-tile.hot, body.navy-work .main .card.due-hot { border-color:#C4AB82; }
+body.navy-work .main .board-col { background:rgba(255,255,255,.04); }
+body.navy-work .main .board-col.drop { background:rgba(255,255,255,.10); }
 </style>
 <style>
 /* Content Ideas: two columns, drag a card across to send it */
@@ -69,7 +79,7 @@
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="/supabase/config.js"></script>
 </head>
-<body>
+<body class="navy-work glass">
 
 <div id="authGate" class="auth-gate"></div>
 <div id="appShell" class="hidden">
@@ -81,7 +91,6 @@
   <div class="nav-item active" data-view="desk" data-label="My desk">My desk<span class="n" id="navDeskN" hidden></span></div>
   <div class="nav-item" data-view="ideabank" data-label="Content Ideas">Content Ideas<span class="n" id="navBankN" hidden></span></div>
   <div class="nav-item" data-view="clients" data-label="Clients">Clients<span class="n" id="navClientsN" hidden></span></div>
-  <div class="nav-item" data-view="todo" data-label="To Do">To Do<span class="n" id="navTodoN" hidden></span></div>
   <div class="nav-item" data-view="calendar" data-label="Content Calendar">Content Calendar</div>
   <div class="nav-item" data-view="library" data-label="Library">Library</div>
   <div class="nav-item" data-view="editors" data-label="Editors">Editors</div>
@@ -92,7 +101,7 @@
 <main class="main">
 
   <div class="topbar">
-    <div class="crumbs">Operator / <b id="crumbPage">To Do</b></div>
+    <div class="crumbs">Operator / <b id="crumbPage">My desk</b></div>
     <div class="seg" id="globalClientFilter" role="group" aria-label="Client"></div>
   </div>
   <div id="globalClientBanner"></div>
@@ -104,6 +113,7 @@
     </div>
     <div id="deskNotice"></div>
     <div class="desk-tiles" id="deskTiles"></div>
+    <div class="card" data-queue="due" id="deskDueCard"><h2>Due soon <span class="meta">Your next step on each video, overdue or due in the next 3 days, soonest first.</span></h2><div id="deskDue"></div></div>
     <div class="card" data-queue="ideas"><h2>Ideas to review <span class="meta">Monthly plans: approve or reject each idea.</span></h2><div id="deskIdeas"></div></div>
     <div class="card" data-queue="scripts"><h2>Scripts to review <span class="meta">Approve and the client sees the whole card.</span></h2><div id="deskScripts"></div></div>
     <div class="card" data-queue="docs"><h2>Documents to review <span class="meta">Operator-only, except approved brand guidelines.</span></h2><div id="deskDocs"></div></div>
@@ -124,26 +134,6 @@
     <div class="page-head"><div><h1>Library</h1><p>Music and sound effects every client shares, and the house moodboard. Mark favourites and anything never to use: the editor follows it.</p></div></div>
     <div class="client-tabs" id="libTabs"></div>
     <div id="libBody"></div>
-  </section>
-
-  <section class="view" id="view-todo">
-    <div class="page-head">
-      <div><h1>To Do<span class="hot-tag" id="todoHot" hidden></span></h1><p>Every video, by the stage it's in. Pick a stage, or All. Click any video to see its whole card.</p></div>
-      <div class="page-actions">
-        <button class="accent" onclick="openBulkAdd(null)">Add ideas with Claude</button>
-        <button onclick="openVideoForm(null)">+ New idea</button>
-      </div>
-    </div>
-    <div class="chip-row" id="todoTabs"></div>
-    <div class="card" data-stage="urgent"><h2>Time sensitive <span style="font-weight:400;color:var(--sub);font-size:0.78rem">What you need to do that's overdue or due in the next 3 days, soonest first.</span></h2><div id="urgentList"></div></div>
-    <div class="card" data-stage="scripting"><h2>Scripting <span style="font-weight:400;color:var(--sub);font-size:0.78rem">The Writer is on it, or it's in your Scripts to review on My desk. The client can't see these yet.</span></h2><div id="scriptingList"></div></div>
-    <div class="card" data-stage="sentBack"><h2>Sent back with suggestions <span style="font-weight:400;color:var(--sub);font-size:0.78rem">Edit them, then send them to the client again.</span></h2><div id="sendAllWrap"></div><div id="ideasList"></div></div>
-    <div class="card" data-stage="client"><h2>Waiting on the client <span style="font-weight:400;color:var(--sub);font-size:0.78rem">Ideas to approve, videos to film, finished videos to approve.</span></h2><div id="clientWaitingList"></div></div>
-    <div class="card" data-stage="toEditor"><h2>Ready for an editor <span style="font-weight:400;color:var(--sub);font-size:0.78rem">Footage the client uploaded, and videos you film.</span></h2><div id="toEditorList"></div></div>
-    <div class="card" data-stage="withEditor"><h2>With an editor</h2><div id="withEditorList"></div></div>
-    <div class="card" data-stage="edits"><h2>Edits to review</h2><div id="editsList"></div></div>
-    <div class="card" data-stage="post"><h2>Ready to post</h2><div id="todoPostList"></div></div>
-    <div class="card" data-stage="abandoned"><h2>Abandoned <span style="font-weight:400;color:var(--sub);font-size:0.78rem">Ideas that won't happen. Off the calendar and the client's portal. Restore one to put it back where it was.</span></h2><div id="abandonedList"></div></div>
   </section>
 
   <section class="view" id="view-calendar">
@@ -231,7 +221,7 @@
 //
 // The flow: ideas (from Claude) → client approves → client films and
 // uploads, or Tait films → editor → Tait reviews the edit and adds the
-// caption → client approves for posting → ready to post (To Do) → posted.
+// caption → client approves for posting → ready to post (My desk) → posted.
 
 let ME = null;               // this operator's social_operators row
 let CLIENTS = [];            // [{ id, slug, name, clientSystem, driveFolders }]
@@ -291,7 +281,7 @@ async function loadLiveData() {
   EDITORS = editorsRes.data || [];
   EDITOR_BY_ID = {};
   EDITORS.forEach(e => { EDITOR_BY_ID[e.id] = e; });
-  // Abandoned videos (status 'rejected') load too, for To Do's Abandoned
+  // Abandoned videos (status 'rejected') load too, for Abandoned on each client's Videos tab
   // tab; the calendar and every other stage leave them out.
   VIDEOS = (videosRes.data || []).filter(r => CLIENT_BY_ID[r.client_id]).map(r => {
     const video = videoFromRow(r);
@@ -491,13 +481,13 @@ async function markPosted(id) {
   await updateVideo(id, { status: "posted" });
 }
 // Abandon: the idea won't happen, but it's kept. Status 'rejected' takes it
-// off the calendar, the client's portal and the editor's page; To Do lists
-// it under Abandoned. Where it was is kept in editor_brief.abandonedFrom
+// off the calendar, the client's portal and the editor's page; the client's
+// Videos tab lists it under Abandoned. Where it was is kept in editor_brief.abandonedFrom
 // (never shown to the client), so Restore puts it back there.
 async function abandonVideo(id) {
   const x = findVideo(id);
   if (!x || x.video.status === "rejected") return;
-  if (!confirm(`Abandon "${x.video.title || "this video"}"? It comes off the calendar and ${x.client.name}'s portal, and goes to To Do → Abandoned, where you can restore it.`)) return;
+  if (!confirm(`Abandon "${x.video.title || "this video"}"? It comes off the calendar and ${x.client.name}'s portal, and goes to Abandoned on the client's Videos tab, where you can restore it.`)) return;
   if (await updateVideo(id, { status: "rejected", editorBrief: Object.assign({}, x.video.editorBrief, { abandonedFrom: x.video.status }) })) closeVideoModal();
 }
 async function restoreVideo(id) {
@@ -524,7 +514,7 @@ async function deleteVideo(id) {
 // banked idea is an Idea with gate 1 cleared, so the client's RLS already
 // hides it (001), plus editor_brief.ideaBank = { from, postDate, dueToFilm,
 // dueToEdit }: where it was and the dates it had, which also keeps it apart
-// from ideas the client sent back. It's off To Do and the calendar until
+// from ideas the client sent back. It's off My desk and the calendar until
 // it's sent.
 const inIdeaBank = x => !!(x.video.editorBrief || {}).ideaBank;
 const canBank = x => !inIdeaBank(x) && ["concept_pending", "to_film"].includes(x.video.status);
@@ -1014,38 +1004,11 @@ function renderGlobalClientFilter() {
     </div>`;
 }
 
-// ---------- To Do ----------
-function isWaitingOnClient(x) {
-  const v = x.video;
-  return (v.status === "concept_pending" && v.conceptApprovedAt)
-    || (filmedByX(x) === "client" && ["to_film","filmed"].includes(v.status))
-    || v.status === "client_review";
-}
-function listOrEmpty(elId, items, rightFn, emptyText) {
-  document.getElementById(elId).innerHTML = items.length
-    ? `<div class="vtable">${VROW_HEAD}${items.map(x => vrowHtml(x, rightFn ? rightFn(x) : "")).join("")}</div>` : `<div class="empty">${emptyText}</div>`;
-}
+// ---------- Time sensitive ----------
 function unsentIdeas() {
   return workVideos().filter(x => x.video.status === "concept_pending" && !x.video.conceptApprovedAt);
 }
-// The stages a video moves through, in order — one tab each (plus All).
-// Posted videos are done, so they're not here.
-const TODO_STAGES = [
-  // Its own tab, kept out of All (everything in it is also in a stage below).
-  { key: "urgent",     label: "Time sensitive",           match: x => !!timeSensitive(x), apart: true },
-  { key: "scripting",  label: "Scripting",                  match: x => ["scripting", "script_review"].includes(x.video.status) },
-  { key: "sentBack",   label: "Sent back with suggestions", match: x => x.video.status === "concept_pending" && !x.video.conceptApprovedAt },
-  { key: "client",     label: "Waiting on client",          match: x => isWaitingOnClient(x) },
-  { key: "toEditor",   label: "Ready for an editor",        match: x => isReadyForEditor(x) },
-  { key: "withEditor", label: "With an editor",             match: x => x.video.status === "with_editor" },
-  { key: "edits",      label: "Edits to review",            match: x => x.video.status === "in_review" },
-  { key: "post",       label: "Ready to post",              match: x => x.video.status === "ready_to_post" },
-  // Not work to do, so it's left out of All: shown only on its own tab.
-  { key: "abandoned",  label: "Abandoned",                  match: x => x.video.status === "rejected", apart: true },
-];
-let todoStage = "all";
-
-// Time sensitive: the next thing Tait has to do on a video, and by when,
+// Time sensitive (My desk → Due soon, and the dot on a row): the next thing Tait has to do on a video, and by when,
 // if that's overdue or within TIME_SENSITIVE_DAYS. Waiting on the client
 // counts only at final approval (nudge them before the approve-by date).
 const TIME_SENSITIVE_DAYS = 3;
@@ -1065,50 +1028,6 @@ function timeSensitive(x) {
   const t = nextTask(x);
   return t && t.date && t.date <= addDaysISO(todayISO(), TIME_SENSITIVE_DAYS) ? t : null;
 }
-function urgentBadge(t) {
-  const late = t.date < todayISO();
-  const when = new Date(t.date + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-  return `<span class="badge" style="background:var(--card2);color:${late ? "var(--red)" : "var(--ink)"}">${escapeHtml(t.task)} · ${late ? "overdue since " : t.date === todayISO() ? "today, " : "by "}${escapeHtml(when)}</span>`;
-}
-function renderTodo() {
-  // Within each stage, grouped by status in pipeline order (so the status
-  // labels line up), then by post date.
-  const rank = s => { const i = STATUS_ORDER.indexOf(s); return i === -1 ? 99 : i; };
-  const vids = workVideos().slice().sort((a, b) => rank(a.video.status) - rank(b.video.status) || byPostDate(a, b));
-  const inStage = key => vids.filter(TODO_STAGES.find(s => s.key === key).match);
-
-  // Tabs, with counts for the client(s) shown.
-  const tabs = [{ key: "all", label: "All", n: TODO_STAGES.filter(s => !s.apart).reduce((t, s) => t + inStage(s.key).length, 0) },
-    ...TODO_STAGES.map(s => ({ key: s.key, label: s.label, n: inStage(s.key).length }))];
-  document.getElementById("todoTabs").innerHTML = tabs.map(t =>
-    `<div class="chip ${t.key === todoStage ? "active" : ""}${t.key === "urgent" && t.n ? " urgent" : ""}${t.n ? "" : " zero"}" data-stage-tab="${t.key}">${chipLabel(t.label, t.n)}</div>`).join("");
-  const hot = document.getElementById("todoHot"), hotN = inStage("urgent").length;
-  hot.hidden = !hotN; hot.textContent = hotN + " time sensitive";
-  const navN = document.getElementById("navTodoN"); navN.hidden = !tabs[0].n; navN.textContent = tabs[0].n;
-  document.querySelectorAll("#todoTabs .chip").forEach(c => c.onclick = () => { todoStage = c.dataset.stageTab; renderTodo(); });
-  const apart = new Set(TODO_STAGES.filter(s => s.apart).map(s => s.key));
-  document.querySelectorAll("#view-todo [data-stage]").forEach(el => {
-    el.style.display = el.dataset.stage === todoStage || (todoStage === "all" && !apart.has(el.dataset.stage)) ? "" : "none";
-  });
-
-
-  listOrEmpty("urgentList", inStage("urgent").sort((a, b) => timeSensitive(a).date.localeCompare(timeSensitive(b).date)),
-    x => urgentBadge(timeSensitive(x)) + operatorActionsHtml(x), "Nothing time sensitive. You're on top of it.");
-  const unsent = inStage("sentBack");
-  document.getElementById("sendAllWrap").innerHTML = unsent.length > 1
-    ? `<div style="margin-bottom:10px">${smallBtn(`Send all ${unsent.length} to the client`, "sendAllToClient(this)", "primary")}</div>` : "";
-  listOrEmpty("scriptingList", inStage("scripting"), x => x.video.status === "script_review" ? smallBtn("Approve script", `approveScript('${x.video.id}')`, "primary") : "", "Nothing being scripted.");
-  listOrEmpty("ideasList", unsent, x => smallBtn("Edit", `openVideoForm('${x.video.id}')`) + operatorActionsHtml(x), "Nothing sent back.");
-  listOrEmpty("clientWaitingList", inStage("client"), x => operatorActionsHtml(x), "Nothing waiting on a client.");
-  listOrEmpty("toEditorList", inStage("toEditor"), x => operatorActionsHtml(x), "Nothing waiting for an editor.");
-  listOrEmpty("withEditorList", inStage("withEditor"), x => (x.video.editorId
-    ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/editor/dashboard.html?editor=${encodeURIComponent(x.video.editorId)}" target="_blank" rel="noopener">Open editor portal</a>` : ""), "Nothing with an editor.");
-  listOrEmpty("editsList", inStage("edits"), x => operatorActionsHtml(x), "No edits waiting.");
-  document.getElementById("todoPostList").innerHTML = inStage("post").map(postCardHtml).join("") || '<div class="empty">Nothing ready to post right now.</div>';
-  listOrEmpty("abandonedList", inStage("abandoned"), x => smallBtn("Restore", `restoreVideo('${x.video.id}')`, "primary") + smallBtn("Delete", `deleteVideo('${x.video.id}')`, "reject"),
-    "Nothing abandoned. To abandon an idea, click it and choose Abandon.");
-}
-
 // ---------- Calendar ----------
 // Posts per platform (colored), plus approve-by, edit-due and film-by
 // deadlines. Filters narrow it to some platforms or kinds of item.
@@ -1124,7 +1043,7 @@ function renderCalendar() {
 
 // ---------- Ready to post ----------
 // One ready-to-post video: post date, both captions, the finished video,
-// and Mark posted. Used in To Do's Ready to post stage.
+// and Mark posted. Used in My desk's Videos to post.
 function postCardHtml(x) {
     const v = x.video, watch = finishedVideoLink(v, x.client.driveFolders);
     return `<div class="card" style="margin-bottom:10px">
@@ -1729,12 +1648,6 @@ async function agentRequest(agent, action) {
   await loadAgents(); renderAgentRoom();
 }
 
-// A click anywhere on a video's row opens its card, except on its own controls.
-document.getElementById("view-todo").addEventListener("click", e => {
-  const row = e.target.closest(".vrow[data-id]");
-  if (!row || e.target.closest("button, a, select, input, textarea, .video-card")) return;
-  openOperatorVideoModal(row.dataset.id);
-});
 // ---------- Content Idea Database (Unify the System, Phase 5; migrations 026, 029) ----------
 // social_ideas: Tait's ideas (here or by Telegram), research finds, Sandcastles
 // links. The monthly plan (bridge.py, on the 10th) picks 20 for next month.
@@ -1845,8 +1758,8 @@ async function askForPlan() {
 // ---------- Moodboards + Library (Unify the System, Phase 4; migration 028) ----------
 // A moodboard is what Tait likes (motion graphics, fonts, text styles,
 // colours, video styles) as screenshots, videos and links, per client or for
-// every client (client_id null = the house moodboard). The bridge asks the
-// Content Editor to turn it into the client's editing guidelines.
+// every client (client_id null = the house moodboard). The board itself is
+// shared with the client portal (renderMoodBoard in shell.js, migration 033).
 let MOOD = [], ASSETS = [], HAS_028 = true, LIB = { tab: "music", folder: "", q: "" };
 async function loadStyleData() {
   const [m, a] = await Promise.all([
@@ -1856,88 +1769,6 @@ async function loadStyleData() {
   HAS_028 = !m.error;
   MOOD = m.data || []; ASSETS = a.error ? [] : (a.data || []);
 }
-const moodKind = f => /^image\//.test(f.type) ? "image" : /^video\//.test(f.type) ? "video" : null;
-async function moodboardHtml(clientId) {
-  const items = MOOD.filter(m => (m.client_id || null) === (clientId || null));
-  const paths = items.filter(m => m.storage_path).map(m => m.storage_path);
-  const signed = {};
-  if (paths.length) {
-    const { data } = await sbClient.storage.from("moodboards").createSignedUrls(paths, 3600);
-    (data || []).forEach(x => { if (x && x.signedUrl) signed[x.path] = x.signedUrl; });
-  }
-  const tile = m => `<div class="mood-item" data-mood="${m.id}">
-      ${m.kind === "image" && signed[m.storage_path] ? `<img src="${escapeHtml(signed[m.storage_path])}" alt="">`
-        : m.kind === "video" && signed[m.storage_path] ? `<video src="${escapeHtml(signed[m.storage_path])}" muted controls preload="metadata"></video>`
-        : m.url ? `<a href="${escapeHtml(m.url)}" target="_blank" rel="noopener">${escapeHtml(m.url)}</a>` : ""}
-      <div style="margin-top:6px"><b>${escapeHtml(m.name || (m.kind === "note" ? "Note" : m.kind))}</b> ${m.used_at ? '<span class="meta">· in the guidelines</span>' : '<span class="meta">· new</span>'}</div>
-      ${m.note ? `<div class="meta">${escapeHtml(m.note)}</div>` : ""}
-      <div style="margin-top:6px;display:flex;gap:4px">${smallBtn("Note", `moodNote('${m.id}')`)}${smallBtn("Remove", `moodRemove('${m.id}')`, "reject")}</div></div>`;
-  const key = clientId || "house";
-  return `<div class="mood-drop" data-mood-drop>Drop screenshots and videos of motion graphics, fonts, text styles, colours and video styles you like
-      <div style="margin-top:8px"><label class="btn">Choose files<input type="file" id="moodPick-${key}" data-mood-pick accept="image/*,video/*" multiple hidden></label>
-      <button onclick="moodLink('${clientId || ""}')">+ Add a link or note</button></div><div class="meta" data-mood-msg style="margin-top:6px"></div></div>
-    <div class="mood-grid">${items.slice().reverse().map(tile).join("") || ""}</div>
-    ${items.length ? "" : '<div class="empty" style="margin-top:10px">Nothing here yet.</div>'}`;
-}
-function wireMoodboard(root, clientId) {
-  const add = async files => {
-    const msg = root.querySelector("[data-mood-msg]");
-    const list = Array.from(files).filter(moodKind);
-    if (!list.length) { msg.textContent = "Add images or videos (or use + Add a link or note)."; return; }
-    for (let i = 0; i < list.length; i++) {
-      const f = list[i];
-      try {
-        const path = await uploadToBucket("moodboards", `${clientId || "house"}/${Date.now()}-${f.name.replace(/[^\w.\-]+/g, "_")}`, f,
-          pct => { msg.textContent = `Uploading ${i + 1} of ${list.length}… ${pct}%`; });
-        const { error } = await sbClient.from("social_moodboard_items").insert({ client_id: clientId || null, kind: moodKind(f), name: f.name, storage_path: path });
-        if (error) throw error;
-      } catch (e) { msg.textContent = `${f.name} didn't upload: ${e.message || e}`; return; }
-    }
-    await loadStyleData(); rerenderMood();
-  };
-  const pick = root.querySelector("[data-mood-pick]"), drop = root.querySelector("[data-mood-drop]");
-  if (pick) pick.onchange = e => add(e.target.files || []);
-  if (drop) {
-    drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
-    drop.addEventListener("dragleave", () => drop.classList.remove("over"));
-    drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); add(e.dataTransfer.files || []); });
-  }
-}
-function rerenderMood() {
-  if (document.getElementById("view-client").classList.contains("active")) renderClientPage();
-  if (LIB.tab !== "house" || document.getElementById("view-library").classList.contains("active")) renderLibrary();
-  if (document.getElementById("view-library").classList.contains("active")) renderLibrary();
-}
-function moodLink(clientId) {
-  const box = openModal(`<h2>Add a link or note</h2>
-    ${lbl("Link (Instagram, YouTube, a site…)")}<input type="url" id="mlUrl" style="width:100%;margin-bottom:10px">
-    ${lbl("What you like about it")}<textarea id="mlNote" rows="4" style="width:100%"></textarea>
-    <div class="modal-actions"><button onclick="closeVideoModal()">Cancel</button><button class="primary" id="mlGo">Add</button></div><div class="auth-error" id="mlErr"></div>`);
-  box.querySelector("#mlGo").onclick = async () => {
-    const url = box.querySelector("#mlUrl").value.trim(), note = box.querySelector("#mlNote").value.trim();
-    if (!url && !note) { box.querySelector("#mlErr").textContent = "Add a link or a note."; return; }
-    const { error } = await sbClient.from("social_moodboard_items").insert({ client_id: clientId || null, kind: url ? "link" : "note", url: url || null, note: note || null, name: url ? null : "Note" });
-    if (error) { box.querySelector("#mlErr").textContent = error.message; return; }
-    closeVideoModal(); await loadStyleData(); rerenderMood();
-  };
-}
-async function moodNote(id) {
-  const m = MOOD.find(x => x.id === id);
-  const note = prompt("What do you like about it?", m && m.note || "");
-  if (note === null) return;
-  const { error } = await sbClient.from("social_moodboard_items").update({ note: note.trim() || null }).eq("id", id);
-  if (error) { alert(error.message); return; }
-  await loadStyleData(); rerenderMood();
-}
-async function moodRemove(id) {
-  if (!confirm("Remove this from the moodboard?")) return;
-  const m = MOOD.find(x => x.id === id);
-  const { error } = await sbClient.from("social_moodboard_items").delete().eq("id", id);
-  if (error) { alert(error.message); return; }
-  if (m && m.storage_path) await sbClient.storage.from("moodboards").remove([m.storage_path]);
-  await loadStyleData(); rerenderMood();
-}
-
 function renderLibrary() {
   const tabs = [["music", "Music"], ["sfx", "Sound effects"], ["house", "House moodboard"]];
   document.getElementById("libTabs").innerHTML = tabs.map(([k, l]) => `<div class="chip ${k === LIB.tab ? "active" : ""}" data-lib="${k}">${l}</div>`).join("");
@@ -1945,8 +1776,8 @@ function renderLibrary() {
   const body = document.getElementById("libBody");
   if (!HAS_028) { body.innerHTML = `<div class="card" style="border-color:var(--gold)"><b>The Library needs migration 028.</b><div class="meta">Run supabase/migrations/028_moodboards_and_library.sql in the Supabase SQL Editor.</div></div>`; return; }
   if (LIB.tab === "house") {
-    body.innerHTML = `<div class="card"><h2>House moodboard <span class="meta">Every client's editing guidelines start from this.</span></h2><div id="houseMood">Loading…</div></div>`;
-    moodboardHtml(null).then(html => { const el = document.getElementById("houseMood"); if (el) { el.innerHTML = html; wireMoodboard(el, null); } });
+    body.innerHTML = `<div id="houseMood">Loading…</div>`;
+    renderMoodBoard(document.getElementById("houseMood"), { clientId: null, role: "operator" });
     return;
   }
   const all = ASSETS.filter(a => a.kind === LIB.tab);
@@ -2021,7 +1852,14 @@ function deskQueues() {
     docs: DOCS.filter(d => d.status === "on_desk" && inClientFilter(d.client_id) && CLIENT_BY_ID[d.client_id]),
     videos: vids.filter(x => x.video.status === "in_review"),
     post: vids.filter(x => x.video.status === "ready_to_post").sort(byPostDate),
+    due: vids.filter(x => timeSensitive(x)).sort((a, b) => timeSensitive(a).date.localeCompare(timeSensitive(b).date)),
   };
+}
+// "Review the edit · overdue since Mon, Oct 19" (gold when late).
+function dueBadge(t) {
+  const late = t.date < todayISO();
+  const when = new Date(t.date + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  return `<span class="badge" style="background:var(--card2);color:${late ? "var(--red)" : "var(--ink)"}">${escapeHtml(t.task)} · ${late ? "overdue since " : t.date === todayISO() ? "today, " : "by "}${escapeHtml(when)}</span>`;
 }
 function renderDesk() {
   const q = deskQueues();
@@ -2066,6 +1904,10 @@ function renderDesk() {
   document.getElementById("deskVideos").innerHTML = q.videos.length
     ? `<div class="vtable">${VROW_HEAD}${q.videos.map(x => vrowHtml(x, operatorActionsHtml(x))).join("")}</div>` : `<div class="empty">No videos waiting for your review.</div>`;
   document.getElementById("deskPost").innerHTML = q.post.map(postCardHtml).join("") || `<div class="empty">Nothing ready to post.</div>`;
+  // Due soon (Tait, 2026-10-22): what To Do's Time sensitive list used to show.
+  document.getElementById("deskDueCard").classList.toggle("due-hot", q.due.length > 0);
+  document.getElementById("deskDue").innerHTML = q.due.length
+    ? `<div class="vtable">${VROW_HEAD}${q.due.map(x => vrowHtml(x, dueBadge(timeSensitive(x)) + operatorActionsHtml(x))).join("")}</div>` : `<div class="empty">Nothing due in the next 3 days. You're on top of it.</div>`;
 }
 
 async function setIdeaStatus(id, status) {
@@ -2218,9 +2060,8 @@ function renderClientPage() {
       ${c.documents.length ? `<h2 style="margin-top:16px">Linked documents</h2>${c.documents.map(d => `<div class="doc-row"><a href="${escapeHtml(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.title)}</a></div>`).join("")}` : ""}</div>`;
   } else if (CLIENT_PAGE.tab === "moodboard") {
     if (!HAS_028) { body.innerHTML = `<div class="card"><div class="meta" style="color:var(--gold)">Run migration 028 to keep a moodboard here.</div></div>`; return; }
-    body.innerHTML = `<div class="card"><h2>Moodboard <span class="meta">The team turns this into ${escapeHtml(c.name)}'s editing guidelines. Operator only.</span></h2><div id="clientMood">Loading…</div></div>`;
-    const id = c.id;
-    moodboardHtml(id).then(html => { const el = document.getElementById("clientMood"); if (el && CLIENT_PAGE.id === id) { el.innerHTML = html; wireMoodboard(el, id); } });
+    body.innerHTML = `<div id="clientMood">Loading…</div>`;
+    renderMoodBoard(document.getElementById("clientMood"), { clientId: c.id, clientName: c.name, role: "operator" });
   } else if (CLIENT_PAGE.tab === "footage") {
     const mine = FOOTAGE.filter(x => x.client_id === c.id);
     const group = (kind, label, note) => { const items = mine.filter(x => x.kind === kind);
@@ -2232,7 +2073,9 @@ function renderClientPage() {
       ${group("broll", "B-roll", "the client sees these")}${group("old", "Old footage", "the client sees these")}${group("raw", "Raw footage on cards", "")}${group("finished", "Finished cuts", "operator only")}</div>`;
   } else {
     const vids = VIDEOS.filter(x => x.client.id === c.id && x.video.status !== "rejected");
-    body.innerHTML = `<div class="card">${vids.length ? `<div class="vtable">${VROW_HEAD}${vids.map(x => vrowHtml(x, operatorActionsHtml(x))).join("")}</div>` : '<div class="empty">No videos yet.</div>'}</div>`;
+    const gone = VIDEOS.filter(x => x.client.id === c.id && x.video.status === "rejected");
+    body.innerHTML = `<div class="card">${vids.length ? `<div class="vtable">${VROW_HEAD}${vids.map(x => vrowHtml(x, operatorActionsHtml(x))).join("")}</div>` : '<div class="empty">No videos yet.</div>'}</div>`
+      + (gone.length ? `<div class="card"><h2>Abandoned <span class="meta">Off the calendar and the client's portal. Restore one to put it back where it was.</span></h2><div class="vtable">${VROW_HEAD}${gone.map(x => vrowHtml(x, smallBtn("Restore", `restoreVideo('${x.video.id}')`, "primary") + smallBtn("Delete", `deleteVideo('${x.video.id}')`, "reject"))).join("")}</div></div>` : "");
   }
 }
 function addFootage(clientId) {
@@ -2249,16 +2092,17 @@ function addFootage(clientId) {
     closeVideoModal(); await loadLiveData();
   };
 }
-document.getElementById("view-desk").addEventListener("click", e => {
+// A click anywhere on a video's row opens its card, except on its own controls.
+["view-desk", "view-client"].forEach(id => document.getElementById(id).addEventListener("click", e => {
   const row = e.target.closest(".vrow[data-id]");
   if (!row || e.target.closest("button, a, select, input, textarea, .video-card")) return;
   openOperatorVideoModal(row.dataset.id);
-});
+}));
 
 function renderAll() {
   const cn = document.getElementById("navClientsN"); cn.hidden = !CLIENTS.length; cn.textContent = CLIENTS.length;
   renderGlobalClientFilter();
-  renderDesk(); renderTodo(); renderCalendar(); renderIdeaBank(); renderIdeaDb(); renderAllClients(); renderEditors(); renderAgentRoom();
+  renderDesk(); renderCalendar(); renderIdeaBank(); renderIdeaDb(); renderAllClients(); renderEditors(); renderAgentRoom();
   if (document.getElementById("view-client").classList.contains("active")) renderClientPage();
   if (LIB.tab !== "house" || document.getElementById("view-library").classList.contains("active")) renderLibrary();
 }

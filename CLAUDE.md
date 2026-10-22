@@ -388,7 +388,11 @@ fully-social-os/
                                the private 'library' bucket, ratings), 029
                                (social_ideas: requested_post_date,
                                planned_post_date, special_request; the
-                               private 'ideas' bucket)
+                               private 'ideas' bucket), 030-032
+                               (scripting, agent room, hand-offs), 033
+                               (shared moodboards: sections, palette,
+                               added_by; clients read/add to their own
+                               board, change only what they added)
     crm/                       013_team_only_access.sql: the CRM's team-only
                                RLS fix (same Supabase project), with its test
   api/                        Vercel serverless functions (no npm deps):
@@ -738,14 +742,16 @@ back one piece at a time:
    editor and shows in the same Revisions needed section). Clients can't
    edit anything on a card. Every client step ends in a short thank-you message, never a
    browser pop-up.
-7. To Do's Ready to post stage lists it by post date with the captions and finished video;
+7. My desk → Videos to post lists it by post date with the captions and finished video;
    whoever posts marks it posted. Posting stays manual (principle 6).
 
 ### Operator dashboard — `/` → `/operator/dashboard.html`
 
 **My desk** (Unify the System Phase 2, Tait 2026-10-21; migration 026) is
 the home page: everything waiting on Tait in 5 queues with counts, narrowed
-by the top client filter. **Ideas to review** (monthly plans with status
+by the top client filter, plus **Due soon** (Tait, 2026-10-22: his next
+step on each video, `nextTask`/`timeSensitive`, overdue or due within 3
+days, soonest first). **Ideas to review** (monthly plans with status
 `on_desk`: approve or reject each idea, then close the plan), **Scripts to
 review** (cards in `script_review`: Approve script runs gate 1 so the client
 sees the whole card, hook, outline, script and camera questions; Send back
@@ -757,16 +763,26 @@ opens one client's page: Overview, Documents (brand guidelines, ICP,
 identity, editing guidelines, content research: write, edit, approve, send
 back; only approved brand guidelines reach the client), Footage (b-roll and
 old footage the client sees, raw footage on cards, finished cuts) and
-Videos, plus **Open their portal**. To Do (every video by stage) stays as a
-secondary page.
+Videos (every video for that client, with its buttons, plus an **Abandoned**
+list), plus **Open their portal**. The old To Do page was removed
+(Tait, 2026-10-22: "that is just my desk now").
 
-**Style guides** (Unify Phase 4, Tait 2026-10-21; migration 028): each
-client's page has a **Moodboard** tab, and **Library → House moodboard**
-holds one for every client. Tait drops in screenshots, videos and links of
-motion graphics, fonts, text styles, colours and video styles. Once a
-client's brand guidelines are approved, the bridge asks the Content Editor
-(with the Motion Designer and Strategist) to turn the moodboard into their
-**editing guidelines** (skill `editing-guidelines-doc`, starting from
+**Style guides** (Unify Phase 4, Tait 2026-10-21; migrations 028 + 033):
+each client's page has a **Moodboard** tab, and **Library → House moodboard**
+holds one for every client. Since 2026-10-22 the client's board is
+**shared with the client** (their portal's **Documents** page): Tait and the
+client both drag in (or paste) screenshots, videos, links and words. One
+board component, `renderMoodBoard` in shell.js, laid out like a brand
+moodboard: 8 sections (Look & feel, Colour palette, Typography, Motion
+graphics, Editing style, Textures & materials, Logo & brand, Words &
+phrases; `MOOD_SECTIONS`), each a collage; tiles drag between sections; the
+colours of every image (`moodPalette`, stored in `palette`) make the strip
+at the top; live updates through Supabase realtime. A client sees the whole
+board but moves or removes only what they added (`added_by`). Once a
+client's brand guidelines are approved, the bridge asks the **Art
+Director** (new 2026-10-22) to turn the moodboard into their
+**editing guidelines**, with a brief for the Content Editor and one for the
+Motion Graphics Designer (skill `editing-guidelines-doc`, starting from
 `team/content-editor/house-style.md`), which land on My desk; new moodboard
 items update them. **No edit starts until a client's editing guidelines are
 approved** (Tait's rule). **Library** (sidebar) lists the shared music and
@@ -774,21 +790,11 @@ sound effects (`bridge.py assets sync` indexes the folders and uploads short
 previews): play, ★ Favourite, Never use. The Editor picks from it with
 `bridge.py assets list` and never uses a track marked Never.
 
-Nav: **To Do** (every video by stage, one tab each plus All, with counts:
-sent back with suggestions → waiting on client → ready for an editor → with
-an editor → edits to review → ready to post, plus an **Abandoned** tab
-kept out of All, and **⏰ Time sensitive** right after All (also kept out of
-it): Tait's next task on each video, from `nextTask` (re-send an idea,
-film it, send it to an editor, chase the editor, review the edit, nudge the
-client to approve, post it), when its date is overdue or within
-`TIME_SENSITIVE_DAYS` (3), soonest first; "Add ideas with Claude" and "+ New idea"
-buttons; within each stage, videos grouped by status in pipeline order,
-then by post date) →
-**Content Calendar** (one chip per platform on each post date, in that
+Nav (sidebar order: My desk, Content Ideas, Clients, Content Calendar, Library, Editors, Agent room, Editor portal ↗): **Content Calendar** (one chip per platform on each post date, in that
 platform's color, plus ✅ approve-by, ✂️ edit-due and 🎬 film-by deadlines
 until they're met; overdue ones turn red; filter by platform and by kind.
 Approve by is 3 days before posting, `APPROVE_DAYS_BEFORE_POST` in
-shell.js. Also "Add ideas with Claude" and "+ New idea", as on To Do) → **Content Ideas** (Tait,
+shell.js. Also "Add ideas with Claude" and "+ New idea") → **Content Ideas** (Tait,
 2026-10-19: a two-column board, ideas the client hasn't seen and ideas
 sent to them; see below) → **Clients** (name, portal
 address, who films, raw footage folder, finished video folder) → **Library** → **Editors** → **Agent room** (the AI content team, below) → **Editor
@@ -827,14 +833,14 @@ the private `footage` bucket; the bridge moves each clip into the card's
 Google Drive folder (`01 Footage Uploads/NN. Title (posts Mon D)`, found
 with Google Drive for desktop) and deletes the temporary copy. Video has
 been filmed: on time keeps the post date and the edit is due P−7; late
-falls back to 7 + 7. To Do has a Scripting stage.
+falls back to 7 + 7. Scripting cards show on the client's Videos tab.
 
 **Editing and reviews** (Unify Phase 7, Tait 2026-10-21; no migration):
 the **AI Editor first, humans as backup**. When a card's footage is in (every
 clip moved to Drive) and the client's editing guidelines are approved, the
 bridge moves it to `with_editor` with `editor_brief.aiEditor` and gives the
 Content Editor the edit (Motion Designer and Reviewer with it); without
-approved guidelines it waits (`editor_brief.waitingOn`, shown on To Do and My
+approved guidelines it waits (`editor_brief.waitingOn`, shown on the client's Videos tab and My
 desk). **Send to editor** offers **AI editor** next to the human editors (a
 human sets `humanEditor`, which the bridge leaves alone). `bridge.py video
 deliver` uploads a review copy (the `review` bucket, a new
@@ -863,7 +869,7 @@ opener + payoff", from the outlier research; the Format field in Edit,
 it, plus `editor_brief.ideaBank = { from, postDate, dueToFilm, dueToEdit }`
 (where it was and its old dates; dates are cleared while banked), which
 keeps it apart from ideas sent back with suggestions. Banked ideas are off
-To Do, the calendar and the client's portal (`workVideos()` / `inIdeaBank`).
+My desk, the calendar and the client's portal (`workVideos()` / `inIdeaBank`).
 Sending stamps gate 1 through `social_operator_approve_concept`, removes
 the marker, and puts a we-film idea that was To film back there. **Move
 back to Ideas** is on the card of any Idea or To film video; "Add ideas
@@ -879,14 +885,14 @@ Upload footage button (operator rows and card, editor, client) there, and
 falls back to the client's raw footage folder when it's empty. Folders are
 made by hand or by Claude in Drive, inside the client's raw footage folder,
 named "NN. Title (posts Mon D)". **✓ Mark filmed** on a we-film video
-(to_film → filmed) clears its film-by deadline; it stays in Ready for an
-editor.
+(to_film → filmed) clears its film-by deadline; it stays ready for an
+editor (Send to editor on its row).
 
 Click any video for its card. **Abandon** (an idea that won't happen)
 sets status `rejected`, remembers where it was in `editor_brief.abandonedFrom`,
 and takes it off the calendar, the client's portal and the editor's page;
-To Do → Abandoned lists it with **Restore** (back where it was) and
-**Delete**. **🗑 Delete** (card, Abandoned tab, or the Edit form) removes the
+the client's Videos tab → Abandoned lists it with **Restore** (back where it was) and
+**Delete**. **🗑 Delete** (card, Abandoned list, or the Edit form) removes the
 row and its status history for good. "Edit" opens the full form (any status, the
 dates (Month · Day · Year dropdowns, `dateSelectHtml` in shell.js), editor, the idea fields, caption, note, and one "Editing
 instructions" field stored as `editor_brief.instructions` — older videos'
@@ -895,10 +901,18 @@ suggests edit-by 7 days earlier.
 
 ### Look and feel
 
-The sidebar is navy; everything to its right (and every popup) is a light
-grey work area with white cards and navy text (Tait, 2026-10-01: "too much
-navy"; the `.main, .modal-backdrop` block at the top of shell.css flips the
-colors there). Navy `#04101f` and white do the work; gold/tan `#C4AB82` from
+The sidebar is navy. The operator dashboard and editor portal have a navy
+work area with white cards (`body.navy-work`; Tait, 2026-10-22: "i want all
+the background to be navy. the video cards can stay white"); the client
+portal and every popup keep the light grey work area with white cards and
+navy text (Tait, 2026-10-01: "too much navy"; the `.main, .modal-backdrop`
+block at the top of shell.css). The operator dashboard is **glass**
+(`body.glass`, end of shell.css; Tait, 2026-10-22: "glass morphism… like
+apple design", keeping navy with the gold accent): a softly lit navy
+background, dark frosted sidebar and sticky top bar, light frosted cards,
+frosted pop-ups that scale in, Apple's system font, press feedback, solid
+fallbacks for reduced transparency and motion. Built with the apple-design
+and impeccable skills. Navy `#04101f` and white do the work; gold/tan `#C4AB82` from
 fullylaunched.com is a rare accent, used only for what needs attention
 (Time sensitive when it has something in it, overdue, today on the
 calendar) and the one main action on a page (`.accent`: "Add ideas with
@@ -908,15 +922,15 @@ platforms are color-coded, filled pills (YouTube red, Instagram purple,
 Facebook blue, LinkedIn green, TikTok cyan; Tait's call, 2026-10-01). One typeface,
 Hanken Grotesk, with weight for headings. No emoji. Layout: a top bar
 (where you are, and the client switch on the right); filter tabs as one
-segmented bar with count bubbles (`chipLabel`); To Do's stages as tables
+segmented bar with count bubbles (`chipLabel`); video lists as tables
 (Video · Posts · Platforms · Status · Actions, `vrowHtml`), where clicking
 a row or its title opens the video's card and its own buttons don't. Only the sidebar tabs
 are raised (white offset shadows). On phones the sidebar becomes a top bar.
 
 ### Client portal — `/clients/<slug>`
 
-One shared file; the slug comes from the URL. Two pages: **To Do** and
-**Content Calendar** (Tait, 2026-10-15: "a super simple view where they
+One shared file; the slug comes from the URL. Three pages: **To Do**,
+**Content Calendar** and **Documents** (just their moodboard, 2026-10-22) (Tait, 2026-10-15: "a super simple view where they
 only see the things they need to do"). No footage folder link and no
 Google Drive for clients. An operator viewing the portal also gets a
 **Documents** page: every document for that client, Team only ones marked,
@@ -963,8 +977,8 @@ gets these. Dates, status and the editor stay on the operator dashboard.
 
 The editor portal's work area is navy like its sidebar, with white
 headings and tabs and white cards (`body.navy-work` in shell.css; Tait,
-2026-10-15). The operator dashboard and client portal keep the light work
-area. The operator's Documents page in a client portal starts each client
+2026-10-15); the operator dashboard has the same since 2026-10-22. The
+client portal keeps the light work area. The operator's Documents page in a client portal starts each client
 with **Brand guidelines** (their colors, logo and font; `brandRow` in
 shell.js), saying so when there isn't one yet. **Editors see no client
 documents** (Tait, 2026-10-15, later the same day, reversing 020: "i dont
@@ -1170,7 +1184,7 @@ As of 2026-09-23:
 | Editor dashboard (brief, footage, brand voice, deliver) | ✅ Live, scoped per editor by RLS. |
 | Owner review (gate 2), client review (gate 3) | ✅ Live. |
 | 7-day edit-to-post rule | ✅ As a suggestion when entering a post date; always editable. |
-| Posting database with caption | ✅ To Do → Ready to post, with copy-caption. Posting stays manual (principle 6). |
+| Posting database with caption | ✅ My desk → Videos to post, with copy-caption. Posting stays manual (principle 6). |
 | Analytics / monthly performance loop | ❌ Not built — off the client nav. |
 | Competitors + Poppy on the client portal | ❌ Not built. |
 

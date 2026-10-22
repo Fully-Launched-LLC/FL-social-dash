@@ -1,6 +1,6 @@
 // Unify Phase 4 (migration 028): moodboards (per client and the house
-// moodboard) and the Library of shared music and sound effects. Operators
-// only.
+// moodboard) and the Library of shared music and sound effects. Migration
+// 033: each client's moodboard is shared with the client (portal Documents).
 import { freshDb, makeHarness, checker, pickFile } from "./harness.mjs";
 
 const db = await freshDb();
@@ -21,8 +21,11 @@ await db.exec(`
     ('sfx','Whoosh 3','editor/public/clients/_sfx/library/Whooshes/Whoosh 3.wav','Whooshes','sfx/d.mp3',1.2);
   insert into social_moodboard_items (client_id, kind, url, note) values (null,'link','https://instagram.com/p/kallaway','the swipes');
 `);
-chk("client can't read moodboards", !(await as(CL, `select * from social_moodboard_items`)).data.length);
-chk("client can't add to moodboards", !!(await as(CL, `insert into social_moodboard_items (client_id,kind,note) values ($1,'note','x')`, [GG])).error);
+// Migration 033: a client reads and adds to their own board only.
+chk("client can't read the house moodboard", !(await as(CL, `select * from social_moodboard_items`)).data.length);
+chk("client can't add to the house moodboard", !!(await as(CL, `insert into social_moodboard_items (client_id,kind,note,added_by_role) values (null,'note','x','client')`)).error);
+chk("client can't add as the operator", !!(await as(CL, `insert into social_moodboard_items (client_id,kind,note,added_by_role) values ($1,'note','x','operator')`, [GG])).error);
+chk("bad section refused", !!(await as(OP, `insert into social_moodboard_items (client_id,kind,note,section) values ($1,'note','x','nope')`, [GG])).error);
 chk("client can't read the Library", !(await as(CL, `select * from social_style_assets`)).data.length);
 chk("rating must be favourite or never", !!(await as(OP, `update social_style_assets set rating='maybe'`)).error);
 
@@ -50,23 +53,60 @@ chk("folder filter", JSON.stringify(rows()) === JSON.stringify(["Deep impact"]),
 d.querySelector('#libTabs [data-lib="house"]').click(); await settle();
 chk("House moodboard shows its items", d.getElementById("libBody").textContent.includes("the swipes"));
 
-// Client moodboard: upload, link, note, remove.
+// Client moodboard (shared with the client, migration 033): upload into a
+// section, link, words, note, move between sections, remove.
 op.w.openClientPage(GG, "moodboard"); await settle();
 chk("client page has a Moodboard tab", [...d.querySelectorAll("#cpTabs .chip")].map(c => c.textContent).includes("Moodboard"));
-pickFile(op, "moodPick-" + GG, "funnel.png", "image/png"); await settle(); await new Promise(r => setTimeout(r, 50)); await settle();
-const up = (await db.query(`select client_id, kind, name, storage_path from social_moodboard_items where client_id=$1`, [GG])).rows[0];
-chk("dropped image saved to the client's moodboard", up && up.kind === "image" && up.storage_path.startsWith(GG + "/"), up);
+const board = () => d.getElementById("clientMood");
+chk("the board has the 8 sections", [...board().querySelectorAll("[data-mb-sec]")].map(x => x.dataset.mbSec).join() === "look,colour,type,motion,editing,texture,brand,words");
+pickFile(op, "mbPick-" + GG, "funnel.png", "image/png"); await settle(); await new Promise(r => setTimeout(r, 50)); await settle();
+const up = (await db.query(`select client_id, kind, name, storage_path, section, added_by_role from social_moodboard_items where client_id=$1`, [GG])).rows[0];
+chk("chosen image saved to the client's board, Look & feel, added by the operator", up && up.kind === "image" && up.storage_path.startsWith(GG + "/") && up.section === "look" && up.added_by_role === "operator", up);
 chk("uploaded to the moodboards bucket", op.ui.log.some(l => l.upload && l.upload.bucket === "moodboards"));
-chk("tile shows the image as new", d.querySelector("#clientMood .mood-item img") && d.getElementById("clientMood").textContent.includes("new"));
-op.ui.prompts.push("Love the funnel narrowing to one face");
-[...d.querySelectorAll("#clientMood .mood-item button")].find(b => b.textContent === "Note").click(); await settle();
+chk("tile shows the image, by Tait", board().querySelector('[data-mb-sec="look"] .mb-tile img') && board().querySelector('[data-mb-sec="look"] .mb-who').textContent === "Tait");
+const btnIn = (root, label) => [...root.querySelectorAll("button")].find(b => b.textContent === label);
+btnIn(board().querySelector(".mb-tile"), "Note").click(); await settle();
+d.getElementById("mbText").value = "Love the funnel narrowing to one face"; d.getElementById("mbGo").click(); await settle();
 chk("note saved", (await db.query(`select note from social_moodboard_items where client_id=$1`, [GG])).rows[0].note === "Love the funnel narrowing to one face");
-[...d.querySelectorAll("#clientMood button")].find(b => b.textContent.includes("Add a link")).click(); await settle();
-d.getElementById("mlUrl").value = "https://www.instagram.com/reel/abc"; d.getElementById("mlNote").value = "caption font";
-d.getElementById("mlGo").click(); await settle();
-chk("link added", (await db.query(`select count(*)::int n from social_moodboard_items where client_id=$1`, [GG])).rows[0].n === 2);
-[...d.querySelectorAll("#clientMood .mood-item")].find(x => x.textContent.includes("instagram.com/reel/abc")).querySelector("button.reject").click(); await settle();
-chk("remove takes it off", (await db.query(`select count(*)::int n from social_moodboard_items where client_id=$1`, [GG])).rows[0].n === 1);
+// Drag the tile onto Colour palette.
+const id1 = (await db.query(`select id from social_moodboard_items where client_id=$1`, [GG])).rows[0].id;
+const dragTo = async (id, sec) => {
+  const data = { "text/x-mood-id": id }, dt = { setData: (k, v) => { data[k] = v; }, getData: k => data[k] || "", files: [] };
+  const ev = new op.w.Event("drop", { bubbles: true, cancelable: true }); ev.dataTransfer = dt;
+  board().querySelector(`[data-mb-sec="${sec}"]`).dispatchEvent(ev); await settle();
+};
+await dragTo(id1, "colour");
+chk("dragged to Colour palette", (await db.query(`select section from social_moodboard_items where id=$1`, [id1])).rows[0].section === "colour");
+btnIn(board(), "Add a link").click(); await settle();
+d.getElementById("mbUrl").value = "https://www.instagram.com/reel/abc"; d.getElementById("mbText").value = "caption font";
+d.getElementById("mbSec").value = "type"; d.getElementById("mbGo").click(); await settle();
+chk("link added to Typography", (await db.query(`select section from social_moodboard_items where client_id=$1 and kind='link'`, [GG])).rows[0]?.section === "type");
+btnIn(board(), "Add words").click(); await settle();
+d.getElementById("mbText").value = "warm\nhonest, hopeful"; d.getElementById("mbGo").click(); await settle();
+chk("words added, one each", (await db.query(`select string_agg(note, ',' order by note) w from social_moodboard_items where client_id=$1 and section='words'`, [GG])).rows[0].w === "honest,hopeful,warm");
+chk("words show in Words & phrases", board().querySelector('[data-mb-sec="words"]').textContent.includes("hopeful"));
+btnIn([...board().querySelectorAll(".mb-tile")].find(x => x.textContent.includes("instagram.com")), "Remove").click(); await settle();
+chk("remove takes it off", !(await db.query(`select 1 from social_moodboard_items where client_id=$1 and kind='link'`, [GG])).rows.length);
+
+// The client, in their portal's Documents: sees the board, adds to it, and
+// can only move or remove what they added.
+const cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/gg");
+cl.d.querySelector('.nav-item[data-view="documents"]').click(); await settle();
+const cb = () => cl.d.getElementById("docsMood");
+chk("client portal: Documents in the nav, documents themselves hidden", !!cl.d.querySelector('.nav-item[data-view="documents"]') && cl.d.getElementById("docsCard").style.display === "none");
+chk("client sees the board with Tait's image and words", !!cb().querySelector('[data-mb-sec="colour"] .mb-tile img') && cb().textContent.includes("hopeful"));
+chk("no Remove or Note on Tait's items", !cb().querySelector('[data-mb-sec="colour"] .mb-tile button'));
+pickFile(cl, "mbPick-" + GG, "grade.jpg", "image/jpeg"); await settle(); await new Promise(r => setTimeout(r, 50)); await settle();
+const mine = (await db.query(`select id, section, added_by, added_by_role from social_moodboard_items where name='grade.jpg'`)).rows[0];
+chk("client's upload saved as theirs", mine && mine.added_by === CL && mine.added_by_role === "client", mine);
+chk("their tile says You, with Remove", [...cb().querySelectorAll(".mb-tile")].some(t => t.querySelector(".mb-who").textContent === "You" && btnIn(t, "Remove")));
+chk("client can't move Tait's item", (await as(CL, `update social_moodboard_items set section='texture' where id=$1 returning id`, [id1])).data.length === 0);
+chk("client can't remove Tait's item", (await as(CL, `delete from social_moodboard_items where id=$1 returning id`, [id1])).data.length === 0);
+btnIn([...cb().querySelectorAll(".mb-tile")].find(t => t.querySelector(".mb-who").textContent === "You"), "Remove").click(); await settle();
+chk("client removes their own", !(await db.query(`select 1 from social_moodboard_items where name='grade.jpg'`)).rows.length);
+chk("Tait sees the client's additions as theirs", (await (async () => { await as(CL, `insert into social_moodboard_items (client_id,kind,note,section,added_by_role) values ($1,'note','cosy','words','client')`, [GG]);
+  op.w.openClientPage(GG, "moodboard"); await settle(); return board().querySelector('[data-mb-sec="words"]').textContent.includes("COSY") || board().querySelector('[data-mb-sec="words"]').textContent.includes("cosy"); })()));
+chk("no client page errors", !cl.ui.errors.length, cl.ui.errors);
 chk("no page errors", !op.ui.errors.length, op.ui.errors);
 console.log(`${counts.pass} passed, ${counts.fail} failed`);
 process.exit(counts.fail ? 1 : 0);

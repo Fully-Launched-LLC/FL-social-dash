@@ -30,7 +30,7 @@ await db.query(`insert into social_footage (client_id,kind,name,drive_url) value
 let op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
 const d = () => op.d;
 chk("My desk is the home page", d().getElementById("view-desk").classList.contains("active") && d().getElementById("crumbPage").textContent === "My desk");
-chk("sidebar order: My desk first, then Content Ideas, Clients, To Do", [...d().querySelectorAll(".nav-item[data-view]")].map(n => n.dataset.view).join(",").startsWith("desk,ideabank,clients,todo"));
+chk("sidebar order: My desk first, then Content Ideas, Clients, Content Calendar; no To Do page", [...d().querySelectorAll(".nav-item[data-view]")].map(n => n.dataset.view).join(",").startsWith("desk,ideabank,clients,calendar") && !d().getElementById("view-todo"));
 const tiles = () => [...d().querySelectorAll("#deskTiles .desk-tile")].map(t => t.textContent.trim());
 chk("5 queues with counts (all clients)", JSON.stringify(tiles()) === JSON.stringify(["2Ideas to review", "2Scripts to review", "1Documents to review", "2Videos to review", "1Videos to post"]), tiles());
 chk("nav shows the desk total", d().getElementById("navDeskN").textContent === "8");
@@ -93,6 +93,17 @@ chk("Footage tab shows the b-roll library", d().getElementById("cpBody").textCon
 d().querySelector('#cpTabs [data-cptab="videos"]').click(); await settle();
 chk("Videos tab lists this client's videos only", d().getElementById("cpBody").textContent.includes("Edit me") && !d().getElementById("cpBody").textContent.includes("FL edit"));
 chk("no page errors", !op.ui.errors.length, op.ui.errors);
+
+// Due soon (Tait, 2026-10-22): Tait's next step on each video, overdue or
+// due within 3 days, soonest first; the rest stay out.
+await db.query(`insert into social_videos (client_id,title,status,post_date) values
+  ($1,'Post today','ready_to_post',current_date),($1,'Post later','ready_to_post',current_date + 20),($1,'Late post','ready_to_post',current_date - 2)`, [GG]);
+op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
+const dueTitles = [...d().querySelectorAll("#deskDue .vrow b.video-card")].map(b => b.textContent);
+chk("Due soon lists overdue and due-now videos, soonest first", dueTitles.join() === "Late post,Post today", dueTitles);
+chk("each says what to do and when", d().getElementById("deskDue").textContent.includes("Post it · overdue since") && d().getElementById("deskDue").textContent.includes("Post it · today,"));
+chk("Due soon is marked when it has something", d().getElementById("deskDueCard").classList.contains("due-hot"));
+chk("no page errors after Due soon", !op.ui.errors.length, op.ui.errors);
 
 console.log(`${counts.pass} passed, ${counts.fail} failed`);
 process.exit(counts.fail ? 1 : 0);

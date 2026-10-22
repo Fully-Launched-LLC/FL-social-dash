@@ -1,6 +1,6 @@
 // Content Ideas: ideas the client hasn't seen yet, and the ones sent. Move
-// ideas back, drag them across to send them, add new ones straight into it, and what To Do, the
-// calendar and the client's portal show for each.
+// ideas back, drag them across to send them, add new ones straight into it, and what the pipeline (My desk, the
+// calendar) and the client's portal show for each.
 import { freshDb, makeHarness, checker } from "./harness.mjs";
 
 const db = await freshDb();
@@ -28,7 +28,8 @@ const A1 = "AI Systems · A1 · The 8 PM invoice problem", W1 = "Websites · W1 
 
 let op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
 const calTitles = () => Object.values(op.w.eval("calendarByDay(workVideos(), calState)")).flat().map(e => e.x.video.title);
-const todoText = () => op.d.getElementById("view-todo").textContent;
+// The videos in the pipeline (My desk, the calendar, the client pages).
+const todoText = () => op.w.eval("workVideos()").map(x => x.video.title).join("\n");
 const bankIds = () => Array.from(op.d.querySelectorAll("#bankList [data-card-id]")).map(el => el.dataset.cardId);
 const sentIds = () => Array.from(op.d.querySelectorAll("#sentList [data-card-id]")).map(el => el.dataset.cardId);
 const modalBtn = label => Array.from(op.d.querySelectorAll("#videoModalBox button")).find(b => b.textContent.trim() === label);
@@ -47,8 +48,8 @@ await op.w.moveToIdeaBank([await idOf(W1), await idOf(W2), await idOf("We film t
 chk("we-film idea remembers it was To film", (await row("We film this one")).editor_brief.ideaBank.from === "to_film");
 chk("bank lists all four, nav count 4", bankIds().length === 4 && op.d.getElementById("navBankN").textContent === "4");
 chk("no category filter on Content Ideas", !op.d.getElementById("bankTabs") && !op.d.querySelector("#view-ideabank [data-bank-cat]"));
-chk("banked ideas are off To Do and the calendar", ![A1, W1, "We film this one"].some(t => todoText().includes(t) || calTitles().includes(t)), calTitles());
-chk("sent-back idea stays in Sent back, not the bank", op.d.querySelector('[data-stage="sentBack"]').textContent.includes("Sent back idea")
+chk("banked ideas are out of the pipeline and off the calendar", ![A1, W1, "We film this one"].some(t => todoText().includes(t) || calTitles().includes(t)), calTitles());
+chk("sent-back idea stays in the pipeline, not the bank", todoText().includes("Sent back idea")
   && !op.d.getElementById("bankList").textContent.includes("Sent back idea"));
 
 let cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
@@ -73,7 +74,7 @@ Array.from(op.d.querySelectorAll(`[data-card-id="${await idOf("We film this one"
 r = await row("We film this one");
 chk("Send button: we-film idea goes back to To film", r.status === "to_film" && !!r.concept_approved_at && !r.editor_brief.ideaBank, r);
 chk("bank keeps the other two", bankIds().length === 2 && op.d.getElementById("bankColN").textContent === "2");
-chk("sent ones are back on To Do", todoText().includes(W1));
+chk("sent ones are back in the pipeline", todoText().includes(W1));
 
 cl = await openPage("clients/portal.html", CL, "https://fl.test/clients/test-fully-launched");
 clTitles = cl.w.eval("VIDEOS").map(v => v.title).sort();

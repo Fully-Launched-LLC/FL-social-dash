@@ -63,3 +63,8 @@ differ from CLAUDE.md's core principles, they apply only to the team's work.
     words, in each client's own brand. (Tait, 2026-10-21; this is Tait's own rule,
     not a reference creator's.)
 
+16. **Pick the structure by video type.** Value/teaching videos: the viral
+    structure (Hook → Lead to 0:10 → Body → Loop → Body → Loop → Body → CTA).
+    Story videos (e.g. Hesedea): Tait's 5-part story. "Not every video needs
+    that type of structure. We will learn as we go based on each type of
+    video." See `team/viral-structure.md`. (Tait, 2026-10-22)

@@ -1,7 +1,7 @@
 """Tests for the bridge's decisions (no network): python3 bridge/test_bridge.py"""
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from bridge import plan_jobs, plan_style_jobs, questions_from_text, timeline, plan_dates, match_client, idea_title, months_ahead, plan_script_jobs, script_signature, card_folder_name, plan_edit_jobs, edit_signature, desk_message, agent_rows, needs_from_error
+from bridge import plan_jobs, plan_style_jobs, questions_from_text, timeline, plan_dates, match_client, idea_title, months_ahead, plan_script_jobs, script_signature, card_folder_name, plan_edit_jobs, edit_signature, desk_message, agent_rows, needs_from_error, is_idea, strip_idea
 import datetime as dt
 
 SINCE = "2026-10-21T12:00:00+00:00"
@@ -145,6 +145,11 @@ check("hand-off to Tait is on the sender", any(h["to"] == "Tait" for h in rows2[
 check("old finished work isn't drawn", rows2["Content Researcher"]["handoffs"] == [])
 check("Apify out of credit is something Tait can fix", "Apify" in (needs_from_error("Apify: monthly usage limit exceeded, add credit") or ""))
 check("an unknown error needs no action from Tait", needs_from_error("TypeError: x") is None)
+
+# ── Telegram as the main channel ──
+check("'idea …' is an idea", is_idea("idea Grad Gig: snow") and is_idea("Idea: Hesedea x") and is_idea("💡 Hesedea: y"))
+check("anything else goes to Claude", not is_idea("use cream subtitles") and not is_idea("Hesedea: use cream") and not is_idea("ideally tomorrow"))
+check("the idea word is stripped", strip_idea("idea: Grad Gig: snow") == "Grad Gig: snow" and strip_idea("💡 Hesedea - x") == "Hesedea - x")
 
 print("all passed" if not fails else f"{fails} failed")
 sys.exit(1 if fails else 0)

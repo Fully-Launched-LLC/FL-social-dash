@@ -25,8 +25,10 @@ await db.exec(`
 `);
 
 const op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
-const row = t => Array.from(op.d.querySelectorAll("#clientWaitingList .row, #ideasList .row"))
-  .find(r => (r.querySelector("b.video-card") || {}).textContent === t);
+// Each client's Videos tab (Clients → Open → Videos).
+const row = t => { for (const c of [FL, DAD]) { op.w.openClientPage(c, "videos");
+  const r = Array.from(op.d.querySelectorAll("#cpBody .row")).find(r => (r.querySelector("b.video-card") || {}).textContent === t);
+  if (r) return r; } };
 const btnL = (r, label) => r && Array.from(r.querySelectorAll("button")).find(b => b.textContent.trim() === label);
 const statusOf = async t => (await db.query("select status, due_to_edit::text from social_videos where title=$1", [t])).rows[0];
 const TODAY = (await db.query("select current_date::text d")).rows[0].d;

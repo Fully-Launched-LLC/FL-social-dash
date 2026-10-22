@@ -67,6 +67,8 @@ const btn = (root, text) => root && Array.from(root.querySelectorAll("button")).
 async function click(el, what) { if (!el) throw new Error("not found: " + what); el.click(); await settle(); }
 const portalCard = (p, listSel, t) => $$(p, listSel + " .card").find(c => (c.querySelector("[data-open]") || {}).textContent === t);
 const opRow = (p, listSel, t) => $$(p, listSel + " .row").find(r => (r.querySelector("b.video-card") || {}).textContent === t);
+// A video's row on its client's Videos tab (Clients → Open → Videos).
+const cpRow = (p, t) => { for (const c of [FL, PREM]) { p.w.openClientPage(c, "videos"); const r = opRow(p, "#cpBody", t); if (r) return r; } };
 const edCard = (p, t) => $$(p, "#queueList .card").find(c => c.querySelector("[data-open]").textContent === t);
 const modal = p => $(p, "#videoModalBox");
 const modalOpen = p => !$(p, "#videoModalRoot").classList.contains("hidden");
@@ -113,7 +115,7 @@ const clientFilmed = idx.filter(i => !V.switchToUs.includes(i));
 // ── 2. Client (films their own) ──
 let cl = track(await CL());
 const shownNav = p => $$(p, ".nav-item").filter(n => n.style.display !== "none").map(n => n.textContent.trim());
-chk("client nav: To Do and Calendar only (no Drive: no Documents, no footage folder)", shownNav(cl).join("|") === "To Do|Content Calendar", shownNav(cl));
+chk("client nav: To Do, Calendar and Documents (their moodboard; no Drive, no footage folder)", shownNav(cl).join("|") === "To Do|Content Calendar|Documents", shownNav(cl));
 chk("no footage folder card", !$(cl, "#footageCard") && !$(cl, "#footageCardLink"));
 chk("To Do is exactly two tabs, To film and To review", $$(cl, "#videoTabs .chip").map(c => c.dataset.tab).join() === "film,review" && !$(cl, "#nextStep"), tabsText(cl));
 chk("it opens on To film", $(cl, "#videoTabs .chip.active").dataset.tab === "film" && $(cl, '[data-panel="film"]').style.display !== "none");
@@ -136,7 +138,7 @@ for (const i of V.change) {
 }
 if (V.change.length) {
   op = track(await OP());
-  for (const i of V.change) chk(`#${i} in To Do's Scripting stage with the client's note`, opRow(op, "#scriptingList", title(i))?.textContent.includes("Make it funnier " + i));
+  for (const i of V.change) chk(`#${i} in Scripting on the client's Videos tab with the client's note`, cpRow(op, title(i))?.textContent.includes("Make it funnier " + i));
   // The Writer's revision (what bridge.py card put + card ready do).
   for (const i of V.change) await db.query("update social_videos set hook=$2, status='script_review', note=null where title=$1", [title(i), "Funnier hook " + i]);
   op = track(await OP());
@@ -177,21 +179,23 @@ if (V.switchToUs.length) {
   chk("approved → to film on Tait's side", (await statusOf(title(i))).status === "to_film");
   chk("once approved it leaves To Do; both tabs empty, nothing on the page", !portalCard(cl, "#listReview", title(i)) && tabCount(cl, "film") === 0 && tabCount(cl, "review") === 0 && !$$(cl, "#view-videos .card").length, tabsText(cl));
   op = track(await OP());
-  chk("Tait sees it ready for an editor with the raw footage link", !!opRow(op, "#toEditorList", title(i))?.querySelector('a[href="https://drive/fl-footage"]'));
+  chk("Tait sees it ready for an editor with the raw footage link", !!cpRow(op, title(i))?.querySelector('a[href="https://drive/fl-footage"]'));
 }
 
 // ── 3. Operator assigns the editor ──
 op = track(await OP());
-chk("30 ready for an editor", $$(op, "#toEditorList .row").length === 30, $$(op, "#toEditorList .row").length);
+op.w.openClientPage(FL, "videos");
+const readyRows = () => $$(op, "#cpBody .row").filter(r => btn(r, "Send to editor"));
+chk("30 ready for an editor", readyRows().length === 30, readyRows().length);
 for (const i of idx) {
   if (i === 0) {   // through the popup, which sits over the row
-    await click(opRow(op, "#toEditorList", title(i)).querySelector("b.video-card"), "open popup");
+    await click(cpRow(op, title(i)).querySelector("b.video-card"), "open popup");
     const box = $(op, "#videoModalBox .modal-actions");
     box.querySelector("select").value = U.ed;
     await click(btn(box, "Send to editor"), "send from popup");
     continue;
   }
-  const row = opRow(op, "#toEditorList", title(i));
+  const row = cpRow(op, title(i));
   row.querySelector("select").value = U.ed;
   await click(btn(row, "Send to editor"), "send " + i);
 }
@@ -236,7 +240,7 @@ chk("all back to Tait", (await count("status='in_review'")) === 30);
 
 // ── 5. Tait: revisions, or approve + captions ──
 async function approveWithCaption(p, i) {
-  await click(btn(opRow(p, "#editsList", title(i)), "Approve & add captions"), "approve edit " + i);
+  await click(btn(opRow(p, "#deskVideos", title(i)), "Approve & add captions"), "approve edit " + i);
   $(p, '#videoModalBox [data-f="onScreenCaption"]').value = "On screen " + (i + 1);
   $(p, '#videoModalBox [data-f="caption"]').value = "Caption " + (i + 1);
   await click($(p, "#aeSave"), "save caption " + i);
@@ -244,7 +248,7 @@ async function approveWithCaption(p, i) {
 op = track(await OP());
 for (const i of idx) {
   if (V.opRev.includes(i)) {
-    await click(btn(opRow(op, "#editsList", title(i)), "Review & comment"), "review " + i);
+    await click(btn(opRow(op, "#deskVideos", title(i)), "Review & comment"), "review " + i);
     await leaveNote(op, "Tighten the intro " + i, "0:12");
     await click(reviewBtn(op, "Send 1 change to the editor"), "send revisions " + i);
   } else await approveWithCaption(op, i);
@@ -297,7 +301,7 @@ if (V.clientRev.length) {
     /Whole video\s+Louder music/.test(edCard(ed, title(i))?.querySelector(".ed-revisions")?.textContent || "") && !edCard(ed, title(i)).textContent.includes("other take") && !!btn(edCard(ed, title(i)), "Watch with the comments"));
   await editorFinish(V.clientRev);
   op = track(await OP());
-  for (const i of V.clientRev) { await click(btn(opRow(op, "#editsList", title(i)), "Approve & add captions"), "again " + i); await click($(op, "#aeSave"), "resend " + i); }
+  for (const i of V.clientRev) { await click(btn(opRow(op, "#deskVideos", title(i)), "Approve & add captions"), "again " + i); await click($(op, "#aeSave"), "resend " + i); }
   cl = track(await CL());
   for (const i of V.clientRev) { await click(btn(portalCard(cl, "#listReview", title(i)), "Approve for posting"), "final again " + i); await dismissThanks(cl, "Approved"); }
 }
@@ -306,9 +310,9 @@ chk("all 30 ready to post", (await count("status='ready_to_post'")) === 30);
 // ── 7. Posting ──
 op = track(await OP());
 chk("no separate Ready to Post page", !$(op, "#view-post") && !$$(op, ".nav-item").some(n => n.textContent.includes("Ready to Post")));
-const p0 = $$(op, "#todoPostList > .card")[0];
-chk("To Do → Ready to post: date, both captions, finished video", p0 && /Post \d{4}-\d{2}-\d{2}/.test(p0.textContent) && p0.textContent.includes("Caption") && p0.textContent.includes("On-screen caption") && !!p0.querySelector('a[href="https://drive/fl-final"]'));
-for (let n = 0; n < V.post; n++) await click(btn($$(op, "#todoPostList > .card")[0], "Mark posted"), "post " + n);
+const p0 = $$(op, "#deskPost > .card")[0];
+chk("My desk → Videos to post: date, both captions, finished video", p0 && /Post \d{4}-\d{2}-\d{2}/.test(p0.textContent) && p0.textContent.includes("Caption") && p0.textContent.includes("On-screen caption") && !!p0.querySelector('a[href="https://drive/fl-final"]'));
+for (let n = 0; n < V.post; n++) await click(btn($$(op, "#deskPost > .card")[0], "Mark posted"), "post " + n);
 chk(`${V.post} posted`, (await count("status='posted'")) === V.post);
 
 // ── 8. Premium client: we film, they approve ideas ──
@@ -330,14 +334,14 @@ chk("premium: approved and sent-back ideas all leave To Do; nothing on the page"
 chk("premium: 2 approved, 1 back with Tait", (await count("client_id=$1 and status='to_film'", [PREM])) === 2 && (await statusOf("Prem 3")).concept_approved_at === null);
 op = track(await OP());
 for (const t of ["Prem 1", "Prem 2"]) {
-  const r = opRow(op, "#toEditorList", t);
+  const r = cpRow(op, t);
   chk(`${t}: Tait films → raw footage link + send to editor`, !!r?.querySelector('a[href="https://drive/prem-footage"]'));
   r.querySelector("select").value = U.ed; await click(btn(r, "Send to editor"), "send " + t);
 }
 ed = track(await ED());
 for (const t of ["Prem 1", "Prem 2"]) await finishOne(ed, t);
 op = track(await OP());
-for (const t of ["Prem 1", "Prem 2"]) { await click(btn(opRow(op, "#editsList", t), "Approve & add captions"), "approve " + t); $(op, '#videoModalBox [data-f="caption"]').value = t + " caption"; await click($(op, "#aeSave"), "cap " + t); }
+for (const t of ["Prem 1", "Prem 2"]) { await click(btn(opRow(op, "#deskVideos", t), "Approve & add captions"), "approve " + t); $(op, '#videoModalBox [data-f="caption"]').value = t + " caption"; await click($(op, "#aeSave"), "cap " + t); }
 prem = track(await PREMP());
 for (const t of ["Prem 1", "Prem 2"]) { await click(btn(portalCard(prem, "#listReview", t), "Approve for posting"), "prem final " + t); await dismissThanks(prem, "Approved"); }
 chk("premium videos ready to post", (await count("client_id=$1 and status='ready_to_post'", [PREM])) === 2);

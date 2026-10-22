@@ -388,15 +388,15 @@ def ask_for_documents(sb, c):
 def ask_for_style(sb, c, update=False):
     slug = c["slug"]
     what = "update their editing guidelines with the new moodboard items" if update else "build their editing guidelines"
-    desc = f"""**{c['name']}**: {what} (Unify the System stage 3: the client's style guide). You lead; bring in the **Motion Graphics Designer** (motion graphics, text styles) and the **Content Strategist** (video types, pacing) as you need them.
+    desc = f"""**{c['name']}**: {what} (the client's style guide). You lead (Tait, 2026-10-22: the Art Director views the moodboard and tells the editor and motion graphics designer how to do it in the style Tait and the client want). Bring in the **Content Strategist** (video types, pacing) as you need.
 
 1. Read: their approved brand guidelines `{bridge_cmd()} doc get --client {slug} --kind brand_guidelines`, their identity `--kind identity`, the house style `team/content-editor/house-style.md`, their `clients/{slug}/style-profile.md` and `team-room/feedback-log.md` if they exist.
-2. Their moodboard: `{bridge_cmd()} moodboard get --client {slug}` downloads every screenshot and video Tait dropped in and prints his notes and links. Look at every image; watch every video (`watch` skill). Pull out the motion graphics, fonts, text styles, colours, layouts and video styles.
-3. Write the guidelines with the `editing-guidelines-doc` skill, save as `clients/{slug}/sources/editing_guidelines.md`, then
-   `{bridge_cmd()} doc put --client {slug} --kind editing_guidelines --file clients/{slug}/sources/editing_guidelines.md --status on_desk --built-by "Content Editor" --sources "moodboard (N items), brand guidelines"`
+2. Their moodboard (Tait and the client build it together, in sections): `{bridge_cmd()} moodboard get --client {slug}` downloads every item with its section, colours, who added it and their note. Look at every image; watch every video and reel (`watch` skill).
+3. Write the guidelines with the `editing-guidelines-doc` skill (including **For the Content Editor** and **For the Motion Graphics Designer**), save as `clients/{slug}/sources/editing_guidelines.md`, then
+   `{bridge_cmd()} doc put --client {slug} --kind editing_guidelines --file clients/{slug}/sources/editing_guidelines.md --status on_desk --built-by "Art Director" --sources "moodboard (N items), brand guidelines"`
    and `{bridge_cmd()} moodboard used --client {slug}`.
-4. Tait approves it on My desk. **No edit for this client starts until it's approved** (Tait's rule)."""
-    tid = give_task("Content Editor", f"{c['name']}: {what}", desc)
+4. Post the two briefs to the Content Editor and the Motion Graphics Designer. Tait approves the guidelines on My desk. **No edit for this client starts until they're approved** (Tait's rule)."""
+    tid = give_task("Art Director", f"{c['name']}: {what}", desc)
     sb.insert("social_client_onboarding", {"client_id": c["id"], "style_requested_at": now()}, upsert_on="client_id")
     return tid
 
@@ -405,9 +405,9 @@ def ask_for_house_style(sb):
     desc = f"""Tait added items to the **house moodboard** (every client). Fold them into the house style.
 
 1. `{bridge_cmd()} moodboard get --client house` downloads them with Tait's notes. Look at every image; watch every video.
-2. Update `team/content-editor/house-style.md` (the defaults every client's editing guidelines start from): motion graphics, fonts, text styles, colours, video styles. Add only what the items show; Tait is the rule maker, so list anything that would change an existing rule as a question for him.
+2. Update `team/content-editor/house-style.md` (the defaults every client's editing guidelines start from): motion graphics, fonts, text styles, colours, video styles. Add only what the items show; Tait is the rule maker, so list anything that would change an existing rule as a question for him. Tell the Content Editor and the Motion Graphics Designer what changed.
 3. `{bridge_cmd()} moodboard used --client house`, then post one line here."""
-    tid = give_task("Content Editor", "House moodboard: fold new items into the house style", desc)
+    tid = give_task("Art Director", "House moodboard: fold new items into the house style", desc)
     return tid
 
 
@@ -969,6 +969,53 @@ def check(sb, verbose=True):
     return log
 
 
+# ── Telegram as Tait's main channel (Tait, 2026-10-21) ──────────────────
+# "i want to use telegram as my main source of communication, not just a
+# place to generate video ideas." A message that starts with "idea" (or 💡)
+# is filed as a content idea; everything else goes to Claude's inbox, which
+# the Claude session working with Tait reads and answers through the bot.
+INBOX = HOME / ".config" / "fully-social" / "telegram-inbox.jsonl"
+
+
+def is_idea(text):
+    return bool(re.match(r"^\s*(idea\b|💡)", text or "", flags=re.I))
+
+
+def strip_idea(text):
+    return re.sub(r"^\s*(idea\b\s*[:\-—]?\s*|💡\s*)", "", text or "", flags=re.I).strip()
+
+
+def to_inbox(entry):
+    INBOX.parent.mkdir(parents=True, exist_ok=True)
+    with INBOX.open("a") as f:
+        f.write(json.dumps(dict(entry, at=now(), read=False)) + "\n")
+
+
+def read_inbox(mark=True):
+    if not INBOX.exists():
+        return []
+    rows = [json.loads(l) for l in INBOX.read_text().splitlines() if l.strip()]
+    unread = [r for r in rows if not r.get("read")]
+    if mark and unread:
+        for r in rows:
+            r["read"] = True
+        INBOX.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return unread
+
+
+def telegram_send(text, photo=None):
+    env, st = read_env(CONFIG), load_state()
+    token, chat = env.get("TELEGRAM_BOT_TOKEN"), st.get("telegram_chat")
+    if not token or not chat:
+        raise RuntimeError("Telegram isn't paired yet (bridge.py telegram pair).")
+    if photo:
+        subprocess.run(["curl", "-s", "-F", f"chat_id={chat}", "-F", f"photo=@{photo}", "-F", f"caption={text[:1000]}",
+                        f"https://api.telegram.org/bot{token}/sendPhoto"], check=True, capture_output=True)
+    else:
+        for i in range(0, len(text), 4000):
+            tg("sendMessage", token, {"chat_id": chat, "text": text[i:i + 4000]})
+
+
 # ── Telegram: text ideas from the phone ─────────────────────────────────
 def tg(method, token, params=None, raw_url=None):
     url = raw_url or f"https://api.telegram.org/bot{token}/{method}"
@@ -1005,11 +1052,44 @@ def handle_telegram(sb, st, verbose=True):
             if st.get("telegram_code") and text.endswith(st["telegram_code"]):
                 st["telegram_chat"] = owner = chat
                 st.pop("telegram_code", None)
-                reply("Paired. Text me ideas like:\nGrad Gig: snow shovelling for seniors\nVoice notes, screenshots and links work too.")
+                reply("Paired. Text me anything and Claude reads it. For a content idea, start with idea, e.g.\nidea Grad Gig: snow shovelling for seniors")
             continue
         if chat != owner:
             continue
-        pending = st.pop("telegram_pending", None)
+        spoken = None
+        if (msg.get("voice") or msg.get("audio")) and not text:
+            try:   # voice notes: transcribe first, then route like text
+                fid = (msg.get("voice") or msg.get("audio"))["file_id"]
+                name, data = tg_file(token, fid)
+                CACHE.mkdir(parents=True, exist_ok=True)
+                local = CACHE / f"tg-{fid[-12:]}-{name}"
+                local.write_bytes(data)
+                spoken = transcribe_file(local)
+            except Exception as e:
+                reply(f"I couldn't hear that voice note: {e}")
+                continue
+        said = text or spoken or ""
+        pending = st.get("telegram_pending")
+        if not is_idea(said) and not pending:
+            files = []
+            if msg.get("photo") or msg.get("document"):
+                try:
+                    fid = msg["photo"][-1]["file_id"] if msg.get("photo") else msg["document"]["file_id"]
+                    name, data = tg_file(token, fid)
+                    CACHE.mkdir(parents=True, exist_ok=True)
+                    local = CACHE / f"tg-{fid[-12:]}-{name}"
+                    local.write_bytes(data)
+                    files.append(str(local))
+                except Exception:
+                    pass
+            to_inbox({"text": said, "voice": bool(spoken), "files": files})
+            reply("Got it, Claude has your message.")
+            log.append("telegram: message for Claude")
+            continue
+        st.pop("telegram_pending", None)
+        if spoken and not text:
+            msg = dict(msg); msg.pop("voice", None); msg.pop("audio", None)
+        text = strip_idea(said) if is_idea(said) else said
         client, body = match_client(text, clients)
         if not client and pending:
             client, _ = match_client(text + ": x", clients)
@@ -1040,10 +1120,11 @@ def handle_telegram(sb, st, verbose=True):
             continue
         if not client:
             st["telegram_pending"] = {"body": body, "msg": msg}
-            reply("Which client is this for? Reply with the name: " + ", ".join(c["name"] for c in clients))
+            st["telegram_pending"] = {"body": body, "msg": msg}
+            reply("Which client is this idea for? Reply with the name: " + ", ".join(c["name"] for c in clients))
             continue
         if not (body or attachments or links):
-            reply("Send the idea after the client's name, e.g. Grad Gig: snow shovelling for seniors")
+            reply("Send the idea after the client's name, e.g. idea Grad Gig: snow shovelling for seniors")
             continue
         sb.insert("social_ideas", {"client_id": client["id"], "title": idea_title(body) if body else "Idea from Telegram",
                                    "body": body or None, "links": links, "attachments": attachments,
@@ -1153,7 +1234,8 @@ def main(argv=None):
     pp.add_argument("--month", required=True, help="YYYY-MM"); pp.add_argument("--file", required=True); pp.add_argument("--brief")
     yt = sub.add_parser("youtube"); yt.add_argument("action", choices=["outliers"]); yt.add_argument("--query", required=True)
     yt.add_argument("--days", type=int, default=180); yt.add_argument("--max", type=int, default=25)
-    tgp = sub.add_parser("telegram"); tgp.add_argument("action", choices=["pair"])
+    tgp = sub.add_parser("telegram"); tgp.add_argument("action", choices=["pair", "send", "inbox"])
+    tgp.add_argument("text", nargs="?"); tgp.add_argument("--photo")
     sj = sub.add_parser("start", help="start a stage by hand for any client (existing ones too)")
     sj.add_argument("job", choices=["questions", "documents", "style", "research", "plan"]); sj.add_argument("--client", required=True)
     sj.add_argument("--size", type=int, default=20, help="plan size"); sj.add_argument("--month", help="YYYY-MM (plan; default next month)")
@@ -1252,6 +1334,11 @@ def main(argv=None):
         key = read_env(CONFIG).get("YOUTUBE_API_KEY")
         if not key: sys.exit(f"Add YOUTUBE_API_KEY to {CONFIG} (a free key from Google Cloud).")
         print(youtube_outliers(key, a.query, a.days, a.max))
+    elif a.cmd == "telegram" and a.action == "send":
+        telegram_send(a.text or sys.stdin.read(), a.photo); print("sent")
+    elif a.cmd == "telegram" and a.action == "inbox":
+        msgs = read_inbox()
+        print("\n\n".join(f"[{m['at'][:16]}]{' (voice)' if m.get('voice') else ''} {m['text']}" + "".join(f"\n  file: {f}" for f in m.get("files", [])) for m in msgs) or "No new messages.")
     elif a.cmd == "telegram":
         st = load_state()
         code = f"{uuid.uuid4().int % 1000000:06d}"
@@ -1353,7 +1440,8 @@ def main(argv=None):
         folder = HOME / ".cache" / "fully-social" / "moodboards" / a.client
         folder.mkdir(parents=True, exist_ok=True)
         for it in items:
-            line = f"- [{it['kind']}] {it.get('name') or ''}"
+            sec = it.get("section") or ("words" if it["kind"] == "note" else "look" if it["kind"] == "image" else "editing")
+            line = f"- [{sec} · {it['kind']}] {it.get('name') or ''}"
             if it.get("storage_path"):
                 local = folder / pathlib.Path(it["storage_path"]).name
                 if not local.exists():
@@ -1361,8 +1449,12 @@ def main(argv=None):
                 line += f" -> {local}"
             if it.get("url"):
                 line += f" -> {it['url']}"
+            if it.get("palette"):
+                line += f"\n    colours: {' '.join(it['palette'])}"
             if it.get("note"):
-                line += f"\n    Tait: {it['note']}"
+                line += f"\n    {'Client' if it.get('added_by_role') == 'client' else 'Tait'}: {it['note']}"
+            elif it.get("added_by_role") == "client":
+                line += "\n    (added by the client)"
             if not it.get("used_at"):
                 line += "  (new)"
             print(line)
