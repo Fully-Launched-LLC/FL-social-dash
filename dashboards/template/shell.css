@@ -905,3 +905,75 @@ html body.glass .main .desk-tile.hot {
   border-color:rgba(226,204,160,.8);
   box-shadow:inset 1.5px 1.5px 0 rgba(255,240,210,.7), inset -1px -1px 0 rgba(196,171,130,.25), inset 0 0 28px rgba(196,171,130,.14), 0 14px 34px rgba(0,0,0,.38);
 }
+
+/* ---------- All glass (Tait, 2026-10-22: "can you make all the borders and
+   bubbles look like this… I want everything to look like that on the
+   client and operator side") ----------
+   Every card, list, calendar day and pop-up becomes the same dark navy glass
+   as the My desk tiles: the navy colour set (white text) instead of the
+   light one, a glass fill, a lit rim and a soft shadow. Buttons everywhere
+   are glass pills; gold stays the one accent. */
+html body.glass .main :is(.card, .agent-card, .idea-card),
+html body.glass .modal-backdrop {
+  --navy:#04101f; --white:#ffffff; --gold:#C4AB82;
+  --bg:#04101f; --card:rgba(255,255,255,.05); --card2:rgba(255,255,255,.08);
+  --border:rgba(255,255,255,.12); --line-2:rgba(255,255,255,.2); --line-strong:rgba(255,255,255,.4);
+  --ink:#ffffff; --sub:rgba(255,255,255,.72); --sub2:rgba(255,255,255,.52);
+  --accent:#C4AB82; --accent-ink:#04101f;
+  --green:#C4AB82; --red:#C4AB82; --amber:#C4AB82; --purple:#C4AB82;
+  --status-scripting:#fff; --status-script_review:#fff; --status-concept_pending:#fff; --status-to_film:#fff; --status-filmed:#fff;
+  --status-ready_to_edit:#fff; --status-rejected:rgba(255,255,255,.5); --status-with_editor:#fff;
+  --status-in_review:#fff; --status-client_review:#fff; --status-ready_to_post:#fff; --status-posted:rgba(255,255,255,.5);
+  color-scheme:dark; color:#fff;
+}
+html body.glass .main :is(.card, .agent-card, .idea-card) {
+  background:var(--glass-fill); border:1px solid var(--glass-edge); border-radius:22px;
+  -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+  box-shadow:inset 1.5px 1.5px 0 rgba(255,255,255,.45), inset -1px -1px 0 rgba(255,255,255,.1), inset 0 0 28px rgba(255,255,255,.05), 0 14px 34px rgba(0,0,0,.36);
+}
+html body.glass .main .card.due-hot { border-color:rgba(226,204,160,.8); }
+html body.glass .main .card :is(.card, .idea-card) { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.12); box-shadow:inset 1px 1px 0 rgba(255,255,255,.18); -webkit-backdrop-filter:none; backdrop-filter:none; }
+html body.glass .main .card .chip-row { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.1); }
+/* Calendar days and form fields: small glass panes. */
+html body.glass :is(.main, .modal-box) .cal-cell { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.12); box-shadow:inset 1px 1px 0 rgba(255,255,255,.14); }
+html body.glass :is(.main, .modal-box) .cal-cell.today { border-color:#C4AB82; }
+html body.glass :is(.main, .modal-box) .cal-cell.today .daynum { background:#C4AB82; color:#04101f; }
+html body.glass :is(.main .card, .modal-box) :is(textarea, input[type=text], input[type=email], input[type=password], input[type=date], input[type=url], input[type=search], input:not([type]), select) {
+  background:rgba(255,255,255,.06); color:#fff; border:1px solid rgba(255,255,255,.18); box-shadow:inset 0 1px 2px rgba(0,0,0,.25);
+}
+html body.glass :is(.main .card, .modal-box) select option { background:#0b1a2e; color:#fff; }
+html body.glass :is(.main .card, .modal-box) input[type=date]::-webkit-calendar-picker-indicator { filter:invert(1); }
+/* Pop-ups: a thick navy glass sheet. */
+html body.glass .modal-box {
+  background:linear-gradient(145deg, rgba(30,52,86,.82), rgba(8,20,38,.86) 55%, rgba(20,38,66,.84));
+  border:1px solid rgba(255,255,255,.22); color:#fff;
+  box-shadow:inset 1.5px 1.5px 0 rgba(255,255,255,.4), inset -1px -1px 0 rgba(255,255,255,.08), 0 30px 80px rgba(0,0,0,.55);
+}
+html body.glass .modal-close { background:rgba(255,255,255,.1); color:#fff; box-shadow:inset 1px 1px 0 rgba(255,255,255,.25); }
+/* Buttons inside cards and pop-ups: the same glass pills as on the navy. */
+html body.glass :is(.main .card, .main .agent-card, .main .idea-card, .modal-box) :is(button, .btn):not(.chip) {
+  border-radius:999px; color:#fff; background:var(--glass-fill); border:1px solid var(--glass-edge);
+  box-shadow:inset 1px 1px 0 rgba(255,255,255,.4), inset -1px -1px 0 rgba(255,255,255,.08), 0 3px 10px rgba(0,0,0,.25);
+}
+html body.glass :is(.main .card, .main .agent-card, .main .idea-card, .modal-box) :is(button, .btn):not(.chip):hover { background:var(--glass-sel); border-color:var(--glass-edge-sel); color:#fff; }
+html body.glass :is(.main .card, .main .agent-card, .main .idea-card, .modal-box) :is(button, .btn).primary {
+  background:linear-gradient(145deg, rgba(255,255,255,.95), rgba(226,232,240,.88)); color:#04101f; border-color:rgba(255,255,255,.9);
+  box-shadow:inset 1px 1px 0 #fff, 0 4px 14px rgba(0,0,0,.3);
+}
+html body.glass :is(.main .card, .main .agent-card, .main .idea-card, .modal-box) :is(button, .btn).primary:hover { background:#fff; color:#04101f; }
+html body.glass :is(.main .card, .main .agent-card, .main .idea-card, .modal-box) :is(button, .btn).accent {
+  background:linear-gradient(180deg, #dcc7a1, #C4AB82 55%, #b3976a); color:#04101f; border-color:rgba(255,236,200,.7);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55), 0 4px 14px rgba(0,0,0,.3);
+}
+html body.glass :is(.main .card, .modal-box) :is(button, .btn).reject { color:#E3CFA8; }
+/* Bubbles (badges, chips inside cards): small glass capsules. */
+html body.glass :is(.main, .modal-box) .badge { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); box-shadow:inset 1px 1px 0 rgba(255,255,255,.2); }
+html body.glass .main .card .chip.active, html body.glass .modal-box .chip.active { background:var(--glass-sel); color:#fff; box-shadow:inset 1px 1px 0 rgba(255,255,255,.45); }
+@media (prefers-reduced-transparency: reduce) {
+  html body.glass .main :is(.card, .agent-card, .idea-card) { background:#0f2340; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  html body.glass .modal-box { background:#0f2340; }
+}
+html body.glass .cal-block { border-radius:10px; box-shadow:inset 1px 1px 0 rgba(255,255,255,.35), 0 2px 6px rgba(0,0,0,.25); }
+html body.glass .cal-block.cal-overdue { box-shadow:0 0 0 2px #C4AB82, inset 1px 1px 0 rgba(255,255,255,.35); }
+html body.glass .cal-block.cal-done { background:rgba(255,255,255,.08); color:rgba(255,255,255,.62); box-shadow:inset 1px 1px 0 rgba(255,255,255,.15); }
+html body.glass .cal-block.cal-done .plat-pill { background:rgba(255,255,255,.1); color:rgba(255,255,255,.7); }
