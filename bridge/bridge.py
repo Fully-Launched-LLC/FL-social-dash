@@ -1380,6 +1380,24 @@ def upload_poster(sb, f, poster, dest):
             sb.upload("library", dest, out.read_bytes(), "image/jpeg")
 
 
+def download_clip(url, start=None, end=None, name=None):
+    """Download a video (or just start–end of it) with yt-dlp as an MP4 in
+    the cache, named after its title or the given name. Tait, 2026-10-23: a
+    ministry client posts on YouTube, so their own B-roll comes from there."""
+    CACHE.mkdir(parents=True, exist_ok=True)
+    out = CACHE / "clips"; out.mkdir(exist_ok=True)
+    stem = re.sub(r'[\\/:*?"<>|]+', "-", name).strip() if name else "%(title).80s"
+    cmd = ["yt-dlp", "--no-playlist", "-S", "res:2160", "-f", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b", "--merge-output-format", "mp4",
+           "-o", str(out / f"{stem}.%(ext)s"), "--print", "after_move:filepath"]
+    if start or end:
+        cmd += ["--download-sections", f"*{start or '0'}-{end or 'inf'}", "--force-keyframes-at-cuts"]
+    r = subprocess.run(cmd + [url], capture_output=True, text=True)
+    path = (r.stdout.strip().splitlines() or [""])[-1]
+    if r.returncode or not path or not pathlib.Path(path).exists():
+        sys.exit(f"Couldn't download {url}: {(r.stderr.strip().splitlines() or ['unknown error'])[-1]}")
+    return pathlib.Path(path)
+
+
 def index_asset(sb, kind, root, f, made_by=None, notes=None, poster=None):
     rel = str(f.relative_to(REPO))
     folder_path = str(f.parent.relative_to(root)) if f.parent != root else ""
@@ -1490,6 +1508,9 @@ def main(argv=None):
     s.add_argument("--into", default="", help="add: the folder inside the category, e.g. 'Whooshes' or 'Camera sounds/shutter clicks'")
     s.add_argument("--by", help="add: who made it, e.g. 'Sound Designer'")
     s.add_argument("--notes", help="add: what it is and when to use it (shown in Assets and in the client's folder README)")
+    s.add_argument("--url", help="add: a YouTube (or other) link to download instead of --file, e.g. the client's own video")
+    s.add_argument("--start", help="add --url: where the clip starts, e.g. 1:05"); s.add_argument("--end", help="add --url: where it ends, e.g. 1:12")
+    s.add_argument("--name", help="add --url: the clip's name in Assets (default: the video's title)")
     s.add_argument("--poster", help="add (motion): a picture of the graphic to show in Assets (default: a frame from the clip)")
     s.add_argument("--folder"); s.add_argument("--favourites", action="store_true")
     ia = sub.add_parser("idea"); ia.add_argument("action", choices=["add"]); ia.add_argument("--client", required=True)
@@ -1770,8 +1791,11 @@ def main(argv=None):
         if a.action == "sync":
             print(sync_assets(sb))
         elif a.action == "add":
-            if not (a.kind and a.file):
-                sys.exit("add needs --kind and --file (and --into for the folder).")
+            if not (a.kind and (a.file or a.url)):
+                sys.exit("add needs --kind and --file or --url (and --into for the folder).")
+            if a.url:   # the client's own video on YouTube etc. (Tait, 2026-10-23)
+                a.file = str(download_clip(a.url, a.start, a.end, a.name))
+                a.notes = " · ".join(x for x in (a.notes, f"from {a.url}" + (f" ({a.start or '0:00'}–{a.end or 'end'})" if a.start or a.end else "")) if x)
             src, root = pathlib.Path(a.file).expanduser(), dict(LIBRARY_DIRS)[a.kind]
             if src.suffix.lower() not in ASSET_EXT[a.kind]:
                 sys.exit(f"{src.suffix or 'That file'} isn't a {ASSET_LABEL[a.kind]} file ({', '.join(sorted(ASSET_EXT[a.kind]))}).")
