@@ -688,12 +688,12 @@ def ask_for_edit(sb, c, v, revise=False, notes=None):
         fix = ("\n**What to fix** (fix exactly these, change nothing else):\n" + (notes or "(read the comments on the latest version)") + "\n"
                # Tait, 2026-10-22: "when i am reviewing video if i say i like this music or i like this font or motion
                # graphic, add whatever i said i liked to the favorite section for the client you are editing the video for."
-               + f"\n**Anything Tait says he likes** (this music, this sound, this font, this motion graphic, this look): find it in `clients/{slug}/team-room/assets-used/{v['id']}.md` and add it to {c['name']}'s assets: `{bridge_cmd()} assets favorite --client {slug} --asset \"<its path>\"`. If it isn't in the library yet (a graphic you built), add it first: `{bridge_cmd()} assets add --kind <music|sfx|lut|motion|font> --file <file> --into \"<folder>\" --client {slug}`. Say what you added when you deliver.\n")
+               + f"\n**Anything Tait says he likes** (this music, this sound, this font, this motion graphic, this look): find it in `clients/{slug}/team-room/assets-used/{v['id']}.md` and add it to {c['name']}'s assets: `{bridge_cmd()} assets favorite --client {slug} --asset \"<its path>\"`. If it isn't in the library yet (a graphic you built), add it first: `{bridge_cmd()} assets add --kind <music|sfx|lut|motion|font|broll> --file <file> --into \"<folder>\" --client {slug}`. Say what you added when you deliver.\n")
     desc = f"""**{c['name']}**: {what} for **{v.get('title')}** (card `{v['id']}`). Unify the System stage 7. You lead; the **Motion Graphics Designer** builds graphics, the **Content Reviewer** checks every render (their checklist) before it goes to Tait.
 {fix}
 1. `{bridge_cmd()} card get --id {v['id']}` (the script, outline, hook, dates) and the client's **approved** editing guidelines: `{bridge_cmd()} doc get --client {slug} --kind editing_guidelines`, plus brand guidelines and the feedback log.
 2. The raw footage is in Google Drive on this Mac: `{bridge_cmd()} footage where --id {v['id']}` prints the folder.
-3. Edit in Remotion (`editor/`). Assets: **{c['name']}'s own first** (`editor/public/clients/{slug}/_assets/`, or `{bridge_cmd()} assets list --client {slug}`), then the whole library (`{bridge_cmd()} assets list --kind music`; never one marked never). Write every asset you used (music, sound effects, fonts, motion graphics, LUTs), with its library path, in `clients/{slug}/team-room/assets-used/{v['id']}.md`, so anything Tait likes can be added to their assets. Render to `editor/out/{slug}/{v['id']}.mp4`.
+3. Edit in Remotion (`editor/`). Assets: **{c['name']}'s own first** (`editor/public/clients/{slug}/_assets/`, or `{bridge_cmd()} assets list --client {slug}`), then the whole library (`{bridge_cmd()} assets list --kind music`, `--kind broll` for B-roll clips; never one marked never). Write every asset you used (music, sound effects, fonts, motion graphics, LUTs, B-roll), with its library path, in `clients/{slug}/team-room/assets-used/{v['id']}.md`, so anything Tait likes can be added to their assets. Render to `editor/out/{slug}/{v['id']}.mp4`.
 4. Content Reviewer ⇄ you until it passes.
 5. Deliver it to Tait's desk: `{bridge_cmd()} video deliver --id {v['id']} --file editor/out/{slug}/{v['id']}.mp4` (a review copy for the player, a copy in their Final Edits Drive folder, and the card moves to Tait's Videos to review).
 The edit is due {v.get('due_to_edit') or 'soon'} (7 days before the post date)."""
@@ -1323,12 +1323,12 @@ def youtube_outliers(key, query, days=180, limit=25):
 REPO = pathlib.Path(__file__).resolve().parents[1]
 ASSET_ROOT = REPO / "editor/public/clients"
 LIBRARY_DIRS = [("music", ASSET_ROOT / "_music"), ("sfx", ASSET_ROOT / "_sfx/library"), ("lut", ASSET_ROOT / "_luts"),
-                ("motion", ASSET_ROOT / "_motion"), ("font", ASSET_ROOT / "_fonts")]
-ASSET_LABEL = {"music": "Music", "sfx": "Sound effects", "lut": "LUTs and Powergrades", "motion": "Motion graphics", "font": "Fonts"}
+                ("motion", ASSET_ROOT / "_motion"), ("font", ASSET_ROOT / "_fonts"), ("broll", ASSET_ROOT / "_broll")]
+ASSET_LABEL = {"music": "Music", "sfx": "Sound effects", "lut": "LUTs and Powergrades", "motion": "Motion graphics", "font": "Fonts", "broll": "B-roll"}
 AUDIO = {".mp3", ".wav", ".m4a", ".aif", ".aiff", ".flac", ".ogg", ".aac"}
 ASSET_EXT = {"music": AUDIO, "sfx": AUDIO, "lut": {".cube", ".3dl", ".drx", ".dpx", ".look", ".lut", ".dctl"},
              "motion": {".mov", ".mp4", ".webm", ".m4v", ".mogrt", ".gif", ".png", ".json", ".aep", ".drfx", ".setting"},
-             "font": {".ttf", ".otf", ".woff", ".woff2"}}
+             "font": {".ttf", ".otf", ".woff", ".woff2"}, "broll": {".mov", ".mp4", ".webm", ".m4v", ".mkv"}}
 FONT_MIME = {".ttf": "font/ttf", ".otf": "font/otf", ".woff": "font/woff", ".woff2": "font/woff2"}
 
 
@@ -1354,15 +1354,15 @@ def asset_preview(sb, kind, f, rel, poster=None):
             subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(f), "-t", "60" if kind == "music" else "15", "-ac", "2", "-b:a", "96k", str(out)], check=True)
             sb.upload("library", f"{kind}/{key}.mp3", out.read_bytes(), "audio/mpeg")
         return f"{kind}/{key}.mp3"
-    if kind == "motion" and ext in {".mov", ".mp4", ".webm", ".m4v", ".gif"}:
+    if kind in ("motion", "broll") and ext in {".mov", ".mp4", ".webm", ".m4v", ".mkv", ".gif"}:
         with tempfile.TemporaryDirectory() as tmp:
             out = pathlib.Path(tmp) / "p.mp4"
             r = subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(f), "-t", "10", "-vf", "scale=480:-2", "-an", "-c:v", "libx264", "-pix_fmt", "yuv420p",
                                 "-movflags", "+faststart", str(out)], capture_output=True)
             if r.returncode == 0:
-                sb.upload("library", f"motion/{key}.mp4", out.read_bytes(), "video/mp4")
-                upload_poster(sb, f, poster, f"motion/{key}.jpg")
-                return f"motion/{key}.mp4"
+                sb.upload("library", f"{kind}/{key}.mp4", out.read_bytes(), "video/mp4")
+                upload_poster(sb, f, poster, f"{kind}/{key}.jpg")
+                return f"{kind}/{key}.mp4"
     if kind == "font" and ext in FONT_MIME:
         sb.upload("library", f"font/{key}{ext}", f.read_bytes(), FONT_MIME[ext])
         return f"font/{key}{ext}"
@@ -1385,7 +1385,7 @@ def index_asset(sb, kind, root, f, made_by=None, notes=None, poster=None):
     folder_path = str(f.parent.relative_to(root)) if f.parent != root else ""
     row = {"kind": kind, "name": f.stem, "path": rel, "folder": f.parent.name if folder_path else root.name,
            "folder_path": folder_path, "file_type": f.suffix.lower().lstrip("."), "preview_path": asset_preview(sb, kind, f, rel, poster),
-           "duration_s": audio_seconds(f) if kind in ("music", "sfx", "motion") else None}
+           "duration_s": audio_seconds(f) if kind in ("music", "sfx", "motion", "broll") else None}
     if made_by:
         row["made_by"] = made_by
     if notes:
@@ -1483,7 +1483,7 @@ def main(argv=None):
     m = sub.add_parser("moodboard"); m.add_argument("action", choices=["get", "used", "place"]); m.add_argument("--client", required=True, help="a portal address, or 'house'")
     m.add_argument("--id", help="place: the item's id"); m.add_argument("--section", choices=MOOD_SECTIONS, help="place: its group")
     s = sub.add_parser("assets", help="the Assets library: sync, list, add a file, favourite one for a client, build a client's folder")
-    s.add_argument("action", choices=["sync", "list", "add", "favorite", "unfavorite", "export"]); s.add_argument("--kind", choices=["music", "sfx", "lut", "motion", "font"])
+    s.add_argument("action", choices=["sync", "list", "add", "favorite", "unfavorite", "export"]); s.add_argument("--kind", choices=["music", "sfx", "lut", "motion", "font", "broll"])
     s.add_argument("--client", help="a portal address: list/favorite/unfavorite/export for that client")
     s.add_argument("--asset", help="favorite/unfavorite: the asset's id, path or name")
     s.add_argument("--file", help="add: the file to put in the library")

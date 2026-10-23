@@ -1820,11 +1820,11 @@ async function loadStyleData() {
 // everything; a client shows only what's been favourited for them (the
 // folder the editors pull from: bridge.py assets export). No house
 // moodboard here: each client's board is in their portal.
-const ASSET_KINDS = [["music", "Music"], ["sfx", "Sound effects"], ["lut", "LUTs / Powergrades"], ["motion", "Motion graphics"], ["font", "Fonts"]];
+const ASSET_KINDS = [["music", "Music"], ["sfx", "Sound effects"], ["lut", "LUTs / Powergrades"], ["motion", "Motion graphics"], ["font", "Fonts"], ["broll", "B-roll"]];
 let LIB = { scope: "all", kind: "music", path: "", q: "" };   // scope follows globalClientFilter
 const assetClients = id => CLIENT_ASSETS.filter(x => x.asset_id === id).map(x => x.client_id);
 const folderIcon = `<svg viewBox="0 0 64 52" aria-hidden="true"><path d="M4 8a4 4 0 0 1 4-4h16l6 6h26a4 4 0 0 1 4 4v4H4z" fill="#8e8e93"/><rect x="4" y="14" width="56" height="34" rx="4" fill="#aeaeb2"/><rect x="4" y="14" width="56" height="5" rx="2" fill="#c7c7cc" opacity=".6"/></svg>`;
-const fileIcon = kind => ({ music: "♪", sfx: "◉", lut: "◐", motion: "▶", font: "Aa" }[kind] || "•");
+const fileIcon = kind => ({ music: "♪", sfx: "◉", lut: "◐", motion: "▶", font: "Aa", broll: "🎞" }[kind] || "•");
 function renderLibrary() {
   // The client picker at the top right (Tait, 2026-10-22): All clients shows
   // every asset; a client shows only the ones favourited for them.
@@ -1850,7 +1850,7 @@ function renderLibrary() {
     <div class="finder-files">${files.map(a => {
       const mine = assetClients(a.id);
       return `<div class="lib-row" data-asset="${a.id}">
-        ${a.kind === "motion" && a.preview_path ? `<button class="lib-thumb" onclick="assetPreview('${a.id}', this)" aria-label="Play ${escapeHtml(a.name)}"><img alt="" data-thumb="${escapeHtml(a.preview_path.replace(/\.mp4$/, ".jpg"))}"><span>▶</span></button>`
+        ${["motion", "broll"].includes(a.kind) && a.preview_path ? `<button class="lib-thumb" onclick="assetPreview('${a.id}', this)" aria-label="Play ${escapeHtml(a.name)}"><img alt="" data-thumb="${escapeHtml(a.preview_path.replace(/\.mp4$/, ".jpg"))}"><span>▶</span></button>`
           : a.preview_path ? `<button class="lib-play" onclick="assetPreview('${a.id}', this)" aria-label="Preview">${["music", "sfx"].includes(a.kind) ? "▶" : "👁"}</button>` : `<span class="lib-icon">${fileIcon(a.kind)}</span>`}
         <div class="nm"><b>${escapeHtml(a.name)}</b><div class="meta">${escapeHtml([LIB.q && fp(a), a.file_type && a.file_type.toUpperCase(), a.duration_s ? Math.round(a.duration_s) + "s" : "", a.made_by && "made by the " + a.made_by].filter(Boolean).join(" · "))}${mine.length && LIB.scope === "all" ? ` · <span class="lib-for">♥ ${mine.map(id => escapeHtml(CLIENT_BY_ID[id] ? CLIENT_BY_ID[id].name : "")).join(", ")}</span>` : ""}</div>${a.notes ? `<div class="lib-notes">${escapeHtml(a.notes)}</div>` : ""}</div>
         ${LIB.scope === "all" ? `<button onclick="assetForClientMenu('${a.id}', this)">♥ Favorite for…</button>` : `<button onclick="toggleClientAsset('${a.id}','${LIB.scope}')">Remove from ${escapeHtml(scopeName)}</button>`}</div>`;
@@ -1889,7 +1889,7 @@ async function assetPreview(id, btn) {
   if (!a || !a.preview_path) return;
   const { data } = await sbClient.storage.from("library").createSignedUrl(a.preview_path, 3600);
   if (!data || !data.signedUrl) return;
-  if (a.kind === "motion") { openModal(`<h2>${escapeHtml(a.name)}</h2><video src="${escapeHtml(data.signedUrl)}" controls autoplay muted loop playsinline style="width:100%;border-radius:12px;background:#000"></video><div class="modal-actions"><button onclick="closeVideoModal()">Close</button></div>`); return; }
+  if (["motion", "broll"].includes(a.kind)) { openModal(`<h2>${escapeHtml(a.name)}</h2><video src="${escapeHtml(data.signedUrl)}" controls autoplay muted loop playsinline style="width:100%;border-radius:12px;background:#000"></video><div class="modal-actions"><button onclick="closeVideoModal()">Close</button></div>`); return; }
   if (a.kind === "font") return;
   const audio = document.getElementById("libAudio");
   if (audio.dataset.id === id && !audio.paused) { audio.pause(); btn.textContent = "▶"; return; }
