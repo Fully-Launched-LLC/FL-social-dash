@@ -688,7 +688,11 @@ def ask_for_edit(sb, c, v, revise=False, notes=None):
         fix = ("\n**What to fix** (fix exactly these, change nothing else):\n" + (notes or "(read the comments on the latest version)") + "\n"
                # Tait, 2026-10-22: "when i am reviewing video if i say i like this music or i like this font or motion
                # graphic, add whatever i said i liked to the favorite section for the client you are editing the video for."
-               + f"\n**Anything Tait says he likes** (this music, this sound, this font, this motion graphic, this look): find it in `clients/{slug}/team-room/assets-used/{v['id']}.md` and add it to {c['name']}'s assets: `{bridge_cmd()} assets favorite --client {slug} --asset \"<its path>\"`. If it isn't in the library yet (a graphic you built), add it first: `{bridge_cmd()} assets add --kind <music|sfx|lut|motion|font|broll> --file <file> --into \"<folder>\" --client {slug}`. Say what you added when you deliver.\n")
+               + f"\n**Anything Tait says he likes** (this music, this sound, this font, this motion graphic, this look): find it in `clients/{slug}/team-room/assets-used/{v['id']}.md` and add it to {c['name']}'s assets: `{bridge_cmd()} assets favorite --client {slug} --asset \"<its path>\"`. If it isn't in the library yet (a graphic you built), add it first: `{bridge_cmd()} assets add --kind <music|sfx|lut|motion|font|broll> --file <file> --into \"<folder>\" --client {slug}`. Say what you added when you deliver.\n"
+               # Tait, 2026-10-23: "make sure that you learn as i give feedback... the best way for the editing
+               # team to understand what i want is by learning when i request changes and why. I will help with that."
+               + f"\n**Learn from every note** (Tait's rule): for each note, write one line in `clients/{slug}/team-room/feedback-log.md`: what he asked, **why** (his words; if he didn't say why, ask him through the Team Lead in one short question), and what you changed. If the note changes how {c['name']}'s videos should look, sound or move, update their editing guidelines so the next edit starts right: `{bridge_cmd()} doc get --client {slug} --kind editing_guidelines` → change only that point, add a line under **Changes from Tait's reviews** at the bottom (date, his words, what changed) → `{bridge_cmd()} doc put --client {slug} --kind editing_guidelines --file <it> --status approved`. Only his own notes go in this way; anything you're guessing goes to him as a question. Then add it to your own rules.\n")
+
     desc = f"""**{c['name']}**: {what} for **{v.get('title')}** (card `{v['id']}`). Unify the System stage 7. You lead; the **Motion Graphics Designer** builds graphics, the **Content Reviewer** checks every render (their checklist) before it goes to Tait.
 {fix}
 1. `{bridge_cmd()} card get --id {v['id']}` (the script, outline, hook, dates) and the client's **approved** editing guidelines: `{bridge_cmd()} doc get --client {slug} --kind editing_guidelines`, plus brand guidelines and the feedback log.
@@ -1496,7 +1500,7 @@ def main(argv=None):
     q = sub.add_parser("questions"); q.add_argument("action", choices=["put"]); q.add_argument("--client", required=True); q.add_argument("--file", required=True)
     d = sub.add_parser("doc"); d.add_argument("action", choices=["put"]); d.add_argument("--client", required=True)
     d.add_argument("--kind", required=True, choices=DOC_KINDS); d.add_argument("--file", required=True)
-    d.add_argument("--status", default="on_desk", choices=["draft", "on_desk"]); d.add_argument("--built-by", default=None); d.add_argument("--sources", default=None)
+    d.add_argument("--status", default="on_desk", choices=["draft", "on_desk", "approved"], help="approved: only for updating already-approved editing guidelines with Tait's own review notes"); d.add_argument("--built-by", default=None); d.add_argument("--sources", default=None)
     dg = sub.add_parser("doc-get"); dg.add_argument("--client", required=True); dg.add_argument("--kind", required=True, choices=DOC_KINDS)
     m = sub.add_parser("moodboard"); m.add_argument("action", choices=["get", "used", "place"]); m.add_argument("--client", required=True, help="a portal address, or 'house'")
     m.add_argument("--id", help="place: the item's id"); m.add_argument("--section", choices=MOOD_SECTIONS, help="place: its group")
@@ -1847,8 +1851,16 @@ def main(argv=None):
         row = {"client_id": c["id"], "kind": a.kind, "title": DOC_TITLES[a.kind],
                "body_md": pathlib.Path(a.file).read_text(), "status": a.status, "built_by": a.built_by, "sources": a.sources,
                "approved_at": None, "approved_by": None}
+        if a.status == "approved":
+            # Tait, 2026-10-23: his review notes keep the approved editing guidelines up to date ("some of the
+            # things on my desk might change as we edit"), without sending them back to his desk each time.
+            cur = sb.select("social_client_generated_docs", f"select=status,approved_at,approved_by&client_id=eq.{c['id']}&kind=eq.{a.kind}")
+            if a.kind != "editing_guidelines" or not cur or cur[0]["status"] != "approved":
+                sys.exit("--status approved only updates editing guidelines Tait has already approved.")
+            row.update(approved_at=cur[0]["approved_at"], approved_by=cur[0]["approved_by"])
+            row.pop("built_by"); row.pop("sources")
         sb.insert("social_client_generated_docs", row, upsert_on="client_id,kind")
-        print(f"Saved {a.kind} for {c['name']} ({'on Tait’s desk' if a.status == 'on_desk' else 'draft'}).")
+        print(f"Saved {a.kind} for {c['name']} ({ {'on_desk': 'on Tait’s desk', 'approved': 'still approved, updated'}.get(a.status, 'draft') }).")
 
 
 if __name__ == "__main__":
