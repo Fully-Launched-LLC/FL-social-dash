@@ -1,0 +1,26 @@
+# Hesedea: warm glow (v1, Color Grader, 2026-10-21, FUL-38)
+# Warm, soft, cinematic documentary grade for the flat Sony interview footage (C0004.MP4, 4K, yuvj420p): corrects the flat image, then adds warm cream highlights, soft warm halation, lifted warm blacks, a gentle vignette and fine grain. Skin stays natural.
+#
+# FILTER CHAIN (one line, for -filter_complex; tuned for the 3840x2160 source; grade BEFORE crop/scale):
+format=gbrp,curves=master='0/0 0.20/0.045 0.40/0.29 0.55/0.50 0.70/0.70 0.86/0.89 1/0.97',eq=saturation=1.15,colorbalance=rs=0.04:gs=-0.005:bs=-0.04:rm=0.04:gm=-0.015:bm=-0.03:rh=0.05:gh=-0.01:bh=-0.035:pl=1,curves=r='0/0.03 1/1':g='0/0.018 1/0.985':b='0/0.01 1/0.95',split[g0][h0];[h0]curves=master='0/0 0.66/0 1/1',gblur=sigma=45,colorchannelmixer=rr=1:gg=0.8:bb=0.55[h1];[g0][h1]blend=all_mode=screen:all_opacity=0.28,vignette=angle=PI/6,noise=c0s=5:c1s=5:c2s=5:allf=t,format=yuv420p
+
+# Usage (graded 4K proxy of a section, then edit on it in Remotion):
+#   ffmpeg -ss <start> -t <dur> -i "/Volumes/Crucial X10/Hesedea/1st interview/C0004.MP4" \
+#     -filter_complex "[0:v]<CHAIN>[v]" -map "[v]" -map 0:a:0 \
+#     -c:v libx264 -crf 16 -preset fast -pix_fmt yuv420p -c:a aac graded.mp4
+#   (crop to 9:16 / scale AFTER the chain: append ",crop=1215:2160:<x>:0,scale=1080:1920" inside the same chain.
+#    If you grade after scaling to 1080 wide instead, halve the bloom: gblur=sigma=22.)
+# Speed: about 3.5 s of compute per 1 s of 4K on Tait's Mac.
+#
+# What each step does:
+#  1. curves master: flat -> normal contrast. Black point down (0.20->0.045), mids a touch lower, top rolled to 0.97 so the windows never clip.
+#  2. eq saturation 1.15: brings back the colour the flat profile hides.
+#  3. colorbalance (luminance preserved): white balance from cool blue-grey to warm; reds up, blues down in shadows/mids/highlights, green trimmed so whites read cream, not olive.
+#  4. curves r/g/b: lifts blacks warm (R .03, G .018, B .01), slight warm roll-off in the top.
+#  5. bloom/halation: highlights only (above 66%), blurred sigma 45, tinted amber, screened at 28%. The soft glow round the windows and on skin edges.
+#  6. vignette PI/6: gentle.  7. noise 5, temporal: fine moving grain.
+#
+# Measured on 7:40, 14:36, 20:09 (8-bit limited range): blacks 27-28 (lifted, not crushed; 16 = pure black), highlights 212-214 (under 235, windows keep detail), skin hue 22-23 deg, sat 0.26-0.31 (natural; orange would be ~30+ deg and much more saturated). Walls: (192,185,172) warm cream.
+#
+# Remotion: don't rebuild it in CSS. Render the graded proxy with ffmpeg first (above) and use it as the <OffthreadVideo> source.
+# Rough CSS-only preview if ever needed: filter: contrast(1.25) brightness(0.92) saturate(1.15) sepia(0.12); plus a radial-gradient vignette overlay. Not a match; never ship it.
