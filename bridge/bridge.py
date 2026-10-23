@@ -422,6 +422,70 @@ def ask_for_style(sb, c, update=False):
     return tid
 
 
+# Links on a moodboard show a picture of the page (Tait, 2026-10-23: "it
+# would be great if the website link i dropped in showed a preview of the
+# gradgig website"). Social posts use the post's own preview image (their
+# pages are login walls); everything else is a screenshot from Chrome.
+CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+SOCIAL_HOSTS = ("instagram.com", "youtube.com", "youtu.be", "tiktok.com", "x.com", "twitter.com", "facebook.com", "linkedin.com")
+
+
+def og_image(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (compatible; facebookexternalhit/1.1)"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        html = r.read(400_000).decode("utf-8", "ignore")
+    m = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)', html) or \
+        re.search(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image', html)
+    if not m:
+        return None
+    with urllib.request.urlopen(urllib.request.Request(m.group(1).replace("&amp;", "&"), headers={"User-Agent": "Mozilla/5.0"}), timeout=20) as r:
+        return r.read()
+
+
+def page_picture(url):
+    """JPEG bytes of a link's preview, or None."""
+    host = urllib.parse.urlparse(url).netloc.lower()
+    with tempfile.TemporaryDirectory() as tmp:
+        raw = pathlib.Path(tmp) / "raw"
+        if any(host == h or host.endswith("." + h) for h in SOCIAL_HOSTS):
+            data = og_image(url)
+            if not data:
+                return None
+            raw.write_bytes(data)
+        else:
+            if not pathlib.Path(CHROME).exists():
+                return None
+            raw = pathlib.Path(tmp) / "shot.png"
+            subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", f"--user-data-dir={tmp}/profile",
+                            "--window-size=1280,800", "--virtual-time-budget=8000", f"--screenshot={raw}", url],
+                           capture_output=True, timeout=90)
+            if not raw.exists():
+                return None
+        out = pathlib.Path(tmp) / "p.jpg"
+        r = subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(raw), "-frames:v", "1", "-vf", "scale='min(1280,iw)':-2", "-q:v", "4", str(out)], capture_output=True)
+        return out.read_bytes() if r.returncode == 0 and out.exists() else None
+
+
+def link_previews(sb, st):
+    """Give every moodboard link without a picture one (each link tried once)."""
+    tried, log = set(st.get("link_preview_tried", [])), []
+    for m in sb.select("social_moodboard_items", "select=id,client_id,url&kind=eq.link&storage_path=is.null"):
+        if m["id"] in tried or not m.get("url"):
+            continue
+        tried.add(m["id"])
+        try:
+            data = page_picture(m["url"])
+        except Exception:
+            data = None
+        if data:
+            path = f"{m['client_id'] or 'house'}/link-{m['id']}.jpg"
+            sb.upload("moodboards", path, data, "image/jpeg")
+            sb.update("social_moodboard_items", {"id": m["id"]}, {"storage_path": path})
+            log.append(f"moodboard link preview: {m['url']}")
+    st["link_preview_tried"] = sorted(tried)
+    return log
+
+
 def ask_for_mood_sort(sb, c):
     slug = c["slug"]
     desc = f"""**{c['name']}**: new things were dropped on their moodboard. Group them (Tait, 2026-10-22: "i want my ai agent to organize the moodboard into groupings of fonts, colors, motion graphics, style… i dont want the client to have to organize the file they drop in").
@@ -901,6 +965,10 @@ def check(sb, verbose=True):
             log.append(f"editing guidelines: {c['name']} -> {ask_for_style(sb, c)}")
         for c in sj["update"]:
             log.append(f"editing guidelines update: {c['name']} -> {ask_for_style(sb, c, update=True)}")
+        try:
+            log += link_previews(sb, st)
+        except Exception as e:
+            log.append(f"moodboard link previews: {e}")
         asked = st.get("mood_sort_asked", {})
         for c, newest in plan_mood_sorts(clients, mood, asked):
             log.append(f"moodboard groups: {c['name']} -> {ask_for_mood_sort(sb, c)}")
@@ -1273,9 +1341,10 @@ def audio_seconds(path):
         return None
 
 
-def asset_preview(sb, kind, f, rel):
+def asset_preview(sb, kind, f, rel, poster=None):
     """A small preview the page can play or show: audio as MP3 (music: the
-    first 60 s; sound effects: up to 15 s), motion as a short MP4, a font
+    first 60 s; sound effects: up to 15 s), motion as a short MP4 plus a
+    still beside it (same name, .jpg) so Tait knows it at a glance, a font
     file as itself. LUTs and project files have none."""
     ext = f.suffix.lower()
     key = uuid.uuid5(uuid.NAMESPACE_URL, rel).hex
@@ -1292,6 +1361,7 @@ def asset_preview(sb, kind, f, rel):
                                 "-movflags", "+faststart", str(out)], capture_output=True)
             if r.returncode == 0:
                 sb.upload("library", f"motion/{key}.mp4", out.read_bytes(), "video/mp4")
+                upload_poster(sb, f, poster, f"motion/{key}.jpg")
                 return f"motion/{key}.mp4"
     if kind == "font" and ext in FONT_MIME:
         sb.upload("library", f"font/{key}{ext}", f.read_bytes(), FONT_MIME[ext])
@@ -1299,14 +1369,27 @@ def asset_preview(sb, kind, f, rel):
     return None
 
 
-def index_asset(sb, kind, root, f, made_by=None):
+def upload_poster(sb, f, poster, dest):
+    """The still for a motion graphic: the given picture, or a frame 60 % in
+    (where the graphic is usually fully on screen)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = pathlib.Path(tmp) / "p.jpg"
+        src, at = (poster, []) if poster else (f, ["-ss", str(round((audio_seconds(f) or 2) * 0.6, 2))])
+        r = subprocess.run(["ffmpeg", "-v", "error", "-y", *at, "-i", str(src), "-frames:v", "1", "-vf", "scale=480:-2", "-q:v", "4", str(out)], capture_output=True)
+        if r.returncode == 0 and out.exists():
+            sb.upload("library", dest, out.read_bytes(), "image/jpeg")
+
+
+def index_asset(sb, kind, root, f, made_by=None, notes=None, poster=None):
     rel = str(f.relative_to(REPO))
     folder_path = str(f.parent.relative_to(root)) if f.parent != root else ""
     row = {"kind": kind, "name": f.stem, "path": rel, "folder": f.parent.name if folder_path else root.name,
-           "folder_path": folder_path, "file_type": f.suffix.lower().lstrip("."), "preview_path": asset_preview(sb, kind, f, rel),
+           "folder_path": folder_path, "file_type": f.suffix.lower().lstrip("."), "preview_path": asset_preview(sb, kind, f, rel, poster),
            "duration_s": audio_seconds(f) if kind in ("music", "sfx", "motion") else None}
     if made_by:
         row["made_by"] = made_by
+    if notes:
+        row["notes"] = notes
     return sb.insert("social_style_assets", row)[0]
 
 
@@ -1347,7 +1430,7 @@ def export_client_assets(sb, c):
         for p in sorted(out.rglob("*"), reverse=True):
             p.unlink() if p.is_symlink() or p.is_file() else p.rmdir()
     ids = [r["asset_id"] for r in sb.select("social_client_assets", f"select=asset_id&client_id=eq.{c['id']}")]
-    rows = sb.select("social_style_assets", f"select=kind,folder_path,path&id=in.({','.join(ids)})") if ids else []
+    rows = sb.select("social_style_assets", f"select=kind,name,folder_path,path,notes&id=in.({','.join(ids)})&order=kind,folder_path,name") if ids else []
     n = 0
     for r in rows:
         src = REPO / r["path"]
@@ -1357,7 +1440,23 @@ def export_client_assets(sb, c):
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.symlink_to(src)
         n += 1
+    if rows:
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "README.md").write_text(assets_readme(c["name"], rows))
     return out, n
+
+
+def assets_readme(name, rows):
+    """What each of the client's assets is, for the editors (rebuilt with the folder)."""
+    lines = [f"# {name}'s assets", "", "Tait's favourites for this client. Use these first. "
+             "Each motion graphic's file is a short clip of it; the note says what it is and how to build it.", ""]
+    kind = None
+    for r in rows:
+        if r["kind"] != kind:
+            kind = r["kind"]; lines += ["", f"## {ASSET_LABEL.get(kind, kind)}", ""]
+        where = "/".join(x for x in (ASSET_LABEL.get(kind, kind), r.get("folder_path") or "", pathlib.Path(r["path"]).name) if x)
+        lines.append(f"- **{r['name']}** (`{where}`)" + (f": {r['notes']}" if r.get("notes") else ""))
+    return "\n".join(lines).replace("\n\n\n", "\n\n") + "\n"
 
 
 # ── commands agents use ─────────────────────────────────────────────────
@@ -1390,6 +1489,8 @@ def main(argv=None):
     s.add_argument("--file", help="add: the file to put in the library")
     s.add_argument("--into", default="", help="add: the folder inside the category, e.g. 'Whooshes' or 'Camera sounds/shutter clicks'")
     s.add_argument("--by", help="add: who made it, e.g. 'Sound Designer'")
+    s.add_argument("--notes", help="add: what it is and when to use it (shown in Assets and in the client's folder README)")
+    s.add_argument("--poster", help="add (motion): a picture of the graphic to show in Assets (default: a frame from the clip)")
     s.add_argument("--folder"); s.add_argument("--favourites", action="store_true")
     ia = sub.add_parser("idea"); ia.add_argument("action", choices=["add"]); ia.add_argument("--client", required=True)
     ia.add_argument("--title", required=True); ia.add_argument("--body"); ia.add_argument("--source", default="research", choices=["tait", "phone", "research", "sandcastles", "client"])
@@ -1680,7 +1781,7 @@ def main(argv=None):
             dest.parent.mkdir(parents=True, exist_ok=True)
             import shutil
             shutil.copy2(src, dest)
-            r = index_asset(sb, a.kind, root, dest, made_by=a.by)
+            r = index_asset(sb, a.kind, root, dest, made_by=a.by, notes=a.notes, poster=a.poster)
             print(f"Added {dest.name} to {ASSET_LABEL[a.kind]}/{a.into or ''} ({r['id']}).")
             if a.client:
                 c = client_by_slug(sb, a.client)
@@ -1704,10 +1805,10 @@ def main(argv=None):
         elif a.client:
             c = client_by_slug(sb, a.client)
             ids = [r["asset_id"] for r in sb.select("social_client_assets", f"select=asset_id&client_id=eq.{c['id']}")]
-            rows = sb.select("social_style_assets", f"select=kind,name,folder_path,path&id=in.({','.join(ids)})&order=kind,folder_path,name") if ids else []
+            rows = sb.select("social_style_assets", f"select=kind,name,folder_path,path,notes&id=in.({','.join(ids)})&order=kind,folder_path,name") if ids else []
             for r in rows:
                 if not a.kind or r["kind"] == a.kind:
-                    print(f"{ASSET_LABEL.get(r['kind'], r['kind'])} · {r.get('folder_path') or ''} · {r['name']} · {r['path']}")
+                    print(f"{ASSET_LABEL.get(r['kind'], r['kind'])} · {r.get('folder_path') or ''} · {r['name']} · {r['path']}" + (f"\n    {r['notes']}" if r.get("notes") else ""))
             print(f"{len(rows)} asset(s) for {c['name']}.", file=sys.stderr)
         else:
             q = "select=kind,name,folder,path,tags,rating,duration_s&order=folder,name&rating=not.eq.never"

@@ -719,6 +719,9 @@ body.navy-work .main .chip-row { box-shadow:none; }
 .mb-link { display:block; padding:16px 12px; min-height:110px; text-decoration:none; color:#2b2722; background:#efe9dd; }
 .mb-link b { display:block; font-size:14px; }
 .mb-link span { display:block; font-size:11px; color:rgba(43,39,34,.6); word-break:break-all; margin-top:6px; }
+.mb-link.has-pic { padding:0; min-height:0; background:#fff; }
+.mb-link.has-pic img { display:block; width:100%; aspect-ratio:16/10; object-fit:cover; object-position:top; }
+.mb-link.has-pic b { padding:8px 10px; font-size:13px; }
 .mb-word { position:relative; break-inside:avoid; display:block; margin:6px 0 14px; font-family:"Caveat", cursive; font-size:clamp(26px, 3vw, 40px); line-height:1; color:#2b2722; padding:6px 14px; transform:rotate(var(--r, 0deg)); }
 .mb-word .mb-tools { top:-14px; right:-6px; }
 .mb-word.long { font-size:21px; line-height:1.2; background:#fbf6dc; padding:12px 14px; box-shadow:0 2px 3px rgba(40,30,20,.12), 0 8px 18px rgba(40,30,20,.14); }

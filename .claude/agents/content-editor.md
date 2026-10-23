@@ -50,3 +50,7 @@ the video's approved card.
   (or "revise the edit" with the exact notes). Footage path:
   `python3 bridge/bridge.py footage where --id <card>`. After the Reviewer
   passes it: `python3 bridge/bridge.py video deliver --id <card> --file <mp4>`.
+
+Before every edit, read the client's `editor/public/clients/<slug>/_assets/README.md`:
+what each favourite asset is. A motion graphic's file is a short clip of it;
+its note names the code to build it from (Tait, 2026-10-23).

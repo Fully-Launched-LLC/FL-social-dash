@@ -34,6 +34,11 @@
 .lib-row { position:relative; }
 .lib-play, .lib-icon { width:34px; height:34px; flex:0 0 34px; border-radius:999px; display:grid; place-items:center; padding:0; font-size:.85rem; }
 .lib-icon { border:1px solid var(--border); color:var(--sub); }
+.lib-thumb { position:relative; width:54px; height:96px; flex:0 0 54px; padding:0; border-radius:10px; overflow:hidden; background:#000; border:1px solid var(--border); display:grid; place-items:center; }
+.lib-thumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.lib-thumb span { position:relative; width:26px; height:26px; border-radius:999px; display:grid; place-items:center; font-size:.7rem; background:rgba(0,0,0,.55); color:#fff; }
+html body.glass .main .card button.lib-thumb { width:54px; height:96px; padding:0; border-radius:10px; }
+.lib-notes { font-size:.8rem; color:var(--sub); margin-top:3px; line-height:1.35; max-width:70ch; }
 .lib-for { color:var(--accent); }
 .asset-menu { position:absolute; right:0; top:100%; z-index:20; display:flex; flex-direction:column; min-width:200px; padding:6px; border-radius:14px;
   background:var(--card); border:1px solid var(--border); box-shadow:0 12px 32px rgba(0,0,0,.35); }
@@ -1845,8 +1850,9 @@ function renderLibrary() {
     <div class="finder-files">${files.map(a => {
       const mine = assetClients(a.id);
       return `<div class="lib-row" data-asset="${a.id}">
-        ${a.preview_path ? `<button class="lib-play" onclick="assetPreview('${a.id}', this)" aria-label="Preview">${["music", "sfx"].includes(a.kind) ? "▶" : "👁"}</button>` : `<span class="lib-icon">${fileIcon(a.kind)}</span>`}
-        <div class="nm"><b>${escapeHtml(a.name)}</b><div class="meta">${escapeHtml([LIB.q && fp(a), a.file_type && a.file_type.toUpperCase(), a.duration_s ? Math.round(a.duration_s) + "s" : "", a.made_by && "made by the " + a.made_by].filter(Boolean).join(" · "))}${mine.length && LIB.scope === "all" ? ` · <span class="lib-for">♥ ${mine.map(id => escapeHtml(CLIENT_BY_ID[id] ? CLIENT_BY_ID[id].name : "")).join(", ")}</span>` : ""}</div></div>
+        ${a.kind === "motion" && a.preview_path ? `<button class="lib-thumb" onclick="assetPreview('${a.id}', this)" aria-label="Play ${escapeHtml(a.name)}"><img alt="" data-thumb="${escapeHtml(a.preview_path.replace(/\.mp4$/, ".jpg"))}"><span>▶</span></button>`
+          : a.preview_path ? `<button class="lib-play" onclick="assetPreview('${a.id}', this)" aria-label="Preview">${["music", "sfx"].includes(a.kind) ? "▶" : "👁"}</button>` : `<span class="lib-icon">${fileIcon(a.kind)}</span>`}
+        <div class="nm"><b>${escapeHtml(a.name)}</b><div class="meta">${escapeHtml([LIB.q && fp(a), a.file_type && a.file_type.toUpperCase(), a.duration_s ? Math.round(a.duration_s) + "s" : "", a.made_by && "made by the " + a.made_by].filter(Boolean).join(" · "))}${mine.length && LIB.scope === "all" ? ` · <span class="lib-for">♥ ${mine.map(id => escapeHtml(CLIENT_BY_ID[id] ? CLIENT_BY_ID[id].name : "")).join(", ")}</span>` : ""}</div>${a.notes ? `<div class="lib-notes">${escapeHtml(a.notes)}</div>` : ""}</div>
         ${LIB.scope === "all" ? `<button onclick="assetForClientMenu('${a.id}', this)">♥ Favorite for…</button>` : `<button onclick="toggleClientAsset('${a.id}','${LIB.scope}')">Remove from ${escapeHtml(scopeName)}</button>`}</div>`;
     }).join("")}</div>
     ${!all.length ? `<div class="empty">${LIB.scope === "all" ? `No ${escapeHtml(kindLabel.toLowerCase())} yet. Send them to Claude ("add these to ${escapeHtml(kindLabel.toLowerCase())}"), or put them in the folder on your Mac and run <code>bridge.py assets sync</code>.` : `Nothing favourited for ${escapeHtml(scopeName)} yet. Pick All clients at the top right and tap ♥ Favorite for… on anything you like for them.`}</div>`
@@ -1855,6 +1861,16 @@ function renderLibrary() {
   body.querySelectorAll("[data-path]").forEach(b => b.onclick = () => { LIB = { ...LIB, path: b.dataset.path, q: "" }; renderLibrary(); });
   document.getElementById("libQ").oninput = e => { LIB.q = e.target.value; clearTimeout(renderLibrary.t); renderLibrary.t = setTimeout(() => { renderLibrary(); const q = document.getElementById("libQ"); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }, 250); };
   loadFontPreviews(files);
+  loadMotionThumbs(body);
+}
+// Motion graphics show a still of themselves (Tait, 2026-10-23: "save it in
+// a way that i know what the motion graphic is when i see it in assets").
+async function loadMotionThumbs(body) {
+  const imgs = [...body.querySelectorAll("img[data-thumb]")];
+  if (!imgs.length) return;
+  const { data } = await sbClient.storage.from("library").createSignedUrls(imgs.map(i => i.dataset.thumb), 3600);
+  (data || []).forEach((d, i) => { if (d && d.signedUrl) imgs[i].src = d.signedUrl; });
+  imgs.forEach(i => { i.onerror = () => i.remove(); });
 }
 // Fonts show their own name in the font.
 async function loadFontPreviews(files) {
