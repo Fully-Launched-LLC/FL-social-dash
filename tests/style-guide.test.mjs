@@ -33,16 +33,17 @@ chk("client can't read the Library", !(await as(CL, `select * from social_style_
 // 036: folder paths come from where each file sits on the drive.
 await db.exec(`update social_style_assets set folder_path = null`);
 await db.exec(readFileSync(new URL("../supabase/migrations/036_assets.sql", import.meta.url), "utf8"));
+await db.exec(readFileSync(new URL("../supabase/migrations/037_broll.sql", import.meta.url), "utf8"));
 const fps = Object.fromEntries((await db.query(`select name, folder_path from social_style_assets`)).rows.map(r => [r.name, r.folder_path]));
 chk("folder paths from the drive, nested ones kept", fps["Deep impact"] === "impacts" && fps["Shutter 1"] === "Camera sounds/shutter clicks" && fps["Paper"] === "" && fps["Arrival of the Birds"] === "cinematic", fps);
 chk("client can't read anyone's assets list", !(await as(CL, `select * from social_client_assets`)).data.length);
-chk("five kinds", !(await as(OP, `insert into social_style_assets (kind,name) values ('lut','Warm glow'),('motion','Lower third'),('font','Inter')`)).error && !!(await as(OP, `insert into social_style_assets (kind,name) values ('poster','x')`)).error);
+chk("six kinds (B-roll, 037)", !(await as(OP, `insert into social_style_assets (kind,name) values ('lut','Warm glow'),('motion','Lower third'),('font','Inter'),('broll','City drone')`)).error && !!(await as(OP, `insert into social_style_assets (kind,name) values ('poster','x')`)).error);
 
 const op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
 const d = op.d;
 chk("Assets is in the sidebar (was Library)", d.querySelector('.nav-item[data-view="library"]').textContent === "Assets");
 d.querySelector('.nav-item[data-view="library"]').click(); await settle();
-chk("tabs: Music, Sound effects, LUTs / Powergrades, Motion graphics, Fonts; no house moodboard", [...d.querySelectorAll("#libTabs .chip")].map(c => c.textContent.replace(/\d+$/, "").trim()).join("|") === "Music|Sound effects|LUTs / Powergrades|Motion graphics|Fonts" && !d.getElementById("libBody").textContent.includes("the swipes"), [...d.querySelectorAll("#libTabs .chip")].map(c => c.textContent));
+chk("tabs: Music, Sound effects, LUTs / Powergrades, Motion graphics, Fonts, B-roll; no house moodboard", [...d.querySelectorAll("#libTabs .chip")].map(c => c.textContent.replace(/\d+$/, "").trim()).join("|") === "Music|Sound effects|LUTs / Powergrades|Motion graphics|Fonts|B-roll" && !d.getElementById("libBody").textContent.includes("the swipes"), [...d.querySelectorAll("#libTabs .chip")].map(c => c.textContent));
 chk("no second client row and no banner: the top-right picker chooses (Tait, 2026-10-22)", !d.getElementById("assetScope") && !d.getElementById("globalClientBanner") && !d.querySelector("#view-library .page-head p"));
 const rows = () => [...d.querySelectorAll("#libBody .lib-row")].map(r => r.querySelector(".nm b").textContent);
 const folders = () => [...d.querySelectorAll("#libBody .finder-folder .nm")].map(f => f.textContent);
@@ -82,6 +83,11 @@ op.w.loadStyleData && await op.w.loadStyleData();
 d.querySelector('#libTabs [data-lib="motion"]').click(); await settle();
 { const r = rowFor("Lower third"), img = r && r.querySelector(".lib-thumb img");
   chk("motion graphic shows its still and its note", img && img.dataset.thumb === "motion/k.jpg" && r.querySelector(".lib-notes").textContent.includes("narrow into one circle") && !!r.querySelector("button[onclick*='assetForClientMenu']"), r && r.outerHTML); }
+await db.exec(`update social_style_assets set preview_path='broll/c.mp4' where name='City drone'`);
+await op.w.loadStyleData();
+d.querySelector('#libTabs [data-lib="broll"]').click(); await settle();
+{ const r = rowFor("City drone"), img = r && r.querySelector(".lib-thumb img");
+  chk("B-roll: its own tab, each clip with a still you can play", img && img.dataset.thumb === "broll/c.jpg", r && r.outerHTML); }
 
 // Client moodboard (shared with the client, migration 033): upload into a
 // section, link, words, note, move between sections, remove.
