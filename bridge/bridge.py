@@ -1387,7 +1387,7 @@ def download_clip(url, start=None, end=None, name=None):
     CACHE.mkdir(parents=True, exist_ok=True)
     out = CACHE / "clips"; out.mkdir(exist_ok=True)
     stem = re.sub(r'[\\/:*?"<>|]+', "-", name).strip() if name else "%(title).80s"
-    cmd = ["yt-dlp", "--no-playlist", "-S", "res:1080", "-f", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b", "--merge-output-format", "mp4",
+    cmd = ["yt-dlp", "--no-playlist", "-S", "res:2160", "-f", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b", "--merge-output-format", "mp4",
            "-o", str(out / f"{stem}.%(ext)s"), "--print", "after_move:filepath"]
     if start or end:
         cmd += ["--download-sections", f"*{start or '0'}-{end or 'inf'}", "--force-keyframes-at-cuts"]
