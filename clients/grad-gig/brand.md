@@ -37,3 +37,12 @@ Tait's file: ~/Desktop/Untitled design (1).png. The shirt in the footage has it 
 - **Every accent is Grad Gig orange #F15523**: highlighted keywords (orange text, never a box), glows, icons, numbers, graph lines, effect colours. No yellow (Blatch's colour) and no other accent colours.
 
 **Captions (Tait, 2026-10-21):** heavy bold white sans with tight spacing, 1–2 words at a time, at the seam above Luke (reference: `team/inspo/frames/2026-10-21-caption-style.jpeg`). Keywords are the same font, just Grad Gig orange #F15523.
+
+## Official style (Tait, 2026-10-23)
+"i want all of the grad gig motion graphics to look just like @kallawaymarketing."
+- **Official font: Nunito Sans Black (900)** for captions, titles and the end card (the caption font from the v10/v11 test reels; also gradgig.co's font). Graphic titles add one **Instrument Serif italic** word. Both are in Assets › Fonts › Grad Gig.
+- **Highlighted words:** Grad Gig orange #F15523, same font, no box.
+- **Graphics:** black and white, orange from time to time; line art, dots, particles, glowing line charts, the swipe between graphics; simple like Kallaway.
+- **Sound:** like the Hesedea videos (Deep impact, Soft Riser 2), with Kallaway's pacing.
+- Full rules: Grad Gig's editing guidelines (dashboard › Grad Gig › Documents).
+
