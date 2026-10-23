@@ -971,6 +971,9 @@ def check(sb, verbose=True):
             log.append(f"editing guidelines update: {c['name']} -> {ask_for_style(sb, c, update=True)}")
         try:
             log += link_previews(sb, st)
+            new_assets = sync_assets(sb, quiet=True)
+            if new_assets:
+                log.append(new_assets)
         except Exception as e:
             log.append(f"moodboard link previews: {e}")
         asked = st.get("mood_sort_asked", {})
@@ -1415,10 +1418,21 @@ def index_asset(sb, kind, root, f, made_by=None, notes=None, poster=None):
     return sb.insert("social_style_assets", row)[0]
 
 
-def sync_assets(sb):
-    """Index every asset folder into social_style_assets (new files only)."""
+def client_for_folder(folder_path, clients):
+    """The client a drop folder belongs to: its top folder is the client's
+    name or portal address (e.g. Music/Grad Gig/…), else None."""
+    top = (folder_path or "").split("/")[0].strip().lower()
+    return next((c for c in clients if top and top in (c["name"].strip().lower(), c["slug"].lower())), None)
+
+
+def sync_assets(sb, quiet=False):
+    """Index every asset folder into social_style_assets (new files only).
+    Tait, 2026-10-23: "i can drop in music tracks i like for each client."
+    A new file inside a folder named after a client (Music/Grad Gig/song.mp3)
+    is also favourited for that client. The bridge runs this every pass."""
     known = {r["path"] for r in sb.select("social_style_assets", "select=path")}
-    added = 0
+    clients = sb.select("social_clients", "select=*")
+    added, fav = 0, {}
     for kind, root in LIBRARY_DIRS:
         root.mkdir(parents=True, exist_ok=True)
         for f in sorted(root.rglob("*")):
@@ -1426,9 +1440,17 @@ def sync_assets(sb):
                 continue
             if str(f.relative_to(REPO)) in known:
                 continue
-            index_asset(sb, kind, root, f)
+            r = index_asset(sb, kind, root, f)
             added += 1
-    return f"Assets: {added} new file(s) added ({len(known) + added} in all)."
+            c = client_for_folder(r.get("folder_path"), clients)
+            if c:
+                sb.insert("social_client_assets", {"client_id": c["id"], "asset_id": r["id"], "added_by": "tait"}, upsert_on="client_id,asset_id")
+                fav[c["id"]] = c
+    for c in fav.values():
+        export_client_assets(sb, c)
+    if quiet and not added:
+        return None
+    return f"Assets: {added} new file(s) added ({len(known) + added} in all)" + (f", favourited for {', '.join(c['name'] for c in fav.values())}." if fav else ".")
 
 
 def find_asset(sb, ref):
