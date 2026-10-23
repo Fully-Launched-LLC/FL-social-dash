@@ -1012,9 +1012,14 @@ def check(sb, verbose=True):
 # ── Telegram as Tait's main channel (Tait, 2026-10-21) ──────────────────
 # "i want to use telegram as my main source of communication, not just a
 # place to generate video ideas." A message that starts with "idea" (or 💡)
-# is filed as a content idea; everything else goes to Claude's inbox, which
-# the Claude session working with Tait reads and answers through the bot.
+# is filed as a content idea; everything else goes to the Team Lead (Tait,
+# 2026-10-23: one manager he talks to directly and tells what to do). Each
+# pass's messages land on one open "Telegram with Tait" task (a new one when
+# none is open), and the Team Lead replies with `telegram send`. The inbox
+# file keeps every message; it is left unread for a Claude session only when
+# Paperclip is down.
 INBOX = HOME / ".config" / "fully-social" / "telegram-inbox.jsonl"
+TG_TASK = "Telegram with Tait"
 
 
 def is_idea(text):
@@ -1025,10 +1030,41 @@ def strip_idea(text):
     return re.sub(r"^\s*(idea\b\s*[:\-—]?\s*|💡\s*)", "", text or "", flags=re.I).strip()
 
 
-def to_inbox(entry):
+def to_inbox(entry, read=False):
     INBOX.parent.mkdir(parents=True, exist_ok=True)
     with INBOX.open("a") as f:
-        f.write(json.dumps(dict(entry, at=now(), read=False)) + "\n")
+        f.write(json.dumps(dict(entry, at=now(), read=read)) + "\n")
+
+
+def team_lead_note(msgs):
+    """The comment the Team Lead gets for one pass's Telegram messages."""
+    lines = []
+    for m in msgs:
+        said = m["text"] or "(no text)"
+        lines.append(("🎤 voice note: " if m.get("voice") else "") + said)
+        lines += [f"  file: {f}" for f in m.get("files", [])]
+    return ("Tait on Telegram:\n\n" + "\n\n".join(lines) + "\n\n"
+            "Reply first with what you understood (python3 bridge/bridge.py telegram send \"...\"), "
+            "then do it or hand it to the right member, train everyone it applies to, and tell Tait when it's done.")
+
+
+def to_team_lead(msgs):
+    """Put Tait's messages on the open Telegram task (or a new one) and wake the Team Lead."""
+    aid = agent_id("Team Lead")
+    issues = paperclip("GET", f"/companies/{COMPANY}/issues?limit=200")
+    issues = issues.get("issues", issues) if isinstance(issues, dict) else issues
+    open_ = [i for i in issues if i.get("title", "").startswith(TG_TASK) and i.get("assigneeAgentId") == aid
+             and i.get("status") not in ("done", "cancelled")]
+    note = team_lead_note(msgs)
+    if open_:
+        t = sorted(open_, key=lambda i: i.get("updatedAt") or "")[-1]
+        paperclip("POST", f"/issues/{t['id']}/comments", {"body": note})
+        paperclip("PATCH", f"/issues/{t['id']}", {"status": "todo"})
+    else:
+        paperclip("POST", f"/companies/{COMPANY}/issues",
+                  {"title": f"{TG_TASK} ({dt.date.today():%b %-d})", "description": note,
+                   "assigneeAgentId": aid, "status": "todo", "priority": "high"})
+    paperclip("POST", f"/agents/{aid}/wakeup", {"source": "on_demand", "reason": "Tait sent a Telegram message"})
 
 
 def read_inbox(mark=True):
@@ -1078,6 +1114,7 @@ def handle_telegram(sb, st, verbose=True):
     log, owner = [], st.get("telegram_chat")
     upd = tg("getUpdates", token, {"offset": st.get("telegram_offset", 0), "timeout": 0})
     clients = sb.select("social_clients", "select=id,name,slug&status=eq.active")
+    for_lead = []
     for u in upd.get("result", []):
         st["telegram_offset"] = u["update_id"] + 1
         msg = u.get("message") or {}
@@ -1092,7 +1129,7 @@ def handle_telegram(sb, st, verbose=True):
             if st.get("telegram_code") and text.endswith(st["telegram_code"]):
                 st["telegram_chat"] = owner = chat
                 st.pop("telegram_code", None)
-                reply("Paired. Text me anything and Claude reads it. For a content idea, start with idea, e.g.\nidea Grad Gig: snow shovelling for seniors")
+                reply("Paired. Text me anything and the Team Lead reads it. For a content idea, start with idea, e.g.\nidea Grad Gig: snow shovelling for seniors")
             continue
         if chat != owner:
             continue
@@ -1122,9 +1159,7 @@ def handle_telegram(sb, st, verbose=True):
                     files.append(str(local))
                 except Exception:
                     pass
-            to_inbox({"text": said, "voice": bool(spoken), "files": files})
-            reply("Got it, Claude has your message.")
-            log.append("telegram: message for Claude")
+            for_lead.append(({"text": said, "voice": bool(spoken), "files": files}, reply))
             continue
         st.pop("telegram_pending", None)
         if spoken and not text:
@@ -1171,6 +1206,19 @@ def handle_telegram(sb, st, verbose=True):
                                    "source": "phone", "created_by": "tait"})
         reply(f"Added to {client['name']}'s ideas ✓")
         log.append(f"telegram idea: {client['name']}")
+    if for_lead:
+        msgs = [m for m, _ in for_lead]
+        try:
+            to_team_lead(msgs)
+            for m in msgs:
+                to_inbox(dict(m, handled_by="team-lead"), read=True)
+            for_lead[-1][1]("Got it, the Team Lead has your message.")
+            log.append(f"telegram: {len(msgs)} message(s) for the Team Lead")
+        except Exception as e:   # Paperclip down: Claude's inbox still has it
+            for m in msgs:
+                to_inbox(m)
+            for_lead[-1][1]("Got it. The team isn't running right now, so Claude has your message.")
+            log.append(f"telegram: Team Lead unreachable ({e}), message for Claude")
     STATE.write_text(json.dumps(st, indent=2))
     return log
 

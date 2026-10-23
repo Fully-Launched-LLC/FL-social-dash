@@ -75,3 +75,11 @@ differ from CLAUDE.md's core principles, they apply only to the team's work.
     content, from ideas to posting, works by it; the team's notes are in
     `team/content-rules-2026.md`. Where it touches one of Tait's earlier
     rules, Tait's rule wins and the question goes to him. (Tait, 2026-10-22.)
+
+18. **Tait talks to the team through the Team Lead.** Tait wanted "a team
+    manager or someone who i can communicate directly with and tell them what
+    to do." Every Telegram message from him (except "idea ..." ones) goes to
+    the Team Lead, who replies with what they understood, does it or hands it
+    to the right member, trains everyone it applies to, and tells him when
+    it's done. Members' questions for Tait go through the Team Lead.
+    (Tait, 2026-10-23.)

@@ -1,7 +1,7 @@
 """Tests for the bridge's decisions (no network): python3 bridge/test_bridge.py"""
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from bridge import plan_jobs, plan_style_jobs, plan_mood_sorts, questions_from_text, timeline, plan_dates, match_client, idea_title, months_ahead, plan_script_jobs, script_signature, card_folder_name, plan_edit_jobs, edit_signature, desk_message, agent_rows, needs_from_error, is_idea, strip_idea
+from bridge import plan_jobs, plan_style_jobs, plan_mood_sorts, questions_from_text, timeline, plan_dates, match_client, idea_title, months_ahead, plan_script_jobs, script_signature, card_folder_name, plan_edit_jobs, edit_signature, desk_message, agent_rows, needs_from_error, is_idea, strip_idea, team_lead_note
 import datetime as dt
 
 SINCE = "2026-10-21T12:00:00+00:00"
@@ -158,4 +158,10 @@ check("anything else goes to Claude", not is_idea("use cream subtitles") and not
 check("the idea word is stripped", strip_idea("idea: Grad Gig: snow") == "Grad Gig: snow" and strip_idea("💡 Hesedea - x") == "Hesedea - x")
 
 print("all passed" if not fails else f"{fails} failed")
+note = team_lead_note([{"text": "L1-64 yes", "voice": False, "files": []},
+                       {"text": "use the light yellow", "voice": True, "files": ["/c/tg-x.jpg"]}])
+check("Team Lead note keeps every message in order", note.index("L1-64 yes") < note.index("use the light yellow"))
+check("Team Lead note marks voice notes and lists files", "🎤 voice note: use the light yellow" in note and "file: /c/tg-x.jpg" in note)
+check("Team Lead note asks for a reply first", "telegram send" in note)
+
 sys.exit(1 if fails else 0)
