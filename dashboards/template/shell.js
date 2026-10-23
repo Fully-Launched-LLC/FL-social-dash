@@ -1661,11 +1661,13 @@ function moodTileHtml(st, m) {
   const h = moodHash(m.id), rot = ((h % 9) - 4) * 0.7, w = [92, 100, 84, 96, 88][h % 5], x = [0, 6, 3, 10, 1][h % 5], tape = h % 3 === 0;
   const src = m.storage_path && st.signed[m.storage_path];
   const edit = moodCanEdit(st, m);
-  const tools = edit ? `<span class="mb-tools">${st.role === "operator" ? `<select data-mb-move="${m.id}" title="Move to a group"><option value="">Group…</option>${MOOD_SECTIONS.map(([k, l]) => `<option value="${k}" ${m.section === k ? "selected" : ""}>${escapeHtml(l)}</option>`).join("")}</select>` : ""}<button type="button" data-mb-note="${m.id}">Note</button><button type="button" data-mb-remove="${m.id}">Remove</button></span>` : "";
+  const tools = edit ? `<span class="mb-tools"><button type="button" data-mb-note="${m.id}">Note</button><button type="button" data-mb-remove="${m.id}">Remove</button></span>` : "";
   if (m.kind === "note") {
     return `<div class="mb-word${(m.note || m.name || "").length > 40 ? " long" : ""}" data-mb-id="${m.id}" style="--r:${rot * 1.6}deg">${escapeHtml(m.note || m.name || "")}${tools}</div>`;
   }
-  const media = m.kind === "image" && src ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(m.note || m.name || "")}" loading="lazy">`
+  const host = m.url && (m.url.match(/^https?:\/\/(?:www\.)?([^/]+)/) || [])[1];
+  const media = m.kind === "link" && src ? `<a class="mb-link has-pic" href="${escapeHtml(m.url)}" target="_blank" rel="noopener"><img src="${escapeHtml(src)}" alt="${escapeHtml(host || "Link")}" loading="lazy"><b>${escapeHtml(host || "Link")} ↗</b></a>`
+    : m.kind === "image" && src ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(m.note || m.name || "")}" loading="lazy">`
     : m.kind === "video" && src ? `<video src="${escapeHtml(src)}" muted loop autoplay playsinline preload="metadata"></video>`
     : m.url ? `<a class="mb-link" href="${escapeHtml(m.url)}" target="_blank" rel="noopener"><b>${escapeHtml((m.url.match(/^https?:\/\/(?:www\.)?([^/]+)/) || [])[1] || "Link")}</b><span>${escapeHtml(m.url)}</span></a>` : "";
   const chips = m.section === "colour" && (m.palette || []).length
@@ -1785,14 +1787,6 @@ function wireMoodBoard(root) {
     const url = dt.getData && (dt.getData("text/uri-list") || dt.getData("text/plain"));
     if (url && /^https?:\/\//.test(url.trim())) insertRow({ kind: "link", url: url.trim().split("\n")[0], section: null });
   });
-  // Tait can move a drop to another group by hand.
-  root.addEventListener("change", async e => {
-    const sel = e.target.closest && e.target.closest("[data-mb-move]");
-    if (!sel || !sel.value) return;
-    const { error } = await sbClient.from("social_moodboard_items").update({ section: sel.value }).eq("id", sel.dataset.mbMove);
-    if (error) { msg(error.message); return; }
-    await renderMoodBoard(root, {});
-  }, true);
   // Paste a screenshot (⌘V) into the section under the pointer.
   document.addEventListener("paste", e => {
     if (!document.body.contains(root) || !root.offsetParent || e.target.closest && e.target.closest("input, textarea")) return;

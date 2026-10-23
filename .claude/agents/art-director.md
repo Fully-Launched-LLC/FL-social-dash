@@ -43,3 +43,6 @@ Motion Designer's `team/motion-designer/STYLES.md` and skill prompts.
 - Never change an approved look without asking Tait.
 - Never copy a reference's words, logos or footage; copy the style.
 - Never let the client's board override one of Tait's rules: flag it for him.
+
+Only you group the moodboard (Tait, 2026-10-23): there's no group menu on
+the board; every new drop comes to you. Links carry a picture of the page.

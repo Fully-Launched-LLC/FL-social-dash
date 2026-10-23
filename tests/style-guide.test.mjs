@@ -76,6 +76,12 @@ chk("…the favourite is there", JSON.stringify(rows()) === JSON.stringify(["Arr
 chk("Remove from Grad Gig takes it out", !(await db.query(`select 1 from social_client_assets`)).rows.length);
 d.querySelector('#globalClientFilter [data-c="all"]').click(); await settle();
 chk("All clients at the top right shows everything again", /Music\s*2/.test(d.getElementById("libTabs").textContent), d.getElementById("libTabs").textContent);
+// Motion graphics: a still of the graphic you can play, and what it is (Tait, 2026-10-23).
+await db.exec(`update social_style_assets set preview_path='motion/k.mp4', notes='Many to one: people narrow into one circle' where name='Lower third'`);
+op.w.loadStyleData && await op.w.loadStyleData();
+d.querySelector('#libTabs [data-lib="motion"]').click(); await settle();
+{ const r = rowFor("Lower third"), img = r && r.querySelector(".lib-thumb img");
+  chk("motion graphic shows its still and its note", img && img.dataset.thumb === "motion/k.jpg" && r.querySelector(".lib-notes").textContent.includes("narrow into one circle") && !!r.querySelector("button[onclick*='assetForClientMenu']"), r && r.outerHTML); }
 
 // Client moodboard (shared with the client, migration 033): upload into a
 // section, link, words, note, move between sections, remove.
@@ -92,15 +98,18 @@ const btnIn = (root, label) => [...root.querySelectorAll("button")].find(b => b.
 btnIn(board().querySelector(".mb-tile"), "Note").click(); await settle();
 d.getElementById("mbText").value = "Love the funnel narrowing to one face"; d.getElementById("mbGo").click(); await settle();
 chk("note saved", (await db.query(`select note from social_moodboard_items where client_id=$1`, [GG])).rows[0].note === "Love the funnel narrowing to one face");
-// Tait can move a drop to another group by hand (the Art Director usually does).
+// The Art Director groups every drop; nobody picks a group by hand (Tait, 2026-10-23).
 const id1 = (await db.query(`select id from social_moodboard_items where client_id=$1`, [GG])).rows[0].id;
-const mv = board().querySelector(`[data-mb-move="${id1}"]`); mv.value = "colour"; mv.dispatchEvent(new op.w.Event("change", { bubbles: true })); await settle();
-chk("moved to the colour group", (await db.query(`select section from social_moodboard_items where id=$1`, [id1])).rows[0].section === "colour");
+chk("no group picker on the board, even for Tait", !board().querySelector("[data-mb-move]") && !board().querySelector(".mb-tools select"));
 btnIn(board(), "Add a link").click(); await settle();
 d.getElementById("mbUrl").value = "https://www.instagram.com/reel/abc"; d.getElementById("mbText").value = "caption font";
 d.getElementById("mbGo").click(); await settle();
 const lk = (await db.query(`select section from social_moodboard_items where client_id=$1 and kind='link'`, [GG])).rows[0];
 chk("link added, no group to pick", lk && lk.section === null, lk);
+// The bridge adds a picture of the page; the board shows it (Tait, 2026-10-23).
+await db.query(`update social_moodboard_items set storage_path=$1 where client_id=$2 and kind='link'`, [GG + "/link-x.jpg", GG]);
+op.w.openClientPage(GG, "moodboard"); await settle();
+chk("link shows the page's picture", !!board().querySelector(".mb-link.has-pic img") && board().querySelector(".mb-link.has-pic b").textContent.includes("instagram.com"));
 btnIn(board(), "Add words").click(); await settle();
 d.getElementById("mbText").value = "warm\nhonest, hopeful"; d.getElementById("mbGo").click(); await settle();
 chk("words added, one each", (await db.query(`select string_agg(note, ',' order by note) w from social_moodboard_items where client_id=$1 and section='words'`, [GG])).rows[0].w === "honest,hopeful,warm");

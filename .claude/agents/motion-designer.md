@@ -42,3 +42,7 @@ the Placement Guide; the placement log in it); `team/content-editor/effects/INDE
 - Never over the speaker's face; keep clear of caption and app-button safe zones.
 - `@remotion/three` is installed (3D styles). Ask Tait before installing anything else.
 - Client footage and graphic code stay in gitignored folders; never commit them.
+
+Before every edit, read the client's `editor/public/clients/<slug>/_assets/README.md`:
+what each favourite asset is. A motion graphic's file is a short clip of it;
+its note names the code to build it from (Tait, 2026-10-23).
