@@ -43,6 +43,7 @@
     <div data-panel="review" style="display:none">
       <p class="meta panel-help" style="margin:8px 0 12px">Approve each one, or ask for changes.</p>
       <div id="listReview"></div>
+      <div id="reviewOptOut"></div>
     </div>
   </section>
 
@@ -582,7 +583,45 @@ function renderVideos() {
   renderToFilm(byFilmDate, byPostDate, fill);
   // Finished videos first (closest to posting), then ideas.
   fill("listReview", videosInTab("review").sort((a, b) => (b.status === "client_review") - (a.status === "client_review") || byPostDate(a, b)));
+  renderReviewOptOut();
   renderVideoTabs();
+}
+
+// Opting out of reviewing (Tait, 2026-10-26: "they can click 'Opt out of the
+// reviewing process,' and that means they trust us completely, so they don't
+// have to go into the portal and review every video"). Migration 038: Tait
+// still checks every video; finished videos and carousels then skip the
+// client's To review and are approved for posting on their date.
+function renderReviewOptOut() {
+  const el = document.getElementById("reviewOptOut"), out = !!CLIENT.skip_client_review;
+  const waiting = VIDEOS.filter(v => v.status === "client_review").length + CAROUSELS.filter(c => c.status === "client_review").length;
+  el.innerHTML = `<div class="card opt-out-box"><div class="row" style="border:0;padding:0">
+    <div class="left">${out
+      ? `<b>You've opted out of reviewing</b><div class="meta">You trust us with every video. We still check each one before it posts, then post it on its date. You can watch them any time on the Content Calendar.</div>`
+      : `<b>Don't want to review every video?</b><div class="meta">If you trust us completely, opt out. We still check every video ourselves and post it on its date, with nothing for you to approve.</div>`}</div>
+    <button class="${out ? "" : "primary"}" data-opt-out>${out ? "Opt back in" : "Opt out of the reviewing process"}</button></div></div>`;
+  el.querySelector("[data-opt-out]").onclick = () => {
+    if (out) return setReviewOptOut(false);
+    openModal(`<h2>Opt out of reviewing?</h2>
+      <p>You're telling us you trust us completely. Finished videos won't wait for your approval: we check each one ourselves and post it on its date.</p>
+      ${waiting ? `<p><b>The ${waiting === 1 ? "video" : waiting + " videos"} waiting for you now will be approved too.</b></p>` : ""}
+      <p class="meta">You can still watch every video on the Content Calendar, and opt back in any time.</p>
+      <div class="modal-actions"><button onclick="closeVideoModal()">Cancel</button><button class="primary" id="optOutYes">Yes, opt me out</button></div>`);
+    document.getElementById("optOutYes").onclick = e => { e.target.disabled = true; setReviewOptOut(true); };
+  };
+}
+async function setReviewOptOut(optOut) {
+  const { error } = await sbClient.rpc("social_set_client_review_opt_out", { p_client_id: CLIENT.id, p_opt_out: optOut });
+  if (error) {
+    const box = document.getElementById("videoModalBox");
+    if (box && box.querySelector("#optOutYes")) { box.querySelector("#optOutYes").disabled = false; return box.querySelector(".modal-actions").insertAdjacentHTML("beforebegin", `<p class="meta" style="color:var(--red)">${escapeHtml(error.message)}</p>`); }
+    return document.getElementById("loadError").innerHTML = `<div class="card"><b style="color:var(--red)">That didn't save:</b> <span class="meta">${escapeHtml(error.message)}</span></div>`;
+  }
+  CLIENT.skip_client_review = optOut;
+  closeVideoModal();
+  if (optOut) openModal(`<h2>You're opted out</h2><p>Thank you for trusting us. We'll take it from here: every video is checked by us and posted on its date.</p>
+    <div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Done</button></div>`);
+  await loadVideos();
 }
 
 // To film, grouped by category so a whole category can be filmed in one
@@ -898,6 +937,10 @@ const TOUR = [
     title: "Send changes, or approve", html: () => `Done? <b>Send changes to the editor</b> and every comment goes to them in one go. You get <b>${REVISION_ROUNDS} rounds</b> of changes on each video. Happy with it? <b>Approve for posting</b>.` },
   { modal: true, go: tourOpenReview, el: inReview(".rv-version"),
     title: "When it comes back", html: () => "Your editor makes the changes and the new cut comes back to you here as the next version (v2). Until then you can still watch the video from its card. Pick an earlier version to see the comments you left on it, which ones were fixed, and your editor's replies. Then review it again the same way." },
+  { go: () => { tourGo("videos"); tourTab("review"); }, el: () => document.querySelector("#reviewOptOut .card"),
+    title: "Or skip reviewing", html: () => CLIENT.skip_client_review
+      ? "You've opted out of reviewing: we check every video ourselves and post it on its date. Changed your mind? <b>Opt back in</b> here any time."
+      : "Trust us completely? Click <b>Opt out of the reviewing process</b> and you won't have to approve each video. We still check every one ourselves and post it on its date. You can opt back in any time." },
   { go: () => tourGo("calendar"), el: () => document.querySelector('.nav-item[data-view="calendar"]'),
     title: "Content Calendar", html: () => "Every video on the day it posts. Red means it needs you this week. Click one to see where it's at and what's next." },
 ];
