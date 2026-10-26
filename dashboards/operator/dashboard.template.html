@@ -1173,18 +1173,20 @@ document.getElementById("newClientBtn").onclick = () => openClientPanel(null);
 // /welcome, emailed from Fully Launched, when a client is added here (later
 // invites and resends: Claude runs bridge.py invite). If email isn't set up
 // yet, the link comes back to copy and send yourself.
-async function sendInvite(clientId) {
+async function sendInvite(clientId, member) {
   const c = CLIENT_BY_ID[clientId];
   let out;
   try {
     const { data } = await sbClient.auth.getSession();
-    const res = await fetch("/api/invite", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + ((data && data.session && data.session.access_token) || "") }, body: JSON.stringify({ clientId }) });
+    const res = await fetch("/api/invite", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + ((data && data.session && data.session.access_token) || "") }, body: JSON.stringify({ clientId, ...(member || {}) }) });
     out = await res.json().catch(() => ({ error: "No response from the invite service." }));
     if (!res.ok && !out.error) out.error = "The invite service answered " + res.status + ".";
   } catch (e) { out = { error: "Couldn't reach the invite service: " + (e.message || e) }; }
   await loadLiveData();
   if (out.sent) {
-    openModal(`<h2>Invite sent</h2><p style="line-height:1.55">${escapeHtml(c.name)}'s invite is on its way to <b>${escapeHtml(out.email)}</b>. The link takes them to their onboarding: create a password, then the steps.</p>
+    openModal(`<h2>Invite sent</h2><p style="line-height:1.55">${out.member
+        ? `The invite to ${escapeHtml(c.name)}'s portal is on its way to <b>${escapeHtml(out.email)}</b>. The link asks them to create a password, then opens the portal and its walkthrough.`
+        : `${escapeHtml(c.name)}'s invite is on its way to <b>${escapeHtml(out.email)}</b>. The link takes them to their onboarding: create a password, then the steps.`}</p>
       ${out.warning ? `<p class="meta" style="line-height:1.55">${escapeHtml(out.warning)}</p>` : ""}
       <div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Got it</button></div>`);
   } else if (out.link) {
@@ -1199,6 +1201,46 @@ async function sendInvite(clientId) {
     openModal(`<h2>The invite didn't go out</h2><p style="line-height:1.55">${escapeHtml(out.error || "Something went wrong.")}</p>
       <div class="modal-actions"><button class="primary" onclick="closeVideoModal()">Got it</button></div>`);
   }
+}
+
+// People with access to a client's portal (Tait, 2026-10-26: "it's not just
+// Mark, but it's other people on his board as well"; migration 039): the
+// contact, everyone else invited (social_client_members), and whether each
+// has signed in (social_client_users). Add a person / Resend send them the
+// welcome email in their own name through /api/invite.
+async function renderPeople(c) {
+  const el = document.getElementById("cpPeople");
+  const [{ data: members, error }, { data: users }] = await Promise.all([
+    sbClient.from("social_client_members").select("*").eq("client_id", c.id).order("created_at"),
+    sbClient.from("social_client_users").select("email").eq("client_id", c.id),
+  ]);
+  if (!el || CLIENT_PAGE.id !== c.id) return;
+  if (error) { el.innerHTML = `<h2>People with access</h2><div class="meta" style="color:var(--gold)">Run migration 039 to add more people to their portal.</div>`; return; }
+  const joined = new Set((users || []).map(u => (u.email || "").toLowerCase()));
+  const row = (name, email, note, resend) => `<div class="doc-row"><div><b>${escapeHtml(name || email)}</b><div class="meta">${escapeHtml(name ? email + " · " : "")}${note} · ${joined.has(email.toLowerCase()) ? "Signed in" : "Invited, not signed in yet"}</div></div>${resend}</div>`;
+  el.innerHTML = `<h2>People with access <span class="meta">Everyone here sees their portal and can use its buttons.</span></h2>
+    ${c.contactEmail ? row(c.contactName, c.contactEmail, "Main contact", "") : ""}
+    ${(members || []).map(m => row(m.name, m.email, "Team", `<button data-resend-member="${escapeHtml(m.email)}">Resend invite</button>`)).join("")}
+    <div style="margin-top:12px"><button class="primary" id="addPerson">Add a person</button></div>`;
+  el.querySelectorAll("[data-resend-member]").forEach(b => b.onclick = () => {
+    const m = members.find(x => x.email === b.dataset.resendMember);
+    b.disabled = true; sendInvite(c.id, { email: m.email, name: m.name }).then(() => renderPeople(c));
+  });
+  el.querySelector("#addPerson").onclick = () => {
+    const box = openModal(`<h2>Add a person to ${escapeHtml(c.name)}'s portal</h2>
+      <p class="meta" style="line-height:1.55">They get the welcome email in their own name: create a password, then the portal and its walkthrough. They see and can do everything the main contact can.</p>
+      <label class="meta">Name</label><input id="apName" style="width:100%;margin-bottom:10px">
+      <label class="meta">Email</label><input type="email" id="apEmail" style="width:100%;margin-bottom:10px">
+      <div class="meta" id="apError" style="color:var(--red)"></div>
+      <div class="modal-actions"><button onclick="closeVideoModal()">Cancel</button><button class="primary" id="apSend">Send invite</button></div>`);
+    box.querySelector("#apSend").onclick = async e => {
+      const name = box.querySelector("#apName").value.trim(), email = box.querySelector("#apEmail").value.trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { box.querySelector("#apError").textContent = "Add their email."; return; }
+      e.target.disabled = true; e.target.textContent = "Sending…";
+      await sendInvite(c.id, { email, name });
+      renderPeople(c);
+    };
+  };
 }
 
 // ---------- Editors ----------
@@ -2162,7 +2204,9 @@ function renderClientPage() {
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
         <button onclick="openOnboarding('${c.id}')">Onboarding</button>
         <button onclick="document.querySelector('.nav-item[data-view=clients]').click();openClientPanel('${c.id}')">Edit client</button>
-      </div></div>`;
+      </div></div>
+      <div class="card" id="cpPeople"><h2>People with access</h2><div class="meta">Loading…</div></div>`;
+    renderPeople(c);
   } else if (CLIENT_PAGE.tab === "docs") {
     body.innerHTML = `<div class="card"><h2>Documents <span class="meta">Operator-only. The client sees brand guidelines once approved.</span></h2>
       ${HAS_026 ? "" : `<div class="meta" style="color:var(--gold)">Run migration 026 to build and approve these here.</div>`}
