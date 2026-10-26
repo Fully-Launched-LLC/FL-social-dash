@@ -956,6 +956,16 @@ to do, both are empty: no message, no other cards. It opens on the first
 tab with something in it. The "Finish setting up" card still shows for a
 client who hasn't finished onboarding.
 
+**Opt out of reviewing** (Tait, 2026-10-26; migration 038): under To
+review, a box with **Opt out of the reviewing process** ("they trust us
+completely"), and a walkthrough step pointing at it ("Or skip reviewing").
+Opting out (`social_set_client_review_opt_out`, the client or an operator)
+sets `social_clients.skip_client_review`, approves what's waiting for them,
+and from then on triggers send every finished video Tait approves straight
+to Ready to post and every carousel to approved (gate 3 is skipped; Tait's
+gate 2 stays). The operator's approve button says so. **Opt back in** puts
+new ones back in their To review. Idea OKs are unchanged.
+
 **Content Calendar**: each post date shows the video's full title and a
 colored pill per platform, with a "Posts on" key above; 🎥 film dates for
 client-filmed ideas. Under the grid, **Posting in the next 30 days**: each

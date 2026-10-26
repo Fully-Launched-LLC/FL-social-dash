@@ -307,6 +307,7 @@ async function loadLiveData() {
       onboarding: obByClient[c.id] || null,
       onboardingQuestions: c.onboarding_questions || null,
       skipOnboarding: !!c.skip_onboarding,
+      skipClientReview: !!c.skip_client_review,   // opted out of reviewing (038)
       driveFolders: { footageUploads: f.footage_uploads, finalEdits: f.final_edits, brandVoice: f.brand_voice,
         root: f.root, importantDocuments: f.important_documents, previousContent: f.previous_content },
     };
@@ -470,10 +471,12 @@ function approveEdit(id) {
   const v = x.video;
   // After the client's last round of changes, it's Tait's to approve for
   // posting; it doesn't go back to the client (Tait, 2026-10-09).
-  const toPost = clientRoundsUsed(v), sendLabel = toPost ? "Approve for posting" : "Approve & send to client";
+  // A client who opted out of reviewing (migration 038) gets it straight to Ready to post too.
+  const optedOut = !!x.client.skipClientReview;
+  const toPost = clientRoundsUsed(v) || optedOut, sendLabel = toPost ? "Approve for posting" : "Approve & send to client";
   const box = openModal(`
     <h2>${toPost ? "Approve for posting" : "Approve edit — add captions"}</h2>
-    <div class="meta" style="margin-bottom:12px">${escapeHtml(x.client.name)} · ${escapeHtml(v.title || "")}. ${toPost ? `They've used both rounds of changes, so this goes straight to <b>Ready to post</b>. Check the captions.` : "The client sees these when they approve it for posting."}</div>
+    <div class="meta" style="margin-bottom:12px">${escapeHtml(x.client.name)} · ${escapeHtml(v.title || "")}. ${optedOut ? `They opted out of reviewing, so this goes straight to <b>Ready to post</b>. Check the captions.` : toPost ? `They've used both rounds of changes, so this goes straight to <b>Ready to post</b>. Check the captions.` : "The client sees these when they approve it for posting."}</div>
     ${(v.editorBrief || {}).captionDraft && !v.caption ? `<div class="meta" style="margin-bottom:8px">Drafted by the Content Poster. Change anything.${v.editorBrief.captionDraft.cover ? ` Cover idea: ${escapeHtml(v.editorBrief.captionDraft.cover)}` : ""}</div>` : ""}
     ${textField("onScreenCaption", "On-screen caption (text shown on the video)", v.onScreenCaption || ((v.editorBrief || {}).captionDraft || {}).onScreenCaption, 2)}
     ${textField("caption", "Caption (the post caption)", v.caption || ((v.editorBrief || {}).captionDraft || {}).caption, 5)}

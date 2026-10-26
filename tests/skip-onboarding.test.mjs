@@ -60,10 +60,10 @@ for (let k = 0; k < 20 && tc() && tc().querySelector("[data-tour-next]"); k++) {
   seen.push(h); text[h] = tc().textContent; review[h] = modalOpen();
   tc().querySelector("[data-tour-next]").click(); await settle();
 }
-chk("the walkthrough: To Do, To review, Review the video, then inside the review window, then the calendar (no filming or documents steps for them)",
-  seen.join("|") === "To Do|To review|Review the video|Watch it here|Read the feedback|Comment on any moment|Send changes, or approve|Content Calendar", seen);
+chk("the walkthrough: To Do, To review, Review the video, then inside the review window, then opting out of reviewing, then the calendar (no filming or documents steps for them)",
+  seen.join("|") === "To Do|To review|Review the video|Watch it here|Read the feedback|Comment on any moment|Send changes, or approve|Or skip reviewing|Content Calendar", seen);
 chk("the review steps happen inside the real review window, and it closes after", review["Watch it here"] && review["Comment on any moment"] && review["Send changes, or approve"]
-  && !review["Review the video"] && !review["Content Calendar"], review);
+  && !review["Review the video"] && !review["Or skip reviewing"] && !review["Content Calendar"], review);
 chk("it explains comments at a moment and on the whole video", /pinned to that exact second/.test(text["Comment on any moment"]) && /Whole video/.test(text["Comment on any moment"]));
 chk("…and sending changes or approving", /Send changes to the editor/.test(text["Send changes, or approve"]) && /Approve for posting/.test(text["Send changes, or approve"]));
 chk("then: bookmark this page", tc().textContent.includes("Bookmark this page") && /email and the password/.test(tc().textContent));
