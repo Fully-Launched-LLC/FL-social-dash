@@ -23,6 +23,8 @@ function world(o) {
     if (u.endsWith("/auth/v1/user")) { const t = String(init.headers.Authorization).split(" ")[1]; return o.users[t] ? json(o.users[t]) : json({ msg: "bad jwt" }, 401); }
     if (u.includes("/rest/v1/social_operators")) return json(o.operators.filter(id => u.includes(id)).map(id => ({ id })));
     if (u.includes("/rest/v1/social_client_users")) return json((o.clientUsers || []).filter(x => u.includes(x.id)).map(x => ({ client_id: x.client_id })));
+    if (u.includes("/rest/v1/social_clients") && u.includes("contact_email=ilike.")) return json((o.clients || []).filter(c => c.contact_email && u.includes("ilike." + encodeURIComponent(c.contact_email.toLowerCase())) && !u.includes("neq." + c.id)));
+    if (u.includes("/rest/v1/social_client_members") && method === "GET") return json((o.members || []).filter(m => u.includes("ilike." + encodeURIComponent(m.email))));
     if (u.includes("/rest/v1/social_clients")) return json((o.clients || []).filter(c => u.includes(c.id)));
     if (u.includes("/rest/v1/social_client_onboarding") && method === "GET") return json(o.onboarding && (!u.includes("invited_email=") || u.includes("invited_email=eq." + encodeURIComponent(o.onboarding.invited_email))) ? [o.onboarding] : []);
     if (u.includes("/rest/v1/social_client_documents") && method === "GET") return json(o.docLinks || []);
@@ -254,6 +256,30 @@ chk("invite-editor: a client's login can't become an editor (and nothing is save
   chk("notify-review: the bridge's newer sb_secret_ key is checked with Supabase's admin API", r.status === 200 && c.some(x => x.url.includes("/auth/v1/admin/users")), [r.status, r.body]);
   c = world({ ...base, reviewVideos: vids, adminDenied: true }); r = await call(notifyReview, "sb_secret_wrong", { clientId: C1 });
   chk("notify-review: a key Supabase refuses → 401, no email", r.status === 401 && !c.some(x => x.url.startsWith("https://api.resend.com")), [r.status, r.body]);
+}
+
+// ── invite someone else on the client's team (a member, migration 039) ──
+{
+  setEnv({ RESEND_API_KEY: "re_test" });
+  let c = world({ ...base, generateLink: (b, json) => json({ properties: { hashed_token: "h1" } }) });
+  let r = await call(invite, "opTok", { clientId: C1, email: " Sam@Board.test ", name: "Sam Ruiz" });
+  const sent = c.find(x => x.url.startsWith("https://api.resend.com")), m = sent && JSON.parse(sent.body);
+  const added = c.find(x => x.url.endsWith("/rest/v1/social_client_members") && x.method === "POST");
+  chk("member: saved as a member of that client, email lowercased", added && JSON.parse(added.body).client_id === C1 && JSON.parse(added.body).email === "sam@board.test" && JSON.parse(added.body).invite_count === 1, added && added.body);
+  chk("member: the contact isn't changed and their onboarding isn't touched", !c.some(x => x.url.includes("/rest/v1/social_clients") && x.method !== "GET") && !c.some(x => x.url.includes("social_client_onboarding")));
+  chk("member: the welcome email, to them, in their own name, with a link to /welcome for that client", r.body.sent === true && r.body.member === true && m.to[0] === "sam@board.test" && m.html.includes("Hi Sam,") && m.html.includes("NewCo") && m.html.includes("/welcome?client=newco"), [r.body, m && m.to]);
+  c = world({ ...base, members: [{ id: "m1", client_id: C1, email: "sam@board.test", name: "Sam Ruiz", invite_count: 1 }], generateLink: (b, json) => json({ properties: { hashed_token: "h2" } }) });
+  r = await call(invite, "opTok", { clientId: C1, email: "sam@board.test" });
+  const patch = c.find(x => x.url.includes("social_client_members?id=eq.m1") && x.method === "PATCH");
+  chk("member: inviting them again resends it and counts it", r.body.sent === true && patch && JSON.parse(patch.body).invite_count === 2 && !c.some(x => x.url.endsWith("/rest/v1/social_client_members") && x.method === "POST"));
+  c = world({ ...base, clients: [...base.clients, { id: C2, name: "Other", slug: "other", contact_email: "sam@board.test" }], generateLink: (b, json) => json({ properties: { hashed_token: "h3" } }) });
+  r = await call(invite, "opTok", { clientId: C1, email: "sam@board.test", name: "Sam" });
+  chk("member: an email that already opens another client's dashboard → 400, nothing sent", r.status === 400 && /different dashboard/.test(r.body.error) && !c.some(x => x.url.startsWith("https://api.resend.com")), r.body);
+  r = await call(invite, "clTok", { clientId: C1, email: "x@y.test" });
+  chk("member: a client can't add people (operators only)", r.status === 403);
+  c = world({ ...base, generateLink: (b, json) => json({ properties: { hashed_token: "h4" } }) });
+  r = await call(invite, "opTok", { clientId: C1, email: "pat@newco.test" });
+  chk("member: the contact's own email is the usual contact invite", r.body.sent === true && !r.body.member && c.some(x => x.url.includes("social_client_onboarding?on_conflict=client_id")));
 }
 
 console.log(`${counts.pass} passed, ${counts.fail} failed`);

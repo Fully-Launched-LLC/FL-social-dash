@@ -189,11 +189,11 @@ await db.exec(`insert into social_videos (client_id,title,hook,outline,body,film
 const tp = await openPage("clients/portal.html", CL, "https://fl.test/clients/newco?tour=1");
 const tc = () => tp.d.getElementById("tourCard");
 const ringed = () => { const s = tp.d.getElementById("tourSpot"); return s && s.style.display !== "none"; };
-chk("the portal opens with a walkthrough, starting at To Do", !!tc() && tc().querySelector("h2").textContent === "To Do" && tc().textContent.includes("Step 1 of 13") && /To film.*To review/.test(tc().textContent) && ringed(), tc() && tc().textContent);
+chk("the portal opens with a walkthrough, starting at To Do", !!tc() && tc().querySelector("h2").textContent === "To Do" && tc().textContent.includes("Step 1 of 14") && /To film.*To review/.test(tc().textContent) && ringed(), tc() && tc().textContent);
 chk("…and drops ?tour=1 from the address, so a reload doesn't repeat it", !tp.w.location.search.includes("tour"));
 const seen = [], text = {}, onPage = {};
 const practice = {};
-for (let k = 0; k < 13; k++) {
+for (let k = 0; k < 14; k++) {
   const h = tc().querySelector("h2").textContent;
   seen.push(h); text[h] = tc().textContent;
   const box = tp.d.getElementById("videoModalBox"), open = !tp.d.getElementById("videoModalRoot").classList.contains("hidden");
@@ -201,8 +201,8 @@ for (let k = 0; k < 13; k++) {
   onPage[h] = tp.d.querySelector(".view.active").id + (h === "To film" ? ":" + tp.d.querySelector("#videoTabs .chip.active").dataset.tab : "");
   tc().querySelector("[data-tour-next]").click(); await settle();
 }
-chk("it walks To Do, To film, a card, Upload footage, film it your way, To review, the review steps, Content Calendar (no Documents, no footage folder)",
-  seen.join("|") === "To Do|To film|Each card is one video|Upload footage on each card|Film it your way|To review|Watch it here|Read the feedback|Comment on any moment|Change your comments|Send changes, or approve|When it comes back|Content Calendar", seen);
+chk("it walks To Do, To film, a card, Upload footage, film it your way, To review, the review steps, opting out of reviewing, Content Calendar (no Documents, no footage folder)",
+  seen.join("|") === "To Do|To film|Each card is one video|Upload footage on each card|Film it your way|To review|Watch it here|Read the feedback|Comment on any moment|Change your comments|Send changes, or approve|When it comes back|Or skip reviewing|Content Calendar", seen);
 const pw = practice["Watch it here"] || {};
 chk("no finished video yet: the review steps run in a practice window (pretend player, two sample comments with marks, a reply, delete buttons, versions)",
   pw.title === "Practice: review a video" && pw.screen && pw.comments === 2 && pw.marks === 1 && pw.reply && pw.del === 2 && pw.version, practice);

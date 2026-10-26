@@ -103,6 +103,7 @@ let CLIPS = {};             // video id -> its uploaded footage (social_footage,
 let HIDDEN_CONCEPTS = 0;    // operator view only: ideas the client can't see (sent back with suggestions)
 let BANKED_IDEAS = 0;       // operator view only: ideas in Content Ideas, not sent yet
 let IS_OPERATOR = false;
+let IS_MEMBER = false;      // someone else on the client's team, not the contact (039)
 const calState = { offset: 0 };
 let activeTab = null;      // "film" or "review"; first one with something in it
 // To film's category filter ("" = every category), kept per browser so a
@@ -769,7 +770,7 @@ function renderDocuments() {
 // A client who hasn't finished onboarding gets a way back into it.
 function renderOnboardBanner() {
   const o = ONBOARDING;
-  document.getElementById("onboardBanner").innerHTML = o && o.invited_at && !o.completed_at && !CLIENT.skip_onboarding ? `
+  document.getElementById("onboardBanner").innerHTML = o && o.invited_at && !o.completed_at && !CLIENT.skip_onboarding && !IS_MEMBER ? `
     <div class="card" style="border-color:var(--gold)"><div class="row" style="border:0;padding:0">
       <div class="left"><b>Finish setting up your account</b><div class="meta">A few quick steps (your brand, a voice memo and your footage) so we can make content that sounds like you.</div></div>
       <a class="btn accent" href="/welcome${IS_OPERATOR ? "?client=" + encodeURIComponent(CLIENT.slug) : ""}">Continue</a></div></div>` : "";
@@ -836,8 +837,10 @@ async function startApp(user, access) {
   }
   // Invited but no password yet: the password page first. Nothing here
   // shows until they've made one. (Not for clients who finished the older
-  // onboarding before the password step existed.)
-  if (!IS_OPERATOR && ONBOARDING && ONBOARDING.invited_at && !ONBOARDING.password_set_at && !ONBOARDING.completed_at) {
+  // onboarding before the password step existed, or for someone else on
+  // their team, a member (039), whose onboarding isn't theirs.)
+  IS_MEMBER = !IS_OPERATOR && !!(await sbClient.rpc("social_is_client_member")).data;
+  if (!IS_OPERATOR && !IS_MEMBER && ONBOARDING && ONBOARDING.invited_at && !ONBOARDING.password_set_at && !ONBOARDING.completed_at) {
     location.replace("/welcome");
     return;
   }

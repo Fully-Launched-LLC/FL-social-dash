@@ -966,6 +966,20 @@ to Ready to post and every carousel to approved (gate 3 is skipped; Tait's
 gate 2 stays). The operator's approve button says so. **Opt back in** puts
 new ones back in their To review. Idea OKs are unchanged.
 
+**More than one person per portal** (Tait, 2026-10-26: "it's not just
+Mark, but it's other people on his board as well"; migration 039). The
+contact stays the one invited the usual way. Everyone else on the client's
+team is a member (`social_client_members`, operators only): the client's
+page → Overview → **People with access** → **Add a person** (or
+`bridge.py invite --client <slug> --email <e> --name <n> --add`) sends them
+the welcome email in their own name through `/api/invite` (`{clientId,
+email, name}`). Their first sign-in links them to the client
+(`social_claim_client_invite`); `/welcome` asks them only for a password
+(`social_is_client_member()`), then opens the portal's walkthrough. They
+see and can do everything the contact can. One login still opens one
+dashboard: an email already on another client, the team or an editor is
+refused.
+
 **Content Calendar**: each post date shows the video's full title and a
 colored pill per platform, with a "Posts on" key above; 🎥 film dates for
 client-filmed ideas. Under the grid, **Posting in the next 30 days**: each

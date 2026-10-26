@@ -7,9 +7,9 @@
 // added get an email at all.
 //
 // "Added" means an operator, an editor, a client's login, or a client's
-// contact email that has been sent an invite. Anyone else gets the same
-// answer as everyone, and nothing is sent, so the page never says which
-// emails have an account.
+// contact email or team member (039) that has been sent an invite. Anyone
+// else gets the same answer as everyone, and nothing is sent, so the page
+// never says which emails have an account.
 
 const { env, need, rest, handler, portalUrl } = require("./_lib");
 const { resetPasswordEmail, sendEmail } = require("./_email");
@@ -35,13 +35,14 @@ async function recoveryLink(email, redirectTo) {
 
 async function isAdded(userId, email) {
   const id = encodeURIComponent(userId), em = encodeURIComponent(email);
-  const [ops, eds, cus, invited] = await Promise.all([
+  const [ops, eds, cus, invited, members] = await Promise.all([
     rest("social_operators?select=id&id=eq." + id),
     rest("social_editors?select=id&active=eq.true&id=eq." + id),
     rest("social_client_users?select=client_id&id=eq." + id),
     rest("social_client_onboarding?select=client_id&invited_at=not.is.null&invited_email=eq." + em),
+    rest("social_client_members?select=client_id&invited_at=not.is.null&email=ilike." + em).catch(() => []),   // before 039: none
   ]);
-  return ops.length + eds.length + cus.length + invited.length > 0;
+  return ops.length + eds.length + cus.length + invited.length + members.length > 0;
 }
 
 module.exports = handler(async (req, { email }) => {

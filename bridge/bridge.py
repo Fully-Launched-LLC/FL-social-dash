@@ -1526,6 +1526,7 @@ def main(argv=None):
     iv.add_argument("--email", help="their email (saved as the client's contact)"); iv.add_argument("--name", help="the contact's name")
     iv.add_argument("--new", metavar="CLIENT_NAME", help="set up a new client with this name and portal address first")
     iv.add_argument("--films", choices=["self-serve", "concierge"], default="self-serve", help="new client: self-serve = client films, concierge = we film")
+    iv.add_argument("--add", action="store_true", help="add --email as another person on their team (keeps the contact); again to resend theirs")
     il = sub.add_parser("ideas"); il.add_argument("action", choices=["list"]); il.add_argument("--client", required=True); il.add_argument("--status"); il.add_argument("--starred", action="store_true", help="only Tait's starred ideas")
     pp = sub.add_parser("plan"); pp.add_argument("action", choices=["put"]); pp.add_argument("--client", required=True)
     pp.add_argument("--month", required=True, help="YYYY-MM"); pp.add_argument("--file", required=True); pp.add_argument("--brief")
@@ -1601,10 +1602,17 @@ def main(argv=None):
             sb.insert("social_clients", {"name": a.new, "slug": a.client, "client_system": a.films})
             print(f"Set up {a.new}: {SITE}/clients/{a.client}")
         c = client_by_slug(sb, a.client)
-        contact = {k: v for k, v in (("contact_email", a.email and a.email.strip().lower()), ("contact_name", a.name)) if v}
-        if contact:
-            sb.update("social_clients", {"id": c["id"]}, contact)
-        req = urllib.request.Request(SITE + "/api/invite", data=json.dumps({"clientId": c["id"]}).encode(), method="POST",
+        body = {"clientId": c["id"]}
+        if a.add:
+            # Tait, 2026-10-26: "it's not just Mark, but it's other people on his
+            # board as well." A member (migration 039): same portal, contact unchanged.
+            if not a.email: sys.exit("--add needs --email (and --name).")
+            body.update(email=a.email.strip().lower(), name=a.name)
+        else:
+            contact = {k: v for k, v in (("contact_email", a.email and a.email.strip().lower()), ("contact_name", a.name)) if v}
+            if contact:
+                sb.update("social_clients", {"id": c["id"]}, contact)
+        req = urllib.request.Request(SITE + "/api/invite", data=json.dumps(body).encode(), method="POST",
                                      headers={"Content-Type": "application/json", "Authorization": f"Bearer {sb.key}"})
         try:
             with urllib.request.urlopen(req, timeout=30) as r:
