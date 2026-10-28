@@ -24,6 +24,8 @@ const i2 = (await one(`insert into social_ideas (client_id,title,source,plan_id,
 const s1 = (await one(`insert into social_videos (client_id,title,status,hook,body,outline,camera_questions,filmed_by) values ($1,'Leaf rules card','script_review','h','s','o','q','client') returning id`, [GG])).id;
 const s2 = (await one(`insert into social_videos (client_id,title,status,filmed_by) values ($1,'Shovel card','script_review','client') returning id`, [GG])).id;
 await db.query(`insert into social_videos (client_id,title,status) values ($1,'Edit me','in_review'),($1,'Post me','ready_to_post'),($2,'FL edit','in_review')`, [GG, FL]);
+// The client approved 'Post me' from their portal (the audit log's approve_final, by a client).
+await db.query(`insert into social_status_audit_log (video_id,client_id,action,from_status,to_status,changed_by_role) select id,client_id,'approve_final','client_review','ready_to_post','client' from social_videos where title='Post me'`);
 const doc = (await one(`insert into social_client_generated_docs (client_id,kind,title,body_md,status,built_by) values ($1,'brand_guidelines','Brand guidelines','# Orange #F15523','on_desk','Account Manager') returning id`, [GG])).id;
 await db.query(`insert into social_footage (client_id,kind,name,drive_url) values ($1,'broll','office.mov','https://drive/x')`, [GG]);
 
@@ -76,6 +78,8 @@ chk("videos to post have Mark posted", d().getElementById("deskPost").textConten
 // Tait, 2026-10-28: three buttons, no Drive: Finished video, Download, Mark posted.
 const postBtns = [...d().querySelectorAll("#deskPost button")].map(b => b.textContent);
 chk("videos to post: Finished video, Download, Mark posted", postBtns.join() === "Finished video,Download,Mark posted", postBtns);
+// Tait, 2026-10-28: "when luke approves a video, add a note on this section saying client has approved it, no more edits neccesary."
+chk("a video the client approved says so on Videos to post", d().getElementById("deskPost").textContent.includes("Grad Gig approved it") && d().getElementById("deskPost").textContent.includes("No more edits necessary."), d().getElementById("deskPost").textContent);
 chk("videos to post link nowhere into Drive", !d().querySelector("#deskPost a[href*='drive.google']"));
 [...d().querySelectorAll("#deskPost button")].find(b => b.textContent === "Finished video").click(); await settle();
 chk("Finished video opens the review window with Send back", !!d().querySelector(".rv") && [...d().querySelectorAll(".rv-actions button")].some(b => /Send back to the editor/.test(b.textContent)), [...d().querySelectorAll(".rv-actions button")].map(b => b.textContent));

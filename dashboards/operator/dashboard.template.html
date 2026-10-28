@@ -280,14 +280,19 @@ const INVITES_ENABLED = true;
 
 // ---------- data ----------
 async function loadLiveData() {
-  const [clientsRes, videosRes, foldersRes, editorsRes, docsRes, obRes] = await Promise.all([
+  const [clientsRes, videosRes, foldersRes, editorsRes, docsRes, obRes, toPostRes] = await Promise.all([
     sbClient.from("social_clients").select("*").order("name"),
     sbClient.from("social_videos").select("*").order("created_at"),
     sbClient.from("social_drive_folder_links").select("*"),
     sbClient.from("social_editors").select("*").order("name"),
     sbClient.from("social_client_documents").select("*").order("position"),
     sbClient.from("social_client_onboarding").select("*"),
+    sbClient.from("social_status_audit_log").select("video_id,action,changed_by_role,changed_at").eq("to_status", "ready_to_post").order("changed_at"),
   ]);
+  // Who sent each video to Videos to post: the last move there wins, so a cut
+  // the client approved, then sent back and re-approved by Tait, isn't marked.
+  CLIENT_APPROVED = {};
+  (toPostRes.data || []).forEach(r => { CLIENT_APPROVED[r.video_id] = r.action === "approve_final" && r.changed_by_role === "client" ? r.changed_at : null; });
   // Onboarding is optional here (migration 008): a database without it just shows no progress.
   const errors = [clientsRes, videosRes, foldersRes, editorsRes, docsRes].filter(r => r.error).map(r => r.error.message);
   const obByClient = {};
@@ -591,7 +596,7 @@ async function sendIdea(id) {
 // Clicking the row (anywhere but its buttons) or its title opens its card.
 const VROW_HEAD = `<div class="vrow vhead"><div>Video</div><div>Posts</div><div>Platforms</div><div>Status</div><div style="text-align:right">Actions</div></div>`;
 function vrowHtml(x, actionsHtml) {
-  const v = x.video, watch = finishedVideoLink(v, x.client.driveFolders);
+  const v = x.video;
   const extra = v.dueToFilm && ["concept_pending", "to_film"].includes(v.status) ? "Film by " + niceDate(v.dueToFilm)
     : v.dueToEdit && ["ready_to_edit", "with_editor"].includes(v.status) ? "Edit by " + niceDate(v.dueToEdit)
     : filmedByX(x) === "us" && v.status === "to_film" ? "No filming" : "";
@@ -601,12 +606,12 @@ function vrowHtml(x, actionsHtml) {
     <div class="when">${v.postDate ? escapeHtml(niceDate(v.postDate)) : "Not set"}${extra ? `<small>${escapeHtml(extra)}</small>` : ""}</div>
     <div>${platformPills(v.platform)}</div>
     <div>${statusDot(v.status, STATUS_LABEL, !!timeSensitive(x))}</div>
-    <div class="acts">${watchHtml(v, watch)}${actionsHtml || ""}</div>
+    <div class="acts">${actionsHtml || ""}</div>
     ${fixLine(v) ? `<div class="note-line">${escapeHtml(fixLine(v))}</div>` : v.note ? `<div class="note-line">Note: ${escapeHtml(v.note)}</div>` : ""}
   </div>`;
 }
 function rowHtml(x, rightHtml) {
-  const v = x.video, watch = finishedVideoLink(v, x.client.driveFolders);
+  const v = x.video;
   const meta = [x.client.name, (v.platform || []).join(" · "),
     v.dueToFilm && ["concept_pending","to_film"].includes(v.status) ? "film by " + v.dueToFilm : null,
     v.dueToEdit && ["ready_to_edit","with_editor"].includes(v.status) ? "edit by " + v.dueToEdit : null,
@@ -616,13 +621,8 @@ function rowHtml(x, rightHtml) {
     <div class="left"><b class="video-card" style="display:inline-block" onclick="openOperatorVideoModal('${v.id}')">${escapeHtml(v.title || "(untitled)")}</b>
       <div class="meta">${escapeHtml(meta)}</div>
       ${v.note ? `<div class="meta">Note: ${escapeHtml(v.note)}</div>` : ""}</div>
-    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${watchHtml(v, watch)}${rightHtml || statusBadge(v.status, STATUS_LABEL)}</div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${rightHtml || statusBadge(v.status, STATUS_LABEL)}</div>
   </div>`;
-}
-// The finished video's Drive link, once there is one.
-function watchHtml(v, watch) {
-  return watch && ["in_review", "client_review", "ready_to_post", "posted"].includes(v.status)
-    ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${watch.label}</a>` : "";
 }
 function smallBtn(label, onclick, cls) {
   return `<button class="${cls || ""}" style="font-size:0.78rem;padding:5px 10px" onclick="${onclick}">${escapeHtml(label)}</button>`;
@@ -982,6 +982,9 @@ function renderCalendar() {
 // (Tait, 2026-10-28): Finished video (the review window, to watch it and
 // still send it back), Download (into Downloads, to AirDrop to the phone)
 // and Mark posted. No trip into Google Drive. Used in My desk's Videos to post.
+// Tait, 2026-10-28: "when luke approves a video, add a note on this section
+// saying client has approved it, no more edits neccesary."
+let CLIENT_APPROVED = {};
 function postCardHtml(x) {
     const v = x.video;
     return `<div class="card" style="margin-bottom:10px">
@@ -990,6 +993,7 @@ function postCardHtml(x) {
           <div class="meta">${escapeHtml(x.client.name)}${(v.platform || []).length ? " · " + escapeHtml(v.platform.join(" · ")) : ""}</div></div>
         <span class="badge" style="background:var(--card2);color:${v.postDate && v.postDate < todayISO() ? "var(--red)" : "var(--ink)"}">Post ${escapeHtml(v.postDate || "— no date")}</span>
       </div>
+      ${CLIENT_APPROVED[v.id] ? `<div class="meta" style="margin-top:6px;color:var(--green)">✓ ${escapeHtml(x.client.name)} approved it (${escapeHtml(new Date(CLIENT_APPROVED[v.id]).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }))}). No more edits necessary.</div>` : ""}
       ${v.onScreenCaption ? `<div style="margin-top:8px"><b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">On-screen caption</b><div style="white-space:pre-wrap;font-size:0.9rem">${escapeHtml(v.onScreenCaption)}</div></div>` : ""}
       ${v.caption ? `<div style="margin-top:8px"><b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">Caption</b><div style="white-space:pre-wrap;font-size:0.9rem">${escapeHtml(v.caption)}</div></div>` : ""}
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
