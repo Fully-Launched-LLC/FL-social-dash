@@ -259,24 +259,30 @@ Voice Profile before writing anything.
 ## Client Drive structure
 
 Every client gets one folder inside the shared **Fully Social OS** Drive
-folder, with five fixed subfolders — this is the template, don't improvise a
-different shape per client:
+folder, with five fixed subfolders (Tait, 2026-10-28: "I shouldn't need to
+actually enter google drive for any reason") — this is the template, don't
+improvise a different shape per client, and don't add Brand Voice or Hooks:
 
 ```
 Fully Social OS/
   General/
     Assets/                    — shared mockup/template docs, not client-specific
       Ideal Customer Profile — Template   — duplicate this per client, then fill it
-  <Client Name>/
-    01 Footage Uploads   — client drops raw footage here; editor pulls from here
-    02 Final Edits       — editor delivers cuts here for owner approval
-    03 Brand Voice       — Google Doc mirror of brain.md's founder/voice/do-don't
-    04 Hooks             — good hooks for this client, for reuse/reference
-    05 Assets/           — this client's filled-in research and idea documents
+  Operator Only (do not share)/
+    Old drafts/<Client>/       — draft cuts moved out of Finished Videos (2026-10-28)
+  Clients/<Client Name>/
+    01 Raw Footage       — footage uploaded on each card, one folder per card
+                            ("NN. Title (posts Mon D)"); editor pulls from here
+    02 Finished Videos   — only videos Tait approved for posting ("<title>.mp4",
+                            copied by the bridge, `copy_finished`); never drafts
+    03 Important Documents — every document made for the client (brand
+                            guidelines, identity / voice, onboarding brand files)
+    04 Assets/           — this client's research and idea documents
       Ideal Customer Profile   — Google Doc, mirrors brain.md's Ideal Customer
                                   section, built from the General/Assets template
       Transcripts/              — voice memo / call transcripts, one file per source
       Content Ideas             — concept-engine output, longer-form idea bank
+    05 Previous Content  — footage they already had (onboarding asks for it)
 ```
 
 `brain.md` in the repo is the source of truth for Brand Voice and the Ideal
@@ -744,8 +750,11 @@ back one piece at a time:
    editor and shows in the same Revisions needed section). Clients can't
    edit anything on a card. Every client step ends in a short thank-you message, never a
    browser pop-up.
-7. My desk → Videos to post lists it by post date with the captions and finished video;
-   whoever posts marks it posted. Posting stays manual (principle 6).
+7. My desk → Videos to post lists it by post date with the captions and three
+   buttons (Tait, 2026-10-28): **Finished video** (the review window: watch it,
+   and still send it back to the editor with comments), **Download** (the
+   latest cut into Downloads as "<title>.mp4", to AirDrop to a phone) and
+   **Mark posted**. No Drive. Posting stays manual (principle 6).
 
 ### Operator dashboard — `/` → `/operator/dashboard.html`
 
@@ -834,7 +843,7 @@ videographer otherwise). The client **Approves** or **Requests changes**
 the client sees the new version). Footage is **uploaded on the card** by the
 client or the videographer (often Tait, through the client's portal) into
 the private `footage` bucket; the bridge moves each clip into the card's
-Google Drive folder (`01 Footage Uploads/NN. Title (posts Mon D)`, found
+Google Drive folder (`01 Raw Footage/NN. Title (posts Mon D)`, found
 with Google Drive for desktop) and deletes the temporary copy. Video has
 been filmed: on time keeps the post date and the edit is due P−7; late
 falls back to 7 + 7. Scripting cards show on the client's Videos tab.
@@ -848,8 +857,9 @@ approved guidelines it waits (`editor_brief.waitingOn`, shown on the client's Vi
 desk). **Send to editor** offers **AI editor** next to the human editors (a
 human sets `humanEditor`, which the bridge leaves alone). `bridge.py video
 deliver` uploads a review copy (the `review` bucket, a new
-`social_video_versions` row), copies it to the client's Final Edits Drive
-folder and puts the card in Videos to review; the Content Poster drafts the
+`social_video_versions` row) and puts the card in Videos to review (no
+Drive copy: only a video approved for posting goes to Finished Videos,
+`copy_finished`, Tait 2026-10-28); the Content Poster drafts the
 captions (`editor_brief.captionDraft`), which open pre-filled in Approve &
 add captions. Tait's notes or a client's round go back to the AI Editor the
 same way (bridge `edit_notes`). The bridge texts Tait (Telegram, grouped, at
@@ -1130,9 +1140,10 @@ Operator dashboard → Clients → "+ New client": client name, portal address,
 contact name / phone / email (required: the invite goes there), who usually
 films, and the Drive links: main folder, Important Documents, Previous
 Content, raw footage, finished videos, brand guidelines. The folders are
-made by hand or by Claude (the repo never creates Drive folders itself):
-`Fully Social OS/<Client>/` with Important Documents, Previous Content, Raw
-Footage and Finished Videos. "Send their portal invite now" (on by default)
+made by hand or by Claude (the repo never creates the client's folders itself):
+`Fully Social OS/Clients/<Client>/` with 01 Raw Footage, 02 Finished Videos,
+03 Important Documents, 04 Assets and 05 Previous Content (see Client Drive
+structure). "Send their portal invite now" (on by default)
 emails the invite as soon as the client is created.
 
 ## Adding an editor
@@ -1214,7 +1225,7 @@ As of 2026-09-23:
 | Editor dashboard (brief, footage, brand voice, deliver) | ✅ Live, scoped per editor by RLS. |
 | Owner review (gate 2), client review (gate 3) | ✅ Live. |
 | 7-day edit-to-post rule | ✅ As a suggestion when entering a post date; always editable. |
-| Posting database with caption | ✅ My desk → Videos to post, with copy-caption. Posting stays manual (principle 6). |
+| Posting database with caption | ✅ My desk → Videos to post: Finished video, Download, Mark posted. Posting stays manual (principle 6). |
 | Analytics / monthly performance loop | ❌ Not built — off the client nav. |
 | Competitors + Poppy on the client portal | ❌ Not built. |
 

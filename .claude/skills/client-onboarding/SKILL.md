@@ -34,11 +34,12 @@ Google Drive, inside the shared **Fully Social OS** folder (find it with Drive
 search, `title contains 'Fully Social OS'`):
 
 ```
-<Client Name>/
-  Important Documents   brand files from onboarding; their Google Docs
-  Previous Content      footage they already have (onboarding asks for it)
-  Raw Footage           new clips; per-video folders go in here
-  Finished Videos       editors' cuts
+Clients/<Client Name>/
+  01 Raw Footage          new clips; per-video folders go in here
+  02 Finished Videos      only videos Tait approved for posting (the bridge copies them)
+  03 Important Documents  brand files from onboarding; their Google Docs
+  04 Assets               research and idea documents
+  05 Previous Content     footage they already have (onboarding asks for it)
 ```
 
 **Brand guidelines** (Tait, 2026-10-15): one Google Doc per client,

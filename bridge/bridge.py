@@ -647,6 +647,33 @@ def move_footage(sb, st):
     return log
 
 
+def copy_finished(sb, st):
+    """Approved for posting (Tait, 2026-10-28): the latest cut goes into the
+    client's Finished Videos Drive folder as "<title>.mp4", and only then.
+    Drafts never go there. A newer cut approved later replaces it."""
+    log = []
+    if not DRIVE_ROOT:
+        return log
+    vids = sb.select("social_videos", "select=id,client_id,title,editor_brief&status=eq.ready_to_post")
+    links = {r["client_id"]: r.get("final_edits") for r in sb.select("social_drive_folder_links", "select=client_id,final_edits")}
+    for v in vids:
+        eb = v.get("editor_brief") or {}
+        latest = (sb.select("social_video_versions", f"select=version,storage_path&video_id=eq.{v['id']}&storage_path=not.is.null&order=version.desc&limit=1") or [None])[0]
+        if not latest or (eb.get("finishedCopy") or {}).get("version") == latest["version"]:
+            continue
+        folder = find_drive_folder(folder_id_of(links.get(v["client_id"])), st)
+        if not folder:
+            log.append(f"finished: no Finished Videos folder for {v['title']}")
+            continue
+        title = re.sub(r'[\\/:*?"<>|]+', "", v.get("title") or "video").strip()[:80]
+        dest = folder / f"{title}{pathlib.Path(latest['storage_path']).suffix or '.mp4'}"
+        dest.write_bytes(sb.download("review", latest["storage_path"]))
+        eb["finishedCopy"] = {"version": latest["version"], "name": dest.name}
+        sb.update("social_videos", {"id": v["id"]}, {"editor_brief": eb})
+        log.append(f"finished: {v['title']} v{latest['version']} -> {dest.name}")
+    return log
+
+
 # ── editing and reviews (Phase 7) ───────────────────────────────────────
 SITE = os.environ.get("FULLY_SOCIAL_SITE", "https://social.fullylaunched.com")
 
@@ -699,7 +726,7 @@ def ask_for_edit(sb, c, v, revise=False, notes=None):
 2. The raw footage is in Google Drive on this Mac: `{bridge_cmd()} footage where --id {v['id']}` prints the folder.
 3. Edit in Remotion (`editor/`). Assets: **{c['name']}'s own first** (`editor/public/clients/{slug}/_assets/`, or `{bridge_cmd()} assets list --client {slug}`), then the whole library (`{bridge_cmd()} assets list --kind music`, `--kind broll` for B-roll clips; never one marked never). Write every asset you used (music, sound effects, fonts, motion graphics, LUTs, B-roll), with its library path, in `clients/{slug}/team-room/assets-used/{v['id']}.md`, so anything Tait likes can be added to their assets. Render to `editor/out/{slug}/{v['id']}.mp4`.
 4. Content Reviewer ⇄ you until it passes.
-5. Deliver it to Tait's desk: `{bridge_cmd()} video deliver --id {v['id']} --file editor/out/{slug}/{v['id']}.mp4` (a review copy for the player, a copy in their Final Edits Drive folder, and the card moves to Tait's Videos to review).
+5. Deliver it to Tait's desk: `{bridge_cmd()} video deliver --id {v['id']} --file editor/out/{slug}/{v['id']}.mp4` (a review copy for the player, and the card moves to Tait's Videos to review; Drive gets it only once Tait approves it for posting).
 The edit is due {v.get('due_to_edit') or 'soon'} (7 days before the post date)."""
     return give_task("Content Editor", f"{c['name']}: {what}: {v.get('title')}", desc)
 
@@ -1038,6 +1065,10 @@ def check(sb, verbose=True):
         log += move_footage(sb, st)
     except Exception as e:
         log.append(f"footage: {e}")
+    try:
+        log += copy_finished(sb, st)
+    except Exception as e:
+        log.append(f"finished: {e}")
     # Editing and reviews (Phase 7).
     try:
         vids = sb.select("social_videos", "select=id,client_id,title,status,note,editor_id,editor_brief,client_revision_rounds,due_to_edit&status=in.(ready_to_edit,with_editor)")
@@ -1697,23 +1728,13 @@ def main(argv=None):
         path = f"{v['client_id']}/{v['id']}/{int(time.time() * 1000)}-v{n}-{re.sub(r'[^A-Za-z0-9._-]+', '_', src.name)}"
         sb.upload("review", path, src.read_bytes(), "video/mp4")
         op = sb.select("social_operators", "select=id&limit=1")[0]["id"]
-        st = load_state()
-        drive_note = ""
-        link = (sb.select("social_drive_folder_links", f"select=final_edits&client_id=eq.{v['client_id']}") or [{}])[0].get("final_edits")
-        folder = find_drive_folder(folder_id_of(link), st) if link else None
-        if folder:
-            title = re.sub(r'[\\/:*?"<>|]+', "", v.get("title") or "video").strip()[:80]
-            dest = folder / f"{title} v{n}{src.suffix}"
-            dest.write_bytes(src.read_bytes())
-            drive_note = f" Copy in Drive: {dest.name}."
-            STATE.write_text(json.dumps(st, indent=2))
         sb.insert("social_video_versions", {"video_id": v["id"], "version": n, "file_name": src.name, "storage_path": path, "created_by": op})
         eb = dict(v.get("editor_brief") or {}); eb.pop("waitingOn", None)
         sb.update("social_videos", {"id": v["id"]}, {"status": "in_review", "editor_brief": eb})
         if n == 1 or not eb.get("captionDraft"):
             try: ask_for_captions(sb, c, v)
             except Exception: pass
-        print(f"v{n} of {v['title']} is on Tait's desk (Videos to review).{drive_note}")
+        print(f"v{n} of {v['title']} is on Tait's desk (Videos to review).")
     elif a.cmd == "captions":
         v = sb.select("social_videos", f"select=editor_brief&id=eq.{a.id}")[0]
         eb = dict(v.get("editor_brief") or {})

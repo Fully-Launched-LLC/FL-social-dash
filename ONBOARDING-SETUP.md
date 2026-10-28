@@ -117,6 +117,6 @@ rebuild and deploy.
 2. When their voice memo comes in: get the transcript, then Clients →
    **Onboarding** → paste → **Save and build documents**.
 3. Tell Claude: "make <client>'s Drive folders". Claude creates
-   `Fully Social OS/<Client>/` with Important Documents, Previous Content,
-   Raw Footage and Finished Videos, and fills the links in on Clients → Edit,
+   `Fully Social OS/Clients/<Client>/` with 01 Raw Footage, 02 Finished Videos,
+   03 Important Documents, 04 Assets and 05 Previous Content, and fills the links in on Clients → Edit,
    so the onboarding steps' folder buttons work.
