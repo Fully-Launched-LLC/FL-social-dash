@@ -801,7 +801,12 @@ items update them. **No edit starts until a client's editing guidelines are
 approved** (Tait's rule). **Library** (sidebar) lists the shared music and
 sound effects (`bridge.py assets sync` indexes the folders and uploads short
 previews): play, ★ Favourite, Never use. The Editor picks from it with
-`bridge.py assets list` and never uses a track marked Never.
+`bridge.py assets list` and never uses a track marked Never. **Songs Tait
+links** (Tait, 2026-10-28) go to two places with one command:
+`bridge.py assets add --kind music --url <link> --into cinematic --client <slug>`
+downloads the MP3, adds it to the client's assets and copies it to his
+external drive's cinematic songs folder (`FULLY_SOCIAL_SONGS_DIR`; it says so
+when the drive isn't plugged in).
 
 Nav (sidebar order: My desk, Content Ideas, Clients, Content Calendar, Library, Editors, Agent room, Editor portal ↗): **Content Calendar** (one chip per platform on each post date, in that
 platform's color, plus ✅ approve-by, ✂️ edit-due and 🎬 film-by deadlines
