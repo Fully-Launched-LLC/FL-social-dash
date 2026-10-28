@@ -978,10 +978,12 @@ function renderCalendar() {
 }
 
 // ---------- Ready to post ----------
-// One ready-to-post video: post date, both captions, the finished video,
-// and Mark posted. Used in My desk's Videos to post.
+// One ready-to-post video: post date, both captions, and three buttons
+// (Tait, 2026-10-28): Finished video (the review window, to watch it and
+// still send it back), Download (into Downloads, to AirDrop to the phone)
+// and Mark posted. No trip into Google Drive. Used in My desk's Videos to post.
 function postCardHtml(x) {
-    const v = x.video, watch = finishedVideoLink(v, x.client.driveFolders);
+    const v = x.video;
     return `<div class="card" style="margin-bottom:10px">
       <div class="row" style="border:none;padding:0">
         <div class="left"><b class="video-card" style="display:inline-block" onclick="openOperatorVideoModal('${v.id}')">${escapeHtml(v.title || "(untitled)")}</b>
@@ -991,17 +993,54 @@ function postCardHtml(x) {
       ${v.onScreenCaption ? `<div style="margin-top:8px"><b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">On-screen caption</b><div style="white-space:pre-wrap;font-size:0.9rem">${escapeHtml(v.onScreenCaption)}</div></div>` : ""}
       ${v.caption ? `<div style="margin-top:8px"><b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">Caption</b><div style="white-space:pre-wrap;font-size:0.9rem">${escapeHtml(v.caption)}</div></div>` : ""}
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-        ${watch ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${watch.label}</a>` : ""}
-        ${v.caption ? smallBtn("Copy caption", `copyCaption('${v.id}', this)`) : ""}
+        ${smallBtn("Finished video", `watchFinished('${v.id}')`)}
+        ${smallBtn("Download", `downloadFinished('${v.id}', this)`)}
         ${smallBtn("Mark posted", `markPosted('${v.id}')`, "primary")}
       </div>
     </div>`;
 }
 
-async function copyCaption(id, btn) {
+// The finished video in the review window: watch it, and if something
+// still needs fixing, leave comments and send it back to the editor.
+function watchFinished(id) {
   const x = findVideo(id);
-  try { await navigator.clipboard.writeText(x.video.caption || ""); btn.textContent = "Copied ✓"; }
-  catch (e) { btn.textContent = "Couldn't copy — select it manually"; }
+  if (!x) return;
+  const v = x.video;
+  const back = n => n.length ? `Send ${n.length} change${n.length === 1 ? "" : "s"} back to the editor` : "Send back to the editor";
+  openReviewPlayer(v, {
+    folders: x.client.driveFolders, title: v.title,
+    intro: `${escapeHtml(x.client.name)} · Ready to post. Spot something? Pause there, leave a comment, and send it back to the editor.`,
+    notesBy: ["operator"], canNote: true, authorRole: "operator", authorName: (ME && ME.name) || "Operator",
+    buttons: [{ label: back, cls: "reject", needsNotes: true, onClick: async (notes, b) => {
+      b.disabled = true; b.textContent = "Sending…";
+      const ok = await updateVideo(id, { editorBrief: Object.assign({}, v.editorBrief, { revisions: reviewNotesText(notes) }), status: "with_editor" });
+      if (ok) closeVideoModal(); else { b.disabled = false; b.textContent = back(notes); }
+    } }],
+  });
+}
+
+// The latest cut, saved straight into Downloads as "<title>.mp4".
+async function downloadFinished(id, btn) {
+  const x = findVideo(id);
+  if (!x) return;
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = "Getting it…";
+  try {
+    const versions = await loadVersions(x.video), latest = versions[versions.length - 1];
+    if (!latest || !latest.storage_path) throw new Error("there's no finished file for this video yet.");
+    const ext = (latest.storage_path.match(/\.\w+$/) || [".mp4"])[0];
+    const name = (x.video.title || "video").replace(/[\\/:*?"<>|]+/g, "").trim().slice(0, 80) + ext;
+    const { data, error } = await sbClient.storage.from("review").createSignedUrl(latest.storage_path, 600, { download: name });
+    if (error || !data) throw new Error(error ? error.message : "no link came back.");
+    const a = document.createElement("a");
+    a.href = data.signedUrl; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    btn.textContent = "Downloading ✓";
+    setTimeout(() => { btn.textContent = label; btn.disabled = false; }, 3000);
+  } catch (e) {
+    alert("Couldn't download: " + e.message);
+    btn.textContent = label; btn.disabled = false;
+  }
 }
 
 // ---------- Clients ----------

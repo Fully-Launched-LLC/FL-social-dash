@@ -311,7 +311,7 @@ chk("all 30 ready to post", (await count("status='ready_to_post'")) === 30);
 op = track(await OP());
 chk("no separate Ready to Post page", !$(op, "#view-post") && !$$(op, ".nav-item").some(n => n.textContent.includes("Ready to Post")));
 const p0 = $$(op, "#deskPost > .card")[0];
-chk("My desk → Videos to post: date, both captions, finished video", p0 && /Post \d{4}-\d{2}-\d{2}/.test(p0.textContent) && p0.textContent.includes("Caption") && p0.textContent.includes("On-screen caption") && !!p0.querySelector('a[href="https://drive/fl-final"]'));
+chk("My desk → Videos to post: date, both captions, Finished video / Download / Mark posted", p0 && /Post \d{4}-\d{2}-\d{2}/.test(p0.textContent) && p0.textContent.includes("Caption") && p0.textContent.includes("On-screen caption") && [...p0.querySelectorAll("button")].map(b => b.textContent).join() === "Finished video,Download,Mark posted");
 for (let n = 0; n < V.post; n++) await click(btn($$(op, "#deskPost > .card")[0], "Mark posted"), "post " + n);
 chk(`${V.post} posted`, (await count("status='posted'")) === V.post);
 

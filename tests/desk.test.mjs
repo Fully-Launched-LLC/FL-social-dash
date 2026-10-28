@@ -73,6 +73,13 @@ chk("approved brand guidelines: off the desk, client can read", tiles()[2] === "
 // Videos to review / post keep the existing buttons.
 chk("videos to review have Review & comment", [...d().querySelectorAll("#deskVideos button")].some(b => b.textContent === "Review & comment"));
 chk("videos to post have Mark posted", d().getElementById("deskPost").textContent.includes("Mark posted"));
+// Tait, 2026-10-28: three buttons, no Drive: Finished video, Download, Mark posted.
+const postBtns = [...d().querySelectorAll("#deskPost button")].map(b => b.textContent);
+chk("videos to post: Finished video, Download, Mark posted", postBtns.join() === "Finished video,Download,Mark posted", postBtns);
+chk("videos to post link nowhere into Drive", !d().querySelector("#deskPost a[href*='drive.google']"));
+[...d().querySelectorAll("#deskPost button")].find(b => b.textContent === "Finished video").click(); await settle();
+chk("Finished video opens the review window with Send back", !!d().querySelector(".rv") && [...d().querySelectorAll(".rv-actions button")].some(b => /Send back to the editor/.test(b.textContent)), [...d().querySelectorAll(".rv-actions button")].map(b => b.textContent));
+op.w.closeVideoModal(); await settle();
 
 // One client's page.
 d().querySelector('.nav-item[data-view="clients"]').click(); await settle();
