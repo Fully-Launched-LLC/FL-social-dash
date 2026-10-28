@@ -591,7 +591,7 @@ async function sendIdea(id) {
 // Clicking the row (anywhere but its buttons) or its title opens its card.
 const VROW_HEAD = `<div class="vrow vhead"><div>Video</div><div>Posts</div><div>Platforms</div><div>Status</div><div style="text-align:right">Actions</div></div>`;
 function vrowHtml(x, actionsHtml) {
-  const v = x.video, watch = finishedVideoLink(v, x.client.driveFolders);
+  const v = x.video;
   const extra = v.dueToFilm && ["concept_pending", "to_film"].includes(v.status) ? "Film by " + niceDate(v.dueToFilm)
     : v.dueToEdit && ["ready_to_edit", "with_editor"].includes(v.status) ? "Edit by " + niceDate(v.dueToEdit)
     : filmedByX(x) === "us" && v.status === "to_film" ? "No filming" : "";
@@ -601,12 +601,12 @@ function vrowHtml(x, actionsHtml) {
     <div class="when">${v.postDate ? escapeHtml(niceDate(v.postDate)) : "Not set"}${extra ? `<small>${escapeHtml(extra)}</small>` : ""}</div>
     <div>${platformPills(v.platform)}</div>
     <div>${statusDot(v.status, STATUS_LABEL, !!timeSensitive(x))}</div>
-    <div class="acts">${watchHtml(v, watch)}${actionsHtml || ""}</div>
+    <div class="acts">${actionsHtml || ""}</div>
     ${fixLine(v) ? `<div class="note-line">${escapeHtml(fixLine(v))}</div>` : v.note ? `<div class="note-line">Note: ${escapeHtml(v.note)}</div>` : ""}
   </div>`;
 }
 function rowHtml(x, rightHtml) {
-  const v = x.video, watch = finishedVideoLink(v, x.client.driveFolders);
+  const v = x.video;
   const meta = [x.client.name, (v.platform || []).join(" · "),
     v.dueToFilm && ["concept_pending","to_film"].includes(v.status) ? "film by " + v.dueToFilm : null,
     v.dueToEdit && ["ready_to_edit","with_editor"].includes(v.status) ? "edit by " + v.dueToEdit : null,
@@ -616,13 +616,8 @@ function rowHtml(x, rightHtml) {
     <div class="left"><b class="video-card" style="display:inline-block" onclick="openOperatorVideoModal('${v.id}')">${escapeHtml(v.title || "(untitled)")}</b>
       <div class="meta">${escapeHtml(meta)}</div>
       ${v.note ? `<div class="meta">Note: ${escapeHtml(v.note)}</div>` : ""}</div>
-    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${watchHtml(v, watch)}${rightHtml || statusBadge(v.status, STATUS_LABEL)}</div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${rightHtml || statusBadge(v.status, STATUS_LABEL)}</div>
   </div>`;
-}
-// The finished video's Drive link, once there is one.
-function watchHtml(v, watch) {
-  return watch && ["in_review", "client_review", "ready_to_post", "posted"].includes(v.status)
-    ? `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(watch.url)}" target="_blank" rel="noopener">${watch.label}</a>` : "";
 }
 function smallBtn(label, onclick, cls) {
   return `<button class="${cls || ""}" style="font-size:0.78rem;padding:5px 10px" onclick="${onclick}">${escapeHtml(label)}</button>`;
