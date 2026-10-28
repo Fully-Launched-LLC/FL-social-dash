@@ -1433,6 +1433,22 @@ def download_clip(url, start=None, end=None, name=None):
     return pathlib.Path(path)
 
 
+def download_song(url):
+    """A song Tait links: the audio only, as an MP3, named after its title."""
+    out = CACHE / "songs"; out.mkdir(parents=True, exist_ok=True)
+    r = subprocess.run(["yt-dlp", "--no-playlist", "-x", "--audio-format", "mp3", "--audio-quality", "0",
+                        "-o", str(out / "%(title).80s.%(ext)s"), "--print", "after_move:filepath", url], capture_output=True, text=True)
+    path = (r.stdout.strip().splitlines() or [""])[-1]
+    if r.returncode or not path or not pathlib.Path(path).exists():
+        sys.exit(f"Couldn't download {url}: {(r.stderr.strip().splitlines() or ['unknown error'])[-1]}")
+    return pathlib.Path(path)
+
+
+# Tait, 2026-10-28: "whenever I give you songs to download, you add them to that client's song asset
+# database and you add it to the folder on my crucial of cinematic songs."
+SONGS_DRIVE = pathlib.Path(os.environ.get("FULLY_SOCIAL_SONGS_DIR", "/Volumes/Crucial X10/Assets /cinematic songs"))
+
+
 def index_asset(sb, kind, root, f, made_by=None, notes=None, poster=None):
     rel = str(f.relative_to(REPO))
     folder_path = str(f.parent.relative_to(root)) if f.parent != root else ""
@@ -1826,7 +1842,10 @@ def main(argv=None):
         elif a.action == "add":
             if not (a.kind and (a.file or a.url)):
                 sys.exit("add needs --kind and --file or --url (and --into for the folder).")
-            if a.url:   # the client's own video on YouTube etc. (Tait, 2026-10-23)
+            if a.url and a.kind == "music":
+                a.file = str(download_song(a.url))
+                a.notes = " · ".join(x for x in (a.notes, f"from {a.url}") if x)
+            elif a.url:   # the client's own video on YouTube etc. (Tait, 2026-10-23)
                 a.file = str(download_clip(a.url, a.start, a.end, a.name))
                 a.notes = " · ".join(x for x in (a.notes, f"from {a.url}" + (f" ({a.start or '0:00'}–{a.end or 'end'})" if a.start or a.end else "")) if x)
             src, root = pathlib.Path(a.file).expanduser(), dict(LIBRARY_DIRS)[a.kind]
@@ -1840,6 +1859,13 @@ def main(argv=None):
             shutil.copy2(src, dest)
             r = index_asset(sb, a.kind, root, dest, made_by=a.by, notes=a.notes, poster=a.poster)
             print(f"Added {dest.name} to {ASSET_LABEL[a.kind]}/{a.into or ''} ({r['id']}).")
+            if a.kind == "music" and a.url:
+                if SONGS_DRIVE.is_dir():
+                    if not (SONGS_DRIVE / dest.name).exists():
+                        shutil.copy2(dest, SONGS_DRIVE / dest.name)
+                    print(f"…and to {SONGS_DRIVE}.")
+                else:
+                    print(f"The songs drive isn't plugged in ({SONGS_DRIVE}); copy {dest.name} there later.")
             if a.client:
                 c = client_by_slug(sb, a.client)
                 sb.insert("social_client_assets", {"client_id": c["id"], "asset_id": r["id"], "added_by": a.by or "tait"}, upsert_on="client_id,asset_id")
