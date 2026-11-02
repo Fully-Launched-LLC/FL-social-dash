@@ -1,7 +1,8 @@
 """Tests for the bridge's decisions (no network): python3 bridge/test_bridge.py"""
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from bridge import plan_jobs, plan_style_jobs, plan_mood_sorts, questions_from_text, timeline, plan_dates, match_client, idea_title, months_ahead, plan_script_jobs, script_signature, card_folder_name, plan_edit_jobs, edit_signature, desk_message, agent_rows, needs_from_error, is_idea, strip_idea, team_lead_note
+from bridge import plan_jobs, plan_style_jobs, plan_mood_sorts, questions_from_text, timeline, plan_dates, match_client, idea_title, months_ahead, plan_script_jobs, script_signature, card_folder_name, plan_edit_jobs, edit_signature, desk_message, agent_rows, needs_from_error, is_idea, strip_idea, team_lead_note, drive_files_to_trash
+import bridge, tempfile
 import datetime as dt
 
 SINCE = "2026-10-21T12:00:00+00:00"
@@ -163,5 +164,20 @@ note = team_lead_note([{"text": "L1-64 yes", "voice": False, "files": []},
 check("Team Lead note keeps every message in order", note.index("L1-64 yes") < note.index("use the light yellow"))
 check("Team Lead note marks voice notes and lists files", "🎤 voice note: use the light yellow" in note and "file: /c/tg-x.jpg" in note)
 check("Team Lead note asks for a reply first", "telegram send" in note)
+
+# ── Abandon video: only this video's own Drive files go to the trash ──
+with tempfile.TemporaryDirectory() as d:
+    fin = pathlib.Path(d)
+    (fin / "Bad cut.mp4").write_text("x"); (fin / "Keep me.mp4").write_text("x")
+    (fin / "old").mkdir(); (fin / "old" / "v1.mp4").write_text("x"); (fin / "old" / "other.mp4").write_text("x")
+    ids = {str(fin / "old" / "v1.mp4"): "DRV1", str(fin / "old" / "other.mp4"): "DRV9"}
+    real = bridge.drive_id
+    bridge.drive_id = lambda p: ids.get(str(p))
+    v = {"editor_brief": {"finishedCopy": {"name": "Bad cut.mp4"}}, "final_cut_url": None}
+    got = sorted(p.name for p in drive_files_to_trash(v, [{"file_id": "DRV1"}, {"file_id": None}], fin))
+    bridge.drive_id = real
+    check("abandon: its approved copy and its versions' Drive files, nothing else", got == ["Bad cut.mp4", "v1.mp4"], got)
+    check("abandon: nothing when the video was never on Drive", drive_files_to_trash({"editor_brief": {}}, [], fin) == [])
+    check("abandon: no folder, nothing", drive_files_to_trash(v, [], None) == [])
 
 sys.exit(1 if fails else 0)
