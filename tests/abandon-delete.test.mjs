@@ -78,6 +78,18 @@ op.w.openVideoForm(await idOf("Keep me")); await settle();
 op.d.getElementById("vfDelete").click(); await settle();
 chk("deleted from the Edit form", !(await status("Keep me")));
 
+// Abandon video in the edit review: flagged for the bridge to delete (and its Drive copy).
+await db.exec(`insert into social_videos (client_id,title,status,filmed_by,concept_approved_at,post_date,platform,editor_brief) values
+  ('${GG}','Bad cut','in_review','us',now(),'2026-10-08','{instagram}','{"aiEditor":true}')`);
+await op.w.loadLiveData();
+op.w.operatorReview(await idOf("Bad cut")); await settle();
+chk("edit review has Abandon video next to Send changes", !!modalBtn("Abandon video") && !!modalBtn("Send changes to the editor"));
+modalBtn("Abandon video").click(); await settle();
+s = await status("Bad cut");
+chk("Abandon video: flagged for deletion, other brief kept", s.status === "rejected" && s.editor_brief.deleteRequested === true && s.editor_brief.aiEditor === true
+  && op.ui.confirms.at(-1).includes("Google Drive"), s);
+chk("…off the calendar and not in the Abandoned list (no Restore)", !calTitles().includes("Bad cut") && !abandoned()?.textContent.includes("Bad cut") && !mainList().includes("Bad cut"));
+
 // Adding ideas still works.
 op.w.openVideoForm(null, GG); await settle();
 op.d.querySelector('#videoModalBox [data-f="title"]').value = "Fresh idea";

@@ -674,6 +674,65 @@ def copy_finished(sb, st):
     return log
 
 
+def drive_files_to_trash(v, versions, folder):
+    """The video's own files in the client's Finished Videos folder (and
+    one level of subfolders): its approved copy by name, and any file whose
+    Drive id a version or the final-cut link points at. Never another video's."""
+    if not folder:
+        return []
+    eb = v.get("editor_brief") or {}
+    named = (eb.get("finishedCopy") or {}).get("name")
+    ids = {x["file_id"] for x in versions if x.get("file_id")}
+    m = re.search(r"/file/d/([A-Za-z0-9_-]+)", v.get("final_cut_url") or "")
+    if m:
+        ids.add(m.group(1))
+    found = [folder / named] if named and (folder / named).is_file() else []
+    if ids:
+        for p in list(folder.iterdir()) + [q for d in folder.iterdir() if d.is_dir() for q in d.iterdir()]:
+            if p.is_file() and p not in found and drive_id(p) in ids:
+                found.append(p)
+    return found
+
+
+def delete_abandoned(sb, st):
+    """"Abandon video" in Tait's edit review (Tait, 2026-11-01: "removes it
+    from the system and deletes it on google drive"). The dashboard flags it
+    (status rejected, editor_brief.deleteRequested); here its Drive copies go
+    to the Drive trash, its review cuts and local renders are deleted, then
+    the card itself (versions and comments go with it)."""
+    log = []
+    vids = sb.select("social_videos", "select=id,client_id,title,final_cut_url,editor_brief&status=eq.rejected&editor_brief->>deleteRequested=eq.true")
+    if not vids:
+        return log
+    links = {r["client_id"]: r.get("final_edits") for r in sb.select("social_drive_folder_links", "select=client_id,final_edits")}
+    slugs = {c["id"]: c["slug"] for c in sb.select("social_clients", "select=id,slug")}
+    for v in vids:
+        eb = v.get("editor_brief") or {}
+        versions = sb.select("social_video_versions", f"select=file_id,storage_path&video_id=eq.{v['id']}")
+        on_drive = bool((eb.get("finishedCopy") or {}).get("name") or v.get("final_cut_url") or any(x.get("file_id") for x in versions))
+        folder = find_drive_folder(folder_id_of(links.get(v["client_id"])), st) if DRIVE_ROOT else None
+        if on_drive and not folder:
+            log.append(f"abandon: can't reach {v['title']}'s Finished Videos folder in Drive; trying again next time")
+            continue
+        trashed = drive_files_to_trash(v, versions, folder)
+        for p in trashed:
+            p.unlink()   # Google Drive for desktop moves it to the Drive trash (30 days)
+        for x in versions:
+            if x.get("storage_path"):
+                try:
+                    sb._req("DELETE", f"/storage/v1/object/review/{urllib.parse.quote(x['storage_path'])}", raw=True)
+                except RuntimeError:
+                    pass
+        out = REPO / "editor" / "out" / slugs.get(v["client_id"], "-")
+        if out.is_dir():
+            for p in out.glob(f"{v['id']}*"):
+                if p.is_file():
+                    p.unlink()
+        sb.delete("social_videos", {"id": v["id"]})
+        log.append(f"abandon: deleted {v['title']}" + (f" (Drive trash: {', '.join(p.name for p in trashed)})" if trashed else " (nothing on Drive)"))
+    return log
+
+
 # ── editing and reviews (Phase 7) ───────────────────────────────────────
 SITE = os.environ.get("FULLY_SOCIAL_SITE", "https://social.fullylaunched.com")
 
@@ -1069,6 +1128,10 @@ def check(sb, verbose=True):
         log += copy_finished(sb, st)
     except Exception as e:
         log.append(f"finished: {e}")
+    try:
+        log += delete_abandoned(sb, st)
+    except Exception as e:
+        log.append(f"abandon: {e}")
     # Editing and reviews (Phase 7).
     try:
         vids = sb.select("social_videos", "select=id,client_id,title,status,note,editor_id,editor_brief,client_revision_rounds,due_to_edit&status=in.(ready_to_edit,with_editor)")

@@ -912,7 +912,13 @@ sets status `rejected`, remembers where it was in `editor_brief.abandonedFrom`,
 and takes it off the calendar, the client's portal and the editor's page;
 the client's Videos tab → Abandoned lists it with **Restore** (back where it was) and
 **Delete**. **🗑 Delete** (card, Abandoned list, or the Edit form) removes the
-row and its status history for good. "Edit" opens the full form (any status, the
+row and its status history for good. **Abandon video** in Tait's edit
+review (Tait, 2026-11-01: "removes it from the system and deletes it on
+google drive") is different: it flags the video (`rejected` +
+`editor_brief.deleteRequested`, off every list, no Restore) and the bridge's
+`delete_abandoned` sends its own files in the Finished Videos folder to the
+Drive trash, deletes its review copies and local renders, then the row.
+Raw footage is kept. "Edit" opens the full form (any status, the
 dates (Month · Day · Year dropdowns, `dateSelectHtml` in shell.js), editor, the idea fields, caption, note, and one "Editing
 instructions" field stored as `editor_brief.instructions` — older videos'
 separate brief fields are folded into it for display). Entering a post date
