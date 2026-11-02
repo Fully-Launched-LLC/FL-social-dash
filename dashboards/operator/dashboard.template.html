@@ -522,7 +522,8 @@ async function markPosted(id) {
 async function abandonAndDelete(id) {
   const x = findVideo(id);
   if (!x) return;
-  if (!confirm(`Abandon "${x.video.title || "this video"}"? It's deleted from the dashboard, with its cuts and comments, and its copy in Google Drive goes to the Drive trash. This can't be undone here.`)) return;
+  if (!await confirmDialog({ title: `Abandon "${x.video.title || "this video"}"?`, ok: "Abandon video",
+    body: `<p>It's deleted from the dashboard, with its cuts and comments, and its copy in Google Drive goes to the Drive trash.</p><p class="meta">This can't be undone.</p>` })) return;
   if (await updateVideo(id, { status: "rejected", editorBrief: Object.assign({}, x.video.editorBrief, { deleteRequested: true }) })) closeVideoModal();
 }
 // ---------- Content Ideas (the bank) ----------

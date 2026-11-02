@@ -33,6 +33,9 @@ let op = await openPage("operator/dashboard.html", OP, "https://fl.test/operator
 const videosTab = () => { op.w.openClientPage(GG, "videos"); return op.d.getElementById("cpBody"); };
 const modalLabels = () => Array.from(op.d.querySelectorAll("#videoModalBox .modal-actions .btn, #videoModalBox .modal-actions button, #videoModalBox .modal-links a")).map(b => b.textContent.trim());
 const modalBtn = label => Array.from(op.d.querySelectorAll("#videoModalBox button")).find(b => b.textContent.trim() === label);
+// The on-brand Abandon pop-up: its text, then a click on one of its buttons.
+const popup = () => op.d.querySelector(".rv-confirm");
+const answer = async label => { Array.from(popup().querySelectorAll("button")).find(b => b.textContent.trim() === label).click(); await settle(); };
 const calTitles = () => Object.values(op.w.eval("calendarByDay(filteredVideos(), calState)")).flat().map(e => e.x.video.title);
 
 // The card at Edit review: just the three.
@@ -47,9 +50,14 @@ op.w.openOperatorVideoModal(await idOf("Maybe not")); await settle();
 labels = modalLabels();
 chk("other cards: Abandon, Edit and Open portal, no Delete", labels.includes("Abandon") && labels.includes("Edit") && labels.includes("Open portal") && !labels.includes("Delete"), labels);
 modalBtn("Abandon").click(); await settle();
+chk("Abandon asks in the on-brand pop-up, not the browser's", popup()?.textContent.includes('Abandon "Maybe not"?') && popup().textContent.includes("Google Drive") && !op.ui.confirms.length);
+await answer("Cancel");
 let s = await row("Maybe not");
-chk("Abandon: flagged for the bridge to delete, brief kept", s.status === "rejected" && s.editor_brief.deleteRequested === true && s.editor_brief.instructions === "Talking head"
-  && op.ui.confirms.at(-1).includes("Google Drive"), s);
+chk("Cancel: pop-up gone, nothing changed, the card still open", !popup() && s.status === "to_film" && !!modalBtn("Abandon"), s);
+modalBtn("Abandon").click(); await settle();
+await answer("Abandon video");
+s = await row("Maybe not");
+chk("Abandon video: flagged for the bridge to delete, brief kept", !popup() && s.status === "rejected" && s.editor_brief.deleteRequested === true && s.editor_brief.instructions === "Talking head", s);
 chk("…off the calendar and the client's Videos tab, no Abandoned list", !calTitles().includes("Maybe not") && calTitles().includes("Keep me")
   && !videosTab().textContent.includes("Maybe not") && !videosTab().textContent.includes("Abandoned"));
 
@@ -63,6 +71,7 @@ op.w.operatorReview(await idOf("Worse cut")); await settle();
 const rvLabels = Array.from(op.d.querySelectorAll("#videoModalBox .rv-actions button")).map(b => b.textContent.trim());
 chk("review window: Approve, Send changes, Abandon", JSON.stringify(rvLabels) === JSON.stringify(["Approve & add captions", "Send changes to the editor", "Abandon"]), rvLabels);
 modalBtn("Abandon").click(); await settle();
+await answer("Abandon video");
 s = await row("Worse cut");
 chk("…and it abandons it the same way", s.status === "rejected" && s.editor_brief.deleteRequested === true && s.editor_brief.aiEditor === true, s);
 
