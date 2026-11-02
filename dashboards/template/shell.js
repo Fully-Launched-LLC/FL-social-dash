@@ -1180,6 +1180,32 @@ function openModal(html) {
   document.getElementById("videoModalRoot").classList.remove("hidden");
   return box;
 }
+// An on-brand yes/no over the open window, instead of the browser's
+// confirm() (Tait, 2026-11-01: "make this popup on brand"). Same look as
+// the client's rounds pop-up. Resolves true on the main button; false on
+// Cancel, Escape or a click outside.
+function confirmDialog({ title, body, ok = "OK" }) {
+  return new Promise(resolve => {
+    const host = document.querySelector("#videoModalRoot:not(.hidden) #videoModalBox") || document.body;
+    const el = document.createElement("div");
+    el.className = "rv-confirm";
+    el.innerHTML = `<div class="rv-confirm-box" role="dialog" aria-modal="true" aria-labelledby="cfTitle">
+        <h2 id="cfTitle">${escapeHtml(title)}</h2>${body || ""}
+        <div class="rv-confirm-actions">
+          <button type="button" class="primary" data-cf-ok>${escapeHtml(ok)}</button>
+          <button type="button" data-cf-cancel>Cancel</button>
+        </div>
+      </div>`;
+    const key = e => { if (e.key === "Escape") { e.stopPropagation(); done(false); } };
+    const done = yes => { el.remove(); document.removeEventListener("keydown", key, true); resolve(yes); };
+    el.onclick = e => { if (e.target === el) { e.stopPropagation(); done(false); } };
+    el.querySelector("[data-cf-ok]").onclick = () => done(true);
+    el.querySelector("[data-cf-cancel]").onclick = () => done(false);
+    document.addEventListener("keydown", key, true);
+    host.appendChild(el);
+    el.querySelector("[data-cf-cancel]").focus();
+  });
+}
 function modalField(label, value) {
   if (!value) return "";
   return `<div class="modal-field"><b>${escapeHtml(label)}</b><div>${escapeHtml(value)}</div></div>`;
