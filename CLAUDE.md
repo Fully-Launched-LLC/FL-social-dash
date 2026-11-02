@@ -774,8 +774,7 @@ opens one client's page: Overview, Documents (brand guidelines, ICP,
 identity, editing guidelines, content research: write, edit, approve, send
 back; only approved brand guidelines reach the client), Footage (b-roll and
 old footage the client sees, raw footage on cards, finished cuts) and
-Videos (every video for that client, with its buttons, plus an **Abandoned**
-list), plus **Open their portal**. The old To Do page was removed
+Videos (every video for that client, with its buttons), plus **Open their portal**. The old To Do page was removed
 (Tait, 2026-10-22: "that is just my desk now").
 
 **Style guides** (Unify Phase 4, Tait 2026-10-21; migrations 028 + 033):
@@ -907,18 +906,16 @@ named "NN. Title (posts Mon D)". **✓ Mark filmed** on a we-film video
 (to_film → filmed) clears its film-by deadline; it stays ready for an
 editor (Send to editor on its row).
 
-Click any video for its card. **Abandon** (an idea that won't happen)
-sets status `rejected`, remembers where it was in `editor_brief.abandonedFrom`,
-and takes it off the calendar, the client's portal and the editor's page;
-the client's Videos tab → Abandoned lists it with **Restore** (back where it was) and
-**Delete**. **🗑 Delete** (card, Abandoned list, or the Edit form) removes the
-row and its status history for good. **Abandon video** in Tait's edit
-review (Tait, 2026-11-01: "removes it from the system and deletes it on
-google drive") is different: it flags the video (`rejected` +
-`editor_brief.deleteRequested`, off every list, no Restore) and the bridge's
-`delete_abandoned` sends its own files in the Finished Videos folder to the
-Drive trash, deletes its review copies and local renders, then the row.
-Raw footage is kept. "Edit" opens the full form (any status, the
+Click any video for its card. There is no Delete (Tait, 2026-11-01).
+**Abandon** (card, and the edit review next to Send changes to the editor;
+Tait: "removes it from the system and deletes it on google drive") flags the
+video (`rejected` + `editor_brief.deleteRequested`, off every list at once)
+and the bridge's `delete_abandoned` sends its own files in the Finished
+Videos folder to the Drive trash, deletes its review copies and local
+renders, then the row. Raw footage is kept. A card at Edit review shows only
+**Review & comment**, **Approve** and **Abandon** (no folders, Edit or
+portal; there's no Comments & replies button anywhere: the review window
+shows the comments). "Edit" opens the full form (any status, the
 dates (Month · Day · Year dropdowns, `dateSelectHtml` in shell.js), editor, the idea fields, caption, note, and one "Editing
 instructions" field stored as `editor_brief.instructions` — older videos'
 separate brief fields are folded into it for display). Entering a post date
