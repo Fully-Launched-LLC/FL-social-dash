@@ -679,6 +679,17 @@ function openOperatorVideoModal(id) {
     openVideoModal(x.client, x.video, { actionsHtml: operatorActionsHtml(x, true) + abandon, linkKeys: [] });
     return;
   }
+  // Ready to post: the post is done (Tait, 2026-11-02: "it should be review
+  // copy, mark posted, and abandon"). Review copy is for one last change.
+  // The post date can be changed right on the card.
+  if (x.video.status === "ready_to_post") {
+    openVideoModal(x.client, x.video, { actionsHtml: operatorActionsHtml(x, true) + abandon, editPostDate: true });
+    const pd = document.getElementById("vmPostDate");
+    if (pd) pd.onchange = async () => {
+      if (await updateVideo(id, { postDate: pd.value || null })) openOperatorVideoModal(id);
+    };
+    return;
+  }
   const actions = (banked ? smallBtn("Send to client", `sendIdea('${id}')`, "primary") : operatorActionsHtml(x, true)) +
     smallBtn("Edit", `closeVideoModal();openVideoForm('${id}')`) +
     `<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="/clients/${encodeURIComponent(x.client.slug)}" target="_blank" rel="noopener">Open portal</a>` +
