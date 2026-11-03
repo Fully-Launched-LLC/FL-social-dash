@@ -1233,7 +1233,9 @@ function openVideoModal(client, video, opts) {
     <div class="modal-dates">
       <div><div class="lbl">Due to film</div>${escapeHtml(video.dueToFilm || "—")}</div>
       <div><div class="lbl">Due to edit</div>${escapeHtml(video.dueToEdit || "—")}</div>
-      <div><div class="lbl">Post date</div>${escapeHtml(video.postDate || "—")}</div>
+      <div><div class="lbl">Post date</div>${opts.editPostDate
+        ? `<input type="date" id="vmPostDate" value="${escapeHtml(video.postDate || "")}" title="Change the post date" style="width:100%">`
+        : escapeHtml(video.postDate || "—")}</div>
     </div>
 
     ${modalField("Overview", video.overview)}
