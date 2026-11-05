@@ -51,7 +51,7 @@ export function makeHarness(db) {
     return p;
   }
 
-  const JSONB = new Set(["editor_brief", "slides", "sources"]);
+  const JSONB = new Set(["editor_brief", "slides", "sources", "hook_options"]);
   function makeClient(uid, log) {
     const q = ident => '"' + ident + '"';
     function builder(table) {

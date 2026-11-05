@@ -315,8 +315,31 @@ const VIDEO_COLUMNS = {
   conceptApprovedBy: "concept_approved_by", conceptApprovedAt: "concept_approved_at",
   clientRevisionRounds: "client_revision_rounds",
   cameraQuestions: "camera_questions", ideaId: "idea_id",
+  contentType: "content_type", hookOptions: "hook_options", photoPath: "photo_path",
   createdAt: "created_at", updatedAt: "updated_at",
 };
+// Content cards (Tait, 2026-11-04; migration 040): a card is a video or a
+// LinkedIn copy post. A LinkedIn post's idea is `concept`, its three
+// example hooks `hookOptions`, its words `caption` and its photo
+// `photoPath` (the private 'post-photos' bucket). It has no filming or
+// editing: Tait checks it on My desk, the client edits, adds a photo and
+// approves it (straight to Ready to post) or rejects the idea.
+const CONTENT_TYPES = { video: "Video", linkedin_post: "LinkedIn post" };
+const isLinkedInPost = v => !!v && v.contentType === "linkedin_post";
+// The client's LinkedIn post actions (social_client_linkedin_post, 040).
+async function runLinkedInPostAction(action, videoId, opts) {
+  opts = opts || {};
+  const { data, error } = await sbClient.rpc("social_client_linkedin_post", { p_video_id: videoId, p_action: action,
+    p_copy: opts.copy == null ? null : opts.copy, p_note: opts.note || null, p_photo_path: opts.photoPath || null });
+  if (error) return { error: error.message };
+  return { video: videoFromRow(data) };
+}
+// A short-lived link to a post's photo (null without one).
+async function postPhotoUrl(v) {
+  if (!v || !v.photoPath) return null;
+  const { data } = await sbClient.storage.from("post-photos").createSignedUrl(v.photoPath, 3600);
+  return data ? data.signedUrl : null;
+}
 // Rounds of changes a client gets on each finished video (Tait,
 // 2026-10-09). The database enforces the same number
 // (social_client_revision_limit, migration 017).
@@ -329,13 +352,16 @@ const clientRoundsUsed = v => (v.clientRevisionRounds || 0) >= REVISION_ROUNDS;
 // Gate-1 columns are deliberately absent — use the approve_concept action,
 // so every approval is stamped and logged.
 const VIDEO_WRITABLE = ["clientId","title","platform","hook","overview","outline","body","concept",
-  "filmingDirection","caption","note","status","editorId","editorBrief","dueToFilm","dueToEdit","postDate","finalCutUrl","onScreenCaption","filmedBy","clientRevisionRounds","cameraQuestions"];
+  "filmingDirection","caption","note","status","editorId","editorBrief","dueToFilm","dueToEdit","postDate","finalCutUrl","onScreenCaption","filmedBy","clientRevisionRounds","cameraQuestions",
+  "contentType","hookOptions","photoPath"];
 
 function videoFromRow(row) {
   const v = {};
   Object.entries(VIDEO_COLUMNS).forEach(([key, col]) => { v[key] = row[col] === undefined ? null : row[col]; });
   v.platform = v.platform || [];
   v.editorBrief = v.editorBrief || {};
+  v.contentType = v.contentType || "video";
+  v.hookOptions = Array.isArray(v.hookOptions) ? v.hookOptions : [];
   v.assignedEditor = null; // display name — resolved from editorId by pages that load social_editors
   return v;
 }
@@ -1225,6 +1251,25 @@ function openVideoModal(client, video, opts) {
   const instructions = opts.hideEditorBrief ? "" : editorInstructions(video);
 
   document.getElementById("videoModalBox").classList.remove("modal-wide");
+  if (isLinkedInPost(video)) {
+    document.getElementById("videoModalBox").innerHTML = `
+    <div class="modal-close" onclick="closeVideoModal()">✕</div>
+    <h2>${escapeHtml(video.title || video.id)}</h2>
+    <div class="modal-meta">${escapeHtml(client.displayName || "")} · LinkedIn post ${statusBadge(video.status, STATUS_LABEL)}</div>
+    <div class="modal-dates"><div><div class="lbl">Post date</div>${opts.editPostDate
+      ? `<input type="date" id="vmPostDate" value="${escapeHtml(video.postDate || "")}" title="Change the post date" style="width:100%">`
+      : escapeHtml(video.postDate || "—")}</div></div>
+    ${modalField("The idea", video.concept)}
+    ${modalField("Example hooks", (video.hookOptions || []).map((h, i) => (i + 1) + ". " + h).join("\n"))}
+    ${modalField("The post", video.caption)}
+    <div class="post-photo" data-photo></div>
+    ${video.note ? modalField("Note", video.note) : ""}
+    ${opts.actionsHtml ? `<div class="modal-actions">${opts.actionsHtml}</div>` : ""}`;
+    document.getElementById("videoModalRoot").classList.remove("hidden");
+    postPhotoUrl(video).then(url => { const el = document.querySelector("#videoModalBox [data-photo]");
+      if (el && url) el.innerHTML = `<b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin:10px 0 4px">Photo</b><img src="${escapeHtml(url)}" alt="The post's photo" style="max-width:100%;max-height:320px;border-radius:8px">`; });
+    return;
+  }
   document.getElementById("videoModalBox").innerHTML = `
     <div class="modal-close" onclick="closeVideoModal()">✕</div>
     <h2>${escapeHtml(video.title || video.id)}</h2>

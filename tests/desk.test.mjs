@@ -34,13 +34,13 @@ const d = () => op.d;
 chk("My desk is the home page", d().getElementById("view-desk").classList.contains("active") && d().getElementById("crumbPage").textContent === "My desk");
 chk("sidebar order: My desk first, then Content Ideas, Clients, Content Calendar; no To Do page", [...d().querySelectorAll(".nav-item[data-view]")].map(n => n.dataset.view).join(",").startsWith("desk,ideabank,clients,calendar") && !d().getElementById("view-todo"));
 const tiles = () => [...d().querySelectorAll("#deskTiles .desk-tile")].map(t => t.textContent.trim());
-chk("6 queues with counts (all clients)", JSON.stringify(tiles()) === JSON.stringify(["2Ideas to review", "2Scripts to review", "1Documents to review", "2Videos to review", "0Carousels to review", "1Videos to post"]), tiles());
+chk("6 queues with counts (all clients)", JSON.stringify(tiles()) === JSON.stringify(["2Ideas to review", "2Scripts to review", "1Documents to review", "2Videos to review", "0Carousels to review", "1Content to post"]), tiles());
 chk("nav shows the desk total", d().getElementById("navDeskN").textContent === "8");
 chk("plan shows its brief and ideas", d().getElementById("deskIdeas").textContent.includes("20 ideas") && d().getElementById("deskIdeas").textContent.includes("Format: Local guide"));
 
 // Client filter narrows the desk.
 d().querySelector(`#globalClientFilter .chip[data-c="${FL}"]`).click(); await settle();
-chk("client filter narrows the queues", JSON.stringify(tiles()) === JSON.stringify(["0Ideas to review", "0Scripts to review", "0Documents to review", "1Videos to review", "0Carousels to review", "0Videos to post"]), tiles());
+chk("client filter narrows the queues", JSON.stringify(tiles()) === JSON.stringify(["0Ideas to review", "0Scripts to review", "0Documents to review", "1Videos to review", "0Carousels to review", "0Content to post"]), tiles());
 d().querySelector(`#globalClientFilter .chip[data-c="all"]`).click(); await settle();
 
 // Ideas: approve one, reject one.

@@ -93,6 +93,37 @@ format) and the question to ask. They go onto the client's **Content
 Ideas** board (operator only); Tait edits them there and drags the ones he
 wants filmed to **Sent to client**.
 
+**10b. Personal brands: a month of content cards** (Tait, 2026-11-04; Matteo
+Warren, Elias O'Neill, Luke Bothun, Tait Allen). From the voice memo, one
+month at a time, on the 5 weekdays only (Mon to Fri, about 20 days):
+
+- **20 video cards**, one per weekday, posting on LinkedIn, Facebook and
+  Instagram. Each: the idea, hook, script, outline and the question to
+  answer on camera (the client films it themselves), as in step 10.
+- **20 LinkedIn copy posts**, one per weekday. Each is written in full in
+  the client's voice (the identity doc's voice profile, their own words
+  from the memo; never invented facts, `[MATTEO: …]` placeholders where a
+  detail is missing). Each has the idea (one line, shown at the top of the
+  card), **three example hooks**, and the post itself.
+
+Write them to `clients/<slug>/concepts/<YYYY-MM>-cards.json` (a list; each
+item `{"type": "video" | "linkedin_post", "title", "post_date", "idea", ...}`:
+videos add `"format", "hook", "script", "outline", "camera_questions",
+"filming_instructions"`; LinkedIn posts add `"hooks": [3], "post"`), then
+`python3 bridge/bridge.py cards add --client <slug> --file <that file>`. It
+checks every card before adding any, sets film-by P-10 and edit-by P-7 on
+videos, and puts all 40 in **My desk → Scripts to review**. Tait reads them
+there and clicks **Approve all** (or approves / sends back one by one); only
+then does the client see them.
+
+The client then: on a video, **Approve** or **Request changes**, films it
+and uploads the footage on the same card (editing, Tait's review, their
+review or opt-out as usual). On a LinkedIn post: reads the idea and hooks,
+edits the post in the box, adds a photo from their camera roll, and
+**Approve post** (straight to Content to post) or **Reject the idea** (with
+a note, back to Scripting: write a new one). Tait copies it from **Content
+to post** and marks it posted (posting stays manual).
+
 **After filming and posting:** the feedback loop (Apify reading the
 client's own post views every 30 days) isn't built yet; Tait decided to set
 it up later.
