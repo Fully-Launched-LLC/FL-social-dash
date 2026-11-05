@@ -659,14 +659,19 @@ def move_footage(sb, st):
         return log
     if not rows or not DRIVE_ROOT:
         return log
-    links = {r["client_id"]: r for r in sb.select("social_drive_folder_links", "select=client_id,footage_uploads")}
+    try:   # random_videos is 041's; before it's run, only footage_uploads
+        links = {r["client_id"]: r for r in sb.select("social_drive_folder_links", "select=client_id,footage_uploads,random_videos")}
+    except RuntimeError:
+        links = {r["client_id"]: r for r in sb.select("social_drive_folder_links", "select=client_id,footage_uploads")}
     for f in rows:
         v = (sb.select("social_videos", f"select=id,title,post_date,editor_brief&id=eq.{f['video_id']}") or [None])[0]
-        client_folder = find_drive_folder(folder_id_of((links.get(f["client_id"]) or {}).get("footage_uploads")), st)
+        eb = (v or {}).get("editor_brief") or {}
+        # Random Video Dump (041): into their "06 Random Video Dump" folder.
+        which = "random_videos" if eb.get("source") == "random_dump" else "footage_uploads"
+        client_folder = find_drive_folder(folder_id_of((links.get(f["client_id"]) or {}).get(which)), st)
         if not v or not client_folder:
             log.append(f"footage: no Drive folder for {f['name']}")
             continue
-        eb = v.get("editor_brief") or {}
         card = find_drive_folder(folder_id_of(eb.get("rawFootageUrl")), st) if eb.get("rawFootageUrl") else None
         if not card:
             existing = [d for d in client_folder.iterdir() if d.is_dir()]

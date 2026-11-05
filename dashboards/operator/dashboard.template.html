@@ -313,8 +313,9 @@ async function loadLiveData() {
       onboardingQuestions: c.onboarding_questions || null,
       skipOnboarding: !!c.skip_onboarding,
       skipClientReview: !!c.skip_client_review,   // opted out of reviewing (038)
+      personalBrand: !!c.personal_brand,     // personal brand (041): Your voice onboarding, Random Video Dump, Idea Drop
       driveFolders: { footageUploads: f.footage_uploads, finalEdits: f.final_edits, brandVoice: f.brand_voice,
-        root: f.root, importantDocuments: f.important_documents, previousContent: f.previous_content },
+        root: f.root, importantDocuments: f.important_documents, previousContent: f.previous_content, randomVideos: f.random_videos },
     };
   });
   CLIENT_BY_ID = {};
@@ -576,7 +577,7 @@ function vrowHtml(x, actionsHtml) {
     : filmedByX(x) === "us" && v.status === "to_film" ? "No filming" : "";
   return `<div class="row vrow" data-id="${v.id}">
     <div><b class="video-card title" onclick="openOperatorVideoModal('${v.id}')">${escapeHtml(v.title || "(untitled)")}</b>
-      <div class="sub">${escapeHtml(x.client.name)}${isLinkedInPost(v) ? " · LinkedIn post" : ""}${v.assignedEditor && v.status === "with_editor" ? " · Editor: " + escapeHtml(v.assignedEditor) : v.status === "with_editor" && (v.editorBrief || {}).aiEditor ? " · AI editor" : ""}${(v.editorBrief || {}).waitingOn && v.status === "ready_to_edit" ? ` · <span style="color:var(--gold)">Waiting on their ${escapeHtml(v.editorBrief.waitingOn)}</span>` : ""}</div></div>
+      <div class="sub">${escapeHtml(x.client.name)}${isLinkedInPost(v) ? " · LinkedIn post" : ""}${(v.editorBrief || {}).source === "random_dump" ? " · Random video" : ""}${v.assignedEditor && v.status === "with_editor" ? " · Editor: " + escapeHtml(v.assignedEditor) : v.status === "with_editor" && (v.editorBrief || {}).aiEditor ? " · AI editor" : ""}${(v.editorBrief || {}).waitingOn && v.status === "ready_to_edit" ? ` · <span style="color:var(--gold)">Waiting on their ${escapeHtml(v.editorBrief.waitingOn)}</span>` : ""}</div></div>
     <div class="when">${v.postDate ? escapeHtml(niceDate(v.postDate)) : "Not set"}${extra ? `<small>${escapeHtml(extra)}</small>` : ""}</div>
     <div>${platformPills(v.platform)}</div>
     <div>${statusDot(v.status, STATUS_LABEL, !!timeSensitive(x))}</div>
@@ -1191,6 +1192,9 @@ function openClientPanel(clientId) {
     ${lbl("Important Documents folder (brand files go here during onboarding)")}<input type="text" id="cpImportant" value="${escapeHtml(f.importantDocuments || "")}" style="width:100%;margin-bottom:10px">
     ${lbl("Previous Content folder (their existing footage goes here during onboarding)")}<input type="text" id="cpPrevious" value="${escapeHtml(f.previousContent || "")}" style="width:100%;margin-bottom:10px">
     ${lbl("Raw footage folder (Google Drive link)")}<input type="text" id="cpFootage" value="${escapeHtml(f.footageUploads || "")}" style="width:100%;margin-bottom:10px">
+    <label style="display:flex;gap:8px;align-items:flex-start;margin:0 0 10px;font-size:0.9rem"><input type="checkbox" id="cpPersonalBrand" ${c.personalBrand ? "checked" : ""} style="width:auto;margin-top:3px">
+      <span>Personal brand: their onboarding asks for their voice (not brand files, no footage step), and their portal has Random Video Dump and Idea Drop tabs</span></label>
+    ${lbl("Random Video Dump folder (Google Drive link)")}<input type="text" id="cpRandomFolder" value="${escapeHtml(f.randomVideos || "")}" style="width:100%;margin-bottom:10px">
     ${lbl("Finished video folder (Google Drive link)")}<input type="text" id="cpFinal" value="${escapeHtml(f.finalEdits || "")}" style="width:100%;margin-bottom:10px">
     ${lbl("Brand guidelines (Google Doc link — the editor sees it on every video)")}<input type="text" id="cpBrand" value="${escapeHtml(f.brandVoice || "")}" style="width:100%;margin-bottom:10px">
     <h3 style="font-size:0.85rem;margin:16px 0 4px;color:var(--sub)">Documents <span style="font-weight:400">— the client sees these on their portal's Documents page, except Team only ones (you and the editors only, like Content Research)</span></h3>
@@ -1230,6 +1234,9 @@ function openClientPanel(clientId) {
     // saves before migration 015 adds the column.
     const skip = document.getElementById("cpSkipOnboarding").checked;
     const skipField = skip || c.skipOnboarding ? { skip_onboarding: skip } : {};
+    // Same for personal brand (041).
+    const dump = document.getElementById("cpPersonalBrand").checked;
+    if (dump || c.personalBrand) skipField.personal_brand = dump;
     const contact = {
       contact_name: document.getElementById("cpContactName").value.trim() || null,
       contact_phone: document.getElementById("cpContactPhone").value.trim() || null,
@@ -1265,6 +1272,8 @@ function openClientPanel(clientId) {
       final_edits: document.getElementById("cpFinal").value.trim() || null,
       brand_voice: document.getElementById("cpBrand").value.trim() || null,
     };
+    const randomFolder = document.getElementById("cpRandomFolder").value.trim() || null;
+    if (randomFolder || f.randomVideos) folders.random_videos = randomFolder;   // 041
     let folderRes = await sbClient.from("social_drive_folder_links").upsert(folders, { onConflict: "client_id" });
     // Before migration 008 there are no root / Important Documents /
     // Previous Content columns: save the rest rather than fail.
@@ -1452,8 +1461,9 @@ async function openOnboarding(clientId) {
   const box = openModal(`
     <h2>${escapeHtml(c.name)}: onboarding</h2>
     <div class="modal-meta">${escapeHtml(s.label)}${ob.invited_email ? " · invited " + escapeHtml(ob.invited_email) : ""}</div>
-    ${Object.keys(b).length ? modalField("Brand", [b.files === "create_for_me" ? "No brand files yet: they asked us to create them" : b.files === "none" ? "They don't have any brand files" : b.files === "uploaded" && !brandFiles.length ? "Brand files: uploaded to their Important Documents folder" : "", b.fonts && "Fonts: " + b.fonts, (b.colors || []).length && "Colors: " + b.colors.join(", "), b.aesthetic && "Look and feel: " + b.aesthetic, b.links && "Looks they love: " + b.links].filter(Boolean).join("\n")) : ""}
-    ${brandFiles.length ? `<div class="modal-field"><b>Brand files (${brandFiles.length})</b><div>${fileLinks(brandFiles)}</div></div>` : ""}
+    ${b.voice ? `<div class="modal-field"><b>Their voice</b><div>${b.linkedin_url ? `LinkedIn: <a href="${escapeHtml(b.linkedin_url)}" target="_blank" rel="noopener">${escapeHtml(b.linkedin_url)}</a>${b.linkedin_ok ? " (they said: grab my voice from there)" : ""}<br>` : ""}${brandFiles.length ? `Voice documents (${brandFiles.length}):<br>${fileLinks(brandFiles)}` : "No documents: use their LinkedIn."}</div></div>` : ""}
+    ${!b.voice && Object.keys(b).length ? modalField("Brand", [b.files === "create_for_me" ? "No brand files yet: they asked us to create them" : b.files === "none" ? "They don't have any brand files" : b.files === "uploaded" && !brandFiles.length ? "Brand files: uploaded to their Important Documents folder" : "", b.fonts && "Fonts: " + b.fonts, (b.colors || []).length && "Colors: " + b.colors.join(", "), b.aesthetic && "Look and feel: " + b.aesthetic, b.links && "Looks they love: " + b.links].filter(Boolean).join("\n")) : ""}
+    ${!b.voice && brandFiles.length ? `<div class="modal-field"><b>Brand files (${brandFiles.length})</b><div>${fileLinks(brandFiles)}</div></div>` : ""}
     ${ob.voice_memo_path ? `<div class="modal-field"><b>Voice memo</b>${SIGNED[ob.voice_memo_path] ? `<audio controls preload="none" src="${escapeHtml(SIGNED[ob.voice_memo_path])}" style="width:100%;margin:4px 0"></audio><a class="btn" href="${escapeHtml(SIGNED[ob.voice_memo_path])}" target="_blank" rel="noopener" download>Download the voice memo</a>` : `<div>Uploaded ${escapeHtml(niceDate(String(ob.voice_memo_uploaded_at || "").slice(0, 10)))}</div>`}</div>` : ""}
     ${ob.footage_done_at || footageFiles.length || (ob.footage || {}).drive_link ? `<div class="modal-field"><b>Footage</b><div>${(ob.footage || {}).drive_link ? `Google Drive folder: <a href="${escapeHtml(ob.footage.drive_link)}" target="_blank" rel="noopener">${escapeHtml(ob.footage.drive_link)}</a><br>` : ""}${footageFiles.length ? `${footageFiles.length} file${footageFiles.length === 1 ? "" : "s"} uploaded:<br>${fileLinks(footageFiles)}` : (ob.footage || {}).none ? "They don't have any footage yet." : ""}</div></div>` : ""}
     ${Object.keys(a).length ? modalField("Their written notes", Object.entries(a).map(([k, v]) => qText(k) + "\n" + v).join("\n\n")) : ""}
@@ -1734,7 +1744,7 @@ async function agentRequest(agent, action) {
 // to be posted soon. i only need to filter the ideas based on client."
 // So: one list per client, starred first, newest next; ideas already on a
 // card or rejected drop off. Stars: migration 034.
-const IDEA_SOURCE = { tait: "You", phone: "Telegram", research: "Research", sandcastles: "Sandcastles", client: "Client" };
+const IDEA_SOURCE = { tait: "You", phone: "Telegram", research: "Research", sandcastles: "Sandcastles", client: "From the client" };
 const ideaOpen = i => !["used", "rejected"].includes(i.status) && !i.video_id;
 async function renderIdeaDb() {
   const navN = document.getElementById("navBankN"), starredN = IDEAS.filter(i => i.starred && ideaOpen(i)).length;

@@ -415,6 +415,9 @@ body.setup-mode .sidebar .nav-item, body.setup-mode #operatorBanner, body.setup-
 .welcome-card .lead { font-size:17px; margin:10px 0 26px; }
 button.big { padding:14px 40px; font-size:16px; }
 .dropzone { border:2px dashed var(--line-strong); border-radius:16px; padding:34px 20px; text-align:center; margin-bottom:12px; transition:border-color .15s, background .15s; }
+.dump-drop { display:block; cursor:pointer; }
+.dump-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 4px; border-bottom:1px solid var(--line); cursor:pointer; }
+.dump-row:last-child { border-bottom:0; }
 .dropzone.over { border-color:var(--gold); background:rgba(196,171,130,.08); }
 .dz-title { font-size:17px; font-weight:600; }
 .dz-or { color:var(--sub2); font-size:13px; margin:8px 0 12px; }
