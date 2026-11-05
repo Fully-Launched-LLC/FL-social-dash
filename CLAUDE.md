@@ -487,6 +487,32 @@ repo — where they live is an open question. `calendar-planner` in
 particular was written to update the old per-client `config.json` files,
 which no longer exist; it needs repointing at Supabase or retiring.
 
+## Content cards: videos and LinkedIn posts (migration 040)
+
+Tait, 2026-11-04: "instead of calling them video cards, i want to call them
+content cards so that they can be different types of content." A card in
+`social_videos` has a `content_type`: `video` (every older card) or
+`linkedin_post`. A LinkedIn post's idea is `concept`, its three example
+hooks `hook_options`, its words `caption` and its photo `photo_path` (the
+private `post-photos` bucket, `<client id>/<card id>/<file>`). Flow:
+`script_review` (My desk → Scripts to review, **Approve all**) →
+`concept_pending` (the client's To review: the idea, three hooks, the post
+in a box they edit, **Add a photo** from their camera roll, **Save my
+edits**, **Approve post**, **Reject the idea** with a note) →
+`ready_to_post` (My desk → **Content to post**: Copy the post, Download
+photo, Mark posted) → `posted`. A rejected post goes to `scripting` with
+the client's note (the Writer writes a new one). The client's moves go
+through `social_client_linkedin_post(card, action, copy, note,
+photo_path)` (save / photo / approve / reject), the only place a client
+changes a card's words. 040 also closes 026's "client users update own
+visible videos" policy, which let a client login write any column on its
+own cards directly. `bridge.py cards add --client <slug> --file <json>`
+adds a month of video and LinkedIn cards at once (see `content-system`
+step 10b). The personal brands (Matteo Warren, Elias O'Neill, Luke Bothun,
+Tait Allen; created 2026-11-04, all film their own videos) get 20 videos
+(LinkedIn, Facebook, Instagram) and 20 LinkedIn posts a month, one of
+each per weekday.
+
 ## Data: social_videos is the single source of truth
 
 Every client, video, editor, and Drive link lives in Supabase (same

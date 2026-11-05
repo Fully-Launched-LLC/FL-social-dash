@@ -246,10 +246,10 @@ chk("invite-editor: a client's login can't become an editor (and nothing is save
   // (Unify Phase 7) Cards waiting for approval, and the bridge signing with the service key.
   c = world({ ...base, reviewVideos: [], cardVideos: [vids[0], vids[1]] }); r = await call(notifyReview, "opTok", { clientId: C1 });
   const mc = JSON.parse(c.find(x => x.url.startsWith("https://api.resend.com")).body);
-  chk("notify-review: cards to approve on their own", r.status === 200 && r.body.count === 2 && mc.subject === "You have 2 video cards ready to approve" && mc.html.includes(">Open your portal<"), [r.body, mc.subject]);
+  chk("notify-review: cards to approve on their own", r.status === 200 && r.body.count === 2 && mc.subject === "You have 2 content cards ready to approve" && mc.html.includes(">Open your portal<"), [r.body, mc.subject]);
   c = world({ ...base, reviewVideos: [vids[0]], cardVideos: [vids[1]] }); r = await call(notifyReview, "opTok", { clientId: C1 });
   const mb = JSON.parse(c.find(x => x.url.startsWith("https://api.resend.com")).body);
-  chk("notify-review: both in one email", mb.subject === "You have 1 video to review and 1 video card to approve" && mb.html.includes("Videos to review") && mb.html.includes("Video cards to approve"), mb.subject);
+  chk("notify-review: both in one email", mb.subject === "You have 1 video to review and 1 content card to approve" && mb.html.includes("Videos to review") && mb.html.includes("Content cards to approve"), mb.subject);
   c = world({ ...base, reviewVideos: vids }); r = await call(notifyReview, process.env.SUPABASE_SERVICE_ROLE_KEY, { clientId: C1 });
   chk("notify-review: the bridge signs with the service key", r.status === 200 && !c.some(x => x.url.includes("/auth/v1/user")), [r.status, r.body]);
   c = world({ ...base, reviewVideos: vids }); r = await call(notifyReview, "sb_secret_abc", { clientId: C1 });

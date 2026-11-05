@@ -162,11 +162,11 @@ body.navy-work .main .board-col.drop { background:rgba(255,255,255,.10); }
     <div id="deskAllClear"></div>
     <div class="card" data-queue="due" id="deskDueCard"><h2>Due soon <span class="meta">Your next step on each video, overdue or due in the next 3 days, soonest first.</span></h2><div id="deskDue"></div></div>
     <div class="card" data-queue="ideas"><h2>Ideas to review <span class="meta">Monthly plans: approve or reject each idea.</span></h2><div id="deskIdeas"></div></div>
-    <div class="card" data-queue="scripts"><h2>Scripts to review <span class="meta">Approve and the client sees the whole card.</span></h2><div id="deskScripts"></div></div>
+    <div class="card" data-queue="scripts"><h2>Scripts to review <span class="meta">Videos and LinkedIn posts. Approve and the client sees the whole card.</span></h2><div id="deskScripts"></div></div>
     <div class="card" data-queue="docs"><h2>Documents to review <span class="meta">Operator-only, except approved brand guidelines.</span></h2><div id="deskDocs"></div></div>
     <div class="card" data-queue="videos"><h2>Videos to review</h2><div id="deskVideos"></div></div>
     <div class="card" data-queue="carousels"><h2>Carousels to review</h2><div id="deskCarousels"></div></div>
-    <div class="card" data-queue="post"><h2>Videos to post</h2><div id="deskPost"></div></div>
+    <div class="card" data-queue="post"><h2>Content to post</h2><div id="deskPost"></div></div>
   </section>
 
   <section class="view" id="view-client">
@@ -576,7 +576,7 @@ function vrowHtml(x, actionsHtml) {
     : filmedByX(x) === "us" && v.status === "to_film" ? "No filming" : "";
   return `<div class="row vrow" data-id="${v.id}">
     <div><b class="video-card title" onclick="openOperatorVideoModal('${v.id}')">${escapeHtml(v.title || "(untitled)")}</b>
-      <div class="sub">${escapeHtml(x.client.name)}${v.assignedEditor && v.status === "with_editor" ? " · Editor: " + escapeHtml(v.assignedEditor) : v.status === "with_editor" && (v.editorBrief || {}).aiEditor ? " · AI editor" : ""}${(v.editorBrief || {}).waitingOn && v.status === "ready_to_edit" ? ` · <span style="color:var(--gold)">Waiting on their ${escapeHtml(v.editorBrief.waitingOn)}</span>` : ""}</div></div>
+      <div class="sub">${escapeHtml(x.client.name)}${isLinkedInPost(v) ? " · LinkedIn post" : ""}${v.assignedEditor && v.status === "with_editor" ? " · Editor: " + escapeHtml(v.assignedEditor) : v.status === "with_editor" && (v.editorBrief || {}).aiEditor ? " · AI editor" : ""}${(v.editorBrief || {}).waitingOn && v.status === "ready_to_edit" ? ` · <span style="color:var(--gold)">Waiting on their ${escapeHtml(v.editorBrief.waitingOn)}</span>` : ""}</div></div>
     <div class="when">${v.postDate ? escapeHtml(niceDate(v.postDate)) : "Not set"}${extra ? `<small>${escapeHtml(extra)}</small>` : ""}</div>
     <div>${platformPills(v.platform)}</div>
     <div>${statusDot(v.status, STATUS_LABEL, !!timeSensitive(x))}</div>
@@ -616,6 +616,14 @@ function isReadyForEditor(x) { return x.video.status === "ready_to_edit" || isOp
 function operatorActionsHtml(x, inCard) {
   const v = x.video, id = v.id, raw = rawFootageLink(v, x.client.driveFolders);
   const out = [];
+  // A LinkedIn post (040): send it, approve it for the client, then post it.
+  if (isLinkedInPost(v)) {
+    if (videoActionsFor(v, "operator", x.client.clientSystem).includes("approve_concept_owner")) out.push(smallBtn("Send to client", `sendToClient('${id}')`, "primary"));
+    if (v.status === "concept_pending" && v.conceptApprovedAt) out.push(smallBtn("Approve for client", `approveForClient('${id}', 'ready_to_post', 'post')`, "primary"));
+    if (v.status === "ready_to_post") out.push(smallBtn("Copy the post", `copyPostText('${id}', this)`), ...(v.photoPath ? [smallBtn("Download photo", `downloadPostPhoto('${id}', this)`)] : []),
+      smallBtn("Mark posted", `markPosted('${id}')`, "primary"));
+    return out.join("");
+  }
   if (videoActionsFor(v, "operator", x.client.clientSystem).includes("approve_concept_owner")) out.push(smallBtn("Send to client", `sendToClient('${id}')`, "primary"));
   if (filmedByX(x) === "us" && v.status === "concept_pending" && v.conceptApprovedAt) {
     out.push(smallBtn("Approve for client", `approveForClient('${id}', 'to_film', 'idea')`, "primary"));
@@ -717,6 +725,7 @@ function openVideoForm(id, presetClientId) {
   if (!CLIENTS.length) { alert("Add a client on the Clients page first."); return; }
   const x = id ? findVideo(id) : null;
   if (id && !x) return;
+  if (x && isLinkedInPost(x.video)) return openLinkedInForm(id);
   const v = x ? x.video : { platform: [], editorBrief: {}, clientId: presetClientId || (globalClientFilter !== "all" ? globalClientFilter : CLIENTS[0].id) };
   const eb = v.editorBrief || {};
   const clientField = x
@@ -728,7 +737,7 @@ function openVideoForm(id, presetClientId) {
     .map(e => `<option value="${e.id}" ${e.id === v.editorId ? "selected" : ""}>${escapeHtml(e.name)}${e.active ? "" : " (inactive)"}</option>`).join("");
 
   const box = openModal(`
-    <h2>${x ? "Edit video" : "New idea"}</h2>
+    <h2>${x ? "Edit content card · Video" : "New idea"}</h2>
     ${clientField}
     ${textField("title", "Title", v.title)}
     <h3 style="font-size:0.85rem;margin:6px 0 8px;color:var(--sub)">The idea (the client sees this)</h3>
@@ -809,6 +818,80 @@ function openVideoForm(id, presetClientId) {
     closeVideoModal();
     await loadLiveData();
   };
+}
+
+// ---------- LinkedIn post form (040) ----------
+// The idea, three example hooks, the post (in the client's voice), the
+// post date and status. No filming, editing or editor.
+const LI_STATUSES = ["scripting", "script_review", "concept_pending", "ready_to_post", "posted"];
+function openLinkedInForm(id, presetClientId) {
+  const x = id ? findVideo(id) : null;
+  if (id && !x) return;
+  const v = x ? x.video : { hookOptions: [], platform: ["linkedin"], status: "script_review", clientId: presetClientId || (globalClientFilter !== "all" ? globalClientFilter : CLIENTS[0].id) };
+  const hooks = v.hookOptions || [];
+  const box = openModal(`
+    <h2>${x ? "Edit content card · LinkedIn post" : "New LinkedIn post"}</h2>
+    ${x ? `${lbl("Client")}<div style="margin-bottom:10px">${escapeHtml(x.client.name)}</div>`
+      : `${lbl("Client")}<select data-f="clientId" style="width:100%;margin-bottom:10px">${CLIENTS.map(c => `<option value="${c.id}" ${c.id === v.clientId ? "selected" : ""}>${escapeHtml(c.name)}</option>`).join("")}</select>`}
+    ${textField("title", "Title", v.title)}
+    ${textField("concept", "The idea (shown at the top of the client's card)", v.concept, 3)}
+    ${[0, 1, 2].map(i => textField("hook" + i, "Example hook " + (i + 1), hooks[i], 2)).join("")}
+    ${textField("caption", "The post (written in their voice; the client can edit it)", v.caption, 12)}
+    ${textField("note", "Note (the client sees it)", v.note, 2)}
+    <div class="grid-2">
+      ${dateField("postDate", "Post date", v.postDate)}
+      <div>${lbl("Status")}<select data-f="status" style="width:100%;margin-bottom:10px">${LI_STATUSES.map(st =>
+        `<option value="${st}" ${st === v.status ? "selected" : ""}>${escapeHtml(STATUS_LABEL[st] || st)}</option>`).join("")}</select></div>
+    </div>
+    <div class="auth-error" id="lfError"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="primary" id="lfSave">${x ? "Save changes" : "Add post"}</button>
+      <button onclick="closeVideoModal()">Cancel</button>
+    </div>`);
+  box.querySelector("#lfSave").onclick = async () => {
+    const err = box.querySelector("#lfError"), fields = { contentType: "linkedin_post", platform: v.platform && v.platform.length ? v.platform : ["linkedin"] };
+    box.querySelectorAll("[data-f]").forEach(el => { fields[el.dataset.f] = el.value.trim(); });
+    fields.hookOptions = [0, 1, 2].map(i => fields["hook" + i]).filter(Boolean);
+    [0, 1, 2].forEach(i => delete fields["hook" + i]);
+    if (!fields.title) { err.textContent = "Give it a title first."; return; }
+    const btn = box.querySelector("#lfSave");
+    btn.disabled = true; btn.textContent = "Saving…";
+    const row = videoFieldsToRow(fields);
+    // Sending it (Idea) is gate 1: stamp it the usual way, so it's logged.
+    const sending = fields.status === "concept_pending" && !(x && x.video.conceptApprovedAt);
+    if (sending) row.status = "script_review";
+    const res = x
+      ? await sbClient.from("social_videos").update(row).eq("id", x.video.id).select("id")
+      : await sbClient.from("social_videos").insert(row).select("id");
+    if (!res.error && sending) {
+      const vid = res.data[0].id;
+      await sbClient.from("social_videos").update({ status: "concept_pending" }).eq("id", vid);
+      const r = await runVideoAction("approve_concept_owner", vid);
+      if (r.error) res.error = { message: r.error };
+    }
+    btn.disabled = false; btn.textContent = x ? "Save changes" : "Add post";
+    if (res.error) { err.textContent = res.error.message; return; }
+    closeVideoModal();
+    await loadLiveData();
+  };
+}
+// Ready to post: the post's words onto the clipboard, and its photo into Downloads.
+async function copyPostText(id, btn) {
+  const x = findVideo(id);
+  if (!x) return;
+  try { await navigator.clipboard.writeText(x.video.caption || ""); btn.textContent = "Copied ✓"; }
+  catch (e) { openModal(`<h2>Copy the post</h2><textarea rows="14" style="width:100%">${escapeHtml(x.video.caption || "")}</textarea><div class="modal-actions"><button onclick="closeVideoModal()">Close</button></div>`); }
+}
+async function downloadPostPhoto(id, btn) {
+  const x = findVideo(id);
+  if (!x || !x.video.photoPath) return;
+  btn.disabled = true; btn.textContent = "Downloading…";
+  const { data, error } = await sbClient.storage.from("post-photos").download(x.video.photoPath);
+  btn.disabled = false; btn.textContent = "Download photo";
+  if (error) { alert("Couldn't download the photo: " + error.message); return; }
+  const a = document.createElement("a"), ext = (x.video.photoPath.match(/\.\w+$/) || [".jpg"])[0];
+  a.href = URL.createObjectURL(data); a.download = (x.video.title || "photo").replace(/[\\/:*?"<>|]+/g, "") + ext;
+  document.body.appendChild(a); a.click(); a.remove();
 }
 
 // ---------- add ideas with Claude ----------
@@ -972,6 +1055,16 @@ function renderCalendar() {
 let CLIENT_APPROVED = {};
 function postCardHtml(x) {
     const v = x.video;
+    if (isLinkedInPost(v)) return `<div class="card" style="margin-bottom:10px">
+      <div class="row" style="border:none;padding:0">
+        <div class="left"><b class="video-card" style="display:inline-block" onclick="openOperatorVideoModal('${v.id}')">${escapeHtml(v.title || "(untitled)")}</b>
+          <div class="meta">${escapeHtml(x.client.name)} · LinkedIn post${v.photoPath ? " · with a photo" : ""}</div></div>
+        <span class="badge" style="background:var(--card2);color:${v.postDate && v.postDate < todayISO() ? "var(--red)" : "var(--ink)"}">Post ${escapeHtml(v.postDate || "— no date")}</span>
+      </div>
+      ${CLIENT_APPROVED[v.id] ? `<div class="meta" style="margin-top:6px;color:var(--green)">✓ ${escapeHtml(x.client.name)} approved it (${escapeHtml(new Date(CLIENT_APPROVED[v.id]).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }))}).</div>` : ""}
+      ${v.caption ? `<div style="margin-top:8px;white-space:pre-wrap;font-size:0.9rem;max-height:180px;overflow:auto">${escapeHtml(v.caption)}</div>` : ""}
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">${operatorActionsHtml(x)}</div>
+    </div>`;
     return `<div class="card" style="margin-bottom:10px">
       <div class="row" style="border:none;padding:0">
         <div class="left"><b class="video-card" style="display:inline-block" onclick="openOperatorVideoModal('${v.id}')">${escapeHtml(v.title || "(untitled)")}</b>
@@ -2039,7 +2132,7 @@ function renderDesk() {
   const q = deskQueues();
   const tiles = [["ideas", "Ideas to review", q.ideas.reduce((n, p) => n + IDEAS.filter(i => i.plan_id === p.id && i.status === "in_plan").length, 0)],
     ["scripts", "Scripts to review", q.scripts.length], ["docs", "Documents to review", q.docs.length],
-    ["videos", "Videos to review", q.videos.length], ["carousels", "Carousels to review", q.carousels.length], ["post", "Videos to post", q.post.length]];
+    ["videos", "Videos to review", q.videos.length], ["carousels", "Carousels to review", q.carousels.length], ["post", "Content to post", q.post.length]];
   const total = tiles.reduce((n, t) => n + t[2], 0);
   // Nothing waiting and nothing due: the logo, and a breath.
   const clear = !total && !q.due.length;
@@ -2069,7 +2162,7 @@ function renderDesk() {
   }).join("") || `<div class="empty">No monthly plan waiting.</div>`;
 
   document.getElementById("deskScripts").innerHTML = q.scripts.length
-    ? `<div class="vtable">${VROW_HEAD}${q.scripts.map(x => vrowHtml(x, smallBtn("Open", `openOperatorVideoModal('${x.video.id}')`) + smallBtn("Approve script", `approveScript('${x.video.id}')`, "primary") + smallBtn("Send back", `sendBackScript('${x.video.id}')`))).join("")}</div>`
+    ? (q.scripts.length > 1 ? `<div style="margin-bottom:10px">${smallBtn(`Approve all ${q.scripts.length}`, "approveAllScripts(this)", "primary")}</div>` : "") + `<div class="vtable">${VROW_HEAD}${q.scripts.map(x => vrowHtml(x, smallBtn("Open", `openOperatorVideoModal('${x.video.id}')`) + smallBtn("Approve script", `approveScript('${x.video.id}')`, "primary") + smallBtn("Send back", `sendBackScript('${x.video.id}')`))).join("")}</div>`
     : `<div class="empty">No scripts waiting.</div>`;
 
   const waiting = workVideos().filter(x => x.video.status === "ready_to_edit" && (x.video.editorBrief || {}).waitingOn === "editing guidelines");
@@ -2140,6 +2233,21 @@ async function approveScript(id) {
   if (error) { alert("Couldn't save: " + error.message); return; }
   const r = await runVideoAction("approve_concept_owner", id);
   if (r.error) { alert(r.error); }
+  await loadLiveData();
+}
+// A month of cards lands here at once (20 videos + 20 LinkedIn posts):
+// approve the whole lot in one go once they're read.
+async function approveAllScripts(btn) {
+  const list = deskQueues().scripts;
+  if (!confirm(`Approve all ${list.length} and send them to the client${globalClientFilter === "all" ? "s" : ""}?`)) return;
+  btn.disabled = true;
+  for (let i = 0; i < list.length; i++) {
+    btn.textContent = `Approving ${i + 1} of ${list.length}…`;
+    const id = list[i].video.id;
+    const { error } = await sbClient.from("social_videos").update({ status: "concept_pending", concept_approved_at: null, concept_approved_by: null }).eq("id", id);
+    const r = error ? { error: error.message } : await runVideoAction("approve_concept_owner", id);
+    if (r.error) { alert(`Stopped at "${list[i].video.title}": ${r.error}`); break; }
+  }
   await loadLiveData();
 }
 function sendBackScript(id) {

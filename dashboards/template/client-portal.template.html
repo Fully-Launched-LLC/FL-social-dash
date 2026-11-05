@@ -118,9 +118,11 @@ const filmedBy = v => filmedByOf(v, CLIENT.client_system);
 // waiting for their OK, and finished videos to approve). Nothing to do:
 // both are empty and nothing else shows. Everything else is on the
 // Content Calendar.
-const needsFilming = v => filmedBy(v) === "client" && ["concept_pending", "to_film", "filmed"].includes(v.status);
-const ideaToApprove = v => filmedBy(v) === "us" && v.status === "concept_pending";
-const toReview = v => ideaToApprove(v) || v.status === "client_review";
+const needsFilming = v => !isLinkedInPost(v) && filmedBy(v) === "client" && ["concept_pending", "to_film", "filmed"].includes(v.status);
+const ideaToApprove = v => !isLinkedInPost(v) && filmedBy(v) === "us" && v.status === "concept_pending";
+// A LinkedIn post waiting for their OK (040): edit it, add a photo, approve or reject.
+const postToApprove = v => isLinkedInPost(v) && v.status === "concept_pending";
+const toReview = v => ideaToApprove(v) || postToApprove(v) || v.status === "client_review";
 const TABS = [
   { key: "film",   label: "To film",   match: needsFilming },
   { key: "review", label: "To review", match: toReview },
@@ -247,6 +249,7 @@ function niceDate(iso) {
 }
 // Where a video is, in the client's words.
 function clientStage(video, fb) {
+  if (isLinkedInPost(video)) return { concept_pending: "LinkedIn post: ready for your OK", ready_to_post: "Approved: ready to post", posted: "Posted" }[video.status] || "We're writing it";
   switch (video.status) {
     case "concept_pending": return fb === "us" ? "Idea: waiting for your OK" : "Idea: ready for you to film";
     // No film date on a we-film video: nothing to film (stock footage, graphics).
@@ -498,6 +501,7 @@ function openCarouselReview(id) {
   box.querySelector("[data-changes]").onclick = e => send(false, e.target);
 }
 function videoCard(video) {
+  if (isLinkedInPost(video)) return linkedInCard(video);
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `<b class="video-card" style="display:inline-block;margin-bottom:8px;font-family:var(--font-serif);font-weight:400;font-size:1.05rem" data-open>${escapeHtml(video.title || "(untitled)")}</b>` + clientCardBody(video);
@@ -510,6 +514,142 @@ function videoCard(video) {
   return card;
 }
 
+
+// ---------- LinkedIn post cards (Tait, 2026-11-04; migration 040) ----------
+// Already written in the client's voice when it reaches them. The idea at
+// the top, three example hooks, the post in a box they can edit, a photo
+// from their own camera roll, then Approve (straight to Ready to post) or
+// Reject the idea (with a note: it goes back to us to rewrite).
+function linkedInBody(video) {
+  const open = video.status === "concept_pending";
+  const hooks = (video.hookOptions || []).filter(Boolean);
+  return `
+    ${cardFacts(video, "client")}
+    ${fieldRow("The idea", video.concept)}
+    ${hooks.length ? `<div style="margin:10px 0 4px"><b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">${hooks.length === 1 ? "A good hook" : hooks.length + " good hooks"}</b>
+      <ol class="hook-list" style="margin:0;padding-left:20px;font-size:0.92rem;line-height:1.5">${hooks.map(h => `<li style="margin-bottom:4px">${escapeHtml(h)}</li>`).join("")}</ol></div>` : ""}
+    ${open ? `${lbl("Your post (edit anything you like)")}<textarea data-copy rows="12" style="width:100%;font:inherit;font-size:0.92rem;line-height:1.5">${escapeHtml(video.caption || "")}</textarea>
+      <div class="meta save-msg" style="min-height:1.2em"></div>`
+      : fieldRow("Your post", video.caption)}
+    <div class="post-photo" style="margin-top:10px">
+      <b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:4px">Photo</b>
+      <div data-photo-preview class="meta">${video.photoPath ? "Loading the photo…" : open ? "No photo yet. Add one from your camera roll if you'd like." : "No photo."}</div>
+      <div class="meta photo-msg"></div>
+    </div>
+    <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      ${open ? `<label class="btn">${video.photoPath ? "Change photo" : "Add a photo"}<input type="file" data-photo accept="image/*" hidden></label>
+        ${video.photoPath ? `<button data-photo-remove>Remove photo</button>` : ""}
+        <button data-save-copy>Save my edits</button>
+        <button class="primary" data-approve-post>Approve post</button>
+        <button data-reject-post>Reject the idea</button>` : ""}
+    </div>
+    <div class="note-box" style="display:none;margin-top:12px">
+      ${lbl("Why isn't this one right? We'll write you a new one.")}<textarea rows="3" style="font:inherit;font-size:0.92rem"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="reject" data-send>Reject the idea</button><button data-cancel>Cancel</button></div>
+    </div>`;
+}
+function linkedInCard(video) {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `<div class="meta" style="margin-bottom:2px">LinkedIn post</div><b class="video-card" style="display:inline-block;margin-bottom:8px;font-family:var(--font-serif);font-weight:400;font-size:1.05rem" data-open>${escapeHtml(video.title || "(untitled)")}</b>` + linkedInBody(video);
+  card.querySelector("[data-open]").onclick = () => openClientVideoModal(video.id);
+  wireLinkedIn(card, video);
+  if (IS_OPERATOR) {
+    card.querySelector(".actions").insertAdjacentHTML("beforeend", `<button data-op-edit>Edit</button>`);
+    card.querySelector("[data-op-edit]").onclick = () => openOperatorEdit(video.id);
+  }
+  return card;
+}
+// An operator clicking the client's buttons: the same moves, written
+// directly (operators have full access; logged as the operator).
+async function linkedInAction(action, video, opts) {
+  if (!IS_OPERATOR) return runLinkedInPostAction(action, video.id, opts);
+  const patch = {};
+  if (opts.copy != null && opts.copy.trim()) patch.caption = opts.copy.trim();
+  if (action === "photo") patch.photoPath = opts.photoPath || null;
+  if (action === "approve") patch.status = "ready_to_post";
+  if (action === "reject") Object.assign(patch, { status: "scripting", note: opts.note });
+  const row = videoFieldsToRow(patch);
+  if (action === "reject") { row.concept_approved_by = null; row.concept_approved_at = null; }
+  const { data, error } = await sbClient.from("social_videos").update(row).eq("id", video.id).eq("status", "concept_pending").select("*");
+  if (error) return { error: error.message };
+  if (!data || !data.length) return { error: "This post has already moved on. Refresh the page." };
+  return { video: videoFromRow(data[0]) };
+}
+function wireLinkedIn(root, video) {
+  const copyEl = root.querySelector("[data-copy]"), copy = () => copyEl ? copyEl.value : null;
+  const preview = root.querySelector("[data-photo-preview]");
+  if (video.photoPath && preview) postPhotoUrl(video).then(url => {
+    preview.innerHTML = url ? `<img src="${escapeHtml(url)}" alt="The post's photo" style="max-width:100%;max-height:320px;border-radius:8px">` : "The photo couldn't be loaded.";
+  });
+  const fail = msg => showMessage("That didn't save", escapeHtml(msg));
+  const save = root.querySelector("[data-save-copy]");
+  if (save) save.onclick = async () => {
+    save.disabled = true; save.textContent = "Saving…";
+    const r = await linkedInAction("save", video, { copy: copy() });
+    save.disabled = false; save.textContent = "Save my edits";
+    if (r.error) return fail(r.error);
+    Object.assign(video, r.video);
+    const m = root.querySelector(".save-msg"); if (m) m.textContent = "✓ Saved. It still needs your OK.";
+  };
+  const pick = root.querySelector("[data-photo]");
+  if (pick) pick.onchange = async e => {
+    const f = e.target.files && e.target.files[0], msg = root.querySelector(".photo-msg");
+    if (!f) return;
+    try {
+      const path = await uploadToBucket("post-photos", `${CLIENT.id}/${video.id}/${Date.now()}-${f.name.replace(/[^\w.\-]+/g, "_")}`, f,
+        pct => { if (msg) msg.textContent = `Uploading… ${pct}%`; });
+      // Keep any edits they've typed, too.
+      if (copyEl) await linkedInAction("save", video, { copy: copy() });
+      const r = await linkedInAction("photo", video, { photoPath: path });
+      if (r.error) throw new Error(r.error);
+    } catch (err) { if (msg) msg.textContent = "The photo didn't upload: " + (err.message || err); return; }
+    await refreshLinkedIn(video.id);
+  };
+  const remove = root.querySelector("[data-photo-remove]");
+  if (remove) remove.onclick = async () => {
+    remove.disabled = true;
+    const r = await linkedInAction("photo", video, { photoPath: null });
+    if (r.error) { remove.disabled = false; return fail(r.error); }
+    await refreshLinkedIn(video.id);
+  };
+  const approve = root.querySelector("[data-approve-post]");
+  if (approve) approve.onclick = () => {
+    if (copyEl && !copyEl.value.trim()) return fail("The post is empty. Write something (or reject the idea) first.");
+    confirmStep("Approve this post?", `<b>${escapeHtml(video.title || "This post")}</b> goes to Ready to post exactly as it is now${video.photoPath ? ", with your photo" : ""}.${video.postDate ? ` It posts on <b>${escapeHtml(niceDate(video.postDate))}</b>.` : ""}`,
+      "Yes, approve it", async () => {
+        const r = await linkedInAction("approve", video, { copy: copy() });
+        closeVideoModal();
+        if (r.error) return fail(r.error);
+        await loadVideos();
+        showMessage("Approved!", `Nothing else to do. It's ready to post${r.video.postDate ? ` on <b>${escapeHtml(niceDate(r.video.postDate))}</b>` : ""}.`);
+      });
+  };
+  const reject = root.querySelector("[data-reject-post]"), noteBox = root.querySelector(".note-box");
+  if (reject) reject.onclick = () => {
+    noteBox.style.display = "";
+    const text = noteBox.querySelector("textarea"), send = noteBox.querySelector("[data-send]");
+    text.focus();
+    noteBox.querySelector("[data-cancel]").onclick = () => { noteBox.style.display = "none"; };
+    send.onclick = async () => {
+      const note = text.value.trim();
+      if (!note) { text.focus(); return; }
+      send.disabled = true; send.textContent = "Sending…";
+      const r = await linkedInAction("reject", video, { note });
+      closeVideoModal();
+      if (r.error) { send.disabled = false; send.textContent = "Reject the idea"; return fail(r.error); }
+      await loadVideos();
+      showMessage("Thanks, we've got it!", "We'll write you a new post and send it back here.");
+    };
+  };
+}
+// After a photo change: reload, and reopen the popup if it was open.
+async function refreshLinkedIn(videoId) {
+  const root = document.getElementById("videoModalRoot"), wasOpen = !!root && !root.classList.contains("hidden");
+  await loadVideos();
+  if (wasOpen) openClientVideoModal(videoId, true);
+}
+
 // Operators edit a video's words right here (Tait, 2026-10-19: "I want all
 // of this information to be editable"): clicking a video opens it as text
 // boxes, every one shown, even empty, so something new can be added. A
@@ -519,13 +659,20 @@ const OP_EDIT_FIELDS = [
 ["cameraQuestions", "Questions to ask / answer on camera", 3], ["filmingDirection", "How to film it", 3], ["onScreenCaption", "On-screen caption", 2],
   ["caption", "Caption", 4], ["note", "Note (the client and the editor see it)", 2],
 ];
+// A LinkedIn post's words (040): the idea, three hooks, the post itself.
+const OP_EDIT_POST_FIELDS = [
+  ["title", "Title", 1], ["concept", "The idea", 3], ["hook0", "Hook 1", 2], ["hook1", "Hook 2", 2], ["hook2", "Hook 3", 2],
+  ["caption", "The post", 10], ["note", "Note (the client sees it)", 2],
+];
 function openOperatorEdit(videoId) {
   const video = VIDEOS.find(v => v.id === videoId);
   if (!video) { if (CAROUSELS.some(c => c.id === videoId)) openCarouselReview(videoId); return; }
   const rows = (val, min) => Math.max(min, String(val || "").split("\n").length + 1);
+  const li = isLinkedInPost(video), FIELDS = li ? OP_EDIT_POST_FIELDS : OP_EDIT_FIELDS;
+  const val = k => /^hook\d$/.test(k) && li ? (video.hookOptions || [])[+k.slice(4)] || "" : video[k] || "";
   const box = openModal(`<h2>Edit: ${escapeHtml(video.title || "(untitled)")}</h2>
     <div class="meta" style="margin-bottom:10px">Only you see this. The client sees the card with your changes once you save.</div>
-    ${OP_EDIT_FIELDS.map(([k, label, min]) => `${lbl(label)}<textarea data-op-f="${k}" rows="${rows(video[k], min)}" style="width:100%;font:inherit;font-size:0.92rem;line-height:1.5">${escapeHtml(video[k] || "")}</textarea>`).join("")}
+    ${FIELDS.map(([k, label, min]) => `${lbl(label)}<textarea data-op-f="${k}" rows="${rows(val(k), min)}" style="width:100%;font:inherit;font-size:0.92rem;line-height:1.5">${escapeHtml(val(k))}</textarea>`).join("")}
     ${lbl("Platforms (comma-separated)")}<input type="text" data-op-f="platform" value="${escapeHtml((video.platform || []).join(", "))}" style="width:100%">
     <div class="auth-error" id="opEditErr"></div>
     <div class="modal-actions"><button class="primary" id="opEditSave">Save changes</button><button id="opEditView">See what the client sees</button><button onclick="closeVideoModal()">Cancel</button></div>`);
@@ -534,7 +681,8 @@ function openOperatorEdit(videoId) {
   const save = box.querySelector("#opEditSave");
   save.onclick = async () => {
     const err = box.querySelector("#opEditErr"), fields = {};
-    OP_EDIT_FIELDS.forEach(([k]) => { fields[k] = box.querySelector(`[data-op-f="${k}"]`).value.trim(); });
+    FIELDS.forEach(([k]) => { fields[k] = box.querySelector(`[data-op-f="${k}"]`).value.trim(); });
+    if (li) { fields.hookOptions = [0, 1, 2].map(i => fields["hook" + i]).filter(Boolean); [0, 1, 2].forEach(i => delete fields["hook" + i]); }
     fields.platform = box.querySelector('[data-op-f="platform"]').value.split(",").map(p => p.trim().toLowerCase()).filter(Boolean);
     if (!fields.title) { err.textContent = "Give it a title first."; return; }
     save.disabled = true; save.textContent = "Saving…";
@@ -554,8 +702,9 @@ function openClientVideoModal(videoId, asClient) {
   if (IS_OPERATOR && !asClient) { openOperatorEdit(videoId); return; }
   const video = VIDEOS.find(v => v.id === videoId);
   if (!video) return;
-  const box = openModal(`<h2>${escapeHtml(video.title || "(untitled)")}</h2>${clientCardBody(video)}`);
-  wireActions(box, video);
+  const li = isLinkedInPost(video);
+  const box = openModal(`<h2>${escapeHtml(video.title || "(untitled)")}</h2>${li ? linkedInBody(video) : clientCardBody(video)}`);
+  if (li) wireLinkedIn(box, video); else wireActions(box, video);
   if (IS_OPERATOR) {
     box.querySelector(".actions").insertAdjacentHTML("beforeend", `<button data-op-edit>Edit</button>`);
     box.querySelector("[data-op-edit]").onclick = () => openOperatorEdit(videoId);
@@ -686,6 +835,7 @@ const inDays = n => n < 0 ? `${-n} day${n === -1 ? "" : "s"} late` : n === 0 ? "
 function clientAction(v) {
   if (needsFilming(v)) return { text: v.dueToFilm ? `Film it by ${niceDate(v.dueToFilm)}` : "Film it", short: "Film it", tab: "film", by: v.dueToFilm || v.postDate };
   if (ideaToApprove(v)) return { text: "Give the idea your OK", short: "OK the idea", tab: "review", by: v.postDate };
+  if (postToApprove(v)) return { text: "Check your LinkedIn post and approve it", short: "OK the post", tab: "review", by: v.postDate };
   if (v.status === "client_review") return { text: "Watch the finished video and approve it", short: "Review it", tab: "review", by: v.postDate };
   return null;
 }
@@ -709,12 +859,14 @@ function renderCalendar() {
 
 // Where a video is in the process, as steps (the calendar's video popup).
 const PROCESS = ["Idea", "Filming", "Editing", "Your review", "Ready to post", "Posted"];
+const POST_PROCESS = ["Written", "Your OK", "Ready to post", "Posted"];
 function processStep(v) {
+  if (isLinkedInPost(v)) return { concept_pending: 1, ready_to_post: 2, posted: 3 }[v.status] ?? 0;
   return { concept_pending: 0, to_film: 1, filmed: 1, ready_to_edit: 2, with_editor: 2, in_review: 2, client_review: 3, ready_to_post: 4, posted: 5 }[v.status] ?? 0;
 }
 function processHtml(v) {
   const at = processStep(v);
-  return `<ol class="process">${PROCESS.map((s, i) => `<li class="${i < at ? "done" : i === at ? "now" : ""}">${escapeHtml(s)}</li>`).join("")}</ol>`;
+  return `<ol class="process">${(isLinkedInPost(v) ? POST_PROCESS : PROCESS).map((s, i) => `<li class="${i < at ? "done" : i === at ? "now" : ""}">${escapeHtml(s)}</li>`).join("")}</ol>`;
 }
 // Read only: where it's at, when it posts, the hook, and the video once
 // there's one for them to watch (after Tait approves it, or the cut they
@@ -728,7 +880,7 @@ function nextStepHtml(v) {
     in_review: "It's being edited.", ready_to_post: "You approved it. We'll post it on the day.", posted: "It's live." }[v.status] || "";
   return `<div class="next-step"><b>Nothing needed from you.</b> ${escapeHtml(ours)}</div>`;
 }
-const hasFileToWatch = v => ["client_review", "ready_to_post", "posted"].includes(v.status) || canWatch(v);
+const hasFileToWatch = v => !isLinkedInPost(v) && ["client_review", "ready_to_post", "posted"].includes(v.status) || canWatch(v);
 function openCalendarVideo(videoId) {
   const video = VIDEOS.find(v => v.id === videoId);
   if (!video) return;
@@ -736,7 +888,7 @@ function openCalendarVideo(videoId) {
   const box = openModal(`<h2>${escapeHtml(video.title || "(untitled)")}</h2>
     ${cardFacts(video, filmedBy(video))}
     ${processHtml(video)}
-    ${fieldRow("Hook", video.hook)}
+    ${isLinkedInPost(video) ? fieldRow("The idea", video.concept) : fieldRow("Hook", video.hook)}
     ${nextStepHtml(video)}
     <div class="modal-actions">${act ? `<button class="primary" data-do>${act.tab === "film" ? "Go to To film" : "Go to To review"}</button>` : ""}${hasFileToWatch(video) ? `<button class="${act ? "" : "primary"}" data-watch>Watch the video</button>` : ""}${IS_OPERATOR ? `<button data-op-edit>Edit</button>` : ""}<button data-close>Close</button></div>`);
   box.querySelector("[data-close]").onclick = closeVideoModal;

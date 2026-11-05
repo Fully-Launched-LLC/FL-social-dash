@@ -558,7 +558,8 @@ def plan_script_jobs(videos, asked):
 
 def ask_for_scripts(sb, c, cards):
     slug = c["slug"]
-    lines = "\n".join(f"- `{v['id']}` {v.get('title') or '(untitled)'}" + (f" (posts {v['post_date']})" if v.get("post_date") else "")
+    lines = "\n".join(f"- `{v['id']}` {v.get('title') or '(untitled)'}" + (" **LinkedIn post**" if v.get("content_type") == "linkedin_post" else "")
+                      + (f" (posts {v['post_date']})" if v.get("post_date") else "")
                       + (" **changes requested**" if v.get("note") else "") for v in cards)
     desc = f"""Script {len(cards)} card(s) for **{c['name']}** (Unify the System stage 5). You run it: Writer → Content Expert → Content Simplifier → Tait's desk.
 
@@ -567,6 +568,7 @@ def ask_for_scripts(sb, c, cards):
 For each card:
 1. `{bridge_cmd()} card get --id <id>`: the idea, its format and why, the dates, and any notes (Tait's send-back notes, or the client's requested changes: fix exactly what they asked, keep the rest).
 2. **Content Writer:** hook, outline, script and the questions for whoever's filming (the client answers them if they film themselves), from their identity (`{bridge_cmd()} doc get --client {slug} --kind identity`) and Tait's rules. Unknown facts: `[LUKE: …]`-style placeholders for the person on camera, never invented. Save: `{bridge_cmd()} card put --id <id> --file <card.json>` with `{{"hook": "...", "outline": "...", "script": "...", "camera_questions": "...", "filming_instructions": "..."}}`.
+   **A LinkedIn post** (marked above) has no filming: write the post itself in their voice (from the identity doc's voice profile; the client rejected the last one if there's a note, so write a new one that answers it) and three example hooks. Save: `{bridge_cmd()} card put --id <id> --file <card.json>` with `{{"idea": "...", "hooks": ["...", "...", "..."], "post": "..."}}`.
 3. **Content Expert:** score it; send weak ones back to the Writer.
 4. **Content Simplifier:** one or two lines for Tait (what it is, the score, anything to decide), then `{bridge_cmd()} card ready --id <id> --score <n> --brief "<lines>"` puts it in Tait's Scripts to review.
 Timing: scripts are approved 13 days before the post date (each card says when)."""
@@ -600,6 +602,45 @@ def find_drive_folder(folder_id, st):
 def folder_id_of(url):
     m = re.search(r"/folders/([A-Za-z0-9_-]+)", url or "")
     return m.group(1) if m else None
+
+
+# A month of content cards (Tait, 2026-11-04; migration 040), from a JSON
+# list. Each item: {"type": "video" | "linkedin_post", "title", "post_date"
+# (YYYY-MM-DD), ...}. Videos: "idea", "format", "hook", "script",
+# "outline", "camera_questions", "filming_instructions", "platform" (default
+# linkedin, facebook, instagram); film by P-10, edit by P-7. LinkedIn posts:
+# "idea", "hooks" (three), "post" (the words, in the client's voice). All
+# land in script_review: Tait reads them on My desk (Approve all) before the
+# client sees any.
+VIDEO_PLATFORMS = ["linkedin", "facebook", "instagram"]
+def month_card_row(c, item):
+    kind = item.get("type") or "video"
+    if kind not in ("video", "linkedin_post"): raise ValueError(f"{item.get('title')}: type must be video or linkedin_post")
+    if not item.get("title"): raise ValueError("every card needs a title")
+    post = item.get("post_date")
+    if post: dt.date.fromisoformat(post)
+    row = {"client_id": c["id"], "title": item["title"], "status": "script_review", "content_type": kind,
+           "concept": item.get("idea"), "post_date": post, "editor_brief": {}}
+    if kind == "linkedin_post":
+        hooks = [h for h in (item.get("hooks") or []) if h]
+        if not item.get("post"): raise ValueError(f"{item['title']}: a LinkedIn post needs its \"post\"")
+        row.update({"hook_options": hooks, "caption": item["post"], "platform": ["linkedin"]})
+    else:
+        if not (item.get("hook") and item.get("script")): raise ValueError(f"{item['title']}: a video needs a hook and a script")
+        d = dt.date.fromisoformat(post) if post else None
+        row.update({"hook": item["hook"], "body": item["script"], "outline": item.get("outline"),
+                    "camera_questions": item.get("camera_questions"), "filming_instructions": item.get("filming_instructions"),
+                    "platform": item.get("platform") or VIDEO_PLATFORMS,
+                    "due_to_film": (d - dt.timedelta(days=10)).isoformat() if d else None,
+                    "due_to_edit": (d - dt.timedelta(days=7)).isoformat() if d else None})
+        if item.get("format"): row["editor_brief"]["format"] = item["format"]
+    return row
+
+def add_month_cards(sb, c, items):
+    rows = [month_card_row(c, i) for i in items]   # check every card before adding any
+    for r in rows: sb.insert("social_videos", r)
+    n_v = sum(r["content_type"] == "video" for r in rows)
+    return f"Added {n_v} video card(s) and {len(rows) - n_v} LinkedIn post(s) for {c['name']} to Tait's Scripts to review."
 
 
 def card_folder_name(n, v):
@@ -1652,6 +1693,9 @@ def main(argv=None):
     cp.add_argument("--caption"); cp.add_argument("--on-screen"); cp.add_argument("--cover")
     fw = sub.add_parser("footage"); fw.add_argument("action", choices=["where"]); fw.add_argument("--id", required=True)
     cd = sub.add_parser("card"); cd.add_argument("action", choices=["get", "put", "ready"]); cd.add_argument("--id", required=True)
+    # A month of content cards at once (Tait, 2026-11-04): videos and
+    # LinkedIn posts, straight into his Scripts to review.
+    ca = sub.add_parser("cards"); ca.add_argument("action", choices=["add"]); ca.add_argument("--client", required=True); ca.add_argument("--file", required=True)
     cd.add_argument("--file"); cd.add_argument("--score", type=int); cd.add_argument("--brief")
     argv = list(sys.argv[1:] if argv is None else argv)
     if argv[:2] == ["doc", "get"]:   # `doc get` reads like `doc put`
@@ -1827,6 +1871,9 @@ def main(argv=None):
         folder = find_drive_folder(folder_id_of(url), st) if url else None
         STATE.write_text(json.dumps(st, indent=2))
         print(folder or f"Couldn't find it on this Mac (Drive link: {url}).")
+    elif a.cmd == "cards":
+        c = client_by_slug(sb, a.client)
+        print(add_month_cards(sb, c, json.loads(pathlib.Path(a.file).read_text())))
     elif a.cmd == "card":
         rows = sb.select("social_videos", f"select=*&id=eq.{a.id}")
         if not rows: sys.exit("No card with that id.")
@@ -1834,21 +1881,26 @@ def main(argv=None):
         if a.action == "get":
             c = sb.select("social_clients", f"select=name,slug,client_system&id=eq.{v['client_id']}")[0]
             eb = v.get("editor_brief") or {}
-            out = {"client": c, "title": v["title"], "idea": v.get("concept"), "format": eb.get("format"), "why": eb.get("why"),
+            out = {"client": c, "title": v["title"], "type": v.get("content_type") or "video", "idea": v.get("concept"), "format": eb.get("format"), "why": eb.get("why"),
                    "filmed_by": v.get("filmed_by"), "status": v["status"],
                    "timeline": timeline(v["post_date"]) if v.get("post_date") else None,
                    "tait_send_back_notes": eb.get("scriptNotes") or [], "client_requested_changes": v.get("note"),
-                   "current": {k: v.get(k) for k in ("hook", "outline", "body", "camera_questions", "filming_instructions")}}
+                   "current": {k: v.get(k) for k in (("concept", "hook_options", "caption") if v.get("content_type") == "linkedin_post"
+                                                    else ("hook", "outline", "body", "camera_questions", "filming_instructions"))}}
             print(json.dumps(out, indent=2, default=str))
         elif a.action == "put":
             data = json.loads(pathlib.Path(a.file).read_text())
-            m = {"hook": "hook", "outline": "outline", "script": "body", "camera_questions": "camera_questions", "filming_instructions": "filming_instructions", "title": "title"}
+            m = {"hook": "hook", "outline": "outline", "script": "body", "camera_questions": "camera_questions", "filming_instructions": "filming_instructions", "title": "title",
+                 # LinkedIn posts (040): the idea, three example hooks, the post itself
+                 "idea": "concept", "hooks": "hook_options", "post": "caption"}
             patch = {m[k]: v2 for k, v2 in data.items() if k in m}
             sb.update("social_videos", {"id": a.id}, patch)
             print(f"Saved {', '.join(patch)} on {v['title']}.")
         else:
             if v["status"] != "scripting": sys.exit(f"That card is {v['status']}, not in Scripting.")
-            if not (v.get("hook") and v.get("body")): sys.exit("Save the hook and script first (card put).")
+            if v.get("content_type") == "linkedin_post":
+                if not v.get("caption"): sys.exit("Save the post first (card put with \"post\").")
+            elif not (v.get("hook") and v.get("body")): sys.exit("Save the hook and script first (card put).")
             eb = v.get("editor_brief") or {}
             if a.score is not None: eb["scriptScore"] = a.score
             if a.brief: eb["scriptBrief"] = a.brief

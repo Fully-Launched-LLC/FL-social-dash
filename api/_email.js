@@ -99,7 +99,7 @@ function reviewReadyEmail({ contactName, videos, cards = [], portal, slug }) {
   const first = firstName(contactName);
   const hi = first ? `Hi ${first},` : "Hi there,";
   const n = videos.length, m = cards.length;
-  const vids = n === 1 ? "1 video" : `${n} videos`, crds = m === 1 ? "1 video card" : `${m} video cards`;
+  const vids = n === 1 ? "1 video" : `${n} videos`, crds = m === 1 ? "1 content card" : `${m} content cards`;
   // (Unify Phase 7) Cards ready to approve can come with the videos.
   const what = n && m ? `${vids} to review and ${crds} to approve` : n ? `${vids} ready to review` : `${crds} ready to approve`;
   const subject = `You have ${what}`;
@@ -112,7 +112,7 @@ function reviewReadyEmail({ contactName, videos, cards = [], portal, slug }) {
   const html = frame({ portal, title: subject, rows: `
         <tr><td style="padding:10px 32px 10px;${BODY};font-size:16px">${esc(hi)}<br><br>You have ${esc(what)} in your Fully Social portal.</td></tr>
         ${m && n ? head("Videos to review") : ""}${rows(videos)}
-        ${m && n ? head("Video cards to approve") : ""}${rows(cards)}
+        ${m && n ? head("Content cards to approve") : ""}${rows(cards)}
         <tr><td style="padding:14px 32px 6px;${SMALL}">${how}</td></tr>
         <tr><td style="padding:12px 32px 28px">${button(link, n ? "Review them" : "Open your portal")}</td></tr>` });
   const lines = list => list.map(v => "- " + v.title + (v.post_date ? " (posts " + when(v.post_date) + ")" : "")).join("\n");
