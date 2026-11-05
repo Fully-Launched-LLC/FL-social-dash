@@ -509,8 +509,26 @@ const safeName = s => String(s || "file").replace(/[^A-Za-z0-9._\-()\/]+/g, "_")
 // in resumable pieces (tus, loaded by pages that upload), so a big file
 // survives a shaky connection. onProgress gets 0 to 100.
 async function uploadToBucket(bucket, path, file, onProgress) {
-  const contentType = file.type || "application/octet-stream";
+  // "audio/webm;codecs=opus" (a browser recording) → "audio/webm": storage
+  // wants a plain type.
+  const contentType = String(file.type || "application/octet-stream").split(";")[0].trim() || "application/octet-stream";
   if (window.tus && file.size > RESUMABLE_OVER) {
+    try { return await uploadResumable(bucket, path, file, contentType, onProgress); }
+    catch (e) {
+      // The pieces didn't go: one plain upload if it's small enough (Supabase's
+      // single-upload cap is 50 MB), else the real error.
+      console.error("resumable upload failed", e);
+      if (file.size > 50 * 1024 * 1024) throw e;
+    }
+  }
+  onProgress && onProgress(5);
+  const { error } = await sbClient.storage.from(bucket).upload(path, file, { contentType, upsert: false });
+  if (error) throw error;
+  onProgress && onProgress(100);
+  return path;
+}
+async function uploadResumable(bucket, path, file, contentType, onProgress) {
+  {
     const { data } = await sbClient.auth.getSession();
     const token = data && data.session && data.session.access_token;
     await new Promise((resolve, reject) => {
@@ -530,11 +548,6 @@ async function uploadToBucket(bucket, path, file, onProgress) {
     });
     return path;
   }
-  onProgress && onProgress(5);
-  const { error } = await sbClient.storage.from(bucket).upload(path, file, { contentType, upsert: false });
-  if (error) throw error;
-  onProgress && onProgress(100);
-  return path;
 }
 
 // 75.4 → "1:15"

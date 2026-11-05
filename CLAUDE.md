@@ -741,6 +741,37 @@ and **Onboarding** shows what they sent, the transcript box, the documents,
 (`/welcome?client=<slug>`). A client who hasn't finished gets a "Finish
 setting up" card on their To Do.
 
+## Personal brands (migration 041)
+
+Tait, 2026-11-05. `social_clients.personal_brand` (on for Matteo Warren,
+Elias O'Neill, Luke Bothun, Tait Allen; the "Personal brand" box on the
+operator's client form) turns on three things:
+
+- **Onboarding** (`/welcome`): Welcome → **Your voice** → The questions →
+  their portal with the walkthrough (`?tour=1`). No footage step. Your
+  voice (stored in the `brand` step as `{ voice: true, uploads,
+  linkedin_url, linkedin_ok, done }`) needs 3 or more documents in their
+  own words, or their LinkedIn link with "My LinkedIn has a lot of my
+  organic voice. Grab it from there." ticked. The operator's Onboarding
+  panel shows it under "Their voice".
+- **Random Video Dump** tab on the portal: each video dropped goes into the
+  `footage` bucket at `<client>/random/`, then
+  `social_client_random_video(name, path)` makes its card straight into
+  editing (`ready_to_edit`, edit by +7, posts +14, `editor_brief.source =
+  'random_dump'`) and its raw footage row. The bridge (`move_footage`)
+  puts the file in `social_drive_folder_links.random_videos` ("06 Random
+  Video Dump" in their Drive folder), one folder per video, not Raw
+  Footage. Tagged "· Random video" on the operator's rows.
+- **Idea Drop** tab on the portal: ideas (words, links, screenshots, voice
+  notes in the `ideas` bucket under their folder) go into `social_ideas`
+  with `source = 'client'`, shown as "From the client" in Tait's Content
+  Ideas. Clients see and can delete only their own new ones (RLS).
+
+The walkthrough adds a step for each tab. Uploads over 6 MB use resumable
+pieces (tus, now loaded on the portal too) and fall back to one plain
+upload if that fails; a failed voice memo save keeps the recording with
+"Try saving again".
+
 ## Dashboards
 
 Three shared, static pages. They contain no client data — everything is

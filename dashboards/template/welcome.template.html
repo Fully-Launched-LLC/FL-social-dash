@@ -67,8 +67,19 @@ const skipSteps = () => !!(CLIENT && CLIENT.skip_onboarding);
 // portal and its walkthrough.
 let MEMBER = false;   // social_is_client_member(), on sign-in
 const isMember = () => ROLE === "client" && MEMBER;
+// A personal brand (social_clients.personal_brand, migration 041; Tait,
+// 2026-11-05): "Your voice" instead of "Your brand" (three documents in
+// their real voice, or their LinkedIn), no footage step, and from the
+// questions straight to their portal and its walkthrough.
+const personalBrand = () => !!(CLIENT && CLIENT.personal_brand);
+const VOICE_DOCS = 3;
 function stepList() {
   if (RESET || skipSteps() || isMember()) return [];
+  if (personalBrand()) return [
+    { key: "welcome", label: "Welcome" },
+    { key: "brand", label: "Your voice" },
+    { key: "questions", label: "The questions" },
+  ];
   return [
     { key: "welcome", label: "Welcome" },
     { key: "brand", label: "Your brand" },
@@ -225,21 +236,28 @@ function memoHtml() {
     <div class="dz-buttons" style="margin-top:12px"><button type="button" class="primary" data-memo-save>Save my voice memo</button><button type="button" data-redo>Record again</button></div>`;
   if (memo.state === "uploading") return `<p>Saving your voice memo… <b>${memo.pct || 0}%</b></p><div class="up-bar"><div style="width:${memo.pct || 0}%"></div></div><p class="meta">Keep this page open until it's saved.</p>`;
   return `${saved ? `<div class="memo-saved">✓ Your voice memo is saved.</div><p class="meta">Want to replace it? Record or upload a new one.</p>` : `<p class="meta">Tap Record and talk through your answers in one go. About 15 to 25 minutes is perfect. Already recorded one on your phone? Upload it instead.</p>`}
-    ${memo.state === "error" ? `<p class="auth-error">${escapeHtml(memo.error || "That didn't work.")}</p>` : ""}
+    ${memo.state === "error" ? `<p class="auth-error">${escapeHtml(memo.error || "That didn't work.")}</p>${memo.file ? `<div class="dz-buttons" style="margin-bottom:10px"><button type="button" class="primary" data-memo-retry>Try saving again</button></div>` : ""}` : ""}
     <div class="dz-buttons">${canRecord() ? `<button type="button" class="accent" data-rec>● Record</button>` : ""}<button type="button" ${canRecord() ? "" : `class="primary"`} data-memo-pick>Upload a recording</button></div>
     <input type="file" accept="audio/*,video/*,.m4a,.mp3,.wav,.aac,.caf" hidden data-memo-file>`;
 }
+// A storage or database error in words (some come back as objects).
+const errText = e => (e && (e.message || e.error_description || e.error)) || String(e || "unknown error");
 async function saveMemoFile(file, rerender) {
   const ext = (file.name && file.name.includes(".")) ? file.name.split(".").pop().toLowerCase() : (file.type.includes("mp4") ? "m4a" : file.type.includes("ogg") ? "ogg" : "webm");
   const path = `${CLIENT.id}/voice-memo/${Date.now()}-voice-memo.${safeName(ext)}`;
-  memo = { state: "uploading", pct: 0 };
+  const kept = { blob: memo.blob, url: memo.url, file };
+  memo = { state: "uploading", pct: 0, ...kept };
   rerender();
   try {
     await uploadFile(path, file, pct => { memo.pct = pct; const el = document.querySelector("[data-memo]"); if (el) el.innerHTML = memoHtml(); });
     const r = await save("voice_memo", { path, name: file.name || "voice memo", size: file.size });
     if (r.error) throw r.error;
     memo = { state: "none" };
-  } catch (e) { memo = { state: "error", error: "Your voice memo didn't save: " + (e.message || e) + ". Try again." }; }
+  } catch (e) {
+    // Keep the recording, so a failed save never means recording it again.
+    console.error("voice memo save failed", e);
+    memo = { state: "error", ...kept, error: "Your voice memo didn't save (" + errText(e) + "). Your recording is still here: tap Try saving again." };
+  }
   rerender();
 }
 function wireMemo(body, rerender) {
@@ -267,6 +285,7 @@ function wireMemo(body, rerender) {
     } catch (e) { memo = { state: "error", error: "We couldn't use your microphone (" + (e.message || e) + "). Allow microphone access, or upload a recording instead." }; rerender(); }
   };
   if (q("[data-stop]")) q("[data-stop]").onclick = () => recorder && recorder.state !== "inactive" && recorder.stop();
+  if (q("[data-memo-retry]")) q("[data-memo-retry]").onclick = () => saveMemoFile(memo.file, rerender);
   if (q("[data-redo]")) q("[data-redo]").onclick = () => { memo = { state: "none" }; rerender(); };
   if (q("[data-memo-save]")) q("[data-memo-save]").onclick = () => {
     const ext = memo.blob.type.includes("mp4") ? "m4a" : "webm";
@@ -297,6 +316,7 @@ const STEPS = {
     </div>`,
 
   brand: () => {
+    if (personalBrand()) return voiceStepHtml();
     const has = doneUploads("brand").length > 0;
     return `
     <h1>Your brand</h1>
@@ -313,7 +333,7 @@ const STEPS = {
     <div class="card">${questionsFor(CLIENT).map(s => `<div class="qsec"><h3>${escapeHtml(s.section)}</h3>${s.note ? `<p class="meta qnote">${escapeHtml(s.note)}</p>` : ""}<ol class="doc-body" style="margin:0 0 6px">${s.items.map(it => `
       <li class="qitem${it.story ? " story" : ""}"><div class="q">${it.story ? `<span class="badge qstory">Story</span> ` : ""}${escapeHtml(it.q)}</div></li>`).join("")}</ol></div>`).join("")}</div>
     <div class="card memo-card"><h2>Your voice memo</h2><div data-memo>${memoHtml()}</div></div>
-    <div class="wnav"><span></span><button type="button" class="primary" data-next ${OB && OB.voice_memo_path && memo.state !== "uploading" ? "" : "disabled"}>Continue</button></div>
+    <div class="wnav"><span></span><button type="button" class="primary" data-next ${OB && OB.voice_memo_path && memo.state !== "uploading" ? "" : "disabled"}>${personalBrand() ? "I'm done, take me to my portal" : "Continue"}</button></div>
     ${errHtml}`,
 
   footage: () => {
@@ -331,6 +351,59 @@ const STEPS = {
     ${errHtml}`;
   },
 };
+
+// "Your voice" (personal brands, 041): at least three documents in their
+// own words, or their LinkedIn with the box ticked. Saved in the brand step
+// ({ voice: true, uploads, linkedin_url, linkedin_ok, done }).
+function voiceReady(body) {
+  const box = body.querySelector("#liOk"), link = body.querySelector("#liUrl");
+  const linkOk = !!(box && box.checked && link && /linkedin\.com\//i.test(link.value));
+  return !uploading() && (doneUploads("brand").length >= VOICE_DOCS || linkOk);
+}
+// What they've typed or ticked this visit, kept across re-renders (each upload re-renders).
+let VOICE_LI = null;
+function voiceStepHtml() {
+  const b = brandOf(), n = doneUploads("brand").length;
+  if (!VOICE_LI) VOICE_LI = { url: b.linkedin_url || "", ok: !!b.linkedin_ok };
+  return `
+    <h1>Your voice</h1>
+    <p class="lead">Upload at least three documents of your real voice, not AI. This could be emails, papers, or LinkedIn posts.</p>
+    ${dropzoneHtml("brand", { folders: false })}
+    <p class="meta" data-voice-count>${n >= VOICE_DOCS ? `✓ ${n} documents uploaded.` : `${n} of ${VOICE_DOCS} uploaded.`}</p>
+    <div class="card"><label for="liUrl">Or drop your LinkedIn link</label>
+      <input type="text" id="liUrl" placeholder="https://www.linkedin.com/in/your-name" value="${escapeHtml(VOICE_LI.url)}">
+      <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px"><input type="checkbox" id="liOk" ${VOICE_LI.ok ? "checked" : ""} style="width:auto;margin-top:3px">
+        <span>My LinkedIn has a lot of my organic voice. Grab it from there.</span></label>
+      <div class="meta" style="margin-top:6px" data-li-hint></div></div>
+    <div class="wnav"><span></span><button type="button" class="primary" data-next disabled>Continue</button></div>
+    ${errHtml}`;
+}
+function wireVoice(body) {
+  const rerender = () => { if (current === "brand") render(); };
+  wireDropzone(body, "brand", rerender);
+  body.querySelector('[data-list="brand"]').innerHTML = uploadListHtml("brand");
+  body.querySelector("#liUrl").oninput = () => refreshVoice(body);
+  body.querySelector("#liOk").onchange = () => refreshVoice(body);
+  refreshVoice(body);
+  const btn = body.querySelector("[data-next]");
+  btn.onclick = async () => {
+    if (!voiceReady(body)) return;
+    setErr(body, "");
+    btn.disabled = true;
+    const uploads = doneUploads("brand"), linkedin_ok = body.querySelector("#liOk").checked;
+    const r = await save("brand", { voice: true, uploads, linkedin_url: body.querySelector("#liUrl").value.trim() || null, linkedin_ok,
+      files: uploads.length >= VOICE_DOCS ? "uploaded" : "linkedin", done: true });
+    if (r.error) { btn.disabled = false; return setErr(body, r.error.message); }
+    next();
+  };
+}
+function refreshVoice(body) {
+  VOICE_LI = { url: body.querySelector("#liUrl").value, ok: body.querySelector("#liOk").checked };
+  const btn = body.querySelector("[data-next]"), hint = body.querySelector("[data-li-hint]");
+  const ok = body.querySelector("#liOk").checked, link = body.querySelector("#liUrl").value.trim();
+  if (hint) hint.textContent = ok && !/linkedin\.com\//i.test(link) ? "Paste your LinkedIn link above so we know where to look." : "";
+  if (btn) btn.disabled = !voiceReady(body);
+}
 
 const WIRE = {
   password: body => {
@@ -371,6 +444,7 @@ const WIRE = {
     btn.onclick = async () => { btn.disabled = true; const r = await save("started"); if (r.error) { btn.disabled = false; return setErr(body, r.error.message); } next(); };
   },
   brand: body => {
+    if (personalBrand()) return wireVoice(body);
     const rerender = () => { if (current === "brand") render(); };
     wireDropzone(body, "brand", rerender);
     body.querySelector('[data-list="brand"]').innerHTML = uploadListHtml("brand");
@@ -386,7 +460,15 @@ const WIRE = {
   questions: body => {
     const rerender = () => { if (current === "questions") { const y = window.scrollY; render(); window.scrollTo(0, y); } };
     wireMemo(body, rerender);
-    body.querySelector("[data-next]").onclick = () => { if (OB && OB.voice_memo_path) next(); };
+    body.querySelector("[data-next]").onclick = async e => {
+      if (!(OB && OB.voice_memo_path)) return;
+      if (!personalBrand()) return next();
+      // Personal brands (041): no footage step; straight to the portal and its walkthrough.
+      e.target.disabled = true;
+      const r = ROLE === "operator" ? { error: null } : await save("done");
+      if (r.error) { e.target.disabled = false; return setErr(body, r.error.message); }
+      location.href = "/clients/" + encodeURIComponent(CLIENT.slug) + "?tour=1";
+    };
   },
   footage: body => {
     const rerender = () => {

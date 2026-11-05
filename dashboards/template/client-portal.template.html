@@ -6,6 +6,7 @@
 <title>Fully Launched — Client Portal</title>
 <style>/*__SHELL_CSS__*/</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <script src="/supabase/config.js"></script>
 </head>
 <body class="navy-work glass">
@@ -19,6 +20,8 @@
   <div class="sync-badge" id="operatorBadge" style="display:none">Viewing as operator</div>
   <div class="nav-item active" data-view="videos">To Do</div>
   <div class="nav-item" data-view="calendar">Content Calendar</div>
+  <div class="nav-item" data-view="dump" id="dumpNav" style="display:none">Random Video Dump</div>
+  <div class="nav-item" data-view="ideas" id="ideasNav" style="display:none">Idea Drop</div>
   <div class="nav-item" data-view="moodboard">Moodboard</div>
   <div class="nav-item" data-view="documents" id="docsNav" style="display:none">Documents</div>
 </nav>
@@ -61,6 +64,32 @@
     <div class="card"><div id="docsList"></div></div>
   </section>
 
+
+  <!-- Random Video Dump (041; Tait, 2026-11-05): the personal brands drop
+       spur-of-the-moment videos here. Each becomes its own card, straight
+       into editing; the file lands in their "06 Random Video Dump" Drive
+       folder. Only clients with personal_brand on. -->
+  <section class="view" id="view-dump">
+    <div class="page-head"><h1>Random Video Dump</h1><p>Filmed something that isn't on your calendar? Drop it here. We'll edit it and send it back for your OK, like any other video.</p></div>
+    <label class="dropzone dump-drop" id="dumpDrop">
+      <b>Drag and drop a video here</b>
+      <div class="meta" style="margin-top:6px">or tap to choose one from your phone or computer. Each video you add becomes its own post.</div>
+      <input type="file" id="dumpFile" accept="video/*" multiple hidden>
+    </label>
+    <div class="meta" id="dumpMsg" style="min-height:1.2em;margin-bottom:12px"></div>
+    <div id="dumpList"></div>
+  </section>
+
+  <!-- Idea Drop (041; Tait, 2026-11-05): the personal brands drop ideas
+       for their content; each lands in Tait's Content Ideas as "From the
+       client", the same list he drops his own into. -->
+  <section class="view" id="view-ideas">
+    <div class="page-head">
+      <div><h1>Idea Drop</h1><p>Got an idea for a post? Drop it here: a few words, a link to a video you liked, a screenshot or a voice note. We'll turn the good ones into content for you.</p></div>
+      <div class="page-actions"><button class="accent" id="ideaAdd">+ Add idea</button></div>
+    </div>
+    <div id="ideaList"></div>
+  </section>
 
   <section class="view" id="view-calendar">
     <div class="page-head"><h1>Content Calendar</h1><p>Every video on the day it posts. Click one to see where it's at and what's next.</p></div>
@@ -161,7 +190,140 @@ async function loadVideos() {
   renderAll();
 }
 
-function renderAll() { renderOperatorBanner(); renderVideos(); renderCalendar(); }
+function renderAll() { renderOperatorBanner(); renderVideos(); renderCalendar(); renderDump(); }
+
+// ---------- Idea Drop (041) ----------
+// Their own ideas (social_ideas, source 'client'), newest first. Anything
+// on a card already or turned down drops off, like Tait's Content Ideas.
+let MY_IDEAS = [];
+async function loadIdeas() {
+  if (!CLIENT.personal_brand) return;
+  const { data, error } = await sbClient.from("social_ideas").select("*").eq("client_id", CLIENT.id).eq("source", "client").order("created_at", { ascending: false });
+  MY_IDEAS = error ? [] : (data || []).filter(i => !["used", "rejected"].includes(i.status) && !i.video_id);
+  const files = MY_IDEAS.flatMap(i => (i.attachments || []).map(a => a.path));
+  const signed = {};
+  if (files.length) {
+    const { data: urls } = await sbClient.storage.from("ideas").createSignedUrls(files, 3600);
+    (urls || []).forEach(x => { if (x && x.signedUrl) signed[x.path] = x.signedUrl; });
+  }
+  const list = document.getElementById("ideaList");
+  list.innerHTML = `<div class="card">${MY_IDEAS.map(i => `<div class="doc-row idea-row" data-idea="${escapeHtml(i.id)}">
+      <div class="idea-text">
+        <div>${escapeHtml(i.body || i.title).replace(/\n/g, "<br>")}</div>
+        <div class="meta">Added ${escapeHtml(niceDate(String(i.created_at).slice(0, 10)))}${i.status === "new" ? "" : " · We're working with it"}</div>
+        ${(i.links || []).map(l => `<div class="meta"><a href="${escapeHtml(l)}" target="_blank" rel="noopener">${escapeHtml(l)}</a></div>`).join("")}
+        ${(i.attachments || []).map(a => signed[a.path] ? (a.kind === "image" ? `<a href="${escapeHtml(signed[a.path])}" target="_blank" rel="noopener"><img src="${escapeHtml(signed[a.path])}" alt="" style="max-width:160px;border-radius:6px;margin-top:6px"></a>` : `<div class="meta"><a href="${escapeHtml(signed[a.path])}" target="_blank" rel="noopener">${escapeHtml(a.name || "file")}</a></div>`) : "").join("")}
+      </div>
+      ${i.status === "new" ? `<button style="font-size:0.78rem;padding:5px 10px" data-idea-del="${escapeHtml(i.id)}">Delete</button>` : ""}</div>`).join("")
+    || `<div class="empty">No ideas yet. Tap <b>+ Add idea</b> to drop your first one.</div>`}</div>`;
+  list.querySelectorAll("[data-idea-del]").forEach(b => b.onclick = () => confirmStep("Delete this idea?", "It comes off your Idea Drop and ours.", "Delete it", async () => {
+    const { error } = await sbClient.from("social_ideas").delete().eq("id", b.dataset.ideaDel);
+    closeVideoModal();
+    if (error) { showMessage("Couldn't delete it", escapeHtml(error.message)); return; }
+    await loadIdeas();
+  }));
+}
+function openIdeaDrop() {
+  const box = openModal(`<h2>Add an idea</h2>
+    ${lbl("The idea")}<textarea id="idBody" rows="5" style="width:100%;margin-bottom:10px" placeholder="What's the post about? A story, a question a client asked you, something you want to talk about…"></textarea>
+    ${lbl("Links (optional, one per line: a video or post you liked)")}<textarea id="idLinks" rows="2" style="width:100%;margin-bottom:10px"></textarea>
+    ${lbl("Screenshots or voice notes (optional)")}<input type="file" id="idFiles" accept="image/*,audio/*,video/*" multiple style="margin-bottom:10px">
+    <div class="modal-actions"><button data-close>Cancel</button><button class="primary" id="idSave">Add idea</button></div>
+    <div class="auth-error" id="idErr"></div>`);
+  box.querySelector("[data-close]").onclick = closeVideoModal;
+  box.querySelector("#idSave").onclick = async e => {
+    const err = box.querySelector("#idErr"), body = box.querySelector("#idBody").value.trim();
+    const links = box.querySelector("#idLinks").value.split(/\s+/).map(x => x.trim()).filter(x => /^https?:\/\//.test(x));
+    const picked = Array.from(box.querySelector("#idFiles").files || []);
+    if (!body && !links.length && !picked.length) { err.textContent = "Write the idea, paste a link, or add a screenshot or voice note."; return; }
+    e.target.disabled = true;
+    const attachments = [];
+    for (const f of picked) {
+      try {
+        err.textContent = `Uploading ${f.name}…`;
+        const path = await uploadToBucket("ideas", `${CLIENT.id}/${Date.now()}-${f.name.replace(/[^\w.\-]+/g, "_")}`, f, () => {});
+        attachments.push({ path, kind: /^image\//.test(f.type) ? "image" : /^audio\//.test(f.type) ? "audio" : "file", name: f.name });
+      } catch (x) { e.target.disabled = false; err.textContent = `${f.name} didn't upload: ${x.message || x}`; return; }
+    }
+    const first = (body.split(/(?<=[.!?])\s|\n/)[0] || links[0] || (picked[0] && picked[0].name) || "Idea").slice(0, 90);
+    const { error } = await sbClient.from("social_ideas").insert({ client_id: CLIENT.id, title: first, body: body || null, links, attachments,
+      source: "client", created_by: IS_OPERATOR ? "tait" : (CLIENT.contact_name || CLIENT.name) });
+    if (error) { e.target.disabled = false; err.textContent = error.message; return; }
+    closeVideoModal();
+    await loadIdeas();
+    showMessage("Idea added!", "Thanks. We'll look at it when we plan your next batch.");
+  };
+}
+
+// ---------- Random Video Dump (041) ----------
+// Each video dropped here: into the private 'footage' bucket at
+// <client>/random/..., then social_client_random_video makes its card
+// (straight into editing, edit by +7, posts +14) and its footage row. The
+// bridge on Tait's Mac moves the file into their "06 Random Video Dump"
+// Drive folder. An operator viewing the portal does the same with a
+// direct insert (operators can write cards and footage).
+const isRandomVideo = v => (v.editorBrief || {}).source === "random_dump";
+function renderDump() {
+  const list = document.getElementById("dumpList");
+  if (!list || !CLIENT.personal_brand) return;
+  const mine = VIDEOS.filter(isRandomVideo).slice().reverse();
+  list.innerHTML = mine.length ? `<div class="card">${mine.map(v => `
+      <div class="dump-row" data-dump-open="${escapeHtml(v.id)}">
+        <div><b>${escapeHtml(v.title || "Random video")}</b>
+          <div class="meta">Added ${escapeHtml(niceDate(String(v.createdAt || "").slice(0, 10) || new Date().toISOString().slice(0, 10)))}</div></div>
+        <span class="meta">${escapeHtml(clientStage(v, "client"))}</span>
+      </div>`).join("")}</div>`
+    : `<p class="meta">Nothing here yet. Your random videos will show up here once you add them.</p>`;
+  list.querySelectorAll("[data-dump-open]").forEach(r => r.onclick = () => {
+    const v = VIDEOS.find(x => x.id === r.dataset.dumpOpen);
+    if (v) openCalendarVideo(v.id);
+  });
+}
+function wireDump() {
+  const drop = document.getElementById("dumpDrop"), input = document.getElementById("dumpFile");
+  if (!drop || drop.dataset.wired) return;
+  drop.dataset.wired = "1";
+  input.onchange = () => { if (input.files.length) dumpVideos(input.files); input.value = ""; };
+  drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+  drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); if (e.dataTransfer.files.length) dumpVideos(e.dataTransfer.files); });
+}
+let dumping = false;
+async function dumpVideos(files) {
+  const msg = document.getElementById("dumpMsg");
+  const list = Array.from(files).filter(f => /^video\//.test(f.type) || /\.(mov|mp4|m4v|avi|mkv|webm|3gp)$/i.test(f.name));
+  if (!list.length) { msg.textContent = "That isn't a video. Drop a video file (from your camera roll, a .mov or .mp4)."; return; }
+  if (dumping) { msg.textContent = "One moment: still uploading the last one."; return; }
+  dumping = true;
+  let done = 0;
+  try {
+    for (let i = 0; i < list.length; i++) {
+      const f = list[i];
+      const path = `${CLIENT.id}/random/${Date.now()}-${f.name.replace(/[^\w.\-]+/g, "_")}`;
+      await uploadToBucket("footage", path, f, pct => { msg.textContent = `Uploading ${list.length > 1 ? `${i + 1} of ${list.length}: ` : ""}${f.name}… ${pct}%`; });
+      if (IS_OPERATOR) {
+        const today = new Date(), plus = n => new Date(today.getTime() + n * 864e5).toISOString().slice(0, 10);
+        const { data: card, error } = await sbClient.from("social_videos").insert({ client_id: CLIENT.id, title: "Random video: " + f.name.replace(/\.[A-Za-z0-9]{1,5}$/, "").slice(0, 80),
+          status: "ready_to_edit", content_type: "video", filmed_by: "client", platform: ["linkedin", "facebook", "instagram"], concept_approved_at: today.toISOString(),
+          editor_brief: { source: "random_dump" }, due_to_edit: plus(7), post_date: plus(14) }).select().single();
+        if (error) throw error;
+        const fe = (await sbClient.from("social_footage").insert({ client_id: CLIENT.id, video_id: card.id, kind: "raw", name: f.name, storage_path: path, uploaded_by_role: "operator" })).error;
+        if (fe) throw fe;
+      } else {
+        const { error } = await sbClient.rpc("social_client_random_video", { p_name: f.name, p_storage_path: path });
+        if (error) throw error;
+      }
+      done++;
+    }
+    msg.textContent = "";
+    showMessage("Got it!", `${done === 1 ? "Your video is" : `All ${done} videos are`} in. We'll edit ${done === 1 ? "it" : "them"} and send ${done === 1 ? "it" : "them"} back for your OK.`);
+  } catch (e) {
+    msg.textContent = `${done ? `${done} uploaded, but the` : "The"} next one didn't upload: ${e.message || e}. Try it again.`;
+  } finally {
+    dumping = false;
+    await loadVideos();
+  }
+}
 
 // ---------- actions ----------
 // An operator sees the client's own buttons too, for clients who'd rather
@@ -999,6 +1161,14 @@ async function startApp(user, access) {
   renderOnboardBanner();
   renderMoodBoard(document.getElementById("portalMood"), { clientId: CLIENT.id, clientName: CLIENT.name, role: IS_OPERATOR ? "operator" : "client" });
 
+  // Personal brands (041): Random Video Dump and Idea Drop.
+  if (CLIENT.personal_brand) {
+    document.getElementById("dumpNav").style.display = "";
+    document.getElementById("ideasNav").style.display = "";
+    wireDump();
+    document.getElementById("ideaAdd").onclick = openIdeaDrop;
+    loadIdeas();
+  }
   initRouter("videos");
   await loadVideos();
   if (new URLSearchParams(location.search).get("tour") === "1") startTour();
@@ -1098,11 +1268,16 @@ const TOUR = [
       : "Trust us completely? Click <b>Opt out of the reviewing process</b> and you won't have to approve each video. We still check every one ourselves and post it on its date. You can opt back in any time." },
   { go: () => tourGo("calendar"), el: () => document.querySelector('.nav-item[data-view="calendar"]'),
     title: "Content Calendar", html: () => "Every video on the day it posts. Red means it needs you this week. Click one to see where it's at and what's next." },
+  // Personal brands (041): their two extra tabs.
+  { only: () => CLIENT.personal_brand, go: () => tourGo("dump"), el: () => document.querySelector('.nav-item[data-view="dump"]'),
+    title: "Random Video Dump", html: () => "Filmed something on the spot that isn't on your calendar? Drop it here. Each video becomes its own post: we edit it and send it back for your OK." },
+  { only: () => CLIENT.personal_brand, go: () => tourGo("ideas"), el: () => document.querySelector('.nav-item[data-view="ideas"]'),
+    title: "Idea Drop", html: () => "Got an idea for a post? Drop it here any time: a few words, a link, a screenshot or a voice note. We use them when we plan your next batch." },
 ];
 function startTour() {
   history.replaceState(null, "", location.pathname + location.hash);
   // Every step outside the review window closes it first.
-  const steps = TOUR.map(t => t.modal ? t : { ...t, go: () => { closeVideoModal(); tourReviewOpen = null; return t.go(); } });
+  const steps = TOUR.filter(t => !t.only || t.only()).map(t => t.modal ? t : { ...t, go: () => { closeVideoModal(); tourReviewOpen = null; return t.go(); } });
   runTour(steps, { onEnd: () => { closeVideoModal(); tourReviewOpen = null; tourGo("videos"); activeTab = null; renderVideoTabs(); } });
 }
 
