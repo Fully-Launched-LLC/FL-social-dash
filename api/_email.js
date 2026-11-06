@@ -28,10 +28,12 @@ const button = (href, label, big) => `<a href="${esc(href)}" style="${GOLD_PILL}
 function frame({ portal, title, rows, footer = true }) {
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"></head>
   <body style="margin:0;padding:0;background:#04101f" bgcolor="#04101f">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#04101f" style="background:#04101f;background-image:radial-gradient(900px 600px at 10% -10%,#1c3a68,#04101f 62%);padding:28px 12px 36px">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#04101f" style="background:#04101f;padding:28px 12px 36px">
     <tr><td align="center">
-      <img src="${esc(portal)}/assets/motion/logo-platinum.gif" alt="" width="110" height="110" style="display:block;border:0;margin:0 auto">
-      <img src="${esc(portal)}/assets/logo-white.png" alt="Fully Launched" width="170" style="display:block;border:0;margin:2px auto 22px">
+      <!-- One animation (Tait, 2026-11-05): the full logo with a platinum shine
+           sweeping across it, on the same navy as the page so there is no box.
+           Its first frame is the whole logo, for mail apps that don't animate. -->
+      <img src="${esc(portal)}/assets/motion/email-logo.gif" alt="Fully Launched" width="300" height="85" style="display:block;border:0;margin:0 auto 22px;color:#ffffff;font:700 22px Helvetica,Arial,sans-serif">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#11233d" style="max-width:560px;background:#11233d;background-image:linear-gradient(145deg,#22385a,#0e1f37 55%,#183052);border:1px solid #3d5070;border-top-color:#6d7f9c;border-left-color:#5a6d8c;border-radius:24px;box-shadow:inset 1px 1px 0 rgba(255,255,255,.35),0 18px 40px rgba(0,0,0,.45)">
         <tr><td style="padding:30px 32px 4px;font:700 24px/1.3 Helvetica,Arial,sans-serif;color:#ffffff;letter-spacing:-.01em">${esc(title)}</td></tr>
         ${rows}
