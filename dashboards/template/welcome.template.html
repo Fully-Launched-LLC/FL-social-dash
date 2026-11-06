@@ -113,8 +113,24 @@ function firstOpenStep() {
   return (open || s[s.length - 1]).key;
 }
 
+// Tait previewing a client's onboarding (an operator login, ?client=…):
+// a dry run (Tait, 2026-11-05: "let me tap through the whole thing ... without
+// submitting anything"). Nothing is saved or uploaded; the steps move on as
+// if it had been.
+const PREVIEW = () => ROLE === "operator" && !RESET;
+function previewSave(step, data) {
+  const t = new Date().toISOString(), o = OB = Object.assign({}, OB || {});
+  if (step === "password") o.password_set_at = t;
+  else if (step === "started") o.started_at = o.started_at || t;
+  else if (step === "brand") o.brand = data || {};
+  else if (step === "voice_memo") { o.voice_memo_path = data.path; o.voice_memo_uploaded_at = t; }
+  else if (step === "footage") { o.footage = data || {}; if (data && data.done) o.footage_done_at = t; }
+  else if (step === "done") o.completed_at = t;
+  return { data: o, error: null };
+}
 async function save(step, data) {
   if (RESET) return { data: null, error: null };
+  if (PREVIEW()) return previewSave(step, data);
   const r = await sbClient.rpc("social_client_onboarding_save", { p_client_id: CLIENT.id, p_step: step, p_data: data || {} });
   if (!r.error && r.data) OB = r.data;
   return r;
@@ -140,7 +156,10 @@ const fmtSize = n => n >= 1e9 ? (n / 1e9).toFixed(1) + " GB" : n >= 1e6 ? (n / 1
 
 // ---------- uploads ----------
 // Full quality, resumable over 6 MB: uploadToBucket and safeName in shell.js.
-const uploadFile = (path, file, onProgress) => uploadToBucket(BUCKET, path, file, onProgress);
+const uploadFile = async (path, file, onProgress) => {
+  if (PREVIEW()) { for (const pct of [30, 70, 100]) { onProgress && onProgress(pct); await new Promise(r => setTimeout(r, 150)); } return path; }
+  return uploadToBucket(BUCKET, path, file, onProgress);
+};
 const uploading = () => UPLOADS.brand.concat(UPLOADS.footage).some(u => u.status === "uploading") || memo.state === "uploading";
 window.addEventListener("beforeunload", e => { if (uploading()) { e.preventDefault(); e.returnValue = ""; } });
 
@@ -535,9 +554,13 @@ initAuthGate({
     ME = user; CLIENT = access.client || null;
     if (CLIENT && ROLE === "client") MEMBER = !!(await sbClient.rpc("social_is_client_member")).data;
     if (CLIENT) await refresh();
-    if (ROLE === "operator" && !RESET) document.getElementById("opBanner").innerHTML =
-      `<div class="card meta">Previewing ${escapeHtml(CLIENT.name)}'s onboarding as the operator. What you save or upload here is saved for them.</div>`;
-    current = firstOpenStep();
+    if (PREVIEW() && CLIENT) {
+      // From the very start, as the client sees it; nothing here is saved.
+      OB = null;
+      document.getElementById("opBanner").innerHTML =
+        `<div class="card meta"><b>Preview:</b> you're seeing ${escapeHtml(CLIENT.name)}'s onboarding as they will. Tap through anything: nothing is saved or uploaded, and nothing changes for them.</div>`;
+    }
+    current = PREVIEW() && CLIENT ? "password" : firstOpenStep();
     render();
   },
 });
