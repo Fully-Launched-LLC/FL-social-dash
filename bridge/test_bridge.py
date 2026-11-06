@@ -211,4 +211,13 @@ with tempfile.TemporaryDirectory() as d:
         for n, f in real_fns.items(): setattr(bridge, n, f)
         bridge.CONFIG, bridge.STATE = real_cfg, real_state
 
+# The posting queue (Tait, 2026-11-06).
+vq = [{"id": "v2", "title": "B", "post_date": "2026-12-02", "platform": ["instagram", "facebook"], "caption": "cap B", "editor_brief": {"finishedCopy": {"name": "B.mp4"}}},
+      {"id": "v1", "title": "A", "post_date": "2026-12-01", "platform": ["linkedin"], "caption": "cap A", "on_screen_caption": "on A", "editor_brief": {"finishedCopy": {"name": "A.mp4"}}},
+      {"id": "v3", "title": "C", "post_date": "2026-12-03", "platform": [], "caption": "", "editor_brief": {"finishedCopy": {"name": "C.mp4"}}},
+      {"id": "v4", "title": "D", "post_date": "2026-12-04", "platform": [], "caption": "", "editor_brief": {}}]
+rows = bridge.posting_rows(vq, {"A.mp4": "idA", "B.mp4": "idB"})
+check("posting queue: soonest first, only videos with a Drive file", [r["card_id"] for r in rows] == ["v1", "v2"], rows)
+check("posting queue: link, download link, caption and platforms", rows[0]["video_link"] == "https://drive.google.com/file/d/idA/view" and rows[0]["download_link"].endswith("id=idA") and rows[0]["caption"] == "cap A" and rows[1]["platforms"] == "instagram, facebook")
+
 sys.exit(1 if fails else 0)
