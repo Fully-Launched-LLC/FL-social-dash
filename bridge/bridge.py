@@ -124,7 +124,19 @@ class Supabase:
 
 
 # ── Paperclip ───────────────────────────────────────────────────────────
+# PAPERCLIP=off in bridge.env (Tait, 2026-11-05: "i dont need paperclip
+# then"): the bridge makes no agent tasks. It still moves footage and
+# finished videos into Drive, transcribes voice memos, sends notifications,
+# and files Telegram messages in Claude's inbox. Work the agents did (scripts,
+# rewrites, documents, research, AI edits) waits for Tait to ask Claude.
+# Delete the line (or PAPERCLIP=on) to turn the agents back on.
+def agents_on():
+    return read_env(CONFIG).get("PAPERCLIP", "on").strip().lower() != "off"
+
+
 def paperclip(method, path, body=None):
+    if not agents_on():
+        raise RuntimeError("Paperclip is off (PAPERCLIP=off in bridge.env)")
     req = urllib.request.Request(PAPERCLIP + "/api" + path, data=json.dumps(body).encode() if body is not None else None,
                                  headers={"Content-Type": "application/json"}, method=method)
     with urllib.request.urlopen(req, timeout=30) as r:
@@ -1081,7 +1093,8 @@ def check(sb, verbose=True):
     recs = sb.select("social_onboarding_recordings", "select=*")
     jobs = plan_jobs(clients, obs, recs, st["since"])
     log = []
-    for c in jobs["questions"]:
+    on = agents_on()   # PAPERCLIP=off: skip every agent job (nothing is marked as asked)
+    for c in (jobs["questions"] if on else []):
         log.append(f"questions: {c['name']} -> {ask_for_questions(sb, c)}")
     for m in jobs["import_memos"]:
         import_memo(sb, m["client"], m["path"])
@@ -1094,7 +1107,7 @@ def check(sb, verbose=True):
     if jobs["transcribe"]:
         recs = sb.select("social_onboarding_recordings", "select=*")
         jobs = plan_jobs(clients, sb.select("social_client_onboarding", "select=client_id,voice_memo_path,voice_memo_uploaded_at,questions_requested_at,docs_requested_at"), recs, st["since"])
-    for c in jobs["documents"]:
+    for c in (jobs["documents"] if on else []):
         log.append(f"documents: {c['name']} -> {ask_for_documents(sb, c)}")
     try:
         docs = sb.select("social_client_generated_docs", "select=client_id,kind,status")
@@ -1102,7 +1115,12 @@ def check(sb, verbose=True):
         obs2 = sb.select("social_client_onboarding", "select=client_id,style_requested_at")
     except RuntimeError:
         mood = None   # migration 028 not run yet
-    if mood is not None:
+    if mood is not None and not on:
+        try:
+            log += link_previews(sb, st)
+        except Exception as e:
+            log.append(f"moodboard link previews: {e}")
+    elif mood is not None:
         sj = plan_style_jobs(clients, obs2, docs, mood)
         for c in sj["build"]:
             log.append(f"editing guidelines: {c['name']} -> {ask_for_style(sb, c)}")
@@ -1132,7 +1150,7 @@ def check(sb, verbose=True):
         plans = sb.select("social_monthly_plans", "select=client_id,month")
     except RuntimeError:
         active = None
-    if active is not None:
+    if active is not None and on:
         today = dt.date.today()
         for c in active:
             last = st.setdefault("research_last", {}).get(c["id"])
@@ -1168,7 +1186,7 @@ def check(sb, verbose=True):
         scripting = []
     asked = st.setdefault("scripts_asked", {})
     byid = {c["id"]: c for c in clients}
-    for cid, cards in plan_script_jobs(scripting, asked).items():
+    for cid, cards in (plan_script_jobs(scripting, asked).items() if on else []):
         if byid.get(cid):
             log.append(f"scripts: {byid[cid]['name']} ({len(cards)}) -> {ask_for_scripts(sb, byid[cid], cards)}")
             for v in cards:
@@ -1194,7 +1212,7 @@ def check(sb, verbose=True):
     except RuntimeError:
         vids = []
     edits = st.setdefault("edits_asked", {})
-    ej = plan_edit_jobs(vids, guides if vids else set(), pending if vids else set(), edits, oc if vids else {})
+    ej = plan_edit_jobs(vids, guides if vids else set(), pending if vids else set(), edits, oc if vids else {}) if on else {"start": [], "waiting": [], "revise": []}
     for v in ej["start"]:
         c = byid.get(v["client_id"])
         if not c: continue
@@ -1214,7 +1232,7 @@ def check(sb, verbose=True):
         log.append(f"edit{'' if first else ' revise'}: {c['name']}: {v['title']} -> {ask_for_edit(sb, c, v, revise=not first, notes=edit_notes(sb, v))}")
         edits[v["id"]] = edit_signature(v, oc.get(v["id"], 0))
     try:
-        log += sync_agents(sb)
+        if on: log += sync_agents(sb)
     except Exception as e:
         log.append(f"agent room: {e}")
     for fn in (notify_tait, notify_clients):
