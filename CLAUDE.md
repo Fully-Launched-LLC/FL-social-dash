@@ -741,6 +741,13 @@ and **Onboarding** shows what they sent, the transcript box, the documents,
 (`/welcome?client=<slug>`). A client who hasn't finished gets a "Finish
 setting up" card on their To Do.
 
+## The content team without Paperclip (2026-11-05)
+
+Tait turned Paperclip off (`PAPERCLIP=off` in bridge.env): Claude does every
+role itself, on request, from the agents' training in `team/` (private).
+Start any content job with the `team-playbook` skill: it maps the request to
+the trained role, its rules, and the skill to run.
+
 ## Personal brands (migration 041)
 
 Tait, 2026-11-05. `social_clients.personal_brand` (on for Matteo Warren,
