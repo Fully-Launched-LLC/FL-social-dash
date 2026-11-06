@@ -1300,7 +1300,7 @@ function openVideoModal(client, video, opts) {
     ${modalField("Outline", video.outline)}
     ${modalField("Hook", video.hook)}
     ${modalField("Question to answer on camera", video.cameraQuestions)}
-    ${modalField("What to say", video.body)}
+    ${modalField("Script", video.body)}
     ${modalField("How to film it", video.filmingDirection)}
     ${modalField("On-screen caption", video.onScreenCaption)}
     ${modalField("Caption", video.caption)}
