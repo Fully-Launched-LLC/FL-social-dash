@@ -145,7 +145,14 @@ def give_task(agent, title, description):
     aid = agent_id(agent)
     issue = paperclip("POST", f"/companies/{COMPANY}/issues",
                       {"title": title, "description": description, "assigneeAgentId": aid, "status": "todo", "priority": "high"})
-    paperclip("POST", f"/agents/{aid}/wakeup", {"source": "on_demand", "reason": title})
+    try:
+        paperclip("POST", f"/agents/{aid}/wakeup", {"source": "on_demand", "reason": title})
+    except urllib.error.HTTPError as e:
+        # 409: the agent is paused (Tait pauses some by hand). The task is made
+        # and waits for it; never let that stop the rest of the bridge's round
+        # (2026-11-05: a paused Account Manager stopped footage moving for a day).
+        if e.code != 409:
+            raise
     return issue.get("identifier")
 
 
