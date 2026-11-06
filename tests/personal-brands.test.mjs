@@ -114,7 +114,7 @@ const $ = s => w.d.querySelector(s);
 const cur = () => $("#stepBody section")?.dataset.current;
 const nextBtn = () => $("#stepBody [data-next]");
 const obRow = async () => (await db.query(`select * from social_client_onboarding where client_id='${NB}'`)).rows[0];
-chk("steps: Welcome, Your voice, The questions (no footage)", Array.from(w.d.querySelectorAll("#steps button")).map(b => b.textContent.replace("✓ ", "")).join("|") === "Welcome|Your voice|The questions");
+chk("steps: Welcome, Your voice, Your style, The questions (no footage)", Array.from(w.d.querySelectorAll("#steps button")).map(b => b.textContent.replace("✓ ", "")).join("|") === "Welcome|Your voice|Your style|The questions");
 chk("opens on Your voice", cur() === "brand" && $("#stepBody h1").textContent === "Your voice");
 chk("…asks for three documents of their real voice, not AI", /Upload at least three documents of your real voice, not AI\. This could be emails, papers, or LinkedIn posts\./.test($("#stepBody").textContent));
 chk("…a LinkedIn link box and the 'grab it from there' box", !!$("#liUrl") && /My LinkedIn has a lot of my organic voice\. Grab it from there\./.test($("#stepBody").textContent));
@@ -130,13 +130,36 @@ w.w.eval(`handleFiles("brand", [{ file: new File(["post"], "post.txt", { type: "
 chk("three documents let them move on", !nextBtn().disabled && /3 documents uploaded/.test($("#stepBody").textContent));
 nextBtn().click(); await settle();
 let ob = await obRow();
-chk("Your voice is saved: documents and LinkedIn", ob.brand.voice === true && ob.brand.done === true && ob.brand.uploads.length === 3 && ob.brand.linkedin_url === "https://www.linkedin.com/in/elias" && cur() === "questions", ob.brand);
+chk("Your voice is saved: documents and LinkedIn", ob.brand.voice === true && ob.brand.done === true && ob.brand.uploads.length === 3 && ob.brand.linkedin_url === "https://www.linkedin.com/in/elias" && cur() === "style", ob.brand);
+// Your style: accounts or reels they like, or "build my style for me".
+chk("Your style asks for an account or example reels", /Drop an account or a few example reels that match the style you want for your personal brand/.test($("#stepBody").textContent) && !!$("#styleLinks"));
+chk("…with Build my style for me and skip", $("#stepBody [data-none]").textContent === "Build my style for me and skip");
+chk("continue is off until they add one", nextBtn().disabled);
+$("#styleLinks").value = "@garyvee\nhttps://www.instagram.com/reel/xyz\nnot a handle!"; $("#styleLinks").dispatchEvent(new w.w.Event("input"));
+$("#styleNotes").value = "Fast cuts, talks straight to camera";
+chk("an account or a reel turns it on", !nextBtn().disabled);
+nextBtn().click(); await settle();
+ob = await obRow();
+chk("their style is saved, and Your voice is kept", ob.brand.style.done && !ob.brand.style.build_for_me && ob.brand.style.links.join("|") === "@garyvee|https://www.instagram.com/reel/xyz" && ob.brand.style.notes === "Fast cuts, talks straight to camera" && ob.brand.voice === true && cur() === "questions", ob.brand);
 chk("the last button takes them to the portal", /take me to my portal/.test(nextBtn().textContent) && nextBtn().disabled);
 w.w.eval(`saveMemoFile(new File(["audio-bytes"], "memo.m4a", { type: "audio/mp4" }), () => render())`); await settle();
 chk("the voice memo saves", !!(await obRow()).voice_memo_path && /Your voice memo is saved/.test($("#stepBody").textContent));
 nextBtn().click(); await settle();
 ob = await obRow();
 chk("finishing marks onboarding done (no footage step)", !!ob.completed_at && !ob.footage_done_at, ob);
+
+// "Build my style for me and skip" moves on with nothing to fill in.
+const w3 = await openPage("welcome.html", CL3, "https://fl.test/welcome");
+w3.w.eval(`go("style")`); await settle();
+w3.d.querySelector("#stepBody [data-none]").click(); await settle();
+const st3 = (await obRow()).brand.style;
+chk("Build my style for me and skip is saved and moves on", st3.build_for_me === true && st3.done && w3.d.querySelector("#stepBody section").dataset.current === "questions", st3);
+// Tait sees it on the Onboarding panel.
+await db.exec(`update social_client_onboarding set brand = brand || '{"style":{"links":["@garyvee"],"notes":"Fast cuts","done":true}}' where client_id='${NB}'`);
+const op3 = await openPage("operator/dashboard.html", OP, "https://fl.test/operator/dashboard.html");
+op3.w.openOnboarding(NB); await settle();
+const panel = op3.d.getElementById("videoModalBox").textContent;
+chk("Tait's Onboarding panel shows their voice and their style", panel.includes("Their voice") && panel.includes("Their style") && panel.includes("@garyvee") && panel.includes("Fast cuts"), panel.slice(0, 400));
 
 // A failed voice memo save keeps the recording, with Try saving again.
 const w2 = await openPage("welcome.html", CL3, "https://fl.test/welcome");

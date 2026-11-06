@@ -23,6 +23,8 @@ w.w.eval(`handleFiles("brand", [1,2,3].map(n => ({ file: new File(["x"], "doc" +
 await new Promise(r => setTimeout(r, 1200)); await settle();
 chk("uploads look done", /3 documents uploaded/.test($("#stepBody").textContent) && !nextBtn().disabled);
 nextBtn().click(); await settle();
+chk("then Your style", cur() === "style");
+$("#stepBody [data-none]").click(); await settle();
 chk("then the questions", cur() === "questions");
 w.w.eval(`saveMemoFile(new File(["a"], "memo.m4a", { type: "audio/mp4" }), () => render())`);
 await new Promise(r => setTimeout(r, 800)); await settle();
