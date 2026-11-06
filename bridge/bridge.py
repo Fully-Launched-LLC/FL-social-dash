@@ -646,6 +646,8 @@ def month_card_row(c, item):
         row.update({"hook_options": hooks, "caption": item["post"], "platform": ["linkedin"]})
     else:
         if not (item.get("hook") and item.get("script")): raise ValueError(f"{item['title']}: a video needs a hook and a script")
+        # Tait, 2026-11-05: "i like recording my content off of a question i can answer make sure all video cards + future video cards have this."
+        if not (item.get("camera_questions") or "").strip(): raise ValueError(f"{item['title']}: a video needs its question to answer on camera (camera_questions)")
         d = dt.date.fromisoformat(post) if post else None
         row.update({"hook": item["hook"], "body": item["script"], "outline": item.get("outline"),
                     "camera_questions": item.get("camera_questions"), "filming_instructions": item.get("filming_instructions"),

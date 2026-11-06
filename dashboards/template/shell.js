@@ -1260,7 +1260,7 @@ function openVideoModal(client, video, opts) {
   ensureModalRoot();
   const f = client.driveFolders || {};
   const linkKeys = opts.linkKeys || Object.keys(f);
-  const linkLabels = { root: "Client folder", footageUploads: "Raw footage", finalEdits: "Finished video folder", brandVoice: "Brand guidelines", hooks: "Hooks", assets: "Assets", customerData: "Customer data", contentIdeas: "Content ideas" };
+  const linkLabels = { root: "Client folder", footageUploads: "Raw footage", finalEdits: "Finished video folder", brandVoice: "Brand guidelines", hooks: "Hooks", assets: "Assets", customerData: "Customer data", contentIdeas: "Content ideas", importantDocuments: "Important documents", previousContent: "Previous content", randomVideos: "Random video dump" };
   const instructions = opts.hideEditorBrief ? "" : editorInstructions(video);
 
   document.getElementById("videoModalBox").classList.remove("modal-wide");
@@ -1299,6 +1299,7 @@ function openVideoModal(client, video, opts) {
     ${modalField("Overview", video.overview)}
     ${modalField("Outline", video.outline)}
     ${modalField("Hook", video.hook)}
+    ${modalField("Question to answer on camera", video.cameraQuestions)}
     ${modalField("What to say", video.body)}
     ${modalField("How to film it", video.filmingDirection)}
     ${modalField("On-screen caption", video.onScreenCaption)}
