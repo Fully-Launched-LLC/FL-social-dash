@@ -741,6 +741,58 @@ def copy_finished(sb, st):
     return log
 
 
+# The posting queue (Tait, 2026-11-06: "i want grok bot to easily find the
+# link for the video see the caption and then post the video"). In each
+# client's Finished Videos folder: "Posting queue.csv" and ".json", one row
+# per video approved for posting (ready_to_post), soonest post date first,
+# with the video's Drive link, its caption and platforms. Rewritten only when
+# it changes; a video leaves the queue when it's marked posted. Nothing here
+# posts anything: Tait's own bot reads the file.
+QUEUE_FIELDS = ["post_date", "title", "platforms", "caption", "on_screen_caption", "video_link", "download_link", "file_name", "card_id"]
+
+
+def posting_rows(vids, file_ids):
+    """Rows for one client's queue. file_ids: finished file name -> Drive id.
+    A video whose copy has no Drive id yet (still syncing) waits a round."""
+    rows = []
+    for v in vids:
+        name = ((v.get("editor_brief") or {}).get("finishedCopy") or {}).get("name")
+        fid = file_ids.get(name) if name else None
+        if not fid:
+            continue
+        rows.append({"post_date": str(v.get("post_date") or "")[:10], "title": v.get("title") or "",
+                     "platforms": ", ".join(v.get("platform") or []), "caption": v.get("caption") or "",
+                     "on_screen_caption": v.get("on_screen_caption") or "",
+                     "video_link": f"https://drive.google.com/file/d/{fid}/view",
+                     "download_link": f"https://drive.google.com/uc?export=download&id={fid}",
+                     "file_name": name, "card_id": v["id"]})
+    return sorted(rows, key=lambda r: (r["post_date"] or "9999", r["title"]))
+
+
+def write_posting_queues(sb, st):
+    log = []
+    if not DRIVE_ROOT:
+        return log
+    import csv, io
+    vids = sb.select("social_videos", "select=id,client_id,title,post_date,platform,caption,on_screen_caption,editor_brief,content_type&status=eq.ready_to_post")
+    links = {r["client_id"]: r.get("final_edits") for r in sb.select("social_drive_folder_links", "select=client_id,final_edits")}
+    for cid, url in links.items():
+        folder = find_drive_folder(folder_id_of(url), st) if url else None
+        if not folder:
+            continue
+        mine = [v for v in vids if v["client_id"] == cid and (v.get("content_type") or "video") == "video"]
+        names = {((v.get("editor_brief") or {}).get("finishedCopy") or {}).get("name") for v in mine} - {None}
+        ids = {n: drive_id(folder / n) for n in names if (folder / n).is_file()}
+        rows = posting_rows(mine, {k: v for k, v in ids.items() if v})
+        buf = io.StringIO(); w = csv.DictWriter(buf, fieldnames=QUEUE_FIELDS); w.writeheader(); w.writerows(rows)
+        for path, text in ((folder / "Posting queue.csv", buf.getvalue()), (folder / "Posting queue.json", json.dumps(rows, indent=1, ensure_ascii=False) + "\n")):
+            if not path.exists() or path.read_text() != text:
+                path.write_text(text)
+                if path.suffix == ".csv":
+                    log.append(f"posting queue: {folder.parent.name} ({len(rows)} to post)")
+    return log
+
+
 def drive_files_to_trash(v, versions, folder):
     """The video's own files in the client's Finished Videos folder (and
     one level of subfolders): its approved copy by name, and any file whose
@@ -1201,6 +1253,10 @@ def check(sb, verbose=True):
         log += copy_finished(sb, st)
     except Exception as e:
         log.append(f"finished: {e}")
+    try:
+        log += write_posting_queues(sb, st)
+    except Exception as e:
+        log.append(f"posting queue: {e}")
     try:
         log += delete_abandoned(sb, st)
     except Exception as e:

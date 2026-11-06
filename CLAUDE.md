@@ -84,7 +84,13 @@ last.
 6. **Posting is manual.** A human with the login posts. Nothing in this repo
    publishes to a platform, schedules a post via an API, or automates
    publishing in any way. (Tait confirmed this again on 2026-10-16: no
-   auto-posting.)
+   auto-posting.) 2026-11-06: Tait wants his own posting bot (Grokbot,
+   outside this repo) to post approved videos. The repo still publishes
+   nothing: the bridge writes a **Posting queue** (`Posting queue.csv` and
+   `.json`) into each client's 02 Finished Videos folder, one row per
+   video approved for posting (post date, title, platforms, caption,
+   on-screen caption, the video's Drive link and download link, card id),
+   and the bot reads it.
 
 ## The business model — two systems, one pipeline
 
