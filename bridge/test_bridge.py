@@ -180,4 +180,35 @@ with tempfile.TemporaryDirectory() as d:
     check("abandon: nothing when the video was never on Drive", drive_files_to_trash({"editor_brief": {}}, [], fin) == [])
     check("abandon: no folder, nothing", drive_files_to_trash(v, [], None) == [])
 
+# PAPERCLIP=off (Tait, 2026-11-05): no agent tasks, the rest still runs.
+with tempfile.TemporaryDirectory() as d:
+    cfg = pathlib.Path(d) / "bridge.env"; cfg.write_text("PAPERCLIP=off\n")
+    real_cfg, real_state, real_fns = bridge.CONFIG, bridge.STATE, {}
+    bridge.CONFIG, bridge.STATE = cfg, pathlib.Path(d) / "state.json"
+    calls, ran = [], []
+    class FakeSB:
+        def select(self, table, q=""):
+            if table == "social_clients": return [dict(new, created_at="2099-01-01T00:00:00+00:00", status="active")]
+            if table == "social_videos" and "scripting" in q: return [{"id": "v1", "client_id": "b", "title": "T", "status": "scripting", "note": None, "post_date": None, "editor_brief": {}}]
+            return []
+        def update(self, *a): calls.append(("update",) + a)
+        def insert(self, *a, **k): calls.append(("insert",) + a)
+    for name in ("move_footage", "copy_finished", "delete_abandoned", "notify_tait", "notify_clients", "handle_telegram", "link_previews"):
+        real_fns[name] = getattr(bridge, name)
+        setattr(bridge, name, (lambda n: lambda *a, **k: ran.append(n) or [])(name))
+    real_req = bridge.urllib.request.urlopen
+    bridge.urllib.request.urlopen = lambda *a, **k: calls.append(("http",) + a) or (_ for _ in ()).throw(RuntimeError("no network"))
+    try:
+        log = bridge.check(FakeSB(), verbose=False)
+        check("paperclip off: no agent tasks, no calls to Paperclip", not any(c[0] == "http" for c in calls) and not any("->" in l for l in log), (calls, log))
+        check("paperclip off: footage, finished videos and notifications still run", {"move_footage", "copy_finished", "notify_tait", "notify_clients", "handle_telegram"} <= set(ran), ran)
+        check("paperclip off: nothing marked as asked (so turning it back on picks them up)", not any(c[0] in ("insert", "update") for c in calls), calls)
+        try: bridge.paperclip("GET", "/x"); refused = False
+        except RuntimeError as e: refused = "off" in str(e)
+        check("paperclip() refuses while off", refused)
+    finally:
+        bridge.urllib.request.urlopen = real_req
+        for n, f in real_fns.items(): setattr(bridge, n, f)
+        bridge.CONFIG, bridge.STATE = real_cfg, real_state
+
 sys.exit(1 if fails else 0)
