@@ -78,6 +78,7 @@ function stepList() {
   if (personalBrand()) return [
     { key: "welcome", label: "Welcome" },
     { key: "brand", label: "Your voice" },
+    { key: "style", label: "Your style" },
     { key: "questions", label: "The questions" },
   ];
   return [
@@ -95,6 +96,7 @@ function isDone(key) {
     password: !!o.password_set_at,
     welcome: !!(o.started_at || b.done || ["uploaded", "none"].includes(b.files) || o.voice_memo_path || o.footage_done_at),
     brand: !!(b.done || ["uploaded", "none"].includes(b.files)),
+    style: !!(b.style && b.style.done),
     questions: !!o.voice_memo_path,
     footage: !!o.footage_done_at,
   }[key];
@@ -113,8 +115,24 @@ function firstOpenStep() {
   return (open || s[s.length - 1]).key;
 }
 
+// Tait previewing a client's onboarding (an operator login, ?client=…):
+// a dry run (Tait, 2026-11-05: "let me tap through the whole thing ... without
+// submitting anything"). Nothing is saved or uploaded; the steps move on as
+// if it had been.
+const PREVIEW = () => ROLE === "operator" && !RESET;
+function previewSave(step, data) {
+  const t = new Date().toISOString(), o = OB = Object.assign({}, OB || {});
+  if (step === "password") o.password_set_at = t;
+  else if (step === "started") o.started_at = o.started_at || t;
+  else if (step === "brand") o.brand = data || {};
+  else if (step === "voice_memo") { o.voice_memo_path = data.path; o.voice_memo_uploaded_at = t; }
+  else if (step === "footage") { o.footage = data || {}; if (data && data.done) o.footage_done_at = t; }
+  else if (step === "done") o.completed_at = t;
+  return { data: o, error: null };
+}
 async function save(step, data) {
   if (RESET) return { data: null, error: null };
+  if (PREVIEW()) return previewSave(step, data);
   const r = await sbClient.rpc("social_client_onboarding_save", { p_client_id: CLIENT.id, p_step: step, p_data: data || {} });
   if (!r.error && r.data) OB = r.data;
   return r;
@@ -140,7 +158,10 @@ const fmtSize = n => n >= 1e9 ? (n / 1e9).toFixed(1) + " GB" : n >= 1e6 ? (n / 1
 
 // ---------- uploads ----------
 // Full quality, resumable over 6 MB: uploadToBucket and safeName in shell.js.
-const uploadFile = (path, file, onProgress) => uploadToBucket(BUCKET, path, file, onProgress);
+const uploadFile = async (path, file, onProgress) => {
+  if (PREVIEW()) { for (const pct of [30, 70, 100]) { onProgress && onProgress(pct); await new Promise(r => setTimeout(r, 150)); } return path; }
+  return uploadToBucket(BUCKET, path, file, onProgress);
+};
 const uploading = () => UPLOADS.brand.concat(UPLOADS.footage).some(u => u.status === "uploading") || memo.state === "uploading";
 window.addEventListener("beforeunload", e => { if (uploading()) { e.preventDefault(); e.returnValue = ""; } });
 
@@ -327,6 +348,23 @@ const STEPS = {
     ${errHtml}`;
   },
 
+  // Your style (personal brands; Tait, 2026-11-05): content they like, "an
+  // account or some example reels", or "Build my style for me and skip".
+  // Saved with the brand step as brand.style = { links, notes, build_for_me, done }.
+  style: () => {
+    const st = brandOf().style || {};
+    return `
+    <h1>Your style</h1>
+    <p class="lead">Show us content you like. Drop an account or a few example reels that match the style you want for your personal brand.</p>
+    <div class="card"><label for="styleLinks">Accounts or reels you like</label>
+      <textarea id="styleLinks" rows="5" placeholder="One per line: @an_account, or a link to a reel, TikTok or YouTube video">${escapeHtml((st.links || []).join("\n"))}</textarea>
+      <label for="styleNotes" style="margin-top:12px;display:block">What do you like about them? <span class="meta">(optional)</span></label>
+      <textarea id="styleNotes" rows="3" placeholder="The editing, the energy, how they talk to camera, the captions…">${escapeHtml(st.notes || "")}</textarea></div>
+    <div class="wnav"><button type="button" data-none>Build my style for me and skip</button>
+      <button type="button" class="primary" data-next disabled>Continue</button></div>
+    ${errHtml}`;
+  },
+
   questions: () => `
     <h1>The questions</h1>
     <p class="lead">Read the questions, then answer them in one voice memo at the bottom of this page. Talk the way you'd explain it to a friend.</p>
@@ -391,7 +429,7 @@ function wireVoice(body) {
     setErr(body, "");
     btn.disabled = true;
     const uploads = doneUploads("brand"), linkedin_ok = body.querySelector("#liOk").checked;
-    const r = await save("brand", { voice: true, uploads, linkedin_url: body.querySelector("#liUrl").value.trim() || null, linkedin_ok,
+    const r = await save("brand", { ...(brandOf().style ? { style: brandOf().style } : {}), voice: true, uploads, linkedin_url: body.querySelector("#liUrl").value.trim() || null, linkedin_ok,
       files: uploads.length >= VOICE_DOCS ? "uploaded" : "linkedin", done: true });
     if (r.error) { btn.disabled = false; return setErr(body, r.error.message); }
     next();
@@ -405,7 +443,27 @@ function refreshVoice(body) {
   if (btn) btn.disabled = !voiceReady(body);
 }
 
+// Lines that look like an account (@name, or a bare handle) or a link.
+const styleLinksFrom = text => String(text || "").split(/[\n,]+/).map(x => x.trim()).filter(x => /^https?:\/\/\S+$/i.test(x) || /^@?[A-Za-z0-9._]{2,30}$/.test(x));
+
 const WIRE = {
+  style: body => {
+    const links = body.querySelector("#styleLinks"), goBtn = body.querySelector("[data-next]");
+    const refresh = () => { goBtn.disabled = !styleLinksFrom(links.value).length; };
+    links.oninput = refresh; refresh();
+    const finish = buildForMe => async () => {
+      setErr(body, "");
+      body.querySelectorAll(".wnav button").forEach(b => b.disabled = true);
+      const style = buildForMe ? { build_for_me: true, links: [], notes: "", done: true }
+        : { build_for_me: false, links: styleLinksFrom(links.value), notes: body.querySelector("#styleNotes").value.trim(), done: true };
+      const r = await save("brand", { ...brandOf(), style });
+      if (r.error) { refresh(); body.querySelector("[data-none]").disabled = false; return setErr(body, r.error.message); }
+      goBtn.disabled = false;
+      next();
+    };
+    body.querySelector("[data-none]").onclick = finish(true);
+    goBtn.onclick = finish(false);
+  },
   password: body => {
     body.querySelectorAll("[data-eye]").forEach(b => b.onclick = () => {
       const input = body.querySelector("#" + b.dataset.eye), show = input.type === "password";
@@ -535,9 +593,13 @@ initAuthGate({
     ME = user; CLIENT = access.client || null;
     if (CLIENT && ROLE === "client") MEMBER = !!(await sbClient.rpc("social_is_client_member")).data;
     if (CLIENT) await refresh();
-    if (ROLE === "operator" && !RESET) document.getElementById("opBanner").innerHTML =
-      `<div class="card meta">Previewing ${escapeHtml(CLIENT.name)}'s onboarding as the operator. What you save or upload here is saved for them.</div>`;
-    current = firstOpenStep();
+    if (PREVIEW() && CLIENT) {
+      // From the very start, as the client sees it; nothing here is saved.
+      OB = null;
+      document.getElementById("opBanner").innerHTML =
+        `<div class="card meta"><b>Preview:</b> you're seeing ${escapeHtml(CLIENT.name)}'s onboarding as they will. Tap through anything: nothing is saved or uploaded, and nothing changes for them.</div>`;
+    }
+    current = PREVIEW() && CLIENT ? "password" : firstOpenStep();
     render();
   },
 });

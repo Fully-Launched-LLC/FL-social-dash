@@ -747,13 +747,15 @@ Tait, 2026-11-05. `social_clients.personal_brand` (on for Matteo Warren,
 Elias O'Neill, Luke Bothun, Tait Allen; the "Personal brand" box on the
 operator's client form) turns on three things:
 
-- **Onboarding** (`/welcome`): Welcome → **Your voice** → The questions →
+- **Onboarding** (`/welcome`): Welcome → **Your voice** → **Your style** → The questions →
   their portal with the walkthrough (`?tour=1`). No footage step. Your
   voice (stored in the `brand` step as `{ voice: true, uploads,
   linkedin_url, linkedin_ok, done }`) needs 3 or more documents in their
   own words, or their LinkedIn link with "My LinkedIn has a lot of my
   organic voice. Grab it from there." ticked. The operator's Onboarding
-  panel shows it under "Their voice".
+  panel shows it under "Their voice". Your style (`brand.style = { links,
+  notes, build_for_me, done }`): accounts (@handle) or reels they like, or
+  "Build my style for me and skip"; shown under "Their style".
 - **Random Video Dump** tab on the portal: each video dropped goes into the
   `footage` bucket at `<client>/random/`, then
   `social_client_random_video(name, path)` makes its card straight into
