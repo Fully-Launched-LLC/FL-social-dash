@@ -164,6 +164,7 @@ body.navy-work .main .board-col.drop { background:rgba(255,255,255,.10); }
     <div class="card" data-queue="ideas"><h2>Ideas to review <span class="meta">Monthly plans: approve or reject each idea.</span></h2><div id="deskIdeas"></div></div>
     <div class="card" data-queue="scripts"><h2>Scripts to review <span class="meta">Videos and LinkedIn posts. Approve and the client sees the whole card.</span></h2><div id="deskScripts"></div></div>
     <div class="card" data-queue="docs"><h2>Documents to review <span class="meta">Operator-only, except approved brand guidelines.</span></h2><div id="deskDocs"></div></div>
+    <div class="card" data-queue="edit"><h2>Ready to edit <span class="meta">Footage is in. Soonest edit-by date first.</span></h2><div id="deskEdit"></div></div>
     <div class="card" data-queue="videos"><h2>Videos to review</h2><div id="deskVideos"></div></div>
     <div class="card" data-queue="carousels"><h2>Carousels to review</h2><div id="deskCarousels"></div></div>
     <div class="card" data-queue="post"><h2>Content to post</h2><div id="deskPost"></div></div>
@@ -2127,6 +2128,9 @@ function deskQueues() {
     ideas: PLANS.filter(p => p.status === "on_desk" && inClientFilter(p.client_id)),
     scripts: vids.filter(x => x.video.status === "script_review"),
     docs: DOCS.filter(d => d.status === "on_desk" && inClientFilter(d.client_id) && CLIENT_BY_ID[d.client_id]),
+    // Tait, 2026-11-10: footage the client uploaded shows here at once, not
+    // only 3 days before the edit-by date (Due soon).
+    edit: vids.filter(x => x.video.status === "ready_to_edit").sort((a, b) => (a.video.dueToEdit || "9999").localeCompare(b.video.dueToEdit || "9999")),
     videos: vids.filter(x => x.video.status === "in_review"),
     carousels: CAROUSELS.filter(c => c.status === "to_review" && inClientFilter(c.client_id) && CLIENT_BY_ID[c.client_id]),
     post: vids.filter(x => x.video.status === "ready_to_post").sort(byPostDate),
@@ -2143,7 +2147,7 @@ function renderDesk() {
   const q = deskQueues();
   const tiles = [["ideas", "Ideas to review", q.ideas.reduce((n, p) => n + IDEAS.filter(i => i.plan_id === p.id && i.status === "in_plan").length, 0)],
     ["scripts", "Scripts to review", q.scripts.length], ["docs", "Documents to review", q.docs.length],
-    ["videos", "Videos to review", q.videos.length], ["carousels", "Carousels to review", q.carousels.length], ["post", "Content to post", q.post.length]];
+    ["edit", "Ready to edit", q.edit.length], ["videos", "Videos to review", q.videos.length], ["carousels", "Carousels to review", q.carousels.length], ["post", "Content to post", q.post.length]];
   const total = tiles.reduce((n, t) => n + t[2], 0);
   // Nothing waiting and nothing due: the logo, and a breath.
   const clear = !total && !q.due.length;
@@ -2184,6 +2188,8 @@ function renderDesk() {
       <div>${smallBtn("Open", `openDoc('${d.client_id}','${d.kind}')`)}${smallBtn("Approve", `setDocStatus('${d.id}','approved')`, "primary")}</div></div>`).join("")
     || (waitNote ? "" : `<div class="empty">No documents waiting.</div>`);
 
+  document.getElementById("deskEdit").innerHTML = q.edit.length
+    ? `<div class="vtable">${VROW_HEAD}${q.edit.map(x => vrowHtml(x, operatorActionsHtml(x))).join("")}</div>` : `<div class="empty">No footage waiting to be edited.</div>`;
   document.getElementById("deskVideos").innerHTML = q.videos.length
     ? `<div class="vtable">${VROW_HEAD}${q.videos.map(x => vrowHtml(x, operatorActionsHtml(x))).join("")}</div>` : `<div class="empty">No videos waiting for your review.</div>`;
   document.getElementById("deskCarousels").innerHTML = q.carousels.map(c => `<div class="doc-row"><div><b>${escapeHtml(c.title)}</b> · ${escapeHtml(CLIENT_BY_ID[c.client_id].name)}
