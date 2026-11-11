@@ -79,13 +79,27 @@ chk("videos to review have Review & comment", [...d().querySelectorAll("#deskVid
 chk("videos to post have Mark posted", d().getElementById("deskPost").textContent.includes("Mark posted"));
 // Tait, 2026-10-28: three buttons, no Drive: Finished video, Download, Mark posted.
 const postBtns = [...d().querySelectorAll("#deskPost button")].map(b => b.textContent);
-chk("videos to post: Finished video, Download, Mark posted", postBtns.join() === "Finished video,Download,Mark posted", postBtns);
+chk("videos to post: Finished video, Download, Mark posted (+ Add caption when it has none)", postBtns.join() === "Add caption,Finished video,Download,Mark posted", postBtns);
 // Tait, 2026-10-28: "when luke approves a video, add a note on this section saying client has approved it, no more edits neccesary."
 chk("a video the client approved says so on Videos to post", d().getElementById("deskPost").textContent.includes("Grad Gig approved it") && d().getElementById("deskPost").textContent.includes("No more edits necessary."), d().getElementById("deskPost").textContent);
 chk("videos to post link nowhere into Drive", !d().querySelector("#deskPost a[href*='drive.google']"));
 [...d().querySelectorAll("#deskPost button")].find(b => b.textContent === "Finished video").click(); await settle();
 chk("Finished video opens the review window with Send back", !!d().querySelector(".rv") && [...d().querySelectorAll(".rv-actions button")].some(b => /Send back to the editor/.test(b.textContent)), [...d().querySelectorAll(".rv-actions button")].map(b => b.textContent));
 op.w.closeVideoModal(); await settle();
+
+// Tait, 2026-11-11: approve a video now, add the caption later.
+chk("a video to post with no caption says Caption needed", d().getElementById("deskPost").textContent.includes("Caption needed"));
+[...d().querySelectorAll("#deskPost button")].find(b => b.textContent === "Add caption").click(); await settle();
+d().querySelector('#videoModalBox [data-f="caption"]').value = "Later caption";
+d().querySelector("#acSave").click(); await settle();
+chk("Add caption saves it without moving the video", (await one(`select status, caption from social_videos where title='Post me'`)).caption === "Later caption" && (await one(`select status from social_videos where title='Post me'`)).status === "ready_to_post");
+chk("then the reminder goes", !d().getElementById("deskPost").textContent.includes("Caption needed"));
+const editMe = (await one(`select id from social_videos where title='Edit me'`)).id;
+[...d().querySelectorAll(`#deskVideos .vrow[data-id="${editMe}"] button`)].find(b => b.textContent === "Approve & add captions").click(); await settle();
+chk("the approve window has Add caption later", !!d().getElementById("aeLater"));
+d().getElementById("aeLater").click(); await settle();
+const later = await one(`select status, caption, editor_brief from social_videos where id=$1`, [editMe]);
+chk("Add caption later: on to the client with no caption, flagged", later.status === "client_review" && !later.caption && later.editor_brief.captionLater === true, later);
 
 // One client's page.
 d().querySelector('.nav-item[data-view="clients"]').click(); await settle();

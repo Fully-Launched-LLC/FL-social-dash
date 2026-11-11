@@ -482,17 +482,55 @@ function approveEdit(id) {
     <div class="auth-error" id="aeError"></div>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="primary" id="aeSave">${escapeHtml(sendLabel)}</button>
+      <button id="aeLater">Add caption later</button>
       <button onclick="closeVideoModal()">Cancel</button>
     </div>`);
+  // Tait, 2026-11-11: approve the video now, write the caption later. It
+  // moves on without one; "Caption needed" + Add caption follow it.
+  box.querySelector("#aeLater").onclick = async e => {
+    e.target.disabled = true; e.target.textContent = "Saving…";
+    const platform = box.querySelector('[data-f="platform"]').value.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+    const caption = box.querySelector('[data-f="caption"]').value.trim() || null;
+    const onScreenCaption = box.querySelector('[data-f="onScreenCaption"]').value.trim() || null;
+    const editorBrief = Object.assign({}, v.editorBrief, { revisions: null, captionLater: !caption });
+    const ok = await updateVideo(id, { caption, onScreenCaption, platform, editorBrief, postDate: box.querySelector('[data-f="postDate"]').value || null, note: null, status: toPost ? "ready_to_post" : "client_review" });
+    if (ok) closeVideoModal(); else { e.target.disabled = false; e.target.textContent = "Add caption later"; }
+  };
   box.querySelector("#aeSave").onclick = async e => {
     const caption = box.querySelector('[data-f="caption"]').value.trim();
     if (!caption) { box.querySelector("#aeError").textContent = "Add the caption first."; return; }
     e.target.disabled = true; e.target.textContent = "Saving…";
     const platform = box.querySelector('[data-f="platform"]').value.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
     const onScreenCaption = box.querySelector('[data-f="onScreenCaption"]').value.trim() || null;
-    const editorBrief = Object.assign({}, v.editorBrief, { revisions: null });
+    const editorBrief = Object.assign({}, v.editorBrief, { revisions: null, captionLater: false });
     const ok = await updateVideo(id, { caption, onScreenCaption, platform, editorBrief, postDate: box.querySelector('[data-f="postDate"]').value || null, note: null, status: toPost ? "ready_to_post" : "client_review" });
     if (ok) closeVideoModal(); else { e.target.disabled = false; e.target.textContent = sendLabel; }
+  };
+}
+// A video approved with "Add caption later": write the captions any time
+// after, without moving it (Tait, 2026-11-11).
+const needsCaption = v => !isLinkedInPost(v) && !v.caption && ["client_review", "ready_to_post"].includes(v.status);
+function addCaption(id) {
+  const x = findVideo(id);
+  if (!x) return;
+  const v = x.video, draft = (v.editorBrief || {}).captionDraft || {};
+  const box = openModal(`
+    <h2>Add caption</h2>
+    <div class="meta" style="margin-bottom:12px">${escapeHtml(x.client.name)} · ${escapeHtml(v.title || "")}</div>
+    ${textField("onScreenCaption", "On-screen caption (text shown on the video)", v.onScreenCaption || draft.onScreenCaption, 2)}
+    ${textField("caption", "Caption (the post caption)", v.caption || draft.caption, 5)}
+    <div class="auth-error" id="acError"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="primary" id="acSave">Save caption</button>
+      <button onclick="closeVideoModal()">Cancel</button>
+    </div>`);
+  box.querySelector("#acSave").onclick = async e => {
+    const caption = box.querySelector('[data-f="caption"]').value.trim();
+    if (!caption) { box.querySelector("#acError").textContent = "Write the caption first."; return; }
+    e.target.disabled = true; e.target.textContent = "Saving…";
+    const onScreenCaption = box.querySelector('[data-f="onScreenCaption"]').value.trim() || null;
+    const ok = await updateVideo(id, { caption, onScreenCaption, editorBrief: Object.assign({}, v.editorBrief, { captionLater: false }) });
+    if (ok) closeVideoModal(); else { e.target.disabled = false; e.target.textContent = "Save caption"; }
   };
 }
 // Stand-in for the client's own Approve buttons, for when they say yes by
@@ -513,7 +551,8 @@ async function markFilmedForClient(id) {
   await updateVideo(id, Object.assign({ status: "ready_to_edit" }, footageDates(x.video)));
 }
 async function markPosted(id) {
-  if (!confirm("Mark this video as posted?")) return;
+  const x = findVideo(id);
+  if (!confirm(x && needsCaption(x.video) ? "This video has no caption yet. Mark it as posted anyway?" : "Mark this video as posted?")) return;
   await updateVideo(id, { status: "posted" });
 }
 // Abandon (Tait, 2026-11-01: "removes it from the system and deletes it on
@@ -640,12 +679,14 @@ function operatorActionsHtml(x, inCard) {
     out.push(`<a class="btn" style="font-size:0.78rem;padding:5px 10px" href="${escapeHtml(raw.url)}" target="_blank" rel="noopener">${raw.label}</a>`);
   }
   if (isReadyForEditor(x)) out.push(editorSelect(v.editorId), smallBtn("Send to editor", `sendToEditor('${id}', this)`, "primary"));
+  if (v.status === "client_review" && needsCaption(v)) out.push(smallBtn("Add caption", `addCaption('${id}')`));
   if (v.status === "in_review") {
     out.push(smallBtn("Review & comment", `operatorReview('${id}')`),
       smallBtn(clientRoundsUsed(v) ? "Approve for posting" : "Approve & add captions", `approveEdit('${id}')`, "primary"));
   }
   if (v.status === "client_review") out.push(smallBtn("Approve for client", `approveForClient('${id}', 'ready_to_post', 'video')`, "primary"));
   if (inCard && ["client_review", "ready_to_post"].includes(v.status)) out.push(smallBtn("Review copy", `reviewCopyModal('${id}')`));
+  if (v.status === "ready_to_post" && needsCaption(v)) out.push(smallBtn("Add caption", `addCaption('${id}')`));
   if (v.status === "ready_to_post") out.push(smallBtn("Mark posted", `markPosted('${id}')`, "primary"));
   return out.join("");
 }
@@ -1027,7 +1068,7 @@ function nextTask(x) {
   if (v.status === "with_editor") return { task: "Chase the editor: edit due", date: v.dueToEdit };
   if (v.status === "in_review") return { task: "Review the edit", date: approveBy };
   if (v.status === "client_review") return { task: "Nudge the client to approve", date: approveBy };
-  if (v.status === "ready_to_post") return { task: "Post it", date: v.postDate };
+  if (v.status === "ready_to_post") return { task: needsCaption(v) ? "Add the caption, then post it" : "Post it", date: v.postDate };
   return null;
 }
 function timeSensitive(x) {
@@ -1075,8 +1116,9 @@ function postCardHtml(x) {
       </div>
       ${CLIENT_APPROVED[v.id] ? `<div class="meta" style="margin-top:6px;color:var(--green)">✓ ${escapeHtml(x.client.name)} approved it (${escapeHtml(new Date(CLIENT_APPROVED[v.id]).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }))}). No more edits necessary.</div>` : ""}
       ${v.onScreenCaption ? `<div style="margin-top:8px"><b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">On-screen caption</b><div style="white-space:pre-wrap;font-size:0.9rem">${escapeHtml(v.onScreenCaption)}</div></div>` : ""}
-      ${v.caption ? `<div style="margin-top:8px"><b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">Caption</b><div style="white-space:pre-wrap;font-size:0.9rem">${escapeHtml(v.caption)}</div></div>` : ""}
+      ${v.caption ? `<div style="margin-top:8px"><b style="display:block;font-size:0.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:3px">Caption</b><div style="white-space:pre-wrap;font-size:0.9rem">${escapeHtml(v.caption)}</div></div>` : `<div class="meta" style="margin-top:8px;color:var(--gold)">Caption needed</div>`}
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        ${needsCaption(v) ? smallBtn("Add caption", `addCaption('${v.id}')`, "primary") : ""}
         ${smallBtn("Finished video", `watchFinished('${v.id}')`)}
         ${smallBtn("Download", `downloadFinished('${v.id}', this)`)}
         ${smallBtn("Mark posted", `markPosted('${v.id}')`, "primary")}
