@@ -37,7 +37,8 @@ const urgent = op.w.eval(`workVideos().filter(x => timeSensitive(x)).sort((a, b)
 const titles = urgent.map(u => u[0]);
 chk("only Tait's tasks due within 3 days or overdue, soonest first", titles.join() === "Edit overdue,Review now,Post today,Film soon", titles);
 const task = t => urgent.find(u => u[0] === t)[1];
-chk("each says what to do", task("Review now") === "Review the edit" && task("Edit overdue").startsWith("Chase the editor") && task("Post today") === "Post it" && task("Film soon") === "Film it");
+// 'Post today' has no caption: it was approved with "Add caption later" (Tait, 2026-11-11).
+chk("each says what to do", task("Review now") === "Review the edit" && task("Edit overdue").startsWith("Chase the editor") && task("Post today") === "Add the caption, then post it" && task("Film soon") === "Film it");
 chk("client's own tasks, far-off ones and abandoned ideas stay out", !["Client idea", "Film later", "Gone"].some(t => titles.includes(t)));
 
 // Calendar days list their items in title order, numbers in order.

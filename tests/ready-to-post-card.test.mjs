@@ -27,7 +27,8 @@ const dateInput = () => op.d.getElementById("vmPostDate");
 
 op.w.openOperatorVideoModal(await idOf("Nature spots")); await settle();
 let labels = actionLabels();
-chk("ready to post: only Review copy, Mark posted, Abandon", JSON.stringify(labels) === JSON.stringify(["Review copy", "Mark posted", "Abandon"]), labels);
+// Plus Add caption while it has none (Tait, 2026-11-11: approve now, caption later).
+chk("ready to post: only Review copy, (Add caption,) Mark posted, Abandon", JSON.stringify(labels) === JSON.stringify(["Review copy", "Add caption", "Mark posted", "Abandon"]), labels);
 chk("…the post date is a date picker showing the date", dateInput() && dateInput().value === "2026-11-01", dateInput() && dateInput().value);
 
 dateInput().value = "2026-11-02"; dateInput().dispatchEvent(new op.w.Event("change")); await settle();
