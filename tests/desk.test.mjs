@@ -23,7 +23,7 @@ const i1 = (await one(`insert into social_ideas (client_id,title,source,format,w
 const i2 = (await one(`insert into social_ideas (client_id,title,source,plan_id,status) values ($1,'Shovel','tait','${plan}','in_plan') returning id`, [GG])).id;
 const s1 = (await one(`insert into social_videos (client_id,title,status,hook,body,outline,camera_questions,filmed_by) values ($1,'Leaf rules card','script_review','h','s','o','q','client') returning id`, [GG])).id;
 const s2 = (await one(`insert into social_videos (client_id,title,status,filmed_by) values ($1,'Shovel card','script_review','client') returning id`, [GG])).id;
-await db.query(`insert into social_videos (client_id,title,status) values ($1,'Edit me','in_review'),($1,'Post me','ready_to_post'),($2,'FL edit','in_review')`, [GG, FL]);
+await db.query(`insert into social_videos (client_id,title,status) values ($1,'Edit me','in_review'),($1,'Post me','ready_to_post'),($2,'FL edit','in_review'),($1,'Luke filmed','ready_to_edit')`, [GG, FL]);
 // The client approved 'Post me' from their portal (the audit log's approve_final, by a client).
 await db.query(`insert into social_status_audit_log (video_id,client_id,action,from_status,to_status,changed_by_role) select id,client_id,'approve_final','client_review','ready_to_post','client' from social_videos where title='Post me'`);
 const doc = (await one(`insert into social_client_generated_docs (client_id,kind,title,body_md,status,built_by) values ($1,'brand_guidelines','Brand guidelines','# Orange #F15523','on_desk','Account Manager') returning id`, [GG])).id;
@@ -34,13 +34,13 @@ const d = () => op.d;
 chk("My desk is the home page", d().getElementById("view-desk").classList.contains("active") && d().getElementById("crumbPage").textContent === "My desk");
 chk("sidebar order: My desk first, then Content Ideas, Clients, Content Calendar; no To Do page", [...d().querySelectorAll(".nav-item[data-view]")].map(n => n.dataset.view).join(",").startsWith("desk,ideabank,clients,calendar") && !d().getElementById("view-todo"));
 const tiles = () => [...d().querySelectorAll("#deskTiles .desk-tile")].map(t => t.textContent.trim());
-chk("6 queues with counts (all clients)", JSON.stringify(tiles()) === JSON.stringify(["2Ideas to review", "2Scripts to review", "1Documents to review", "2Videos to review", "0Carousels to review", "1Content to post"]), tiles());
-chk("nav shows the desk total", d().getElementById("navDeskN").textContent === "8");
+chk("7 queues with counts (all clients)", JSON.stringify(tiles()) === JSON.stringify(["2Ideas to review", "2Scripts to review", "1Documents to review", "1Ready to edit", "2Videos to review", "0Carousels to review", "1Content to post"]), tiles());
+chk("nav shows the desk total", d().getElementById("navDeskN").textContent === "9");
 chk("plan shows its brief and ideas", d().getElementById("deskIdeas").textContent.includes("20 ideas") && d().getElementById("deskIdeas").textContent.includes("Format: Local guide"));
 
 // Client filter narrows the desk.
 d().querySelector(`#globalClientFilter .chip[data-c="${FL}"]`).click(); await settle();
-chk("client filter narrows the queues", JSON.stringify(tiles()) === JSON.stringify(["0Ideas to review", "0Scripts to review", "0Documents to review", "1Videos to review", "0Carousels to review", "0Content to post"]), tiles());
+chk("client filter narrows the queues", JSON.stringify(tiles()) === JSON.stringify(["0Ideas to review", "0Scripts to review", "0Documents to review", "0Ready to edit", "1Videos to review", "0Carousels to review", "0Content to post"]), tiles());
 d().querySelector(`#globalClientFilter .chip[data-c="all"]`).click(); await settle();
 
 // Ideas: approve one, reject one.
@@ -72,6 +72,8 @@ chk("client can't read brand guidelines on the desk", !(await as(CL, `select id 
 [...d().querySelectorAll("#deskDocs button")].find(b => b.textContent === "Approve").click(); await settle();
 chk("approved brand guidelines: off the desk, client can read", tiles()[2] === "0Documents to review" && (await as(CL, `select kind from social_client_generated_docs`)).data.length === 1);
 
+// Tait, 2026-11-10: footage the client uploaded shows on the desk at once.
+chk("ready to edit lists the filmed video with Send to editor", d().getElementById("deskEdit").textContent.includes("Luke filmed") && [...d().querySelectorAll("#deskEdit button")].some(b => b.textContent === "Send to editor"));
 // Videos to review / post keep the existing buttons.
 chk("videos to review have Review & comment", [...d().querySelectorAll("#deskVideos button")].some(b => b.textContent === "Review & comment"));
 chk("videos to post have Mark posted", d().getElementById("deskPost").textContent.includes("Mark posted"));
