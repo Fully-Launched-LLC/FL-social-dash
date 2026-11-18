@@ -220,4 +220,18 @@ rows = bridge.posting_rows(vq, {"A.mp4": "idA", "B.mp4": "idB"})
 check("posting queue: soonest first, only videos with a Drive file", [r["card_id"] for r in rows] == ["v1", "v2"], rows)
 check("posting queue: link, download link, caption and platforms", rows[0]["video_link"] == "https://drive.google.com/file/d/idA/view" and rows[0]["download_link"].endswith("id=idA") and rows[0]["caption"] == "cap A" and rows[1]["platforms"] == "instagram, facebook")
 
+lq = [{"id": "p1", "title": "Post", "post_date": "2026-11-30", "platform": None, "content_type": "linkedin_post", "caption": "the whole post",
+       "editor_brief": {"finishedCopy": {"sig": "x", "name": "LinkedIn - Post.txt", "photo": "LinkedIn - Post.jpeg"}}},
+      {"id": "p2", "title": "Words only", "post_date": "2026-11-29", "platform": ["linkedin"], "content_type": "linkedin_post", "caption": "just words",
+       "editor_brief": {"finishedCopy": {"sig": "y", "name": "LinkedIn - Words only.txt", "photo": None}}},
+      {"id": "p3", "title": "Photo syncing", "post_date": "2026-11-28", "platform": ["linkedin"], "content_type": "linkedin_post", "caption": "c",
+       "editor_brief": {"finishedCopy": {"sig": "z", "name": "LinkedIn - Photo syncing.txt", "photo": "LinkedIn - Photo syncing.png"}}}]
+rows = bridge.posting_rows(lq, {"LinkedIn - Post.txt": "t1", "LinkedIn - Post.jpeg": "ph1", "LinkedIn - Words only.txt": "t2", "LinkedIn - Photo syncing.txt": "t3"})
+check("posting queue: LinkedIn posts listed, waits for the photo to sync", [r["card_id"] for r in rows] == ["p2", "p1"], rows)
+check("posting queue: LinkedIn post = whole post as caption + photo link, no video link",
+      rows[1]["type"] == "linkedin_post" and rows[1]["caption"] == "the whole post" and rows[1]["platforms"] == "linkedin"
+      and rows[1]["photo_link"] == "https://drive.google.com/file/d/ph1/view" and rows[1]["video_link"] == "" and rows[0]["photo_link"] == "", rows)
+check("linkedin signature changes with the words", bridge.linkedin_signature({"caption": "a"}) != bridge.linkedin_signature({"caption": "b"}))
+check("posting queue: videos are type video", bridge.posting_rows(vq, {"A.mp4": "idA", "B.mp4": "idB"})[0]["type"] == "video")
+
 sys.exit(1 if fails else 0)

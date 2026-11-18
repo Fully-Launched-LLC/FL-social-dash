@@ -714,17 +714,51 @@ def move_footage(sb, st):
     return log
 
 
+def linkedin_signature(v):
+    """What a LinkedIn post's Drive copy was made from: its words and photo."""
+    import hashlib
+    return hashlib.sha1(((v.get("caption") or "") + "\0" + (v.get("photo_path") or "")).encode()).hexdigest()[:12]
+
+
 def copy_finished(sb, st):
     """Approved for posting (Tait, 2026-10-28): the latest cut goes into the
     client's Finished Videos Drive folder as "<title>.mp4", and only then.
-    Drafts never go there. A newer cut approved later replaces it."""
+    Drafts never go there. A newer cut approved later replaces it.
+    LinkedIn posts approved for posting go there too (Tait, 2026-11-18: "all
+    the videos and linkedin posts that are ready to post need to go into one
+    folder that their agent can pull from"): "LinkedIn - <title>.txt" with
+    the post's words, plus its photo as "LinkedIn - <title>.<ext>". An edit
+    to the words or photo afterwards rewrites them."""
     log = []
     if not DRIVE_ROOT:
         return log
-    vids = sb.select("social_videos", "select=id,client_id,title,editor_brief&status=eq.ready_to_post")
+    vids = sb.select("social_videos", "select=id,client_id,title,caption,photo_path,content_type,editor_brief&status=eq.ready_to_post")
     links = {r["client_id"]: r.get("final_edits") for r in sb.select("social_drive_folder_links", "select=client_id,final_edits")}
     for v in vids:
         eb = v.get("editor_brief") or {}
+        title = re.sub(r'[\\/:*?"<>|]+', "", v.get("title") or "video").strip()[:80]
+        if v.get("content_type") == "linkedin_post":
+            sig = linkedin_signature(v)
+            if (eb.get("finishedCopy") or {}).get("sig") == sig:
+                continue
+            folder = find_drive_folder(folder_id_of(links.get(v["client_id"])), st)
+            if not folder:
+                log.append(f"finished: no Finished Videos folder for {v['title']}")
+                continue
+            old = eb.get("finishedCopy") or {}
+            name = f"LinkedIn - {title}.txt"
+            (folder / name).write_text((v.get("caption") or "").strip() + "\n")
+            photo = None
+            if v.get("photo_path"):
+                photo = f"LinkedIn - {title}{pathlib.Path(v['photo_path']).suffix.lower() or '.jpg'}"
+                (folder / photo).write_bytes(sb.download("post-photos", v["photo_path"]))
+            for stale in {old.get("name"), old.get("photo")} - {name, photo, None}:
+                if (folder / stale).is_file():
+                    (folder / stale).unlink()
+            eb["finishedCopy"] = {"sig": sig, "name": name, "photo": photo}
+            sb.update("social_videos", {"id": v["id"]}, {"editor_brief": eb})
+            log.append(f"finished: LinkedIn post {v['title']} -> {name}" + (f" + {photo}" if photo else ""))
+            continue
         latest = (sb.select("social_video_versions", f"select=version,storage_path&video_id=eq.{v['id']}&storage_path=not.is.null&order=version.desc&limit=1") or [None])[0]
         if not latest or (eb.get("finishedCopy") or {}).get("version") == latest["version"]:
             continue
@@ -732,7 +766,6 @@ def copy_finished(sb, st):
         if not folder:
             log.append(f"finished: no Finished Videos folder for {v['title']}")
             continue
-        title = re.sub(r'[\\/:*?"<>|]+', "", v.get("title") or "video").strip()[:80]
         dest = folder / f"{title}{pathlib.Path(latest['storage_path']).suffix or '.mp4'}"
         dest.write_bytes(sb.download("review", latest["storage_path"]))
         eb["finishedCopy"] = {"version": latest["version"], "name": dest.name}
@@ -744,28 +777,54 @@ def copy_finished(sb, st):
 # The posting queue (Tait, 2026-11-06: "i want grok bot to easily find the
 # link for the video see the caption and then post the video"). In each
 # client's Finished Videos folder: "Posting queue.csv" and ".json", one row
-# per video approved for posting (ready_to_post), soonest post date first,
-# with the video's Drive link, its caption and platforms. Rewritten only when
-# it changes; a video leaves the queue when it's marked posted. Nothing here
-# posts anything: Tait's own bot reads the file.
-QUEUE_FIELDS = ["post_date", "title", "platforms", "caption", "on_screen_caption", "video_link", "download_link", "file_name", "card_id"]
+# per video or LinkedIn post approved for posting (ready_to_post), soonest
+# post date first, with the video's Drive link (or the LinkedIn post's photo
+# link), its caption (a LinkedIn post's caption is the whole post) and
+# platforms. Rewritten only when it changes; an item leaves the queue when
+# it's marked posted. Nothing here posts anything: the client's agent reads it.
+QUEUE_FIELDS = ["post_date", "type", "title", "platforms", "caption", "on_screen_caption", "video_link", "download_link",
+                "photo_link", "photo_download_link", "file_name", "photo_file", "card_id"]
+QUEUE_README = """READ ME - how to use this folder
+
+Everything in here is approved and ready to post. Nothing else goes in here.
+
+Posting queue.json (or .csv) lists every item, soonest post date first:
+  type        "video" or "linkedin_post"
+  post_date   the day to post it
+  platforms   where to post it
+  caption     the caption to post. For a LinkedIn post this is the whole post.
+  video_link / download_link              the video (videos)
+  photo_link / photo_download_link        the photo to attach (LinkedIn posts, if it has one)
+
+Files: "<title>.mp4" are the videos. "LinkedIn - <title>.txt" is a LinkedIn post's
+words and "LinkedIn - <title>.jpeg" (or .png) is its photo.
+
+When something is posted, it gets marked posted on the dashboard and drops off the queue.
+This folder is kept up to date automatically.
+"""
 
 
 def posting_rows(vids, file_ids):
     """Rows for one client's queue. file_ids: finished file name -> Drive id.
-    A video whose copy has no Drive id yet (still syncing) waits a round."""
+    An item whose copy has no Drive id yet (still syncing) waits a round."""
     rows = []
     for v in vids:
-        name = ((v.get("editor_brief") or {}).get("finishedCopy") or {}).get("name")
+        fc = (v.get("editor_brief") or {}).get("finishedCopy") or {}
+        name, photo = fc.get("name"), fc.get("photo")
         fid = file_ids.get(name) if name else None
-        if not fid:
+        pid = file_ids.get(photo) if photo else None
+        if not fid or (photo and not pid):
             continue
-        rows.append({"post_date": str(v.get("post_date") or "")[:10], "title": v.get("title") or "",
-                     "platforms": ", ".join(v.get("platform") or []), "caption": v.get("caption") or "",
-                     "on_screen_caption": v.get("on_screen_caption") or "",
-                     "video_link": f"https://drive.google.com/file/d/{fid}/view",
-                     "download_link": f"https://drive.google.com/uc?export=download&id={fid}",
-                     "file_name": name, "card_id": v["id"]})
+        post = v.get("content_type") == "linkedin_post"
+        rows.append({"post_date": str(v.get("post_date") or "")[:10], "type": "linkedin_post" if post else "video",
+                     "title": v.get("title") or "",
+                     "platforms": ", ".join(v.get("platform") or (["linkedin"] if post else [])), "caption": v.get("caption") or "",
+                     "on_screen_caption": "" if post else (v.get("on_screen_caption") or ""),
+                     "video_link": "" if post else f"https://drive.google.com/file/d/{fid}/view",
+                     "download_link": "" if post else f"https://drive.google.com/uc?export=download&id={fid}",
+                     "photo_link": f"https://drive.google.com/file/d/{pid}/view" if pid else "",
+                     "photo_download_link": f"https://drive.google.com/uc?export=download&id={pid}" if pid else "",
+                     "file_name": name, "photo_file": photo or "", "card_id": v["id"]})
     return sorted(rows, key=lambda r: (r["post_date"] or "9999", r["title"]))
 
 
@@ -780,12 +839,14 @@ def write_posting_queues(sb, st):
         folder = find_drive_folder(folder_id_of(url), st) if url else None
         if not folder:
             continue
-        mine = [v for v in vids if v["client_id"] == cid and (v.get("content_type") or "video") == "video"]
-        names = {((v.get("editor_brief") or {}).get("finishedCopy") or {}).get("name") for v in mine} - {None}
+        mine = [v for v in vids if v["client_id"] == cid and (v.get("content_type") or "video") in ("video", "linkedin_post")]
+        fcs = [(v.get("editor_brief") or {}).get("finishedCopy") or {} for v in mine]
+        names = {n for fc in fcs for n in (fc.get("name"), fc.get("photo")) if n}
         ids = {n: drive_id(folder / n) for n in names if (folder / n).is_file()}
         rows = posting_rows(mine, {k: v for k, v in ids.items() if v})
         buf = io.StringIO(); w = csv.DictWriter(buf, fieldnames=QUEUE_FIELDS); w.writeheader(); w.writerows(rows)
-        for path, text in ((folder / "Posting queue.csv", buf.getvalue()), (folder / "Posting queue.json", json.dumps(rows, indent=1, ensure_ascii=False) + "\n")):
+        for path, text in ((folder / "Posting queue.csv", buf.getvalue()), (folder / "Posting queue.json", json.dumps(rows, indent=1, ensure_ascii=False) + "\n"),
+                           (folder / "READ ME - how to use this folder.txt", QUEUE_README)):
             if not path.exists() or path.read_text() != text:
                 path.write_text(text)
                 if path.suffix == ".csv":
@@ -800,12 +861,12 @@ def drive_files_to_trash(v, versions, folder):
     if not folder:
         return []
     eb = v.get("editor_brief") or {}
-    named = (eb.get("finishedCopy") or {}).get("name")
+    fc = eb.get("finishedCopy") or {}
     ids = {x["file_id"] for x in versions if x.get("file_id")}
     m = re.search(r"/file/d/([A-Za-z0-9_-]+)", v.get("final_cut_url") or "")
     if m:
         ids.add(m.group(1))
-    found = [folder / named] if named and (folder / named).is_file() else []
+    found = [folder / n for n in (fc.get("name"), fc.get("photo")) if n and (folder / n).is_file()]   # a LinkedIn post: words + photo
     if ids:
         for p in list(folder.iterdir()) + [q for d in folder.iterdir() if d.is_dir() for q in d.iterdir()]:
             if p.is_file() and p not in found and drive_id(p) in ids:
