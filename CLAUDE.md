@@ -90,7 +90,11 @@ last.
    `.json`) into each client's 02 Finished Videos folder, one row per
    video approved for posting (post date, title, platforms, caption,
    on-screen caption, the video's Drive link and download link, card id),
-   and the bot reads it.
+   and the bot reads it. 2026-11-18: LinkedIn posts approved for posting
+   go there too ("LinkedIn - <title>.txt" with the words, plus its photo),
+   and the queue lists them (type linkedin_post, caption = the whole post,
+   photo link), so a client's agent pulls everything from one folder; a
+   "READ ME - how to use this folder.txt" explains the queue.
 
 ## The business model — two systems, one pipeline
 
@@ -279,8 +283,9 @@ Fully Social OS/
   Clients/<Client Name>/
     01 Raw Footage       — footage uploaded on each card, one folder per card
                             ("NN. Title (posts Mon D)"); editor pulls from here
-    02 Finished Videos   — only videos Tait approved for posting ("<title>.mp4",
-                            copied by the bridge, `copy_finished`); never drafts
+    02 Finished Videos   — only content Tait approved for posting: videos ("<title>.mp4")
+                            and LinkedIn posts ("LinkedIn - <title>.txt" + photo), copied by
+                            the bridge (`copy_finished`), + Posting queue; never drafts
     03 Important Documents — every document made for the client (brand
                             guidelines, identity / voice, onboarding brand files)
     04 Assets/           — this client's research and idea documents
