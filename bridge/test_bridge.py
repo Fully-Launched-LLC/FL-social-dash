@@ -193,7 +193,7 @@ with tempfile.TemporaryDirectory() as d:
             return []
         def update(self, *a): calls.append(("update",) + a)
         def insert(self, *a, **k): calls.append(("insert",) + a)
-    for name in ("move_footage", "copy_finished", "delete_abandoned", "notify_tait", "notify_clients", "handle_telegram", "link_previews"):
+    for name in ("move_footage", "copy_finished", "delete_abandoned", "notify_tait", "notify_clients", "remind_film", "handle_telegram", "link_previews"):
         real_fns[name] = getattr(bridge, name)
         setattr(bridge, name, (lambda n: lambda *a, **k: ran.append(n) or [])(name))
     real_req = bridge.urllib.request.urlopen
@@ -201,7 +201,7 @@ with tempfile.TemporaryDirectory() as d:
     try:
         log = bridge.check(FakeSB(), verbose=False)
         check("paperclip off: no agent tasks, no calls to Paperclip", not any(c[0] == "http" for c in calls) and not any("->" in l for l in log), (calls, log))
-        check("paperclip off: footage, finished videos and notifications still run", {"move_footage", "copy_finished", "notify_tait", "notify_clients", "handle_telegram"} <= set(ran), ran)
+        check("paperclip off: footage, finished videos and notifications still run", {"move_footage", "copy_finished", "notify_tait", "notify_clients", "remind_film", "handle_telegram"} <= set(ran), ran)
         check("paperclip off: nothing marked as asked (so turning it back on picks them up)", not any(c[0] in ("insert", "update") for c in calls), calls)
         try: bridge.paperclip("GET", "/x"); refused = False
         except RuntimeError as e: refused = "off" in str(e)
@@ -234,4 +234,27 @@ check("posting queue: LinkedIn post = whole post as caption + photo link, no vid
 check("linkedin signature changes with the words", bridge.linkedin_signature({"caption": "a"}) != bridge.linkedin_signature({"caption": "b"}))
 check("posting queue: videos are type video", bridge.posting_rows(vq, {"A.mp4": "idA", "B.mp4": "idB"})[0]["type"] == "video")
 
+
+# ── Weekly "videos to film" reminder (Tait, 2026-11-18) ──
+class FilmSB:
+    def select(self, table, q=""):
+        if table == "social_clients": return [{"id": "c1", "name": "Luke", "slug": "luke"}, {"id": "c2", "name": "Ann", "slug": "ann"}]
+        return [{"client_id": "c1"}]
+posted = []
+real_post = bridge.post_api
+bridge.post_api = lambda route, body: posted.append((route, body["clientId"])) or {"count": 20}
+try:
+    st = {}
+    bridge.remind_film(FilmSB(), st)
+    check("film reminder: the first run only starts the clock (no emails)", posted == [] and list(st["film_reminded"]) == ["c1"], (posted, st))
+    bridge.remind_film(FilmSB(), st)
+    check("film reminder: not again within a week", posted == [])
+    st["film_reminded"]["c1"] = (dt.date.today() - dt.timedelta(days=7)).isoformat()
+    log = bridge.remind_film(FilmSB(), st)
+    check("film reminder: a week later, emails clients with videos to film (only them)", posted == [("/api/notify-film", "c1")] and st["film_reminded"]["c1"] == dt.date.today().isoformat() and "20 to film" in log[0], (posted, log))
+    posted.clear(); bridge.remind_film(FilmSB(), st, force_client="ann")
+    check("film reminder: remind-film --client sends now", posted == [("/api/notify-film", "c2")], posted)
+finally:
+    bridge.post_api = real_post
+print("all passed" if not fails else f"{fails} failed")
 sys.exit(1 if fails else 0)
