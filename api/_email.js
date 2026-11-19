@@ -122,6 +122,29 @@ function reviewReadyEmail({ contactName, videos, cards = [], portal, slug }) {
   return { subject, html, text };
 }
 
+// The filming reminder (Tait, 2026-11-18: "send them an email reminding
+// them they have videos to film"): "You have N videos ready to film", each
+// video with its film-by day, and one button to their portal (it opens on
+// To film). Sent from the dashboard (/api/notify-film) and weekly by the
+// bridge while a client has videos left to film.
+function filmReminderEmail({ contactName, videos, portal, slug }) {
+  const first = firstName(contactName);
+  const hi = first ? `Hi ${first},` : "Hi there,";
+  const n = videos.length, vids = n === 1 ? "1 video" : `${n} videos`;
+  const subject = `You have ${vids} ready to film`;
+  const link = portal + "/clients/" + encodeURIComponent(slug);
+  const when = d => d ? new Date(d + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }) : "";
+  const intro = `You have ${vids} ready to film in your Fully Social portal. ${n === 1 ? "It has" : "Each one has"} the hook, what to say and how to film it.`;
+  const how = "Open your portal, go to To film, and pick a few to knock out this week. Upload the clips on each card and we'll take care of the editing.";
+  const html = frame({ portal, title: subject, rows: `
+        <tr><td style="padding:10px 32px 10px;${BODY};font-size:16px">${esc(hi)}<br><br>${esc(intro)}</td></tr>
+        ${videos.map(v => `<tr><td style="padding:3px 32px;${BODY}">&bull; ${esc(v.title)}${v.due_to_film ? ` <span style="color:rgba(255,255,255,.6)">(film by ${esc(when(v.due_to_film))})</span>` : ""}</td></tr>`).join("")}
+        <tr><td style="padding:14px 32px 6px;${SMALL}">${esc(how)}</td></tr>
+        <tr><td style="padding:12px 32px 28px">${button(link, "See what to film")}</td></tr>` });
+  const text = `${hi}\n\n${intro}\n\n${videos.map(v => "- " + v.title + (v.due_to_film ? " (film by " + when(v.due_to_film) + ")" : "")).join("\n")}\n\n${how}\n\nSee what to film: ${link}`;
+  return { subject, html, text };
+}
+
 // Send one email through Resend, from EMAIL_FROM (or the default). If
 // EMAIL_FROM is on a domain Resend hasn't verified (e.g. a typo), try once
 // more from the default sender and say so.
@@ -144,4 +167,4 @@ async function sendEmail({ to, subject, html, text, from: fromOverride }) {
   return mail.ok ? { ok: true, ...(warning ? { warning } : {}) } : { ok: false, message: m.message || String(mail.status) };
 }
 
-module.exports = { inviteEmail, editorInviteEmail, resetPasswordEmail, reviewReadyEmail, sendEmail, DEFAULT_FROM };
+module.exports = { inviteEmail, editorInviteEmail, resetPasswordEmail, reviewReadyEmail, filmReminderEmail, sendEmail, DEFAULT_FROM };

@@ -1077,6 +1077,60 @@ def notify_clients(sb, st):
     return log
 
 
+FILM_REMINDER_DAYS = 7
+
+
+def post_api(route, body):
+    """POST to one of the dashboard's /api functions as the bridge (service key)."""
+    url, key = config()
+    req = urllib.request.Request(SITE + route, data=json.dumps(body).encode(), method="POST",
+                                 headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read() or b"{}")
+    except urllib.error.HTTPError as e:
+        try: msg = json.loads(e.read() or b"{}").get("error")
+        except Exception: msg = None
+        raise RuntimeError(msg or f"HTTP {e.code}")
+
+
+def remind_film(sb, st, force_client=None):
+    """Once a week per active client with videos on their To film tab, email
+    them "You have N videos ready to film" (/api/notify-film; Tait,
+    2026-11-18). The first run only starts the clock, so turning this on
+    doesn't email every client at once. force_client sends now."""
+    log, today = [], dt.date.today()
+    seen = st.get("film_reminded")
+    first_run = seen is None
+    seen = st.setdefault("film_reminded", {})
+    try:
+        clients = sb.select("social_clients", "select=id,name,slug&status=eq.active")
+        waiting = {v["client_id"] for v in sb.select("social_videos", "select=client_id&content_type=eq.video&status=in.(concept_pending,to_film,filmed)")}
+    except RuntimeError:
+        return log
+    for c in clients:
+        if force_client and c["slug"] != force_client:
+            continue
+        if not force_client:
+            if c["id"] not in waiting:
+                continue
+            last = seen.get(c["id"])
+            if first_run or not last:
+                seen[c["id"]] = today.isoformat()
+                continue
+            if (today - dt.date.fromisoformat(last)).days < FILM_REMINDER_DAYS:
+                continue
+        try:
+            out = post_api("/api/notify-film", {"clientId": c["id"]})
+            log.append(f"film reminder: {c['name']} ({out.get('count', '?')} to film)")
+        except Exception as e:
+            log.append(f"film reminder {c['name']}: {e}")
+            if "no videos to film" not in str(e):
+                continue
+        seen[c["id"]] = today.isoformat()
+    return log
+
+
 # ── the Agent room (Phase 8) ────────────────────────────────────────────
 def needs_from_error(err):
     e = (err or "").lower()
@@ -1354,7 +1408,7 @@ def check(sb, verbose=True):
         if on: log += sync_agents(sb)
     except Exception as e:
         log.append(f"agent room: {e}")
-    for fn in (notify_tait, notify_clients):
+    for fn in (notify_tait, notify_clients, remind_film):
         try:
             log += fn(sb, st)
         except Exception as e:
@@ -1837,6 +1891,8 @@ def main(argv=None):
     sj = sub.add_parser("start", help="start a stage by hand for any client (existing ones too)")
     sj.add_argument("job", choices=["questions", "documents", "style", "research", "plan"]); sj.add_argument("--client", required=True)
     sj.add_argument("--size", type=int, default=20, help="plan size"); sj.add_argument("--month", help="YYYY-MM (plan; default next month)")
+    rf = sub.add_parser("remind-film", help="email a client \"You have N videos ready to film\" now (it also goes out weekly)")
+    rf.add_argument("--client", required=True, help="the portal address, e.g. luke-bothun")
     vd = sub.add_parser("video"); vd.add_argument("action", choices=["deliver"]); vd.add_argument("--id", required=True); vd.add_argument("--file", required=True)
     cp = sub.add_parser("captions"); cp.add_argument("action", choices=["put"]); cp.add_argument("--id", required=True)
     cp.add_argument("--caption"); cp.add_argument("--on-screen"); cp.add_argument("--cover")
@@ -1990,6 +2046,11 @@ def main(argv=None):
         elif a.job == "research": tid = ask_for_research(sb, c)
         else: tid = ask_for_plan(sb, c, (a.month + "-01") if a.month else months_ahead(), a.size)
         print(f"Started {a.job} for {c['name']}: {tid}")
+    elif a.cmd == "remind-film":
+        st = load_state()
+        out = remind_film(sb, st, force_client=a.client)
+        STATE.write_text(json.dumps(st, indent=2))
+        print("\n".join(out) or f"No active client called {a.client}.")
     elif a.cmd == "video":
         v = sb.select("social_videos", f"select=*&id=eq.{a.id}")[0]
         c = sb.select("social_clients", f"select=id,name,slug&id=eq.{v['client_id']}")[0]

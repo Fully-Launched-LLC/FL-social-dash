@@ -30,6 +30,7 @@ function world(o) {
     if (u.includes("/rest/v1/social_client_documents") && method === "GET") return json(o.docLinks || []);
     if (u.includes("/rest/v1/social_editors") && method === "GET") return json((o.editors || []).filter(e => u.includes(e.id) || u.includes(encodeURIComponent(e.email))));
     if (u.includes("/auth/v1/admin/users")) return o.adminDenied ? json({ message: "invalid" }, 401) : json({ users: [] });
+    if (u.includes("/rest/v1/social_videos") && method === "GET" && u.includes("status=in.(")) return json(o.filmVideos || []);
     if (u.includes("/rest/v1/social_videos") && method === "GET") return json(u.includes("status=eq.concept_pending") ? (o.cardVideos || []) : (o.reviewVideos || []));
     if (u.includes("/rest/v1/social_client_generated_docs") && method === "GET" && o.builtDocs) return json(o.builtDocs);
     if (u.includes("/rest/v1/")) return json(null, 201);
@@ -54,6 +55,7 @@ const build = require("../api/build-documents.js");
 const inviteEditor = require("../api/invite-editor.js");
 const forgot = require("../api/forgot-password.js");
 const notifyReview = require("../api/notify-review.js");
+const notifyFilm = require("../api/notify-film.js");
 const C1 = "11111111-1111-1111-1111-111111111111", C2 = "22222222-2222-2222-2222-222222222222";
 const base = {
   users: { opTok: { id: "op1", email: "tait@x" }, clTok: { id: "cl1", email: "pat@x" }, edTok: { id: "ed1", email: "ed@x" } },
@@ -256,6 +258,39 @@ chk("invite-editor: a client's login can't become an editor (and nothing is save
   chk("notify-review: the bridge's newer sb_secret_ key is checked with Supabase's admin API", r.status === 200 && c.some(x => x.url.includes("/auth/v1/admin/users")), [r.status, r.body]);
   c = world({ ...base, reviewVideos: vids, adminDenied: true }); r = await call(notifyReview, "sb_secret_wrong", { clientId: C1 });
   chk("notify-review: a key Supabase refuses → 401, no email", r.status === 401 && !c.some(x => x.url.startsWith("https://api.resend.com")), [r.status, r.body]);
+}
+
+// ── notify-film: "You have N videos ready to film" (Tait, 2026-11-18) ──
+{
+  setEnv({ RESEND_API_KEY: "re_1" });
+  const sent = { status: "concept_pending", concept_approved_at: "2026-11-09T00:00:00Z", content_type: "video" };
+  const film = [
+    { ...sent, title: "20 hours of invoices to 30 seconds", due_to_film: "2026-11-24" },
+    { status: "to_film", content_type: "video", title: "AI isn't a chatbot" },
+    { status: "filmed", content_type: "video", filmed_by: "client", title: "Be The Bear" },
+    { ...sent, title: "Not sent yet", concept_approved_at: null },
+    { ...sent, title: "Banked idea", editor_brief: { ideaBank: { from: "concept_pending" } } },
+    { ...sent, title: "We film this one", filmed_by: "us" },
+    { ...sent, title: "A LinkedIn post", content_type: "linkedin_post" },
+  ];
+  let c = world({ ...base, filmVideos: film }); let r = await call(notifyFilm, null, { clientId: C1 });
+  chk("notify-film: not signed in → 401", r.status === 401);
+  r = await call(notifyFilm, "clTok", { clientId: C1 });
+  chk("notify-film: a client can't send it → 403", r.status === 403);
+  r = await call(notifyFilm, "opTok", { clientId: C2 });
+  chk("notify-film: no contact email → 400", r.status === 400 && /contact email/.test(r.body.error), r.body);
+  c = world({ ...base, filmVideos: film.slice(3) }); r = await call(notifyFilm, "opTok", { clientId: C1 });
+  chk("notify-film: nothing to film (unsent, banked, we-film, posts) → 400, no email", r.status === 400 && /no videos to film/.test(r.body.error) && !c.some(x => x.url.startsWith("https://api.resend.com")), r.body);
+  c = world({ ...base, filmVideos: film }); r = await call(notifyFilm, "opTok", { clientId: C1 });
+  const q = c.find(x => x.url.includes("/rest/v1/social_videos"));
+  chk("notify-film: only this client's videos", q && q.url.includes("client_id=eq." + C1), q && q.url);
+  const m = JSON.parse(c.find(x => x.url.startsWith("https://api.resend.com")).body);
+  chk("notify-film: sent to the contact, counts only the To film videos", r.status === 200 && r.body.count === 3 && m.to[0] === "pat@newco.test" && m.subject === "You have 3 videos ready to film", [r.body, m.subject]);
+  chk("notify-film: branded, greets by name, lists each video with its film-by day, button to the portal", m.html.includes("/assets/motion/email-logo.gif") && m.html.includes("Hi Pat,") && m.html.includes("ready to film in your Fully Social portal") && m.html.includes("20 hours of invoices") && m.html.includes("film by Tue, Nov 24") && !m.html.includes("Not sent yet") && !m.html.includes("Banked idea") && !m.html.includes("A LinkedIn post") && m.html.includes('href="https://social.fullylaunched.com/clients/newco"') && m.html.includes(">See what to film<"), m.html.length);
+  chk("notify-film: plain-text version too", m.text.includes("- AI isn't a chatbot") && m.text.includes("See what to film: https://social.fullylaunched.com/clients/newco"), m.text);
+  chk("notify-film: a concierge client's videos default to us", !notifyFilm.toFilm({ status: "to_film", content_type: "video" }, "concierge") && notifyFilm.toFilm({ status: "to_film", content_type: "video" }, "self-serve"));
+  c = world({ ...base, filmVideos: film, resend: (b, json) => json({ message: "Rate limited" }, 429) }); r = await call(notifyFilm, "opTok", { clientId: C1 });
+  chk("notify-film: the email fails → says so", r.status === 502 && /didn't send/.test(r.body.error), r.body);
 }
 
 // ── invite someone else on the client's team (a member, migration 039) ──

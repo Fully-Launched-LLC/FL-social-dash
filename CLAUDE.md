@@ -423,6 +423,8 @@ fully-social-os/
                                transcript), notify-review.js ("You have N
                                videos ready to review" email to the client,
                                from Clients → "Email: N to review");
+                               notify-film.js ("You have N videos ready to
+                               film", the client's To film tab);
                                _lib.js, _email.js
   ONBOARDING-SETUP.md          the steps only Tait can do to turn onboarding on
     config.example.js          template for supabase/config.js (gitignored —
@@ -947,7 +949,10 @@ same way (bridge `edit_notes`). The bridge texts Tait (Telegram, grouped, at
 most every 2 hours) when new things land on My desk, and emails each client
 once a day when cards or videos wait for them (`/api/notify-review`, which
 now lists cards too and accepts the service-role key from the bridge; live
-once deployed).
+once deployed). Once a week it also emails each active client with videos
+on their To film tab "You have N videos ready to film" (`remind_film` →
+`/api/notify-film`, Tait 2026-11-18; the first run only starts each
+client's clock). `bridge.py remind-film --client <slug>` sends it now.
 
 **Content Ideas** (no migration; Tait, 2026-10-19: "ideas are on one
 side and send to the client on the other"). Two columns, per client (the
